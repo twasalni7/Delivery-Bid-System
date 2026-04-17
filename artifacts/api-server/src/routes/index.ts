@@ -4,10 +4,12 @@ import driversRouter from "./drivers";
 import requestsRouter from "./requests";
 import offersRouter from "./offers";
 import adminRouter from "./admin";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use("/auth", authRouter);
 router.use("/drivers", driversRouter);
 router.use("/requests", requestsRouter);
 router.use("/offers", offersRouter);

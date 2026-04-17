@@ -9,6 +9,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { driversTable } from "./drivers";
+import { clientsTable } from "./clients";
 
 export const requestStatusEnum = pgEnum("request_status", [
   "OPEN",
@@ -19,6 +20,7 @@ export const requestStatusEnum = pgEnum("request_status", [
 
 export const requestsTable = pgTable("requests", {
   id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => clientsTable.id),
   homeLocation: text("home_location").notNull(),
   workLocation: text("work_location").notNull(),
   phone: text("phone").notNull(),
@@ -38,6 +40,7 @@ export const insertRequestSchema = createInsertSchema(requestsTable).omit({
   createdAt: true,
   status: true,
   selectedDriverId: true,
+  clientId: true,
 });
 
 export type InsertRequest = z.infer<typeof insertRequestSchema>;

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Monthly Commute Bidding System API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from "zod";
 
@@ -15,23 +15,85 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * @summary Login or register driver by name
+ * @summary Register a new client account
+ */
+export const ClientRegisterBody = zod.object({
+  name: zod.string(),
+  mobile: zod.string(),
+  password: zod.string(),
+});
+
+/**
+ * @summary Login as client
+ */
+export const ClientLoginBody = zod.object({
+  mobile: zod.string(),
+  password: zod.string(),
+});
+
+export const ClientLoginResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  role: zod.enum(["client", "driver", "admin"]),
+  mobile: zod.string().nullish(),
+  balance: zod.number().nullish(),
+  status: zod.string().nullish(),
+});
+
+/**
+ * @summary Login as driver using mobile + loginCode
  */
 export const DriverLoginBody = zod.object({
-  name: zod.string(),
+  mobile: zod.string(),
+  loginCode: zod.string(),
 });
 
 export const DriverLoginResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
-  balance: zod.number(),
-  carType: zod.string().nullish(),
-  nationality: zod.string().nullish(),
-  createdAt: zod.string().optional(),
+  role: zod.enum(["client", "driver", "admin"]),
+  mobile: zod.string().nullish(),
+  balance: zod.number().nullish(),
+  status: zod.string().nullish(),
 });
 
 /**
- * @summary List all drivers
+ * @summary Login as admin using loginCode
+ */
+export const AdminLoginBody = zod.object({
+  loginCode: zod.string(),
+});
+
+export const AdminLoginResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  role: zod.enum(["client", "driver", "admin"]),
+  mobile: zod.string().nullish(),
+  balance: zod.number().nullish(),
+  status: zod.string().nullish(),
+});
+
+/**
+ * @summary Logout current session
+ */
+export const LogoutResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Get current session user
+ */
+export const GetMeResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  role: zod.enum(["client", "driver", "admin"]),
+  mobile: zod.string().nullish(),
+  balance: zod.number().nullish(),
+  status: zod.string().nullish(),
+});
+
+/**
+ * @summary List all active drivers
  */
 export const ListDriversResponseItem = zod.object({
   id: zod.number(),
@@ -39,9 +101,29 @@ export const ListDriversResponseItem = zod.object({
   balance: zod.number(),
   carType: zod.string().nullish(),
   nationality: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
   createdAt: zod.string().optional(),
 });
 export const ListDriversResponse = zod.array(ListDriversResponseItem);
+
+/**
+ * @summary Get current driver profile (requires driver auth)
+ */
+export const GetDriverMeResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  mobile: zod.string().nullish(),
+  loginCode: zod.string().nullish(),
+  balance: zod.number(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
+  age: zod.number().nullish(),
+  nationalId: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
+  createdAt: zod.string().optional(),
+});
 
 /**
  * @summary Get driver by ID
@@ -56,11 +138,13 @@ export const GetDriverResponse = zod.object({
   balance: zod.number(),
   carType: zod.string().nullish(),
   nationality: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
   createdAt: zod.string().optional(),
 });
 
 /**
- * @summary Add balance to driver
+ * @summary Add balance to driver (admin only)
  */
 export const AddDriverBalanceParams = zod.object({
   id: zod.coerce.number(),
@@ -76,6 +160,8 @@ export const AddDriverBalanceResponse = zod.object({
   balance: zod.number(),
   carType: zod.string().nullish(),
   nationality: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
   createdAt: zod.string().optional(),
 });
 
@@ -106,9 +192,11 @@ export const ListRequestsQueryParams = zod.object({
 
 export const ListRequestsResponseItem = zod.object({
   id: zod.number(),
+  clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
   phone: zod.string(),
+  phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
@@ -122,6 +210,8 @@ export const ListRequestsResponseItem = zod.object({
       balance: zod.number(),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
       createdAt: zod.string().optional(),
     })
     .nullish(),
@@ -130,7 +220,7 @@ export const ListRequestsResponseItem = zod.object({
 export const ListRequestsResponse = zod.array(ListRequestsResponseItem);
 
 /**
- * @summary Create a commute request
+ * @summary Create a commute request (requires client auth)
  */
 export const CreateRequestBody = zod.object({
   homeLocation: zod.string(),
@@ -151,9 +241,11 @@ export const GetRequestParams = zod.object({
 
 export const GetRequestResponse = zod.object({
   id: zod.number(),
+  clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
   phone: zod.string(),
+  phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
@@ -167,6 +259,8 @@ export const GetRequestResponse = zod.object({
       balance: zod.number(),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
       createdAt: zod.string().optional(),
     })
     .nullish(),
@@ -174,7 +268,7 @@ export const GetRequestResponse = zod.object({
 });
 
 /**
- * @summary Update request status (admin)
+ * @summary Update request status (admin only)
  */
 export const UpdateRequestStatusParams = zod.object({
   id: zod.coerce.number(),
@@ -186,9 +280,11 @@ export const UpdateRequestStatusBody = zod.object({
 
 export const UpdateRequestStatusResponse = zod.object({
   id: zod.number(),
+  clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
   phone: zod.string(),
+  phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
@@ -202,6 +298,8 @@ export const UpdateRequestStatusResponse = zod.object({
       balance: zod.number(),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
       createdAt: zod.string().optional(),
     })
     .nullish(),
@@ -209,7 +307,7 @@ export const UpdateRequestStatusResponse = zod.object({
 });
 
 /**
- * @summary Client selects an offer for their request
+ * @summary Client selects an offer for their request (requires client auth)
  */
 export const SelectOfferParams = zod.object({
   id: zod.coerce.number(),
@@ -221,9 +319,11 @@ export const SelectOfferBody = zod.object({
 
 export const SelectOfferResponse = zod.object({
   id: zod.number(),
+  clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
   phone: zod.string(),
+  phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
@@ -237,6 +337,8 @@ export const SelectOfferResponse = zod.object({
       balance: zod.number(),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
       createdAt: zod.string().optional(),
     })
     .nullish(),
@@ -255,8 +357,8 @@ export const GetRequestOffersResponseItem = zod.object({
   driverId: zod.number(),
   requestId: zod.number(),
   price: zod.number(),
-  carType: zod.string(),
-  nationality: zod.string(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
   driver: zod
     .object({
       id: zod.number(),
@@ -264,6 +366,8 @@ export const GetRequestOffersResponseItem = zod.object({
       balance: zod.number(),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
       createdAt: zod.string().optional(),
     })
     .nullish(),
@@ -279,8 +383,8 @@ export const ListOffersResponseItem = zod.object({
   driverId: zod.number(),
   requestId: zod.number(),
   price: zod.number(),
-  carType: zod.string(),
-  nationality: zod.string(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
   driver: zod
     .object({
       id: zod.number(),
@@ -288,6 +392,8 @@ export const ListOffersResponseItem = zod.object({
       balance: zod.number(),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
       createdAt: zod.string().optional(),
     })
     .nullish(),
@@ -296,10 +402,9 @@ export const ListOffersResponseItem = zod.object({
 export const ListOffersResponse = zod.array(ListOffersResponseItem);
 
 /**
- * @summary Driver submits an offer
+ * @summary Driver submits an offer (requires driver auth)
  */
 export const CreateOfferBody = zod.object({
-  driverId: zod.number(),
   requestId: zod.number(),
   price: zod.number(),
   carType: zod.string(),
@@ -307,7 +412,7 @@ export const CreateOfferBody = zod.object({
 });
 
 /**
- * @summary Get admin dashboard statistics
+ * @summary Get admin dashboard statistics (admin only)
  */
 export const GetAdminStatsResponse = zod.object({
   totalRequests: zod.number(),
@@ -317,4 +422,200 @@ export const GetAdminStatsResponse = zod.object({
   completedRequests: zod.number(),
   totalDrivers: zod.number(),
   totalOffers: zod.number(),
+  totalClients: zod.number(),
+});
+
+/**
+ * @summary List all drivers with full details (admin only)
+ */
+export const AdminListDriversResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  mobile: zod.string().nullish(),
+  loginCode: zod.string().nullish(),
+  balance: zod.number(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
+  age: zod.number().nullish(),
+  nationalId: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
+  createdAt: zod.string().optional(),
+});
+export const AdminListDriversResponse = zod.array(AdminListDriversResponseItem);
+
+/**
+ * @summary Register a new driver (admin only)
+ */
+export const AdminCreateDriverBody = zod.object({
+  name: zod.string(),
+  mobile: zod.string(),
+  carType: zod.string().optional(),
+  nationality: zod.string().optional(),
+  age: zod.number().optional(),
+  nationalId: zod.string().optional(),
+});
+
+/**
+ * @summary Get driver full details (admin only)
+ */
+export const AdminGetDriverParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetDriverResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  mobile: zod.string().nullish(),
+  loginCode: zod.string().nullish(),
+  balance: zod.number(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
+  age: zod.number().nullish(),
+  nationalId: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Update driver information (admin only)
+ */
+export const AdminUpdateDriverParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateDriverBody = zod.object({
+  name: zod.string().optional(),
+  mobile: zod.string().optional(),
+  carType: zod.string().optional(),
+  nationality: zod.string().optional(),
+  age: zod.number().optional(),
+  nationalId: zod.string().optional(),
+});
+
+export const AdminUpdateDriverResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  mobile: zod.string().nullish(),
+  loginCode: zod.string().nullish(),
+  balance: zod.number(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
+  age: zod.number().nullish(),
+  nationalId: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Soft-delete driver (admin only)
+ */
+export const AdminDeleteDriverParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteDriverResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Block a driver (admin only)
+ */
+export const AdminBlockDriverParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminBlockDriverResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Unblock a driver (admin only)
+ */
+export const AdminUnblockDriverParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUnblockDriverResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Add warning to driver (admin only)
+ */
+export const AdminWarnDriverParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminWarnDriverResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Regenerate driver login code (admin only)
+ */
+export const AdminRegenerateDriverCodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminRegenerateDriverCodeResponse = zod.object({
+  loginCode: zod.string(),
+});
+
+/**
+ * @summary List all clients (admin only)
+ */
+export const AdminListClientsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  mobile: zod.string(),
+  createdAt: zod.string().optional(),
+});
+export const AdminListClientsResponse = zod.array(AdminListClientsResponseItem);
+
+/**
+ * @summary List all requests with full phone (admin only)
+ */
+export const AdminListRequestsResponseItem = zod.object({
+  id: zod.number(),
+  clientId: zod.number().nullish(),
+  homeLocation: zod.string(),
+  workLocation: zod.string(),
+  phone: zod.string(),
+  phoneHidden: zod.boolean(),
+  numberOfPeople: zod.number(),
+  workingDaysPerWeek: zod.number(),
+  morningTime: zod.string(),
+  eveningTime: zod.string(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  selectedDriverId: zod.number().nullish(),
+  selectedDriver: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      balance: zod.number(),
+      carType: zod.string().nullish(),
+      nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
+      createdAt: zod.string().optional(),
+    })
+    .nullish(),
+  createdAt: zod.string().optional(),
+});
+export const AdminListRequestsResponse = zod.array(
+  AdminListRequestsResponseItem,
+);
+
+/**
+ * @summary Delete a request (admin only)
+ */
+export const AdminDeleteRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteRequestResponse = zod.object({
+  message: zod.string(),
 });

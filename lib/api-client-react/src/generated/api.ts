@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Monthly Commute Bidding System API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -18,14 +18,24 @@ import type {
 
 import type {
   AddBalanceBody,
+  AdminCreateDriverBody,
+  AdminLoginBody,
+  AdminRegenerateDriverCode200,
   AdminStats,
+  AdminUpdateDriverBody,
+  AuthUser,
+  ClientLoginBody,
+  ClientRegisterBody,
+  ClientSummary,
   CommuteRequest,
   CreateOfferBody,
   CreateRequestBody,
   Driver,
+  DriverDetail,
   DriverLoginBody,
   HealthStatus,
   ListRequestsParams,
+  MessageResponse,
   Offer,
   SelectOfferBody,
   Transaction,
@@ -117,17 +127,189 @@ export function useHealthCheck<
 }
 
 /**
- * @summary Login or register driver by name
+ * @summary Register a new client account
+ */
+export const getClientRegisterUrl = () => {
+  return `/api/auth/client/register`;
+};
+
+export const clientRegister = async (
+  clientRegisterBody: ClientRegisterBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getClientRegisterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(clientRegisterBody),
+  });
+};
+
+export const getClientRegisterMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientRegister>>,
+    TError,
+    { data: BodyType<ClientRegisterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clientRegister>>,
+  TError,
+  { data: BodyType<ClientRegisterBody> },
+  TContext
+> => {
+  const mutationKey = ["clientRegister"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clientRegister>>,
+    { data: BodyType<ClientRegisterBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return clientRegister(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClientRegisterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clientRegister>>
+>;
+export type ClientRegisterMutationBody = BodyType<ClientRegisterBody>;
+export type ClientRegisterMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register a new client account
+ */
+export const useClientRegister = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientRegister>>,
+    TError,
+    { data: BodyType<ClientRegisterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clientRegister>>,
+  TError,
+  { data: BodyType<ClientRegisterBody> },
+  TContext
+> => {
+  return useMutation(getClientRegisterMutationOptions(options));
+};
+
+/**
+ * @summary Login as client
+ */
+export const getClientLoginUrl = () => {
+  return `/api/auth/client/login`;
+};
+
+export const clientLogin = async (
+  clientLoginBody: ClientLoginBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getClientLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(clientLoginBody),
+  });
+};
+
+export const getClientLoginMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientLogin>>,
+    TError,
+    { data: BodyType<ClientLoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clientLogin>>,
+  TError,
+  { data: BodyType<ClientLoginBody> },
+  TContext
+> => {
+  const mutationKey = ["clientLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clientLogin>>,
+    { data: BodyType<ClientLoginBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return clientLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClientLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clientLogin>>
+>;
+export type ClientLoginMutationBody = BodyType<ClientLoginBody>;
+export type ClientLoginMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Login as client
+ */
+export const useClientLogin = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clientLogin>>,
+    TError,
+    { data: BodyType<ClientLoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clientLogin>>,
+  TError,
+  { data: BodyType<ClientLoginBody> },
+  TContext
+> => {
+  return useMutation(getClientLoginMutationOptions(options));
+};
+
+/**
+ * @summary Login as driver using mobile + loginCode
  */
 export const getDriverLoginUrl = () => {
-  return `/api/drivers/login`;
+  return `/api/auth/driver/login`;
 };
 
 export const driverLogin = async (
   driverLoginBody: DriverLoginBody,
   options?: RequestInit,
-): Promise<Driver> => {
-  return customFetch<Driver>(getDriverLoginUrl(), {
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getDriverLoginUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
@@ -180,7 +362,7 @@ export type DriverLoginMutationBody = BodyType<DriverLoginBody>;
 export type DriverLoginMutationError = ErrorType<unknown>;
 
 /**
- * @summary Login or register driver by name
+ * @summary Login as driver using mobile + loginCode
  */
 export const useDriverLogin = <
   TError = ErrorType<unknown>,
@@ -203,7 +385,237 @@ export const useDriverLogin = <
 };
 
 /**
- * @summary List all drivers
+ * @summary Login as admin using loginCode
+ */
+export const getAdminLoginUrl = () => {
+  return `/api/auth/admin/login`;
+};
+
+export const adminLogin = async (
+  adminLoginBody: AdminLoginBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getAdminLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminLoginBody),
+  });
+};
+
+export const getAdminLoginMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminLogin>>,
+    TError,
+    { data: BodyType<AdminLoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: BodyType<AdminLoginBody> },
+  TContext
+> => {
+  const mutationKey = ["adminLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminLogin>>,
+    { data: BodyType<AdminLoginBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminLogin>>
+>;
+export type AdminLoginMutationBody = BodyType<AdminLoginBody>;
+export type AdminLoginMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Login as admin using loginCode
+ */
+export const useAdminLogin = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminLogin>>,
+    TError,
+    { data: BodyType<AdminLoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: BodyType<AdminLoginBody> },
+  TContext
+> => {
+  return useMutation(getAdminLoginMutationOptions(options));
+};
+
+/**
+ * @summary Logout current session
+ */
+export const getLogoutUrl = () => {
+  return `/api/auth/logout`;
+};
+
+export const logout = async (
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getLogoutUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getLogoutMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof logout>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["logout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof logout>>,
+    void
+  > = () => {
+    return logout(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LogoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logout>>
+>;
+
+export type LogoutMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Logout current session
+ */
+export const useLogout = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof logout>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getLogoutMutationOptions(options));
+};
+
+/**
+ * @summary Get current session user
+ */
+export const getGetMeUrl = () => {
+  return `/api/auth/me`;
+};
+
+export const getMe = async (options?: RequestInit): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getGetMeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMeQueryKey = () => {
+  return [`/api/auth/me`] as const;
+};
+
+export const getGetMeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMeQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMe>>> = ({
+    signal,
+  }) => getMe({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMe>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMeQueryResult = NonNullable<Awaited<ReturnType<typeof getMe>>>;
+export type GetMeQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get current session user
+ */
+
+export function useGetMe<
+  TData = Awaited<ReturnType<typeof getMe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMeQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all active drivers
  */
 export const getListDriversUrl = () => {
   return `/api/drivers`;
@@ -252,7 +664,7 @@ export type ListDriversQueryResult = NonNullable<
 export type ListDriversQueryError = ErrorType<unknown>;
 
 /**
- * @summary List all drivers
+ * @summary List all active drivers
  */
 
 export function useListDrivers<
@@ -267,6 +679,81 @@ export function useListDrivers<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListDriversQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get current driver profile (requires driver auth)
+ */
+export const getGetDriverMeUrl = () => {
+  return `/api/drivers/me`;
+};
+
+export const getDriverMe = async (
+  options?: RequestInit,
+): Promise<DriverDetail> => {
+  return customFetch<DriverDetail>(getGetDriverMeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDriverMeQueryKey = () => {
+  return [`/api/drivers/me`] as const;
+};
+
+export const getGetDriverMeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDriverMe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDriverMe>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDriverMeQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDriverMe>>> = ({
+    signal,
+  }) => getDriverMe({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDriverMe>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDriverMeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDriverMe>>
+>;
+export type GetDriverMeQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get current driver profile (requires driver auth)
+ */
+
+export function useGetDriverMe<
+  TData = Awaited<ReturnType<typeof getDriverMe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDriverMe>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDriverMeQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -361,7 +848,7 @@ export function useGetDriver<
 }
 
 /**
- * @summary Add balance to driver
+ * @summary Add balance to driver (admin only)
  */
 export const getAddDriverBalanceUrl = (id: number) => {
   return `/api/drivers/${id}/balance`;
@@ -425,7 +912,7 @@ export type AddDriverBalanceMutationBody = BodyType<AddBalanceBody>;
 export type AddDriverBalanceMutationError = ErrorType<unknown>;
 
 /**
- * @summary Add balance to driver
+ * @summary Add balance to driver (admin only)
  */
 export const useAddDriverBalance = <
   TError = ErrorType<unknown>,
@@ -630,7 +1117,7 @@ export function useListRequests<
 }
 
 /**
- * @summary Create a commute request
+ * @summary Create a commute request (requires client auth)
  */
 export const getCreateRequestUrl = () => {
   return `/api/requests`;
@@ -693,7 +1180,7 @@ export type CreateRequestMutationBody = BodyType<CreateRequestBody>;
 export type CreateRequestMutationError = ErrorType<unknown>;
 
 /**
- * @summary Create a commute request
+ * @summary Create a commute request (requires client auth)
  */
 export const useCreateRequest = <
   TError = ErrorType<unknown>,
@@ -803,7 +1290,7 @@ export function useGetRequest<
 }
 
 /**
- * @summary Update request status (admin)
+ * @summary Update request status (admin only)
  */
 export const getUpdateRequestStatusUrl = (id: number) => {
   return `/api/requests/${id}/status`;
@@ -867,7 +1354,7 @@ export type UpdateRequestStatusMutationBody = BodyType<UpdateStatusBody>;
 export type UpdateRequestStatusMutationError = ErrorType<unknown>;
 
 /**
- * @summary Update request status (admin)
+ * @summary Update request status (admin only)
  */
 export const useUpdateRequestStatus = <
   TError = ErrorType<unknown>,
@@ -890,7 +1377,7 @@ export const useUpdateRequestStatus = <
 };
 
 /**
- * @summary Client selects an offer for their request
+ * @summary Client selects an offer for their request (requires client auth)
  */
 export const getSelectOfferUrl = (id: number) => {
   return `/api/requests/${id}/select-offer`;
@@ -954,7 +1441,7 @@ export type SelectOfferMutationBody = BodyType<SelectOfferBody>;
 export type SelectOfferMutationError = ErrorType<unknown>;
 
 /**
- * @summary Client selects an offer for their request
+ * @summary Client selects an offer for their request (requires client auth)
  */
 export const useSelectOffer = <
   TError = ErrorType<unknown>,
@@ -1137,7 +1624,7 @@ export function useListOffers<
 }
 
 /**
- * @summary Driver submits an offer
+ * @summary Driver submits an offer (requires driver auth)
  */
 export const getCreateOfferUrl = () => {
   return `/api/offers`;
@@ -1200,7 +1687,7 @@ export type CreateOfferMutationBody = BodyType<CreateOfferBody>;
 export type CreateOfferMutationError = ErrorType<unknown>;
 
 /**
- * @summary Driver submits an offer
+ * @summary Driver submits an offer (requires driver auth)
  */
 export const useCreateOffer = <
   TError = ErrorType<unknown>,
@@ -1223,7 +1710,7 @@ export const useCreateOffer = <
 };
 
 /**
- * @summary Get admin dashboard statistics
+ * @summary Get admin dashboard statistics (admin only)
  */
 export const getGetAdminStatsUrl = () => {
   return `/api/admin/stats`;
@@ -1274,7 +1761,7 @@ export type GetAdminStatsQueryResult = NonNullable<
 export type GetAdminStatsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get admin dashboard statistics
+ * @summary Get admin dashboard statistics (admin only)
  */
 
 export function useGetAdminStats<
@@ -1296,3 +1783,995 @@ export function useGetAdminStats<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List all drivers with full details (admin only)
+ */
+export const getAdminListDriversUrl = () => {
+  return `/api/admin/drivers`;
+};
+
+export const adminListDrivers = async (
+  options?: RequestInit,
+): Promise<DriverDetail[]> => {
+  return customFetch<DriverDetail[]>(getAdminListDriversUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListDriversQueryKey = () => {
+  return [`/api/admin/drivers`] as const;
+};
+
+export const getAdminListDriversQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListDrivers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListDrivers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListDriversQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListDrivers>>
+  > = ({ signal }) => adminListDrivers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListDrivers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListDriversQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListDrivers>>
+>;
+export type AdminListDriversQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all drivers with full details (admin only)
+ */
+
+export function useAdminListDrivers<
+  TData = Awaited<ReturnType<typeof adminListDrivers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListDrivers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListDriversQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register a new driver (admin only)
+ */
+export const getAdminCreateDriverUrl = () => {
+  return `/api/admin/drivers`;
+};
+
+export const adminCreateDriver = async (
+  adminCreateDriverBody: AdminCreateDriverBody,
+  options?: RequestInit,
+): Promise<DriverDetail> => {
+  return customFetch<DriverDetail>(getAdminCreateDriverUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminCreateDriverBody),
+  });
+};
+
+export const getAdminCreateDriverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateDriver>>,
+    TError,
+    { data: BodyType<AdminCreateDriverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateDriver>>,
+  TError,
+  { data: BodyType<AdminCreateDriverBody> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateDriver"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateDriver>>,
+    { data: BodyType<AdminCreateDriverBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateDriver(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateDriverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateDriver>>
+>;
+export type AdminCreateDriverMutationBody = BodyType<AdminCreateDriverBody>;
+export type AdminCreateDriverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register a new driver (admin only)
+ */
+export const useAdminCreateDriver = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateDriver>>,
+    TError,
+    { data: BodyType<AdminCreateDriverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateDriver>>,
+  TError,
+  { data: BodyType<AdminCreateDriverBody> },
+  TContext
+> => {
+  return useMutation(getAdminCreateDriverMutationOptions(options));
+};
+
+/**
+ * @summary Get driver full details (admin only)
+ */
+export const getAdminGetDriverUrl = (id: number) => {
+  return `/api/admin/drivers/${id}`;
+};
+
+export const adminGetDriver = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DriverDetail> => {
+  return customFetch<DriverDetail>(getAdminGetDriverUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetDriverQueryKey = (id: number) => {
+  return [`/api/admin/drivers/${id}`] as const;
+};
+
+export const getAdminGetDriverQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetDriver>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetDriver>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetDriverQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminGetDriver>>> = ({
+    signal,
+  }) => adminGetDriver(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetDriver>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetDriverQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetDriver>>
+>;
+export type AdminGetDriverQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get driver full details (admin only)
+ */
+
+export function useAdminGetDriver<
+  TData = Awaited<ReturnType<typeof adminGetDriver>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetDriver>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetDriverQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update driver information (admin only)
+ */
+export const getAdminUpdateDriverUrl = (id: number) => {
+  return `/api/admin/drivers/${id}`;
+};
+
+export const adminUpdateDriver = async (
+  id: number,
+  adminUpdateDriverBody: AdminUpdateDriverBody,
+  options?: RequestInit,
+): Promise<DriverDetail> => {
+  return customFetch<DriverDetail>(getAdminUpdateDriverUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateDriverBody),
+  });
+};
+
+export const getAdminUpdateDriverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateDriver>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateDriverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateDriver>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateDriverBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateDriver"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateDriver>>,
+    { id: number; data: BodyType<AdminUpdateDriverBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateDriver(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateDriverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateDriver>>
+>;
+export type AdminUpdateDriverMutationBody = BodyType<AdminUpdateDriverBody>;
+export type AdminUpdateDriverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update driver information (admin only)
+ */
+export const useAdminUpdateDriver = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateDriver>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateDriverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateDriver>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateDriverBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateDriverMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete driver (admin only)
+ */
+export const getAdminDeleteDriverUrl = (id: number) => {
+  return `/api/admin/drivers/${id}`;
+};
+
+export const adminDeleteDriver = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminDeleteDriverUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteDriverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteDriver"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteDriver>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteDriver(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteDriverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteDriver>>
+>;
+
+export type AdminDeleteDriverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-delete driver (admin only)
+ */
+export const useAdminDeleteDriver = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteDriverMutationOptions(options));
+};
+
+/**
+ * @summary Block a driver (admin only)
+ */
+export const getAdminBlockDriverUrl = (id: number) => {
+  return `/api/admin/drivers/${id}/block`;
+};
+
+export const adminBlockDriver = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminBlockDriverUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminBlockDriverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminBlockDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminBlockDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminBlockDriver"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminBlockDriver>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminBlockDriver(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminBlockDriverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminBlockDriver>>
+>;
+
+export type AdminBlockDriverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Block a driver (admin only)
+ */
+export const useAdminBlockDriver = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminBlockDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminBlockDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminBlockDriverMutationOptions(options));
+};
+
+/**
+ * @summary Unblock a driver (admin only)
+ */
+export const getAdminUnblockDriverUrl = (id: number) => {
+  return `/api/admin/drivers/${id}/unblock`;
+};
+
+export const adminUnblockDriver = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminUnblockDriverUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminUnblockDriverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUnblockDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUnblockDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminUnblockDriver"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUnblockDriver>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminUnblockDriver(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUnblockDriverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUnblockDriver>>
+>;
+
+export type AdminUnblockDriverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Unblock a driver (admin only)
+ */
+export const useAdminUnblockDriver = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUnblockDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUnblockDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminUnblockDriverMutationOptions(options));
+};
+
+/**
+ * @summary Add warning to driver (admin only)
+ */
+export const getAdminWarnDriverUrl = (id: number) => {
+  return `/api/admin/drivers/${id}/warn`;
+};
+
+export const adminWarnDriver = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminWarnDriverUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminWarnDriverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminWarnDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminWarnDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminWarnDriver"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminWarnDriver>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminWarnDriver(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminWarnDriverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminWarnDriver>>
+>;
+
+export type AdminWarnDriverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add warning to driver (admin only)
+ */
+export const useAdminWarnDriver = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminWarnDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminWarnDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminWarnDriverMutationOptions(options));
+};
+
+/**
+ * @summary Regenerate driver login code (admin only)
+ */
+export const getAdminRegenerateDriverCodeUrl = (id: number) => {
+  return `/api/admin/drivers/${id}/regenerate-code`;
+};
+
+export const adminRegenerateDriverCode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminRegenerateDriverCode200> => {
+  return customFetch<AdminRegenerateDriverCode200>(
+    getAdminRegenerateDriverCodeUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAdminRegenerateDriverCodeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRegenerateDriverCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRegenerateDriverCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminRegenerateDriverCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRegenerateDriverCode>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminRegenerateDriverCode(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRegenerateDriverCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRegenerateDriverCode>>
+>;
+
+export type AdminRegenerateDriverCodeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Regenerate driver login code (admin only)
+ */
+export const useAdminRegenerateDriverCode = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRegenerateDriverCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRegenerateDriverCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminRegenerateDriverCodeMutationOptions(options));
+};
+
+/**
+ * @summary List all clients (admin only)
+ */
+export const getAdminListClientsUrl = () => {
+  return `/api/admin/clients`;
+};
+
+export const adminListClients = async (
+  options?: RequestInit,
+): Promise<ClientSummary[]> => {
+  return customFetch<ClientSummary[]>(getAdminListClientsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListClientsQueryKey = () => {
+  return [`/api/admin/clients`] as const;
+};
+
+export const getAdminListClientsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListClients>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListClients>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListClientsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListClients>>
+  > = ({ signal }) => adminListClients({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListClients>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListClientsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListClients>>
+>;
+export type AdminListClientsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all clients (admin only)
+ */
+
+export function useAdminListClients<
+  TData = Awaited<ReturnType<typeof adminListClients>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListClients>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListClientsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all requests with full phone (admin only)
+ */
+export const getAdminListRequestsUrl = () => {
+  return `/api/admin/requests`;
+};
+
+export const adminListRequests = async (
+  options?: RequestInit,
+): Promise<CommuteRequest[]> => {
+  return customFetch<CommuteRequest[]>(getAdminListRequestsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListRequestsQueryKey = () => {
+  return [`/api/admin/requests`] as const;
+};
+
+export const getAdminListRequestsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListRequests>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListRequests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListRequestsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListRequests>>
+  > = ({ signal }) => adminListRequests({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListRequests>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListRequestsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListRequests>>
+>;
+export type AdminListRequestsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all requests with full phone (admin only)
+ */
+
+export function useAdminListRequests<
+  TData = Awaited<ReturnType<typeof adminListRequests>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListRequests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListRequestsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delete a request (admin only)
+ */
+export const getAdminDeleteRequestUrl = (id: number) => {
+  return `/api/admin/requests/${id}`;
+};
+
+export const adminDeleteRequest = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminDeleteRequestUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteRequestMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteRequest>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteRequest>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteRequest>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteRequest(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteRequest>>
+>;
+
+export type AdminDeleteRequestMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a request (admin only)
+ */
+export const useAdminDeleteRequest = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteRequest>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteRequest>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteRequestMutationOptions(options));
+};

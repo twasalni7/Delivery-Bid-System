@@ -3,11 +3,60 @@
  * Do not edit manually.
  * Api
  * Monthly Commute Bidding System API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
 }
+
+export interface MessageResponse {
+  message: string;
+}
+
+export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
+
+export const AuthUserRole = {
+  client: "client",
+  driver: "driver",
+  admin: "admin",
+} as const;
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  role: AuthUserRole;
+  mobile?: string | null;
+  balance?: number | null;
+  status?: string | null;
+}
+
+export interface ClientRegisterBody {
+  name: string;
+  mobile: string;
+  password: string;
+}
+
+export interface ClientLoginBody {
+  mobile: string;
+  password: string;
+}
+
+export interface DriverLoginBody {
+  mobile: string;
+  loginCode: string;
+}
+
+export interface AdminLoginBody {
+  loginCode: string;
+}
+
+export type DriverStatus = (typeof DriverStatus)[keyof typeof DriverStatus];
+
+export const DriverStatus = {
+  ACTIVE: "ACTIVE",
+  BLOCKED: "BLOCKED",
+  DELETED: "DELETED",
+} as const;
 
 export interface Driver {
   id: number;
@@ -15,11 +64,58 @@ export interface Driver {
   balance: number;
   carType?: string | null;
   nationality?: string | null;
+  status: DriverStatus;
+  warningCount: number;
   createdAt?: string;
 }
 
-export interface DriverLoginBody {
+export type DriverDetailStatus =
+  (typeof DriverDetailStatus)[keyof typeof DriverDetailStatus];
+
+export const DriverDetailStatus = {
+  ACTIVE: "ACTIVE",
+  BLOCKED: "BLOCKED",
+  DELETED: "DELETED",
+} as const;
+
+export interface DriverDetail {
+  id: number;
   name: string;
+  mobile?: string | null;
+  loginCode?: string | null;
+  balance: number;
+  carType?: string | null;
+  nationality?: string | null;
+  age?: number | null;
+  nationalId?: string | null;
+  status: DriverDetailStatus;
+  warningCount: number;
+  createdAt?: string;
+}
+
+export interface AdminCreateDriverBody {
+  name: string;
+  mobile: string;
+  carType?: string;
+  nationality?: string;
+  age?: number;
+  nationalId?: string;
+}
+
+export interface AdminUpdateDriverBody {
+  name?: string;
+  mobile?: string;
+  carType?: string;
+  nationality?: string;
+  age?: number;
+  nationalId?: string;
+}
+
+export interface ClientSummary {
+  id: number;
+  name: string;
+  mobile: string;
+  createdAt?: string;
 }
 
 export interface AddBalanceBody {
@@ -38,9 +134,11 @@ export const CommuteRequestStatus = {
 
 export interface CommuteRequest {
   id: number;
+  clientId?: number | null;
   homeLocation: string;
   workLocation: string;
   phone: string;
+  phoneHidden: boolean;
   numberOfPeople: number;
   workingDaysPerWeek: number;
   morningTime: string;
@@ -84,14 +182,13 @@ export interface Offer {
   driverId: number;
   requestId: number;
   price: number;
-  carType: string;
-  nationality: string;
+  carType?: string | null;
+  nationality?: string | null;
   driver?: Driver | null;
   createdAt?: string;
 }
 
 export interface CreateOfferBody {
-  driverId: number;
   requestId: number;
   price: number;
   carType: string;
@@ -114,6 +211,7 @@ export interface AdminStats {
   completedRequests: number;
   totalDrivers: number;
   totalOffers: number;
+  totalClients: number;
 }
 
 export type ListRequestsParams = {
@@ -129,3 +227,7 @@ export const ListRequestsStatus = {
   ACTIVE: "ACTIVE",
   COMPLETED: "COMPLETED",
 } as const;
+
+export type AdminRegenerateDriverCode200 = {
+  loginCode: string;
+};

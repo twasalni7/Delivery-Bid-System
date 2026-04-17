@@ -1,47 +1,18 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import {
-  driversTable,
-  transactionsTable,
-} from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { DriverLoginBody, AddDriverBalanceBody } from "@workspace/api-zod";
+import { driversTable, transactionsTable } from "@workspace/db";
+import { eq, ne } from "drizzle-orm";
+import { AddDriverBalanceBody } from "@workspace/api-zod";
+import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
 
-router.post("/login", async (req, res) => {
-  const parsed = DriverLoginBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
-    return;
-  }
-
-  const { name } = parsed.data;
-
-  let driver = await db.query.driversTable.findFirst({
-    where: eq(driversTable.name, name),
-  });
-
-  if (!driver) {
-    const [created] = await db
-      .insert(driversTable)
-      .values({ name, balance: 0 })
-      .returning();
-    driver = created;
-  }
-
-  res.json({
-    id: driver.id,
-    name: driver.name,
-    balance: driver.balance,
-    carType: driver.carType,
-    nationality: driver.nationality,
-    createdAt: driver.createdAt?.toISOString(),
-  });
-});
-
 router.get("/", async (_req, res) => {
-  const drivers = await db.select().from(driversTable).orderBy(driversTable.createdAt);
+  const drivers = await db
+    .select()
+    .from(driversTable)
+    .where(ne(driversTable.status, "DELETED"))
+    .orderBy(driversTable.createdAt);
   res.json(
     drivers.map((d) => ({
       id: d.id,
@@ -49,15 +20,41 @@ router.get("/", async (_req, res) => {
       balance: d.balance,
       carType: d.carType,
       nationality: d.nationality,
+      status: d.status,
+      warningCount: d.warningCount,
       createdAt: d.createdAt?.toISOString(),
     }))
   );
 });
 
+router.get("/me", requireAuth("driver"), async (req, res) => {
+  const driverId = (req as any).session?.user?.id as number;
+  const driver = await db.query.driversTable.findFirst({
+    where: eq(driversTable.id, driverId),
+  });
+  if (!driver) {
+    res.status(404).json({ error: "السائق غير موجود" });
+    return;
+  }
+  res.json({
+    id: driver.id,
+    name: driver.name,
+    mobile: driver.mobile,
+    balance: driver.balance,
+    carType: driver.carType,
+    nationality: driver.nationality,
+    age: driver.age,
+    nationalId: driver.nationalId,
+    status: driver.status,
+    warningCount: driver.warningCount,
+    createdAt: driver.createdAt?.toISOString(),
+  });
+});
+
 router.get("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
 
@@ -66,7 +63,7 @@ router.get("/:id", async (req, res) => {
   });
 
   if (!driver) {
-    res.status(404).json({ error: "Driver not found" });
+    res.status(404).json({ error: "السائق غير موجود" });
     return;
   }
 
@@ -76,20 +73,22 @@ router.get("/:id", async (req, res) => {
     balance: driver.balance,
     carType: driver.carType,
     nationality: driver.nationality,
+    status: driver.status,
+    warningCount: driver.warningCount,
     createdAt: driver.createdAt?.toISOString(),
   });
 });
 
-router.patch("/:id/balance", async (req, res) => {
+router.patch("/:id/balance", requireAuth("admin"), async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
 
   const parsed = AddDriverBalanceBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
+    res.status(400).json({ error: "بيانات غير صحيحة" });
     return;
   }
 
@@ -100,7 +99,7 @@ router.patch("/:id/balance", async (req, res) => {
   });
 
   if (!driver) {
-    res.status(404).json({ error: "Driver not found" });
+    res.status(404).json({ error: "السائق غير موجود" });
     return;
   }
 
@@ -122,6 +121,7 @@ router.patch("/:id/balance", async (req, res) => {
     balance: updated.balance,
     carType: updated.carType,
     nationality: updated.nationality,
+    status: updated.status,
     createdAt: updated.createdAt?.toISOString(),
   });
 });
@@ -129,7 +129,7 @@ router.patch("/:id/balance", async (req, res) => {
 router.get("/:id/transactions", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
 

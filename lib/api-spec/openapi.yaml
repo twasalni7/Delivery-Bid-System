@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
+  version: 0.2.0
   description: Monthly Commute Bidding System API
 servers:
   - url: /api
@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
   - name: drivers
     description: Driver operations
   - name: requests
@@ -32,11 +34,49 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /drivers/login:
+  /auth/client/register:
+    post:
+      operationId: clientRegister
+      tags: [auth]
+      summary: Register a new client account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientRegisterBody"
+      responses:
+        "201":
+          description: Client registered and logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+
+  /auth/client/login:
+    post:
+      operationId: clientLogin
+      tags: [auth]
+      summary: Login as client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientLoginBody"
+      responses:
+        "200":
+          description: Client logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+
+  /auth/driver/login:
     post:
       operationId: driverLogin
-      tags: [drivers]
-      summary: Login or register driver by name
+      tags: [auth]
+      summary: Login as driver using mobile + loginCode
       requestBody:
         required: true
         content:
@@ -45,17 +85,62 @@ paths:
               $ref: "#/components/schemas/DriverLoginBody"
       responses:
         "200":
-          description: Driver logged in or created
+          description: Driver logged in
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Driver"
+                $ref: "#/components/schemas/AuthUser"
+
+  /auth/admin/login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Login as admin using loginCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginBody"
+      responses:
+        "200":
+          description: Admin logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current session user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
 
   /drivers:
     get:
       operationId: listDrivers
       tags: [drivers]
-      summary: List all drivers
+      summary: List all active drivers
       responses:
         "200":
           description: List of drivers
@@ -65,6 +150,19 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Driver"
+
+  /drivers/me:
+    get:
+      operationId: getDriverMe
+      tags: [drivers]
+      summary: Get current driver profile (requires driver auth)
+      responses:
+        "200":
+          description: Driver profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDetail"
 
   /drivers/{id}:
     get:
@@ -89,7 +187,7 @@ paths:
     patch:
       operationId: addDriverBalance
       tags: [drivers]
-      summary: Add balance to driver
+      summary: Add balance to driver (admin only)
       parameters:
         - name: id
           in: path
@@ -155,7 +253,7 @@ paths:
     post:
       operationId: createRequest
       tags: [requests]
-      summary: Create a commute request
+      summary: Create a commute request (requires client auth)
       requestBody:
         required: true
         content:
@@ -193,7 +291,7 @@ paths:
     patch:
       operationId: updateRequestStatus
       tags: [requests]
-      summary: Update request status (admin)
+      summary: Update request status (admin only)
       parameters:
         - name: id
           in: path
@@ -218,7 +316,7 @@ paths:
     post:
       operationId: selectOffer
       tags: [requests]
-      summary: Client selects an offer for their request
+      summary: Client selects an offer for their request (requires client auth)
       parameters:
         - name: id
           in: path
@@ -277,7 +375,7 @@ paths:
     post:
       operationId: createOffer
       tags: [offers]
-      summary: Driver submits an offer
+      summary: Driver submits an offer (requires driver auth)
       requestBody:
         required: true
         content:
@@ -296,7 +394,7 @@ paths:
     get:
       operationId: getAdminStats
       tags: [admin]
-      summary: Get admin dashboard statistics
+      summary: Get admin dashboard statistics (admin only)
       responses:
         "200":
           description: Statistics
@@ -304,6 +402,227 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminStats"
+
+  /admin/drivers:
+    get:
+      operationId: adminListDrivers
+      tags: [admin]
+      summary: List all drivers with full details (admin only)
+      responses:
+        "200":
+          description: List of drivers with full details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DriverDetail"
+    post:
+      operationId: adminCreateDriver
+      tags: [admin]
+      summary: Register a new driver (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateDriverBody"
+      responses:
+        "201":
+          description: Driver created with auto-generated loginCode
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDetail"
+
+  /admin/drivers/{id}:
+    get:
+      operationId: adminGetDriver
+      tags: [admin]
+      summary: Get driver full details (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver full details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDetail"
+    patch:
+      operationId: adminUpdateDriver
+      tags: [admin]
+      summary: Update driver information (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateDriverBody"
+      responses:
+        "200":
+          description: Updated driver
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDetail"
+    delete:
+      operationId: adminDeleteDriver
+      tags: [admin]
+      summary: Soft-delete driver (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/drivers/{id}/block:
+    post:
+      operationId: adminBlockDriver
+      tags: [admin]
+      summary: Block a driver (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver blocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/drivers/{id}/unblock:
+    post:
+      operationId: adminUnblockDriver
+      tags: [admin]
+      summary: Unblock a driver (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver unblocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/drivers/{id}/warn:
+    post:
+      operationId: adminWarnDriver
+      tags: [admin]
+      summary: Add warning to driver (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Warning added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/drivers/{id}/regenerate-code:
+    post:
+      operationId: adminRegenerateDriverCode
+      tags: [admin]
+      summary: Regenerate driver login code (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: New login code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  loginCode:
+                    type: string
+                required:
+                  - loginCode
+
+  /admin/clients:
+    get:
+      operationId: adminListClients
+      tags: [admin]
+      summary: List all clients (admin only)
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientSummary"
+
+  /admin/requests:
+    get:
+      operationId: adminListRequests
+      tags: [admin]
+      summary: List all requests with full phone (admin only)
+      responses:
+        "200":
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommuteRequest"
+
+  /admin/requests/{id}:
+    delete:
+      operationId: adminDeleteRequest
+      tags: [admin]
+      summary: Delete a request (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
 
 components:
   schemas:
@@ -314,6 +633,82 @@ components:
           type: string
       required:
         - status
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+          enum: [client, driver, admin]
+        mobile:
+          type: string
+          nullable: true
+        balance:
+          type: number
+          nullable: true
+        status:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - role
+
+    ClientRegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        mobile:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - mobile
+        - password
+
+    ClientLoginBody:
+      type: object
+      properties:
+        mobile:
+          type: string
+        password:
+          type: string
+      required:
+        - mobile
+        - password
+
+    DriverLoginBody:
+      type: object
+      properties:
+        mobile:
+          type: string
+        loginCode:
+          type: string
+      required:
+        - mobile
+        - loginCode
+
+    AdminLoginBody:
+      type: object
+      properties:
+        loginCode:
+          type: string
+      required:
+        - loginCode
 
     Driver:
       type: object
@@ -330,20 +725,111 @@ components:
         nationality:
           type: string
           nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, DELETED]
+        warningCount:
+          type: integer
         createdAt:
           type: string
       required:
         - id
         - name
         - balance
+        - status
+        - warningCount
 
-    DriverLoginBody:
+    DriverDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        mobile:
+          type: string
+          nullable: true
+        loginCode:
+          type: string
+          nullable: true
+        balance:
+          type: number
+        carType:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        nationalId:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, DELETED]
+        warningCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - balance
+        - status
+        - warningCount
+
+    AdminCreateDriverBody:
       type: object
       properties:
         name:
           type: string
+        mobile:
+          type: string
+        carType:
+          type: string
+        nationality:
+          type: string
+        age:
+          type: integer
+        nationalId:
+          type: string
       required:
         - name
+        - mobile
+
+    AdminUpdateDriverBody:
+      type: object
+      properties:
+        name:
+          type: string
+        mobile:
+          type: string
+        carType:
+          type: string
+        nationality:
+          type: string
+        age:
+          type: integer
+        nationalId:
+          type: string
+
+    ClientSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        mobile:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - mobile
 
     AddBalanceBody:
       type: object
@@ -358,12 +844,17 @@ components:
       properties:
         id:
           type: integer
+        clientId:
+          type: integer
+          nullable: true
         homeLocation:
           type: string
         workLocation:
           type: string
         phone:
           type: string
+        phoneHidden:
+          type: boolean
         numberOfPeople:
           type: integer
         workingDaysPerWeek:
@@ -388,6 +879,7 @@ components:
         - homeLocation
         - workLocation
         - phone
+        - phoneHidden
         - numberOfPeople
         - workingDaysPerWeek
         - morningTime
@@ -450,8 +942,10 @@ components:
           type: number
         carType:
           type: string
+          nullable: true
         nationality:
           type: string
+          nullable: true
         driver:
           $ref: "#/components/schemas/Driver"
           nullable: true
@@ -462,14 +956,10 @@ components:
         - driverId
         - requestId
         - price
-        - carType
-        - nationality
 
     CreateOfferBody:
       type: object
       properties:
-        driverId:
-          type: integer
         requestId:
           type: integer
         price:
@@ -479,7 +969,6 @@ components:
         nationality:
           type: string
       required:
-        - driverId
         - requestId
         - price
         - carType
@@ -521,6 +1010,8 @@ components:
           type: integer
         totalOffers:
           type: integer
+        totalClients:
+          type: integer
       required:
         - totalRequests
         - openRequests
@@ -529,3 +1020,4 @@ components:
         - completedRequests
         - totalDrivers
         - totalOffers
+        - totalClients

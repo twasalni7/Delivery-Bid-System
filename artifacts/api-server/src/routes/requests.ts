@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import { db } from "@workspace/db";
 import {
   requestsTable,
@@ -13,8 +13,31 @@ import {
   SelectOfferBody,
   ListRequestsQueryParams,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
+
+function maskPhone(phone: string): string {
+  if (phone.length <= 4) return "****";
+  return phone.slice(0, -4).replace(/./g, "*") + phone.slice(-4);
+}
+
+function canSeePhone(
+  req: Request,
+  r: typeof requestsTable.$inferSelect
+): boolean {
+  const user = (req as any).session?.user;
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  if (user.role === "client" && r.clientId === user.id) return true;
+  if (
+    user.role === "driver" &&
+    r.selectedDriverId === user.id &&
+    (r.status === "SELECTED" || r.status === "ACTIVE")
+  )
+    return true;
+  return false;
+}
 
 function formatDriver(d: typeof driversTable.$inferSelect) {
   return {
@@ -28,14 +51,18 @@ function formatDriver(d: typeof driversTable.$inferSelect) {
 }
 
 function formatRequest(
+  req: Request,
   r: typeof requestsTable.$inferSelect,
   driver?: typeof driversTable.$inferSelect | null
 ) {
+  const showPhone = canSeePhone(req, r);
   return {
     id: r.id,
+    clientId: r.clientId,
     homeLocation: r.homeLocation,
     workLocation: r.workLocation,
-    phone: r.phone,
+    phone: showPhone ? r.phone : maskPhone(r.phone),
+    phoneHidden: !showPhone,
     numberOfPeople: r.numberOfPeople,
     workingDaysPerWeek: r.workingDaysPerWeek,
     morningTime: r.morningTime,
@@ -52,8 +79,20 @@ router.get("/", async (req, res) => {
   const status = parsed.success ? parsed.data.status : undefined;
 
   const rows = status
-    ? await db.select().from(requestsTable).where(eq(requestsTable.status, status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED")).orderBy(requestsTable.createdAt)
-    : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
+    ? await db
+        .select()
+        .from(requestsTable)
+        .where(
+          eq(
+            requestsTable.status,
+            status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED"
+          )
+        )
+        .orderBy(requestsTable.createdAt)
+    : await db
+        .select()
+        .from(requestsTable)
+        .orderBy(requestsTable.createdAt);
 
   const results = await Promise.all(
     rows.map(async (r) => {
@@ -61,31 +100,34 @@ router.get("/", async (req, res) => {
         const driver = await db.query.driversTable.findFirst({
           where: eq(driversTable.id, r.selectedDriverId),
         });
-        return formatRequest(r, driver);
+        return formatRequest(req, r, driver);
       }
-      return formatRequest(r, null);
+      return formatRequest(req, r, null);
     })
   );
 
   res.json(results);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth("client"), async (req, res) => {
   const parsed = CreateRequestBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "بيانات غير صحيحة" });
     return;
   }
 
+  const clientId = (req as any).session?.user?.id as number;
+
   const [created] = await db
     .insert(requestsTable)
     .values({
       ...parsed.data,
+      clientId,
       status: "OPEN",
     })
     .returning();
 
-  res.status(201).json(formatRequest(created, null));
+  res.status(201).json(formatRequest(req, created, null));
 });
 
 router.get("/:id", async (req, res) => {
@@ -111,10 +153,10 @@ router.get("/:id", async (req, res) => {
     });
   }
 
-  res.json(formatRequest(request, driver));
+  res.json(formatRequest(req, request, driver));
 });
 
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
@@ -129,7 +171,9 @@ router.patch("/:id/status", async (req, res) => {
 
   const [updated] = await db
     .update(requestsTable)
-    .set({ status: parsed.data.status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED" })
+    .set({
+      status: parsed.data.status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED",
+    })
     .where(eq(requestsTable.id, id))
     .returning();
 
@@ -145,10 +189,10 @@ router.patch("/:id/status", async (req, res) => {
     });
   }
 
-  res.json(formatRequest(updated, driver));
+  res.json(formatRequest(req, updated, driver));
 });
 
-router.post("/:id/select-offer", async (req, res) => {
+router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
@@ -162,6 +206,7 @@ router.post("/:id/select-offer", async (req, res) => {
   }
 
   const { offerId } = parsed.data;
+  const clientId = (req as any).session?.user?.id as number;
 
   const request = await db.query.requestsTable.findFirst({
     where: eq(requestsTable.id, id),
@@ -169,6 +214,11 @@ router.post("/:id/select-offer", async (req, res) => {
 
   if (!request) {
     res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+
+  if (request.clientId !== null && request.clientId !== clientId) {
+    res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
     return;
   }
 
@@ -196,7 +246,7 @@ router.post("/:id/select-offer", async (req, res) => {
   }
 
   if (driver.balance < 50) {
-    res.status(400).json({ error: "رصيد السائق غير كافٍ" });
+    res.status(400).json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
     return;
   }
 
@@ -221,7 +271,7 @@ router.post("/:id/select-offer", async (req, res) => {
     where: eq(driversTable.id, driver.id),
   });
 
-  res.json(formatRequest(updated, updatedDriver));
+  res.json(formatRequest(req, updated, updatedDriver));
 });
 
 router.get("/:id/offers", async (req, res) => {

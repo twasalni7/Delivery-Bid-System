@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { offersTable, driversTable, requestsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
+import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
 
@@ -42,26 +43,29 @@ router.get("/", async (_req, res) => {
   res.json(results);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth("driver"), async (req, res) => {
   const parsed = CreateOfferBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
+    res.status(400).json({ error: "بيانات غير صحيحة" });
     return;
   }
 
-  const { driverId, requestId, price, carType, nationality } = parsed.data;
+  const driverId = (req as any).session?.user?.id as number;
+  const { requestId, price, carType, nationality } = parsed.data;
 
   const driver = await db.query.driversTable.findFirst({
     where: eq(driversTable.id, driverId),
   });
 
   if (!driver) {
-    res.status(404).json({ error: "Driver not found" });
+    res.status(404).json({ error: "السائق غير موجود" });
     return;
   }
 
   if (driver.balance < 50) {
-    res.status(400).json({ error: "Insufficient balance. Minimum balance of 50 required to submit an offer." });
+    res.status(400).json({
+      error: "رصيد السائق غير كافٍ. الحد الأدنى 50 ريال للتقديم على عرض.",
+    });
     return;
   }
 
@@ -70,21 +74,22 @@ router.post("/", async (req, res) => {
   });
 
   if (!request) {
-    res.status(404).json({ error: "Request not found" });
+    res.status(404).json({ error: "الطلب غير موجود" });
     return;
   }
 
   if (request.status !== "OPEN") {
-    res.status(400).json({ error: "Request is not open for offers" });
+    res.status(400).json({ error: "الطلب ليس مفتوحاً للعروض" });
     return;
   }
 
   const existingOffer = await db.query.offersTable.findFirst({
-    where: (o, { and }) => and(eq(o.driverId, driverId), eq(o.requestId, requestId)),
+    where: (o, { and }) =>
+      and(eq(o.driverId, driverId), eq(o.requestId, requestId)),
   });
 
   if (existingOffer) {
-    res.status(400).json({ error: "You have already submitted an offer for this request" });
+    res.status(400).json({ error: "لقد قدّمت عرضاً على هذا الطلب مسبقاً" });
     return;
   }
 
