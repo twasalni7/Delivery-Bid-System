@@ -290,6 +290,22 @@ export type AdminUpdateRequestByPathBody = {
   selectedDriverId?: number | null;
 };
 
+export type GetAdminAnalyticsParams = {
+  /**
+   * Number of months to include in the analytics (3, 6, or 12)
+   */
+  months?: GetAdminAnalyticsMonths;
+};
+
+export type GetAdminAnalyticsMonths =
+  (typeof GetAdminAnalyticsMonths)[keyof typeof GetAdminAnalyticsMonths];
+
+export const GetAdminAnalyticsMonths = {
+  NUMBER_3: 3,
+  NUMBER_6: 6,
+  NUMBER_12: 12,
+} as const;
+
 export type AdminRegenerateDriverCode200 = {
   loginCode: string;
 };

@@ -76,7 +76,12 @@ router.get("/stats", async (_req, res) => {
   });
 });
 
-router.get("/analytics", async (_req, res) => {
+router.get("/analytics", async (req, res) => {
+  const rawMonths = Number(req.query["months"]);
+  const months = [3, 6, 12].includes(rawMonths) ? rawMonths : 12;
+
+  const timeFilter = sql`${requestsTable.createdAt} > NOW() - INTERVAL '1 month' * ${months}`;
+
   const monthlyRequests = await db
     .select({
       year: sql<number>`EXTRACT(year FROM ${requestsTable.createdAt})::int`,
@@ -84,7 +89,7 @@ router.get("/analytics", async (_req, res) => {
       count: count(),
     })
     .from(requestsTable)
-    .where(sql`${requestsTable.createdAt} > NOW() - INTERVAL '12 months'`)
+    .where(timeFilter)
     .groupBy(
       sql`EXTRACT(year FROM ${requestsTable.createdAt})`,
       sql`EXTRACT(month FROM ${requestsTable.createdAt})`
@@ -102,6 +107,7 @@ router.get("/analytics", async (_req, res) => {
     })
     .from(driversTable)
     .innerJoin(requestsTable, eq(requestsTable.selectedDriverId, driversTable.id))
+    .where(timeFilter)
     .groupBy(driversTable.id, driversTable.name)
     .orderBy(desc(count(requestsTable.id)))
     .limit(10);
@@ -109,12 +115,12 @@ router.get("/analytics", async (_req, res) => {
   const [openCount] = await db
     .select({ count: count() })
     .from(requestsTable)
-    .where(eq(requestsTable.status, "OPEN"));
+    .where(sql`${requestsTable.status} = 'OPEN' AND ${timeFilter}`);
 
   const [selectedCount] = await db
     .select({ count: count() })
     .from(requestsTable)
-    .where(ne(requestsTable.status, "OPEN"));
+    .where(sql`${requestsTable.status} != 'OPEN' AND ${timeFilter}`);
 
   res.json({
     monthlyRequests: monthlyRequests.map((r) => ({

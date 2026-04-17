@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { useGetAdminStats, useGetAdminAnalytics } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
@@ -25,6 +26,12 @@ const ARABIC_MONTHS = [
 ];
 
 const PIE_COLORS = ["#22c55e", "#e5e7eb"];
+
+const MONTH_OPTIONS = [
+  { label: "3 أشهر", value: 3 as const },
+  { label: "6 أشهر", value: 6 as const },
+  { label: "12 شهراً", value: 12 as const },
+];
 
 function formatMonthLabel(year: number, month: number) {
   return `${ARABIC_MONTHS[month - 1]} ${year}`;
@@ -71,8 +78,12 @@ function exportAnalyticsCSV(analytics: AdminAnalytics) {
 }
 
 export default function AdminDashboard() {
+  const [selectedMonths, setSelectedMonths] = useState<3 | 6 | 12>(12);
+
   const { data: stats, isLoading: statsLoading } = useGetAdminStats();
-  const { data: analytics, isLoading: analyticsLoading } = useGetAdminAnalytics();
+  const { data: analytics, isLoading: analyticsLoading } = useGetAdminAnalytics(
+    { months: selectedMonths }
+  );
 
   const isLoading = statsLoading || analyticsLoading;
 
@@ -95,6 +106,8 @@ export default function AdminDashboard() {
   const selectionRate = totalRequests > 0
     ? Math.round((analytics!.requestStatusSplit.selected / totalRequests) * 100)
     : 0;
+
+  const selectedMonthLabel = MONTH_OPTIONS.find((o) => o.value === selectedMonths)?.label ?? "";
 
   return (
     <Layout role="admin">
@@ -194,12 +207,33 @@ export default function AdminDashboard() {
         </>
       )}
 
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <h2 className="text-base font-bold">الرسوم البيانية</h2>
+        <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-1">
+          {MONTH_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setSelectedMonths(opt.value)}
+              className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${
+                selectedMonths === opt.value
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {analytics && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <Card className="border-2 lg:col-span-2">
               <CardHeader className="pb-2 pt-4 px-4">
-                <CardTitle className="text-sm font-bold">حجم الطلبات الشهري (آخر 12 شهر)</CardTitle>
+                <CardTitle className="text-sm font-bold">
+                  حجم الطلبات الشهري (آخر {selectedMonthLabel})
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 {monthlyChartData.length === 0 ? (

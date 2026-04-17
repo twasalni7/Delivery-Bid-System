@@ -93,7 +93,7 @@ Both naming conventions supported (RESTful path + flat alias):
 
 ### Admin (`/api/admin`) — All require admin auth
 - `GET /admin/stats` — Platform statistics
-- `GET /admin/analytics` — Analytics data: monthly request volume (12 months), offer acceptance rate, top drivers by accepted bids
+- `GET /admin/analytics?months=3|6|12` — Analytics data: monthly request volume (default 12 months, filterable), offer acceptance rate, top drivers by accepted bids
 - `GET /admin/drivers` — All drivers with full details
 - `POST /admin/drivers` — Register driver (auto-generates 8-char loginCode)
 - `GET /admin/drivers/:id` — Driver full details

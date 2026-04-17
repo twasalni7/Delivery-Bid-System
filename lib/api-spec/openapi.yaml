@@ -455,6 +455,15 @@ paths:
       operationId: getAdminAnalytics
       tags: [admin]
       summary: Get admin dashboard analytics (admin only)
+      parameters:
+        - in: query
+          name: months
+          schema:
+            type: integer
+            enum: [3, 6, 12]
+            default: 12
+          required: false
+          description: Number of months to include in the analytics (3, 6, or 12)
       responses:
         "200":
           description: Analytics data

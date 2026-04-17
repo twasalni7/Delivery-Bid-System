@@ -554,6 +554,15 @@ export const GetAdminStatsResponse = zod.object({
 /**
  * @summary Get admin dashboard analytics (admin only)
  */
+export const getAdminAnalyticsQueryMonthsDefault = 12;
+
+export const GetAdminAnalyticsQueryParams = zod.object({
+  months: zod
+    .union([zod.literal(3), zod.literal(6), zod.literal(12)])
+    .default(getAdminAnalyticsQueryMonthsDefault)
+    .describe("Number of months to include in the analytics (3, 6, or 12)"),
+});
+
 export const GetAdminAnalyticsResponse = zod.object({
   monthlyRequests: zod.array(
     zod.object({
