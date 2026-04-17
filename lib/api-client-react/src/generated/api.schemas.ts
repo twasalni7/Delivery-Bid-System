@@ -231,3 +231,18 @@ export const ListRequestsStatus = {
 export type AdminRegenerateDriverCode200 = {
   loginCode: string;
 };
+
+export type AdminUpdateRequestBodyStatus =
+  (typeof AdminUpdateRequestBodyStatus)[keyof typeof AdminUpdateRequestBodyStatus];
+
+export const AdminUpdateRequestBodyStatus = {
+  OPEN: "OPEN",
+  SELECTED: "SELECTED",
+  ACTIVE: "ACTIVE",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export type AdminUpdateRequestBody = {
+  status?: AdminUpdateRequestBodyStatus;
+  selectedDriverId?: number | null;
+};

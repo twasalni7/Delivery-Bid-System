@@ -647,6 +647,46 @@ export const AdminListRequestsResponse = zod.array(
 );
 
 /**
+ * @summary Update request status or reassign selectedDriverId (admin only)
+ */
+export const AdminUpdateRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateRequestBody = zod.object({
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
+  selectedDriverId: zod.number().nullish(),
+});
+
+export const AdminUpdateRequestResponse = zod.object({
+  id: zod.number(),
+  clientId: zod.number().nullish(),
+  homeLocation: zod.string(),
+  workLocation: zod.string(),
+  phone: zod.string(),
+  phoneHidden: zod.boolean(),
+  numberOfPeople: zod.number(),
+  workingDaysPerWeek: zod.number(),
+  morningTime: zod.string(),
+  eveningTime: zod.string(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  selectedDriverId: zod.number().nullish(),
+  selectedDriver: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      balance: zod.number(),
+      carType: zod.string().nullish(),
+      nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
+      createdAt: zod.string().optional(),
+    })
+    .nullish(),
+  createdAt: zod.string().optional(),
+});
+
+/**
  * @summary Delete a request (admin only)
  */
 export const AdminDeleteRequestParams = zod.object({

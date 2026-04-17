@@ -23,6 +23,7 @@ import type {
   AdminRegenerateDriverCode200,
   AdminStats,
   AdminUpdateDriverBody,
+  AdminUpdateRequestBody,
   AuthUser,
   ClientLoginBody,
   ClientRegisterBody,
@@ -2862,6 +2863,93 @@ export function useAdminListRequests<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Update request status or reassign selectedDriverId (admin only)
+ */
+export const getAdminUpdateRequestUrl = (id: number) => {
+  return `/api/admin/requests/${id}`;
+};
+
+export const adminUpdateRequest = async (
+  id: number,
+  adminUpdateRequestBody: AdminUpdateRequestBody,
+  options?: RequestInit,
+): Promise<CommuteRequest> => {
+  return customFetch<CommuteRequest>(getAdminUpdateRequestUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateRequestBody),
+  });
+};
+
+export const getAdminUpdateRequestMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateRequest>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateRequest>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateRequestBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateRequest>>,
+    { id: number; data: BodyType<AdminUpdateRequestBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateRequest(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateRequest>>
+>;
+export type AdminUpdateRequestMutationBody = BodyType<AdminUpdateRequestBody>;
+export type AdminUpdateRequestMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update request status or reassign selectedDriverId (admin only)
+ */
+export const useAdminUpdateRequest = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateRequest>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateRequest>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateRequestBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateRequestMutationOptions(options));
+};
 
 /**
  * @summary Delete a request (admin only)

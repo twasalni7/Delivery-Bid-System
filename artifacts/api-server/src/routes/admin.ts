@@ -131,7 +131,7 @@ router.post("/drivers", async (req, res) => {
 });
 
 router.get("/drivers/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -160,7 +160,7 @@ router.get("/drivers/:id", async (req, res) => {
 });
 
 router.patch("/drivers/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -207,7 +207,7 @@ router.patch("/drivers/:id", async (req, res) => {
 });
 
 router.post("/drivers/:id/block", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -225,7 +225,7 @@ router.post("/drivers/:id/block", async (req, res) => {
 });
 
 router.post("/drivers/:id/unblock", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -243,7 +243,7 @@ router.post("/drivers/:id/unblock", async (req, res) => {
 });
 
 router.post("/drivers/:id/warn", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -267,7 +267,7 @@ router.post("/drivers/:id/warn", async (req, res) => {
 });
 
 router.post("/drivers/:id/restore", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -285,7 +285,7 @@ router.post("/drivers/:id/restore", async (req, res) => {
 });
 
 router.delete("/drivers/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -303,7 +303,7 @@ router.delete("/drivers/:id", async (req, res) => {
 });
 
 router.post("/drivers/:id/regenerate-code", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -322,7 +322,7 @@ router.post("/drivers/:id/regenerate-code", async (req, res) => {
 });
 
 router.patch("/drivers/:id/balance", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -396,8 +396,51 @@ router.get("/requests", async (_req, res) => {
   );
 });
 
+router.patch("/requests/:id", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const { status, selectedDriverId } = req.body ?? {};
+  const updates: Record<string, unknown> = {};
+  if (status !== undefined)
+    updates.status = status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED";
+  if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "لا توجد بيانات للتحديث" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(requestsTable)
+    .set(updates)
+    .where(eq(requestsTable.id, id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+  res.json({
+    id: updated.id,
+    clientId: updated.clientId,
+    homeLocation: updated.homeLocation,
+    workLocation: updated.workLocation,
+    phone: updated.phone,
+    phoneHidden: false,
+    numberOfPeople: updated.numberOfPeople,
+    workingDaysPerWeek: updated.workingDaysPerWeek,
+    morningTime: updated.morningTime,
+    eveningTime: updated.eveningTime,
+    status: updated.status,
+    selectedDriverId: updated.selectedDriverId,
+    createdAt: updated.createdAt?.toISOString(),
+  });
+});
+
 router.delete("/requests/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;

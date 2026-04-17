@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
 
-router.get("/", async (_req, res) => {
+router.get("/", requireAuth("admin"), async (_req, res) => {
   const offers = await db
     .select()
     .from(offersTable)
@@ -29,6 +29,7 @@ router.get("/", async (_req, res) => {
           ? {
               id: driver.id,
               name: driver.name,
+              mobile: driver.mobile,
               balance: driver.balance,
               carType: driver.carType,
               nationality: driver.nationality,

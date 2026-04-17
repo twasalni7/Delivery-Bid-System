@@ -52,7 +52,7 @@ router.get("/me", requireAuth("driver"), async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -80,7 +80,7 @@ router.get("/:id", async (req, res) => {
 });
 
 router.patch("/:id/balance", requireAuth("admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -127,7 +127,7 @@ router.patch("/:id/balance", requireAuth("admin"), async (req, res) => {
 });
 
 router.get("/:id/transactions", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;

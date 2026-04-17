@@ -140,7 +140,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -166,7 +166,7 @@ router.get("/:id", async (req, res) => {
 });
 
 router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -206,7 +206,7 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
 });
 
 router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
@@ -290,11 +290,26 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 });
 
 router.get("/:id/offers", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
+
+  const request = await db.query.requestsTable.findFirst({
+    where: eq(requestsTable.id, id),
+  });
+  if (!request) {
+    res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+
+  const sessionUser = getSessionUser(req);
+  const isAdmin = sessionUser?.role === "admin";
+  const isOwner =
+    sessionUser?.role === "client" && sessionUser.id === request.clientId;
+  const postSelection =
+    request.status === "SELECTED" || request.status === "ACTIVE";
 
   const offers = await db
     .select()
@@ -307,6 +322,12 @@ router.get("/:id/offers", async (req, res) => {
       const driver = await db.query.driversTable.findFirst({
         where: eq(driversTable.id, o.driverId),
       });
+      const isSelectedDriver =
+        request.selectedDriverId != null &&
+        driver?.id === request.selectedDriverId;
+      const revealMobile =
+        isAdmin || (isOwner && postSelection && isSelectedDriver);
+
       return {
         id: o.id,
         driverId: o.driverId,
@@ -314,7 +335,7 @@ router.get("/:id/offers", async (req, res) => {
         price: o.price,
         carType: o.carType,
         nationality: o.nationality,
-        driver: driver ? formatDriver(driver, false) : null,
+        driver: driver ? formatDriver(driver, revealMobile) : null,
         createdAt: o.createdAt?.toISOString(),
       };
     })

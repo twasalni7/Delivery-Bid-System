@@ -650,6 +650,36 @@ paths:
                   $ref: "#/components/schemas/CommuteRequest"
 
   /admin/requests/{id}:
+    patch:
+      operationId: adminUpdateRequest
+      tags: [admin]
+      summary: Update request status or reassign selectedDriverId (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [OPEN, SELECTED, ACTIVE, COMPLETED]
+                selectedDriverId:
+                  type: integer
+                  nullable: true
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommuteRequest"
     delete:
       operationId: adminDeleteRequest
       tags: [admin]
