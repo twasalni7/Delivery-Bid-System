@@ -195,7 +195,10 @@ export const ListRequestsResponseItem = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  phone: zod.string(),
+  phone: zod
+    .string()
+    .nullable()
+    .describe("null when caller is not authorized to see it"),
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
@@ -244,7 +247,10 @@ export const GetRequestResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  phone: zod.string(),
+  phone: zod
+    .string()
+    .nullable()
+    .describe("null when caller is not authorized to see it"),
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
@@ -283,7 +289,10 @@ export const UpdateRequestStatusResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  phone: zod.string(),
+  phone: zod
+    .string()
+    .nullable()
+    .describe("null when caller is not authorized to see it"),
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
@@ -322,7 +331,10 @@ export const SelectOfferResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  phone: zod.string(),
+  phone: zod
+    .string()
+    .nullable()
+    .describe("null when caller is not authorized to see it"),
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
@@ -620,7 +632,10 @@ export const AdminListRequestsResponseItem = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  phone: zod.string(),
+  phone: zod
+    .string()
+    .nullable()
+    .describe("null when caller is not authorized to see it"),
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
@@ -663,7 +678,10 @@ export const AdminUpdateRequestResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  phone: zod.string(),
+  phone: zod
+    .string()
+    .nullable()
+    .describe("null when caller is not authorized to see it"),
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),

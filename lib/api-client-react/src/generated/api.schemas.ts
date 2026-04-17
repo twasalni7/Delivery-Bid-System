@@ -137,7 +137,8 @@ export interface CommuteRequest {
   clientId?: number | null;
   homeLocation: string;
   workLocation: string;
-  phone: string;
+  /** null when caller is not authorized to see it */
+  phone: string | null;
   phoneHidden: boolean;
   numberOfPeople: number;
   workingDaysPerWeek: number;

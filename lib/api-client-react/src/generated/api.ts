@@ -131,7 +131,7 @@ export function useHealthCheck<
  * @summary Register a new client account
  */
 export const getClientRegisterUrl = () => {
-  return `/api/auth/client/register`;
+  return `/api/auth/register-client`;
 };
 
 export const clientRegister = async (
@@ -217,7 +217,7 @@ export const useClientRegister = <
  * @summary Login as client
  */
 export const getClientLoginUrl = () => {
-  return `/api/auth/client/login`;
+  return `/api/auth/login-client`;
 };
 
 export const clientLogin = async (
@@ -303,7 +303,7 @@ export const useClientLogin = <
  * @summary Login as driver using mobile + loginCode
  */
 export const getDriverLoginUrl = () => {
-  return `/api/auth/driver/login`;
+  return `/api/auth/login-driver`;
 };
 
 export const driverLogin = async (
@@ -389,7 +389,7 @@ export const useDriverLogin = <
  * @summary Login as admin using loginCode
  */
 export const getAdminLoginUrl = () => {
-  return `/api/auth/admin/login`;
+  return `/api/auth/login-admin`;
 };
 
 export const adminLogin = async (
