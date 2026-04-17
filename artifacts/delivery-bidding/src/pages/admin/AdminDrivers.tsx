@@ -136,14 +136,17 @@ export default function AdminDrivers() {
   };
 
   const handleBlock = (d: DriverDetail) => {
+    if (!confirm(`هل تريد حظر السائق "${d.name}"؟`)) return;
     blockDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم الحظر" }); } });
   };
 
   const handleUnblock = (d: DriverDetail) => {
+    if (!confirm(`هل تريد رفع الحظر عن "${d.name}"؟`)) return;
     unblockDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم رفع الحظر" }); } });
   };
 
   const handleWarn = (d: DriverDetail) => {
+    if (!confirm(`هل تريد إصدار تحذير للسائق "${d.name}"؟ سيصل التحذير إلى رقم ${d.warningCount + 1}.`)) return;
     warnDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم إصدار تحذير" }); } });
   };
 
@@ -328,7 +331,7 @@ export default function AdminDrivers() {
                   <Label className="font-bold text-xs">رقم الجوال</Label>
                   <Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="font-bold text-xs">الجنسية (اختياري)</Label>
                     <Input value={formNationality} onChange={(e) => setFormNationality(e.target.value)} placeholder="سعودي" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetRequest, useCreateOffer, getGetRequestQueryKey } from "@workspace/api-client-react";
@@ -25,6 +25,10 @@ export default function SubmitOffer() {
   const [carType, setCarType] = useState("");
   const [nationality, setNationality] = useState("");
 
+  useEffect(() => {
+    if (!user) setLocation("/driver/login");
+  }, [user, setLocation]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numPrice = parseFloat(price);
@@ -47,10 +51,7 @@ export default function SubmitOffer() {
     );
   };
 
-  if (!user) {
-    setLocation("/driver/login");
-    return null;
-  }
+  if (!user) return null;
 
   if (isLoading) {
     return <Layout role="driver"><div className="text-center py-20 text-muted-foreground">جاري التحميل...</div></Layout>;

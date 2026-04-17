@@ -127,7 +127,7 @@ export default function CreateRequest() {
                   <h2 className="font-bold text-lg mb-1">الجدول وتفاصيل الرحلة</h2>
                   <p className="text-muted-foreground text-sm">أوقات الذهاب والعودة وعدد الأيام</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="morning" className="font-bold text-xs">وقت الذهاب</Label>
                     <Input id="morning" type="time" value={morningTime} onChange={(e) => setMorningTime(e.target.value)} dir="ltr" />
@@ -137,7 +137,7 @@ export default function CreateRequest() {
                     <Input id="evening" type="time" value={eveningTime} onChange={(e) => setEveningTime(e.target.value)} dir="ltr" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="people" className="font-bold text-xs">عدد الأشخاص</Label>
                     <Input id="people" type="number" min="1" max="10" value={numberOfPeople} onChange={(e) => setNumberOfPeople(e.target.value)} dir="ltr" />
