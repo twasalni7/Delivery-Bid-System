@@ -11,7 +11,7 @@
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
+- **Database**: Supabase PostgreSQL + Drizzle ORM (connection via `SUPABASE_DATABASE_URL` secret — Transaction Pooler on port 6543)
 - **Session**: express-session + connect-pg-simple (PostgreSQL-backed, `user_sessions` table, auto-created)
 - **Password hashing**: Node.js crypto (scrypt)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
