@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { offersTable, driversTable, requestsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 
@@ -43,6 +43,141 @@ router.get("/", requireAuth("admin"), async (_req, res) => {
   );
 
   res.json(results);
+});
+
+router.get("/my", requireAuth("driver"), async (req, res) => {
+  const driverId = req.session.user!.id;
+
+  const offers = await db
+    .select()
+    .from(offersTable)
+    .where(eq(offersTable.driverId, driverId))
+    .orderBy(offersTable.createdAt);
+
+  const results = await Promise.all(
+    offers.map(async (o) => {
+      const request = await db.query.requestsTable.findFirst({
+        where: eq(requestsTable.id, o.requestId),
+      });
+      return {
+        id: o.id,
+        driverId: o.driverId,
+        requestId: o.requestId,
+        price: o.price,
+        carType: o.carType,
+        nationality: o.nationality,
+        request: request
+          ? {
+              id: request.id,
+              homeLocation: request.homeLocation,
+              workLocation: request.workLocation,
+              morningTime: request.morningTime,
+              eveningTime: request.eveningTime,
+              numberOfPeople: request.numberOfPeople,
+              workingDaysPerWeek: request.workingDaysPerWeek,
+              status: request.status,
+            }
+          : null,
+        createdAt: o.createdAt?.toISOString(),
+      };
+    })
+  );
+
+  res.json(results);
+});
+
+router.put("/:id", requireAuth("driver"), async (req, res) => {
+  const offerId = parseInt(req.params.id, 10);
+  if (isNaN(offerId)) {
+    res.status(400).json({ error: "معرف العرض غير صحيح" });
+    return;
+  }
+
+  const { price: rawPrice } = req.body as { price?: unknown };
+  const price = typeof rawPrice === "number" ? rawPrice : parseFloat(String(rawPrice ?? ""));
+  if (!isFinite(price) || price <= 0) {
+    res.status(400).json({ error: "السعر غير صحيح" });
+    return;
+  }
+  const driverId = req.session.user!.id;
+
+  const offer = await db.query.offersTable.findFirst({
+    where: eq(offersTable.id, offerId),
+  });
+
+  if (!offer) {
+    res.status(404).json({ error: "العرض غير موجود" });
+    return;
+  }
+
+  if (offer.driverId !== driverId) {
+    res.status(403).json({ error: "غير مصرح لك بتعديل هذا العرض" });
+    return;
+  }
+
+  const request = await db.query.requestsTable.findFirst({
+    where: eq(requestsTable.id, offer.requestId),
+  });
+
+  if (!request || request.status !== "OPEN") {
+    res.status(400).json({ error: "لا يمكن تعديل العرض — الطلب لم يعد مفتوحاً" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(offersTable)
+    .set({ price })
+    .where(and(eq(offersTable.id, offerId), eq(offersTable.driverId, driverId)))
+    .returning();
+
+  res.json({
+    id: updated.id,
+    driverId: updated.driverId,
+    requestId: updated.requestId,
+    price: updated.price,
+    carType: updated.carType,
+    nationality: updated.nationality,
+    createdAt: updated.createdAt?.toISOString(),
+  });
+});
+
+router.delete("/:id", requireAuth("driver"), async (req, res) => {
+  const offerId = parseInt(req.params.id, 10);
+  if (isNaN(offerId)) {
+    res.status(400).json({ error: "معرف العرض غير صحيح" });
+    return;
+  }
+
+  const driverId = req.session.user!.id;
+
+  const offer = await db.query.offersTable.findFirst({
+    where: eq(offersTable.id, offerId),
+  });
+
+  if (!offer) {
+    res.status(404).json({ error: "العرض غير موجود" });
+    return;
+  }
+
+  if (offer.driverId !== driverId) {
+    res.status(403).json({ error: "غير مصرح لك بسحب هذا العرض" });
+    return;
+  }
+
+  const request = await db.query.requestsTable.findFirst({
+    where: eq(requestsTable.id, offer.requestId),
+  });
+
+  if (!request || request.status !== "OPEN") {
+    res.status(400).json({ error: "لا يمكن سحب العرض — الطلب لم يعد مفتوحاً" });
+    return;
+  }
+
+  await db
+    .delete(offersTable)
+    .where(and(eq(offersTable.id, offerId), eq(offersTable.driverId, driverId)));
+
+  res.json({ message: "تم سحب العرض بنجاح" });
 });
 
 router.post("/", requireAuth("driver"), async (req, res) => {
