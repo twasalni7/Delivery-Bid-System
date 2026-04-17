@@ -11,6 +11,24 @@ import { eq, count, ne } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
 
+const VALID_REQUEST_STATUSES = new Set([
+  "OPEN",
+  "SELECTED",
+  "ACTIVE",
+  "COMPLETED",
+]);
+
+async function generateUniqueLoginCode(maxAttempts = 5): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const code = generateLoginCode();
+    const existing = await db.query.driversTable.findFirst({
+      where: eq(driversTable.loginCode, code),
+    });
+    if (!existing) return code;
+  }
+  throw new Error("فشل توليد رمز فريد، يرجى المحاولة مرة أخرى");
+}
+
 const router = Router();
 
 router.use(requireAuth("admin"));
@@ -98,7 +116,7 @@ router.post("/drivers", async (req, res) => {
     return;
   }
 
-  const loginCode = generateLoginCode();
+  const loginCode = await generateUniqueLoginCode();
 
   const [driver] = await db
     .insert(driversTable)
@@ -308,7 +326,7 @@ router.post("/drivers/:id/regenerate-code", async (req, res) => {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
-  const newCode = generateLoginCode();
+  const newCode = await generateUniqueLoginCode();
   const [updated] = await db
     .update(driversTable)
     .set({ loginCode: newCode })
@@ -404,8 +422,13 @@ router.patch("/requests/:id", async (req, res) => {
   }
   const { status, selectedDriverId } = req.body ?? {};
   const updates: Record<string, unknown> = {};
-  if (status !== undefined)
+  if (status !== undefined) {
+    if (!VALID_REQUEST_STATUSES.has(status as string)) {
+      res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
+      return;
+    }
     updates.status = status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED";
+  }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
 
   if (Object.keys(updates).length === 0) {

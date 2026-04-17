@@ -348,8 +348,14 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   }
   const { status, selectedDriverId } = req.body ?? {};
   const updates: Record<string, unknown> = {};
-  if (status !== undefined)
+  const validStatuses = new Set(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]);
+  if (status !== undefined) {
+    if (!validStatuses.has(status as string)) {
+      res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
+      return;
+    }
     updates.status = status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED";
+  }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
 
   if (Object.keys(updates).length === 0) {
