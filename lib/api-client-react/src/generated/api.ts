@@ -2456,6 +2456,177 @@ export const useAdminWarnDriver = <
 };
 
 /**
+ * @summary Restore a soft-deleted driver (admin only)
+ */
+export const getAdminRestoreDriverUrl = (id: number) => {
+  return `/api/admin/drivers/${id}/restore`;
+};
+
+export const adminRestoreDriver = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminRestoreDriverUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminRestoreDriverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRestoreDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRestoreDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminRestoreDriver"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRestoreDriver>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminRestoreDriver(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRestoreDriverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRestoreDriver>>
+>;
+
+export type AdminRestoreDriverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Restore a soft-deleted driver (admin only)
+ */
+export const useAdminRestoreDriver = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRestoreDriver>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRestoreDriver>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminRestoreDriverMutationOptions(options));
+};
+
+/**
+ * @summary Update driver balance (admin only)
+ */
+export const getAdminUpdateDriverBalanceUrl = (id: number) => {
+  return `/api/admin/drivers/${id}/balance`;
+};
+
+export const adminUpdateDriverBalance = async (
+  id: number,
+  addBalanceBody: AddBalanceBody,
+  options?: RequestInit,
+): Promise<DriverDetail> => {
+  return customFetch<DriverDetail>(getAdminUpdateDriverBalanceUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addBalanceBody),
+  });
+};
+
+export const getAdminUpdateDriverBalanceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateDriverBalance>>,
+    TError,
+    { id: number; data: BodyType<AddBalanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateDriverBalance>>,
+  TError,
+  { id: number; data: BodyType<AddBalanceBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateDriverBalance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateDriverBalance>>,
+    { id: number; data: BodyType<AddBalanceBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateDriverBalance(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateDriverBalanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateDriverBalance>>
+>;
+export type AdminUpdateDriverBalanceMutationBody = BodyType<AddBalanceBody>;
+export type AdminUpdateDriverBalanceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update driver balance (admin only)
+ */
+export const useAdminUpdateDriverBalance = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateDriverBalance>>,
+    TError,
+    { id: number; data: BodyType<AddBalanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateDriverBalance>>,
+  TError,
+  { id: number; data: BodyType<AddBalanceBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateDriverBalanceMutationOptions(options));
+};
+
+/**
  * @summary Regenerate driver login code (admin only)
  */
 export const getAdminRegenerateDriverCodeUrl = (id: number) => {

@@ -554,6 +554,43 @@ export const AdminWarnDriverResponse = zod.object({
 });
 
 /**
+ * @summary Restore a soft-deleted driver (admin only)
+ */
+export const AdminRestoreDriverParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminRestoreDriverResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Update driver balance (admin only)
+ */
+export const AdminUpdateDriverBalanceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateDriverBalanceBody = zod.object({
+  amount: zod.number(),
+});
+
+export const AdminUpdateDriverBalanceResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  mobile: zod.string().nullish(),
+  loginCode: zod.string().nullish(),
+  balance: zod.number(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
+  age: zod.number().nullish(),
+  nationalId: zod.string().nullish(),
+  status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+  warningCount: zod.number(),
+  createdAt: zod.string().optional(),
+});
+
+/**
  * @summary Regenerate driver login code (admin only)
  */
 export const AdminRegenerateDriverCodeParams = zod.object({

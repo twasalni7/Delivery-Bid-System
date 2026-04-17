@@ -28,7 +28,7 @@ router.get("/", async (_req, res) => {
 });
 
 router.get("/me", requireAuth("driver"), async (req, res) => {
-  const driverId = (req as any).session?.user?.id as number;
+  const driverId = req.session.user!.id;
   const driver = await db.query.driversTable.findFirst({
     where: eq(driversTable.id, driverId),
   });

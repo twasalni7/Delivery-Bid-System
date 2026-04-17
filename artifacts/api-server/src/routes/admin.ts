@@ -255,13 +255,33 @@ router.post("/drivers/:id/warn", async (req, res) => {
     res.status(404).json({ error: "السائق غير موجود" });
     return;
   }
-  const newCount = (driver.warningCount ?? 0) + 1;
   const [updated] = await db
     .update(driversTable)
-    .set({ warningCount: newCount })
+    .set({ warningCount: (driver.warningCount ?? 0) + 1 })
     .where(eq(driversTable.id, id))
     .returning();
-  res.json({ message: "تم إضافة تحذير للسائق", warningCount: updated.warningCount });
+  res.json({
+    message: "تم إضافة تحذير للسائق",
+    warningCount: updated.warningCount,
+  });
+});
+
+router.post("/drivers/:id/restore", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const [updated] = await db
+    .update(driversTable)
+    .set({ status: "ACTIVE", deletedAt: null })
+    .where(eq(driversTable.id, id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "السائق غير موجود" });
+    return;
+  }
+  res.json({ message: "تم استعادة السائق", status: updated.status });
 });
 
 router.delete("/drivers/:id", async (req, res) => {
@@ -299,6 +319,39 @@ router.post("/drivers/:id/regenerate-code", async (req, res) => {
     return;
   }
   res.json({ loginCode: updated.loginCode });
+});
+
+router.patch("/drivers/:id/balance", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const { amount } = req.body ?? {};
+  if (typeof amount !== "number") {
+    res.status(400).json({ error: "بيانات غير صحيحة" });
+    return;
+  }
+  const driver = await db.query.driversTable.findFirst({
+    where: eq(driversTable.id, id),
+  });
+  if (!driver) {
+    res.status(404).json({ error: "السائق غير موجود" });
+    return;
+  }
+  const [updated] = await db
+    .update(driversTable)
+    .set({ balance: driver.balance + amount })
+    .where(eq(driversTable.id, id))
+    .returning();
+  res.json({
+    id: updated.id,
+    name: updated.name,
+    mobile: updated.mobile,
+    balance: updated.balance,
+    status: updated.status,
+    createdAt: updated.createdAt?.toISOString(),
+  });
 });
 
 router.get("/clients", async (_req, res) => {

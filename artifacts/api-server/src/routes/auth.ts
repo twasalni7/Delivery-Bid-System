@@ -74,7 +74,9 @@ router.post("/driver/login", async (req, res) => {
     return;
   }
   if (driver.status === "BLOCKED") {
-    res.status(403).json({ error: "تم إيقاف حسابك. يرجى التواصل مع الإدارة" });
+    res
+      .status(403)
+      .json({ error: "تم إيقاف حسابك. يرجى التواصل مع الإدارة" });
     return;
   }
   if (driver.status === "DELETED") {
@@ -120,11 +122,12 @@ router.post("/logout", (req, res) => {
 });
 
 router.get("/me", (req, res) => {
-  if (!req.session?.user) {
+  const user = req.session.user;
+  if (!user) {
     res.status(401).json({ error: "غير مسجّل الدخول" });
     return;
   }
-  res.json(req.session.user);
+  res.json(user);
 });
 
 export default router;

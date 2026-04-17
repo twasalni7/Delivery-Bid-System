@@ -551,6 +551,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
 
+  /admin/drivers/{id}/restore:
+    post:
+      operationId: adminRestoreDriver
+      tags: [admin]
+      summary: Restore a soft-deleted driver (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/drivers/{id}/balance:
+    patch:
+      operationId: adminUpdateDriverBalance
+      tags: [admin]
+      summary: Update driver balance (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBalanceBody"
+      responses:
+        "200":
+          description: Updated driver
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDetail"
+
   /admin/drivers/{id}/regenerate-code:
     post:
       operationId: adminRegenerateDriverCode

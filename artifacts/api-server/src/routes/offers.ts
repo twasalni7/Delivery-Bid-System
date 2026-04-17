@@ -32,6 +32,7 @@ router.get("/", async (_req, res) => {
               balance: driver.balance,
               carType: driver.carType,
               nationality: driver.nationality,
+              status: driver.status,
               createdAt: driver.createdAt?.toISOString(),
             }
           : null,
@@ -50,7 +51,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     return;
   }
 
-  const driverId = (req as any).session?.user?.id as number;
+  const driverId = req.session.user!.id;
   const { requestId, price, carType, nationality } = parsed.data;
 
   const driver = await db.query.driversTable.findFirst({
@@ -111,6 +112,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       balance: driver.balance,
       carType: driver.carType,
       nationality: driver.nationality,
+      status: driver.status,
       createdAt: driver.createdAt?.toISOString(),
     },
     createdAt: created.createdAt?.toISOString(),

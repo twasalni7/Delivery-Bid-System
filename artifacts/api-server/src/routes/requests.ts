@@ -14,6 +14,7 @@ import {
   ListRequestsQueryParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
+import { getSessionUser } from "../lib/session";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ function canSeePhone(
   req: Request,
   r: typeof requestsTable.$inferSelect
 ): boolean {
-  const user = (req as any).session?.user;
+  const user = getSessionUser(req);
   if (!user) return false;
   if (user.role === "admin") return true;
   if (user.role === "client" && r.clientId === user.id) return true;
@@ -39,13 +40,18 @@ function canSeePhone(
   return false;
 }
 
-function formatDriver(d: typeof driversTable.$inferSelect) {
+function formatDriver(
+  d: typeof driversTable.$inferSelect,
+  showContact: boolean
+) {
   return {
     id: d.id,
     name: d.name,
     balance: d.balance,
     carType: d.carType,
     nationality: d.nationality,
+    mobile: showContact ? d.mobile : null,
+    status: d.status,
     createdAt: d.createdAt?.toISOString(),
   };
 }
@@ -56,6 +62,12 @@ function formatRequest(
   driver?: typeof driversTable.$inferSelect | null
 ) {
   const showPhone = canSeePhone(req, r);
+  const user = getSessionUser(req);
+  const showDriverContact =
+    user?.role === "admin" ||
+    (user?.role === "client" &&
+      r.clientId === user.id &&
+      (r.status === "SELECTED" || r.status === "ACTIVE"));
   return {
     id: r.id,
     clientId: r.clientId,
@@ -69,7 +81,7 @@ function formatRequest(
     eveningTime: r.eveningTime,
     status: r.status,
     selectedDriverId: r.selectedDriverId,
-    selectedDriver: driver ? formatDriver(driver) : null,
+    selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
     createdAt: r.createdAt?.toISOString(),
   };
 }
@@ -89,10 +101,7 @@ router.get("/", async (req, res) => {
           )
         )
         .orderBy(requestsTable.createdAt)
-    : await db
-        .select()
-        .from(requestsTable)
-        .orderBy(requestsTable.createdAt);
+    : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
 
   const results = await Promise.all(
     rows.map(async (r) => {
@@ -116,7 +125,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
     return;
   }
 
-  const clientId = (req as any).session?.user?.id as number;
+  const clientId = req.session.user!.id;
 
   const [created] = await db
     .insert(requestsTable)
@@ -172,7 +181,11 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
   const [updated] = await db
     .update(requestsTable)
     .set({
-      status: parsed.data.status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED",
+      status: parsed.data.status as
+        | "OPEN"
+        | "SELECTED"
+        | "ACTIVE"
+        | "COMPLETED",
     })
     .where(eq(requestsTable.id, id))
     .returning();
@@ -206,7 +219,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   }
 
   const { offerId } = parsed.data;
-  const clientId = (req as any).session?.user?.id as number;
+  const clientId = req.session.user!.id;
 
   const request = await db.query.requestsTable.findFirst({
     where: eq(requestsTable.id, id),
@@ -246,7 +259,9 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   }
 
   if (driver.balance < 50) {
-    res.status(400).json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
+    res
+      .status(400)
+      .json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
     return;
   }
 
@@ -299,7 +314,7 @@ router.get("/:id/offers", async (req, res) => {
         price: o.price,
         carType: o.carType,
         nationality: o.nationality,
-        driver: driver ? formatDriver(driver) : null,
+        driver: driver ? formatDriver(driver, false) : null,
         createdAt: o.createdAt?.toISOString(),
       };
     })
