@@ -19,9 +19,13 @@ export const requestStatusEnum = pgEnum("request_status", [
 
 export const requestsTable = pgTable("requests", {
   id: serial("id").primaryKey(),
-  pickup: text("pickup").notNull(),
-  dropoff: text("dropoff").notNull(),
+  homeLocation: text("home_location").notNull(),
+  workLocation: text("work_location").notNull(),
   phone: text("phone").notNull(),
+  numberOfPeople: integer("number_of_people").notNull().default(1),
+  workingDaysPerWeek: integer("working_days_per_week").notNull().default(5),
+  morningTime: text("morning_time").notNull(),
+  eveningTime: text("evening_time").notNull(),
   status: requestStatusEnum("status").notNull().default("OPEN"),
   selectedDriverId: integer("selected_driver_id").references(
     () => driversTable.id

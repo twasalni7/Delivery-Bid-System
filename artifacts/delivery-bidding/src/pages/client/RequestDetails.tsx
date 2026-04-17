@@ -20,13 +20,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, MapPin, Phone, Check } from "lucide-react";
+import { ArrowRight, MapPin, Phone, Clock, Users, Calendar, Check } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-800 border-blue-200",
   SELECTED: "bg-amber-100 text-amber-800 border-amber-200",
   ACTIVE: "bg-green-100 text-green-800 border-green-200",
   COMPLETED: "bg-gray-100 text-gray-700 border-gray-200",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  OPEN: "مفتوح",
+  SELECTED: "تم الاختيار",
+  ACTIVE: "نشط",
+  COMPLETED: "مكتمل",
 };
 
 export default function RequestDetails() {
@@ -53,12 +60,12 @@ export default function RequestDetails() {
           queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(reqId) });
           queryClient.invalidateQueries({ queryKey: getGetRequestOffersQueryKey(reqId) });
           queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
-          toast({ title: "Driver selected!", description: "50 credits deducted from driver balance. Request is now SELECTED." });
+          toast({ title: "تم اختيار السائق!", description: "تم خصم 50 رصيداً من حساب السائق. الطلب أصبح مكتمل الاختيار." });
         },
         onError: (error: { data?: { error?: string } }) => {
           toast({
-            title: "Selection failed",
-            description: error?.data?.error || "Could not select this offer.",
+            title: "فشل الاختيار",
+            description: error?.data?.error || "تعذّر اختيار هذا العرض.",
             variant: "destructive",
           });
         },
@@ -69,7 +76,7 @@ export default function RequestDetails() {
   if (loadingRequest) {
     return (
       <Layout role="client">
-        <div className="text-center py-20 font-mono text-muted-foreground">Loading...</div>
+        <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
       </Layout>
     );
   }
@@ -78,8 +85,8 @@ export default function RequestDetails() {
     return (
       <Layout role="client">
         <div className="text-center py-20">
-          <p className="font-bold text-xl uppercase">Request not found</p>
-          <Link href="/client" className="text-primary font-mono text-sm mt-4 block hover:underline">Back to requests</Link>
+          <p className="font-bold text-xl">الطلب غير موجود</p>
+          <Link href="/client" className="text-primary text-sm mt-4 block hover:underline">العودة للطلبات</Link>
         </div>
       </Layout>
     );
@@ -90,16 +97,16 @@ export default function RequestDetails() {
   return (
     <Layout role="client">
       <div className="max-w-3xl mx-auto">
-        <Link href="/client" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 font-mono">
-          <ArrowLeft size={14} /> Back to requests
+        <Link href="/client" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+          <ArrowRight size={14} /> العودة للطلبات
         </Link>
 
         <Card className="border-2 mb-8">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-black uppercase tracking-tight">Request #{request.id}</CardTitle>
+              <CardTitle className="text-xl font-black">طلب رقم #{request.id}</CardTitle>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-bold border ${STATUS_COLORS[request.status] || ""}`}>
-                {request.status}
+                {STATUS_LABELS[request.status] || request.status}
               </span>
             </div>
           </CardHeader>
@@ -108,48 +115,79 @@ export default function RequestDetails() {
               <div className="flex items-start gap-2">
                 <MapPin size={16} className="mt-0.5 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pickup</p>
-                  <p className="font-medium">{request.pickup}</p>
+                  <p className="text-xs font-bold text-muted-foreground">موقع المنزل</p>
+                  <p className="font-medium">{request.homeLocation}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <MapPin size={16} className="mt-0.5 text-primary shrink-0" />
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Dropoff</p>
-                  <p className="font-medium">{request.dropoff}</p>
+                  <p className="text-xs font-bold text-muted-foreground">موقع العمل</p>
+                  <p className="font-medium">{request.workLocation}</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <Phone size={14} className="text-muted-foreground" />
-              <span className="font-mono text-sm">{request.phone}</span>
+
+            <div className="grid grid-cols-3 gap-3 pt-2 border-t text-sm">
+              <div className="flex items-center gap-1.5">
+                <Users size={14} className="text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground text-xs">الأشخاص:</span>
+                <span className="font-bold">{request.numberOfPeople}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Calendar size={14} className="text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground text-xs">أيام/أسبوع:</span>
+                <span className="font-bold">{request.workingDaysPerWeek}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Phone size={14} className="text-muted-foreground shrink-0" />
+                <span dir="ltr" className="font-medium">{request.phone}</span>
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-amber-500 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">وقت الذهاب</p>
+                  <p className="font-bold" dir="ltr">{request.morningTime}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-blue-500 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">وقت العودة</p>
+                  <p className="font-bold" dir="ltr">{request.eveningTime}</p>
+                </div>
+              </div>
+            </div>
+
             {request.selectedDriver && (
               <div className="flex items-center gap-2 pt-2 border-t bg-green-50 -mx-6 px-6 pb-2 rounded-b-sm">
                 <Check size={14} className="text-green-700" />
-                <span className="text-sm font-bold text-green-800">Driver: {request.selectedDriver.name}</span>
+                <span className="text-sm font-bold text-green-800">السائق المختار: {request.selectedDriver.name}</span>
               </div>
             )}
           </CardContent>
         </Card>
 
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-black uppercase tracking-tight">
-            Offers {offers ? `(${offers.length})` : ""}
+          <h2 className="text-lg font-black">
+            العروض المقدّمة {offers ? `(${offers.length})` : ""}
           </h2>
           {!isOpen && (
-            <span className="text-xs font-mono text-muted-foreground">This request is no longer accepting offers</span>
+            <span className="text-xs text-muted-foreground">هذا الطلب مغلق ولا يقبل عروضاً جديدة</span>
           )}
         </div>
 
         {loadingOffers && (
-          <div className="text-center py-10 font-mono text-muted-foreground text-sm">Loading offers...</div>
+          <div className="text-center py-10 text-muted-foreground text-sm">جاري تحميل العروض...</div>
         )}
 
         {!loadingOffers && (!offers || offers.length === 0) && (
           <div className="text-center py-14 border-2 border-dashed rounded-sm">
-            <p className="font-bold uppercase">No offers yet</p>
-            <p className="text-muted-foreground font-mono text-sm mt-1">Drivers will submit their offers here</p>
+            <p className="font-bold">لا توجد عروض بعد</p>
+            <p className="text-muted-foreground text-sm mt-1">سيقوم السائقون بتقديم عروضهم قريباً</p>
           </div>
         )}
 
@@ -158,11 +196,11 @@ export default function RequestDetails() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-bold uppercase text-xs tracking-wider">Driver</TableHead>
-                  <TableHead className="font-bold uppercase text-xs tracking-wider">Price</TableHead>
-                  <TableHead className="font-bold uppercase text-xs tracking-wider">Car Type</TableHead>
-                  <TableHead className="font-bold uppercase text-xs tracking-wider">Nationality</TableHead>
-                  {isOpen && <TableHead className="font-bold uppercase text-xs tracking-wider">Select</TableHead>}
+                  <TableHead className="font-bold text-xs">السائق</TableHead>
+                  <TableHead className="font-bold text-xs">السعر الشهري</TableHead>
+                  <TableHead className="font-bold text-xs">نوع السيارة</TableHead>
+                  <TableHead className="font-bold text-xs">الجنسية</TableHead>
+                  {isOpen && <TableHead className="font-bold text-xs">اختيار</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -171,19 +209,19 @@ export default function RequestDetails() {
                     key={offer.id}
                     className={`hover:bg-muted/30 transition-colors ${request.selectedDriverId === offer.driverId ? "bg-amber-50" : ""}`}
                   >
-                    <TableCell className="font-medium">{offer.driver?.name ?? `Driver #${offer.driverId}`}</TableCell>
-                    <TableCell className="font-mono font-bold text-primary">${offer.price.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium">{offer.driver?.name ?? `سائق #${offer.driverId}`}</TableCell>
+                    <TableCell className="font-bold text-primary" dir="ltr">{offer.price.toFixed(2)} ر.س</TableCell>
                     <TableCell className="text-sm">{offer.carType}</TableCell>
                     <TableCell className="text-sm">{offer.nationality}</TableCell>
                     {isOpen && (
                       <TableCell>
                         <Button
                           size="sm"
-                          className="font-bold text-xs uppercase"
+                          className="font-bold text-xs"
                           onClick={() => handleSelectOffer(offer.id)}
                           disabled={selectOffer.isPending}
                         >
-                          <Check size={12} className="mr-1" /> Select
+                          <Check size={12} className="ml-1" /> اختيار
                         </Button>
                       </TableCell>
                     )}

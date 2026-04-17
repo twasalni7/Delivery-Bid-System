@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, PlusCircle } from "lucide-react";
+import { Banknote, PlusCircle } from "lucide-react";
 
 export default function AdminDrivers() {
   const queryClient = useQueryClient();
@@ -41,7 +41,7 @@ export default function AdminDrivers() {
     if (!selectedDriver || !amount) return;
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      toast({ title: "Invalid amount", variant: "destructive" });
+      toast({ title: "مبلغ غير صحيح", variant: "destructive" });
       return;
     }
 
@@ -51,12 +51,12 @@ export default function AdminDrivers() {
         onSuccess: (driver) => {
           queryClient.invalidateQueries({ queryKey: getListDriversQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDriverQueryKey(selectedDriver.id) });
-          toast({ title: "Balance added!", description: `${selectedDriver.name} now has $${driver.balance.toFixed(2)}` });
+          toast({ title: "تم شحن الرصيد!", description: `رصيد ${selectedDriver.name} الآن: ${driver.balance.toFixed(2)} ر.س` });
           setSelectedDriver(null);
           setAmount("");
         },
         onError: () => {
-          toast({ title: "Failed to add balance", variant: "destructive" });
+          toast({ title: "فشل شحن الرصيد", variant: "destructive" });
         },
       }
     );
@@ -65,18 +65,18 @@ export default function AdminDrivers() {
   return (
     <Layout role="admin">
       <div className="mb-8">
-        <h1 className="text-3xl font-black uppercase tracking-tight">Drivers</h1>
-        <p className="text-muted-foreground font-mono text-sm mt-1">Manage driver accounts and balances</p>
+        <h1 className="text-3xl font-black">السائقون</h1>
+        <p className="text-muted-foreground text-sm mt-1">إدارة حسابات السائقين وأرصدتهم</p>
       </div>
 
       {isLoading && (
-        <div className="text-center py-16 font-mono text-muted-foreground">Loading drivers...</div>
+        <div className="text-center py-16 text-muted-foreground">جاري تحميل السائقين...</div>
       )}
 
       {!isLoading && (!drivers || drivers.length === 0) && (
         <div className="text-center py-20 border-2 border-dashed rounded-sm">
-          <p className="font-bold uppercase">No drivers registered</p>
-          <p className="text-muted-foreground font-mono text-sm mt-1">Drivers register by entering their name in the Driver Portal</p>
+          <p className="font-bold">لا يوجد سائقون مسجّلون</p>
+          <p className="text-muted-foreground text-sm mt-1">يسجّل السائقون عبر بوابة السائق بإدخال أسمائهم</p>
         </div>
       )}
 
@@ -85,40 +85,40 @@ export default function AdminDrivers() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="font-bold uppercase text-xs tracking-wider">ID</TableHead>
-                <TableHead className="font-bold uppercase text-xs tracking-wider">Name</TableHead>
-                <TableHead className="font-bold uppercase text-xs tracking-wider">Balance</TableHead>
-                <TableHead className="font-bold uppercase text-xs tracking-wider">Car Type</TableHead>
-                <TableHead className="font-bold uppercase text-xs tracking-wider">Nationality</TableHead>
-                <TableHead className="font-bold uppercase text-xs tracking-wider">Action</TableHead>
+                <TableHead className="font-bold text-xs">رقم</TableHead>
+                <TableHead className="font-bold text-xs">الاسم</TableHead>
+                <TableHead className="font-bold text-xs">الرصيد</TableHead>
+                <TableHead className="font-bold text-xs">نوع السيارة</TableHead>
+                <TableHead className="font-bold text-xs">الجنسية</TableHead>
+                <TableHead className="font-bold text-xs">إجراء</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {drivers.map((driver) => (
                 <TableRow key={driver.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="font-mono text-xs text-muted-foreground">#{driver.id}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">#{driver.id}</TableCell>
                   <TableCell className="font-bold">{driver.name}</TableCell>
                   <TableCell>
-                    <span className={`font-mono font-bold ${driver.balance >= 50 ? "text-green-700" : "text-red-600"}`}>
-                      ${driver.balance.toFixed(2)}
+                    <span className={`font-bold ${driver.balance >= 50 ? "text-green-700" : "text-red-600"}`} dir="ltr">
+                      {driver.balance.toFixed(2)} ر.س
                     </span>
                     {driver.balance < 50 && (
-                      <span className="ml-2 text-xs text-red-500 font-mono">(below minimum)</span>
+                      <span className="mr-2 text-xs text-red-500">(أقل من الحد)</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm font-mono">{driver.carType ?? "—"}</TableCell>
+                  <TableCell className="text-sm">{driver.carType ?? "—"}</TableCell>
                   <TableCell className="text-sm">{driver.nationality ?? "—"}</TableCell>
                   <TableCell>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="font-bold text-xs uppercase border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                      className="font-bold text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                       onClick={() => {
                         setSelectedDriver({ id: driver.id, name: driver.name });
                         setAmount("");
                       }}
                     >
-                      <PlusCircle size={12} className="mr-1" /> Add Balance
+                      <PlusCircle size={12} className="ml-1" /> شحن رصيد
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -131,16 +131,16 @@ export default function AdminDrivers() {
       <Dialog open={!!selectedDriver} onOpenChange={(open) => { if (!open) setSelectedDriver(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-black uppercase tracking-tight">Add Balance</DialogTitle>
+            <DialogTitle className="font-black">شحن الرصيد</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground font-mono">
-              Adding balance to <strong className="text-foreground">{selectedDriver?.name}</strong>
+            <p className="text-sm text-muted-foreground">
+              إضافة رصيد إلى حساب <strong className="text-foreground">{selectedDriver?.name}</strong>
             </p>
             <div className="space-y-1.5">
-              <Label htmlFor="amount" className="font-bold uppercase text-xs tracking-wider">Amount ($)</Label>
+              <Label htmlFor="amount" className="font-bold text-xs">المبلغ (ر.س)</Label>
               <div className="relative">
-                <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Banknote size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="amount"
                   type="number"
@@ -149,20 +149,21 @@ export default function AdminDrivers() {
                   placeholder="100"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="pl-8 font-mono"
+                  className="pr-8"
+                  dir="ltr"
                   onKeyDown={(e) => { if (e.key === "Enter") handleAddBalance(); }}
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedDriver(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setSelectedDriver(null)}>إلغاء</Button>
             <Button
               onClick={handleAddBalance}
               disabled={addBalance.isPending}
-              className="font-bold uppercase"
+              className="font-bold"
             >
-              {addBalance.isPending ? "Adding..." : "Add Balance"}
+              {addBalance.isPending ? "جاري الشحن..." : "شحن الرصيد"}
             </Button>
           </DialogFooter>
         </DialogContent>

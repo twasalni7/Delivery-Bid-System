@@ -11,12 +11,12 @@ export default function AdminDashboard() {
   return (
     <Layout role="admin">
       <div className="mb-8">
-        <h1 className="text-3xl font-black uppercase tracking-tight">Admin Console</h1>
-        <p className="text-muted-foreground font-mono text-sm mt-1">Platform overview and controls</p>
+        <h1 className="text-3xl font-black">لوحة الإدارة</h1>
+        <p className="text-muted-foreground text-sm mt-1">نظرة عامة على المنصة والإحصائيات</p>
       </div>
 
       {isLoading && (
-        <div className="text-center py-16 font-mono text-muted-foreground">Loading stats...</div>
+        <div className="text-center py-16 text-muted-foreground">جاري التحميل...</div>
       )}
 
       {stats && (
@@ -24,7 +24,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <Card className="border-2">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Requests</CardTitle>
+                <CardTitle className="text-xs font-bold text-muted-foreground">إجمالي الطلبات</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-3xl font-black">{stats.totalRequests}</p>
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
 
             <Card className="border-2 border-blue-200 bg-blue-50/30">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-blue-600">Open</CardTitle>
+                <CardTitle className="text-xs font-bold text-blue-600">مفتوح</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-3xl font-black text-blue-700">{stats.openRequests}</p>
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
 
             <Card className="border-2 border-amber-200 bg-amber-50/30">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-amber-600">Selected</CardTitle>
+                <CardTitle className="text-xs font-bold text-amber-600">تم الاختيار</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-3xl font-black text-amber-700">{stats.selectedRequests}</p>
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
 
             <Card className="border-2 border-green-200 bg-green-50/30">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-green-600">Active</CardTitle>
+                <CardTitle className="text-xs font-bold text-green-600">نشط</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-3xl font-black text-green-700">{stats.activeRequests}</p>
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <Card className="border-2 bg-muted/20">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Completed</CardTitle>
+                <CardTitle className="text-xs font-bold text-muted-foreground">مكتمل</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-3xl font-black text-muted-foreground">{stats.completedRequests}</p>
@@ -71,8 +71,8 @@ export default function AdminDashboard() {
 
             <Card className="border-2">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <Users size={12} /> Total Drivers
+                <CardTitle className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                  <Users size={12} /> إجمالي السائقين
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
@@ -82,8 +82,8 @@ export default function AdminDashboard() {
 
             <Card className="border-2">
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <TrendingUp size={12} /> Total Offers
+                <CardTitle className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                  <TrendingUp size={12} /> إجمالي العروض
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
@@ -95,22 +95,22 @@ export default function AdminDashboard() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Button asChild variant="outline" className="h-20 font-bold uppercase flex-col gap-1 border-2 hover:border-primary transition-colors">
+        <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
           <Link href="/admin/requests">
             <Package size={20} className="mb-1" />
-            Manage Requests
+            إدارة الطلبات
           </Link>
         </Button>
-        <Button asChild variant="outline" className="h-20 font-bold uppercase flex-col gap-1 border-2 hover:border-primary transition-colors">
+        <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
           <Link href="/admin/drivers">
             <Users size={20} className="mb-1" />
-            Manage Drivers
+            إدارة السائقين
           </Link>
         </Button>
-        <Button asChild variant="outline" className="h-20 font-bold uppercase flex-col gap-1 border-2 hover:border-primary transition-colors">
+        <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
           <Link href="/admin/offers">
             <FileText size={20} className="mb-1" />
-            View All Offers
+            عرض كل العروض
           </Link>
         </Button>
       </div>

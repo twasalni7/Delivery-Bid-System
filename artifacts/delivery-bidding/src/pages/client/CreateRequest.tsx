@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 
 export default function CreateRequest() {
@@ -17,27 +17,41 @@ export default function CreateRequest() {
   const { toast } = useToast();
   const createRequest = useCreateRequest();
 
-  const [pickup, setPickup] = useState("");
-  const [dropoff, setDropoff] = useState("");
+  const [homeLocation, setHomeLocation] = useState("");
+  const [workLocation, setWorkLocation] = useState("");
   const [phone, setPhone] = useState("");
+  const [numberOfPeople, setNumberOfPeople] = useState("1");
+  const [workingDaysPerWeek, setWorkingDaysPerWeek] = useState("5");
+  const [morningTime, setMorningTime] = useState("");
+  const [eveningTime, setEveningTime] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pickup.trim() || !dropoff.trim() || !phone.trim()) {
-      toast({ title: "All fields are required", variant: "destructive" });
+    if (!homeLocation.trim() || !workLocation.trim() || !phone.trim() || !morningTime || !eveningTime) {
+      toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" });
       return;
     }
 
     createRequest.mutate(
-      { data: { pickup: pickup.trim(), dropoff: dropoff.trim(), phone: phone.trim() } },
+      {
+        data: {
+          homeLocation: homeLocation.trim(),
+          workLocation: workLocation.trim(),
+          phone: phone.trim(),
+          numberOfPeople: parseInt(numberOfPeople) || 1,
+          workingDaysPerWeek: parseInt(workingDaysPerWeek) || 5,
+          morningTime,
+          eveningTime,
+        },
+      },
       {
         onSuccess: (req) => {
           queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
-          toast({ title: "Request created!", description: `Your delivery request #${req.id} is now open for bids.` });
+          toast({ title: "تم إضافة الطلب!", description: `طلب الدوام رقم #${req.id} مفتوح الآن لعروض السائقين.` });
           setLocation(`/client/request/${req.id}`);
         },
         onError: () => {
-          toast({ title: "Failed to create request", variant: "destructive" });
+          toast({ title: "فشل إضافة الطلب", variant: "destructive" });
         },
       }
     );
@@ -46,57 +60,107 @@ export default function CreateRequest() {
   return (
     <Layout role="client">
       <div className="max-w-xl mx-auto">
-        <Link href="/client" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 font-mono">
-          <ArrowLeft size={14} /> Back to requests
+        <Link href="/client" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+          <ArrowRight size={14} /> العودة للطلبات
         </Link>
 
         <Card className="border-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl font-black uppercase tracking-tight">New Delivery Request</CardTitle>
-            <CardDescription className="font-mono text-xs">Fill in the details and drivers will submit their offers</CardDescription>
+            <CardTitle className="text-2xl font-black">طلب دوام شهري جديد</CardTitle>
+            <CardDescription className="text-xs">أدخل تفاصيل رحلة الدوام وسيقوم السائقون بتقديم عروضهم</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="pickup" className="font-bold uppercase text-xs tracking-wider">Pickup Location</Label>
+                <Label htmlFor="homeLocation" className="font-bold text-xs">موقع المنزل</Label>
                 <Input
-                  id="pickup"
-                  placeholder="e.g. 123 Main St, New York"
-                  value={pickup}
-                  onChange={(e) => setPickup(e.target.value)}
-                  className="font-mono"
+                  id="homeLocation"
+                  placeholder="مثال: حي النزهة، الرياض"
+                  value={homeLocation}
+                  onChange={(e) => setHomeLocation(e.target.value)}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="dropoff" className="font-bold uppercase text-xs tracking-wider">Dropoff Location</Label>
+                <Label htmlFor="workLocation" className="font-bold text-xs">موقع العمل</Label>
                 <Input
-                  id="dropoff"
-                  placeholder="e.g. 456 Park Ave, Brooklyn"
-                  value={dropoff}
-                  onChange={(e) => setDropoff(e.target.value)}
-                  className="font-mono"
+                  id="workLocation"
+                  placeholder="مثال: طريق الملك فهد، برج المملكة"
+                  value={workLocation}
+                  onChange={(e) => setWorkLocation(e.target.value)}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="phone" className="font-bold uppercase text-xs tracking-wider">Phone Number</Label>
+                <Label htmlFor="phone" className="font-bold text-xs">رقم الهاتف</Label>
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="e.g. +1 555 000 1234"
+                  placeholder="مثال: 0501234567"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="font-mono"
+                  dir="ltr"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="numberOfPeople" className="font-bold text-xs">عدد الأشخاص</Label>
+                  <Input
+                    id="numberOfPeople"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={numberOfPeople}
+                    onChange={(e) => setNumberOfPeople(e.target.value)}
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="workingDaysPerWeek" className="font-bold text-xs">أيام العمل بالأسبوع</Label>
+                  <Input
+                    id="workingDaysPerWeek"
+                    type="number"
+                    min="1"
+                    max="7"
+                    value={workingDaysPerWeek}
+                    onChange={(e) => setWorkingDaysPerWeek(e.target.value)}
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="morningTime" className="font-bold text-xs">وقت الذهاب</Label>
+                  <Input
+                    id="morningTime"
+                    type="time"
+                    value={morningTime}
+                    onChange={(e) => setMorningTime(e.target.value)}
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="eveningTime" className="font-bold text-xs">وقت العودة</Label>
+                  <Input
+                    id="eveningTime"
+                    type="time"
+                    value={eveningTime}
+                    onChange={(e) => setEveningTime(e.target.value)}
+                    dir="ltr"
+                  />
+                </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full font-bold uppercase tracking-wide"
+                className="w-full font-bold"
                 disabled={createRequest.isPending}
               >
-                {createRequest.isPending ? "Submitting..." : "Post Delivery Request"}
+                {createRequest.isPending ? "جاري الإرسال..." : "نشر طلب الدوام"}
               </Button>
             </form>
           </CardContent>

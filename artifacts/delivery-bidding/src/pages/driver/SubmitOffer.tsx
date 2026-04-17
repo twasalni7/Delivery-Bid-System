@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, MapPin, Phone, AlertTriangle } from "lucide-react";
+import { ArrowRight, MapPin, Phone, AlertTriangle, Clock, Users, Calendar } from "lucide-react";
 
 export default function SubmitOffer() {
   const { id } = useParams<{ id: string }>();
@@ -51,15 +51,15 @@ export default function SubmitOffer() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!price || !carType.trim() || !nationality.trim()) {
-      toast({ title: "All fields are required", variant: "destructive" });
+      toast({ title: "يرجى ملء جميع الحقول", variant: "destructive" });
       return;
     }
     if (!driverId) {
-      toast({ title: "Please log in first", variant: "destructive" });
+      toast({ title: "يرجى تسجيل الدخول أولاً", variant: "destructive" });
       return;
     }
     if (!hasEnoughBalance) {
-      toast({ title: "Insufficient balance", description: "You need at least $50 balance to bid", variant: "destructive" });
+      toast({ title: "رصيد غير كافٍ", description: "تحتاج إلى 50 ريال على الأقل لتقديم عرض", variant: "destructive" });
       return;
     }
 
@@ -76,13 +76,13 @@ export default function SubmitOffer() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey({ status: "OPEN" }) });
-          toast({ title: "Offer submitted!", description: "The client will review your offer." });
+          toast({ title: "تم إرسال العرض!", description: "سيراجع العميل عرضك قريباً." });
           setLocation("/driver/dashboard");
         },
         onError: (error: { data?: { error?: string } }) => {
           toast({
-            title: "Failed to submit offer",
-            description: error?.data?.error || "Something went wrong.",
+            title: "فشل إرسال العرض",
+            description: error?.data?.error || "حدث خطأ ما.",
             variant: "destructive",
           });
         },
@@ -95,37 +95,67 @@ export default function SubmitOffer() {
   return (
     <Layout role="driver">
       <div className="max-w-xl mx-auto">
-        <Link href="/driver/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 font-mono">
-          <ArrowLeft size={14} /> Back to dashboard
+        <Link href="/driver/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+          <ArrowRight size={14} /> العودة للوحة السائق
         </Link>
 
         {loadingRequest && (
-          <div className="text-center py-16 font-mono text-muted-foreground">Loading request...</div>
+          <div className="text-center py-16 text-muted-foreground">جاري تحميل الطلب...</div>
         )}
 
         {request && (
           <>
             <Card className="border-2 mb-6">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-black uppercase tracking-tight flex items-center justify-between">
-                  Request #{request.id}
-                  <span className="text-xs bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-sm font-bold">OPEN</span>
+                <CardTitle className="text-base font-black flex items-center justify-between">
+                  طلب دوام رقم #{request.id}
+                  <span className="text-xs bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-sm font-bold">مفتوح</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin size={14} className="text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground font-mono text-xs">From:</span>
-                  <span className="font-medium">{request.pickup}</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} className="text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">المنزل</p>
+                      <p className="font-medium">{request.homeLocation}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} className="text-primary shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">العمل</p>
+                      <p className="font-medium">{request.workLocation}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin size={14} className="text-primary shrink-0" />
-                  <span className="text-muted-foreground font-mono text-xs">To:</span>
-                  <span className="font-medium">{request.dropoff}</span>
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+                  <div className="flex items-center gap-1">
+                    <Users size={12} className="text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">الأشخاص:</span>
+                    <span className="font-bold text-xs">{request.numberOfPeople}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar size={12} className="text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">الأيام:</span>
+                    <span className="font-bold text-xs">{request.workingDaysPerWeek}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Phone size={12} className="text-muted-foreground" />
+                    <span dir="ltr" className="text-xs">{request.phone}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone size={14} className="text-muted-foreground shrink-0" />
-                  <span className="font-mono">{request.phone}</span>
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t">
+                  <div className="flex items-center gap-1">
+                    <Clock size={12} className="text-amber-500" />
+                    <span className="text-xs text-muted-foreground">الذهاب:</span>
+                    <span dir="ltr" className="font-bold text-xs">{request.morningTime}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock size={12} className="text-blue-500" />
+                    <span className="text-xs text-muted-foreground">العودة:</span>
+                    <span dir="ltr" className="font-bold text-xs">{request.eveningTime}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -134,9 +164,9 @@ export default function SubmitOffer() {
               <div className="flex items-start gap-3 bg-red-50 border-2 border-red-300 rounded-sm px-4 py-3 mb-6">
                 <AlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
                 <div>
-                  <p className="font-bold text-red-800 text-sm">Cannot Submit Offer</p>
-                  <p className="text-red-700 font-mono text-xs mt-0.5">
-                    Your balance (${driver.balance.toFixed(2)}) is below the required $50.00 minimum. Contact an admin to add funds.
+                  <p className="font-bold text-red-800 text-sm">لا يمكن تقديم العرض</p>
+                  <p className="text-red-700 text-xs mt-0.5">
+                    رصيدك ({driver.balance.toFixed(2)} ر.س) أقل من الحد المطلوب (50 ر.س). تواصل مع الإدارة لشحن رصيدك.
                   </p>
                 </div>
               </div>
@@ -144,55 +174,53 @@ export default function SubmitOffer() {
 
             <Card className="border-2">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-black uppercase tracking-tight">Submit Your Offer</CardTitle>
-                <CardDescription className="font-mono text-xs">
-                  Logged in as <strong>{driver?.name}</strong> (Balance: ${driver?.balance.toFixed(2) ?? "0.00"})
+                <CardTitle className="text-lg font-black">تقديم عرضك</CardTitle>
+                <CardDescription className="text-xs">
+                  مسجّل دخول بـ <strong>{driver?.name}</strong> — الرصيد: {driver?.balance.toFixed(2) ?? "0.00"} ر.س
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="price" className="font-bold uppercase text-xs tracking-wider">Your Price ($)</Label>
+                    <Label htmlFor="price" className="font-bold text-xs">سعرك الشهري (ر.س)</Label>
                     <Input
                       id="price"
                       type="number"
                       min="0"
                       step="0.01"
-                      placeholder="e.g. 25.00"
+                      placeholder="مثال: 600.00"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="font-mono"
+                      dir="ltr"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="carType" className="font-bold uppercase text-xs tracking-wider">Car Type</Label>
+                    <Label htmlFor="carType" className="font-bold text-xs">نوع السيارة</Label>
                     <Input
                       id="carType"
-                      placeholder="e.g. Sedan, SUV, Truck, Motorcycle"
+                      placeholder="مثال: تويوتا كامري، هايلكس، GMC"
                       value={carType}
                       onChange={(e) => setCarType(e.target.value)}
-                      className="font-mono"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="nationality" className="font-bold uppercase text-xs tracking-wider">Nationality</Label>
+                    <Label htmlFor="nationality" className="font-bold text-xs">الجنسية</Label>
                     <Input
                       id="nationality"
-                      placeholder="e.g. American, Egyptian, British"
+                      placeholder="مثال: سعودي، مصري، باكستاني"
                       value={nationality}
                       onChange={(e) => setNationality(e.target.value)}
-                      className="font-mono"
                     />
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full font-bold uppercase tracking-wide"
+                    className="w-full font-bold"
                     disabled={createOffer.isPending || !hasEnoughBalance}
                   >
-                    {createOffer.isPending ? "Submitting..." : "Submit Offer"}
+                    {createOffer.isPending ? "جاري الإرسال..." : "إرسال العرض"}
                   </Button>
                 </form>
               </CardContent>

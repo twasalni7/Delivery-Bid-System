@@ -3,7 +3,7 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Delivery Bidding System API
+  description: Monthly Commute Bidding System API
 servers:
   - url: /api
     description: Base API path
@@ -13,7 +13,7 @@ tags:
   - name: drivers
     description: Driver operations
   - name: requests
-    description: Delivery request operations
+    description: Commute request operations
   - name: offers
     description: Offer operations
   - name: admin
@@ -135,7 +135,7 @@ paths:
     get:
       operationId: listRequests
       tags: [requests]
-      summary: List delivery requests
+      summary: List commute requests
       parameters:
         - name: status
           in: query
@@ -151,11 +151,11 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/DeliveryRequest"
+                  $ref: "#/components/schemas/CommuteRequest"
     post:
       operationId: createRequest
       tags: [requests]
-      summary: Create a delivery request
+      summary: Create a commute request
       requestBody:
         required: true
         content:
@@ -168,7 +168,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeliveryRequest"
+                $ref: "#/components/schemas/CommuteRequest"
 
   /requests/{id}:
     get:
@@ -187,7 +187,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeliveryRequest"
+                $ref: "#/components/schemas/CommuteRequest"
 
   /requests/{id}/status:
     patch:
@@ -212,7 +212,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeliveryRequest"
+                $ref: "#/components/schemas/CommuteRequest"
 
   /requests/{id}/select-offer:
     post:
@@ -237,7 +237,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeliveryRequest"
+                $ref: "#/components/schemas/CommuteRequest"
 
   /requests/{id}/offers:
     get:
@@ -353,16 +353,24 @@ components:
       required:
         - amount
 
-    DeliveryRequest:
+    CommuteRequest:
       type: object
       properties:
         id:
           type: integer
-        pickup:
+        homeLocation:
           type: string
-        dropoff:
+        workLocation:
           type: string
         phone:
+          type: string
+        numberOfPeople:
+          type: integer
+        workingDaysPerWeek:
+          type: integer
+        morningTime:
+          type: string
+        eveningTime:
           type: string
         status:
           type: string
@@ -377,24 +385,40 @@ components:
           type: string
       required:
         - id
-        - pickup
-        - dropoff
+        - homeLocation
+        - workLocation
         - phone
+        - numberOfPeople
+        - workingDaysPerWeek
+        - morningTime
+        - eveningTime
         - status
 
     CreateRequestBody:
       type: object
       properties:
-        pickup:
+        homeLocation:
           type: string
-        dropoff:
+        workLocation:
           type: string
         phone:
           type: string
+        numberOfPeople:
+          type: integer
+        workingDaysPerWeek:
+          type: integer
+        morningTime:
+          type: string
+        eveningTime:
+          type: string
       required:
-        - pickup
-        - dropoff
+        - homeLocation
+        - workLocation
         - phone
+        - numberOfPeople
+        - workingDaysPerWeek
+        - morningTime
+        - eveningTime
 
     UpdateStatusBody:
       type: object

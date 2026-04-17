@@ -2,7 +2,7 @@
 
 ## Overview
 
-Full-stack delivery bidding system (SwiftBid) — a logistics marketplace where clients post delivery jobs, drivers bid competitively, and admins manage everything.
+نظام دوامات شهرية (Monthly Commute Bidding System) — منصة تتيح للعملاء نشر طلبات توصيل الدوام الشهري، ويتنافس السائقون بتقديم أفضل العروض، وتُشرف الإدارة على كل شيء. الواجهة بالكامل باللغة العربية مع دعم RTL.
 
 ## Stack
 
@@ -17,39 +17,76 @@ Full-stack delivery bidding system (SwiftBid) — a logistics marketplace where 
 - **Build**: esbuild (CJS bundle)
 - **Frontend**: React + Vite + Tailwind CSS (shadcn/ui components)
 - **Routing**: Wouter (client-side)
+- **Font**: Cairo (Arabic-optimized)
+- **Direction**: RTL (Right-to-Left)
 
 ## Artifacts
 
-- **delivery-bidding** (`/`) — Main React + Vite frontend app
+- **delivery-bidding** (`/`) — Main React + Vite frontend app (Arabic/RTL)
 - **api-server** (`/api`) — Express backend API
 
 ## Key Features
 
 ### 3 Roles
-1. **Client** — Create delivery requests (pickup, dropoff, phone), view offers per request, select a driver
-2. **Driver** — Login by name, view open requests, submit offers (price, car type, nationality). Minimum $50 balance required to bid. $50 deducted when selected.
-3. **Admin** — Dashboard stats, manage all requests/drivers/offers, change statuses, add driver balance
+1. **Client (عميل)** — Create commute requests with: homeLocation, workLocation, phone, numberOfPeople, workingDaysPerWeek, morningTime, eveningTime. View offers per request, select a driver.
+2. **Driver (سائق)** — Login by name (auto-register). View open requests, submit offers (price, car type, nationality). Minimum 50 SAR balance required to bid. 50 SAR deducted when selected.
+3. **Admin (مدير)** — View platform stats, manage all requests (change status), manage driver balances, view all offers.
 
 ### Status Flow
-`OPEN → SELECTED → ACTIVE → COMPLETED`
+`OPEN (مفتوح)` → `SELECTED (تم الاختيار)` → `ACTIVE (نشط)` → `COMPLETED (مكتمل)`
 
-## Database Schema (PostgreSQL)
-- `drivers` — id, name, balance, car_type, nationality, created_at
-- `requests` — id, pickup, dropoff, phone, status (enum), selected_driver_id, created_at
-- `offers` — id, driver_id, request_id, price, car_type, nationality, created_at
-- `transactions` — id, driver_id, amount, type, created_at
+### Business Logic
+- When client selects an offer: request status → SELECTED, selectedDriverId set, driver balance −50 SAR
+- Admin can manually change request status to any value
+- Driver cannot bid if balance < 50 SAR
 
-## Key Commands
+## DB Schema (Drizzle)
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec (Note: fix lib/api-zod/src/index.ts to `export * from "./generated/api";` after running codegen)
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+### Tables
+- `requests_table` — CommuteRequest (homeLocation, workLocation, phone, numberOfPeople, workingDaysPerWeek, morningTime, eveningTime, status, selectedDriverId)
+- `drivers_table` — Driver (name, balance, carType, nationality)
+- `offers_table` — Offer (requestId, driverId, price, carType, nationality)
+- `transactions_table` — Transaction (driverId, amount, type)
+
+## API Routes
+
+- `GET/POST /api/requests` — List/create commute requests
+- `GET /api/requests/:id` — Get single request
+- `PATCH /api/requests/:id/status` — Update status (admin)
+- `POST /api/requests/:id/select-offer` — Select an offer (deducts 50 SAR)
+- `GET /api/requests/:id/offers` — List offers for a request
+- `POST /api/drivers/login` — Login/register driver by name
+- `GET /api/drivers` — List all drivers
+- `GET /api/drivers/:id` — Get single driver
+- `PATCH /api/drivers/:id/balance` — Add balance (admin)
+- `GET /api/drivers/:id/transactions` — Driver transaction history
+- `POST /api/offers` — Create offer
+- `GET /api/offers` — List all offers (admin)
+- `GET /api/admin/stats` — Platform statistics
+
+## Frontend Pages
+
+- `/` — Home (role selection cards in Arabic)
+- `/client` — Client Dashboard (table of commute requests)
+- `/client/request/new` — Create Request form
+- `/client/request/:id` — Request Details + offers table + select driver
+- `/driver` — Driver Login
+- `/driver/dashboard` — Driver Dashboard (open requests table)
+- `/driver/request/:id` — Submit Offer form
+- `/admin` — Admin Dashboard (stats)
+- `/admin/requests` — Manage Requests (filter + status change)
+- `/admin/drivers` — Manage Drivers (add balance dialog)
+- `/admin/offers` — All Offers table
+
+## Design
+
+- **Theme**: Industrial Yellow (HSL 45 93% 47%) primary color
+- **Corners**: Sharp (radius 0.1rem)
+- **Font**: Cairo (Arabic Google Font)
+- **Direction**: RTL throughout (html[dir="rtl"], lang="ar")
 
 ## Important Notes
-- After running codegen, manually update `lib/api-zod/src/index.ts` to only contain `export * from "./generated/api";` (orval regenerates it with extra exports that cause conflicts)
-- Driver session stored in localStorage (key: `swiftbid_driver_id`)
-- No authentication — client portal is open, admin portal is open, driver portal uses name-based login
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+- After running codegen, `lib/api-zod/src/index.ts` must be manually set to `export * from "./generated/api";` only — orval regenerates it with conflicting exports
+- Driver session stored in localStorage key: `swiftbid_driver_id`
+- No authentication — client portal is open access, admin is open, driver uses name-based login

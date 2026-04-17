@@ -33,9 +33,13 @@ function formatRequest(
 ) {
   return {
     id: r.id,
-    pickup: r.pickup,
-    dropoff: r.dropoff,
+    homeLocation: r.homeLocation,
+    workLocation: r.workLocation,
     phone: r.phone,
+    numberOfPeople: r.numberOfPeople,
+    workingDaysPerWeek: r.workingDaysPerWeek,
+    morningTime: r.morningTime,
+    eveningTime: r.eveningTime,
     status: r.status,
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver) : null,
@@ -69,7 +73,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const parsed = CreateRequestBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
+    res.status(400).json({ error: "بيانات غير صحيحة" });
     return;
   }
 
@@ -87,7 +91,7 @@ router.post("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
 
@@ -96,7 +100,7 @@ router.get("/:id", async (req, res) => {
   });
 
   if (!request) {
-    res.status(404).json({ error: "Request not found" });
+    res.status(404).json({ error: "الطلب غير موجود" });
     return;
   }
 
@@ -113,13 +117,13 @@ router.get("/:id", async (req, res) => {
 router.patch("/:id/status", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
 
   const parsed = UpdateRequestStatusBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
+    res.status(400).json({ error: "بيانات غير صحيحة" });
     return;
   }
 
@@ -130,7 +134,7 @@ router.patch("/:id/status", async (req, res) => {
     .returning();
 
   if (!updated) {
-    res.status(404).json({ error: "Request not found" });
+    res.status(404).json({ error: "الطلب غير موجود" });
     return;
   }
 
@@ -147,13 +151,13 @@ router.patch("/:id/status", async (req, res) => {
 router.post("/:id/select-offer", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
 
   const parsed = SelectOfferBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body" });
+    res.status(400).json({ error: "بيانات غير صحيحة" });
     return;
   }
 
@@ -164,12 +168,12 @@ router.post("/:id/select-offer", async (req, res) => {
   });
 
   if (!request) {
-    res.status(404).json({ error: "Request not found" });
+    res.status(404).json({ error: "الطلب غير موجود" });
     return;
   }
 
   if (request.status !== "OPEN") {
-    res.status(400).json({ error: "Request is not open for offers" });
+    res.status(400).json({ error: "الطلب ليس مفتوحاً للعروض" });
     return;
   }
 
@@ -178,7 +182,7 @@ router.post("/:id/select-offer", async (req, res) => {
   });
 
   if (!offer || offer.requestId !== id) {
-    res.status(404).json({ error: "Offer not found for this request" });
+    res.status(404).json({ error: "العرض غير موجود لهذا الطلب" });
     return;
   }
 
@@ -187,12 +191,12 @@ router.post("/:id/select-offer", async (req, res) => {
   });
 
   if (!driver) {
-    res.status(404).json({ error: "Driver not found" });
+    res.status(404).json({ error: "السائق غير موجود" });
     return;
   }
 
   if (driver.balance < 50) {
-    res.status(400).json({ error: "Driver has insufficient balance" });
+    res.status(400).json({ error: "رصيد السائق غير كافٍ" });
     return;
   }
 
@@ -223,7 +227,7 @@ router.post("/:id/select-offer", async (req, res) => {
 router.get("/:id/offers", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
 

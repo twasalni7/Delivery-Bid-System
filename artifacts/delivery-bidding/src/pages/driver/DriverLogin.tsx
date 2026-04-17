@@ -21,7 +21,7 @@ export default function DriverLogin() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast({ title: "Please enter your name", variant: "destructive" });
+      toast({ title: "يرجى إدخال اسمك", variant: "destructive" });
       return;
     }
 
@@ -30,11 +30,11 @@ export default function DriverLogin() {
       {
         onSuccess: (driver) => {
           setDriverId(driver.id);
-          toast({ title: `Welcome, ${driver.name}!`, description: `Balance: $${driver.balance.toFixed(2)}` });
+          toast({ title: `مرحباً ${driver.name}!`, description: `رصيدك الحالي: ${driver.balance.toFixed(2)} ر.س` });
           setLocation("/driver/dashboard");
         },
         onError: () => {
-          toast({ title: "Login failed", variant: "destructive" });
+          toast({ title: "فشل تسجيل الدخول", variant: "destructive" });
         },
       }
     );
@@ -47,35 +47,34 @@ export default function DriverLogin() {
           <div className="inline-flex items-center justify-center bg-primary text-primary-foreground p-3 rounded-sm mb-4">
             <Truck size={32} />
           </div>
-          <h1 className="text-2xl font-black uppercase tracking-tight">Driver Login</h1>
-          <p className="text-muted-foreground font-mono text-sm mt-1">Enter your name to access the driver portal</p>
+          <h1 className="text-2xl font-black">دخول السائق</h1>
+          <p className="text-muted-foreground text-sm mt-1">أدخل اسمك للوصول إلى بوابة السائق</p>
         </div>
 
         <Card className="border-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold">Sign in</CardTitle>
-            <CardDescription className="font-mono text-xs">New drivers are automatically registered</CardDescription>
+            <CardTitle className="text-base font-bold">تسجيل الدخول</CardTitle>
+            <CardDescription className="text-xs">السائقون الجدد يُسجَّلون تلقائياً عند أول دخول</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="font-bold uppercase text-xs tracking-wider">Your Name</Label>
+                <Label htmlFor="name" className="font-bold text-xs">الاسم الكامل</Label>
                 <Input
                   id="name"
-                  placeholder="e.g. Ahmed Al-Rashid"
+                  placeholder="مثال: أحمد الرشيد"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="font-mono"
                   autoFocus
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full font-bold uppercase tracking-wide"
+                className="w-full font-bold"
                 disabled={driverLogin.isPending}
               >
-                {driverLogin.isPending ? "Signing in..." : "Enter Driver Portal"}
+                {driverLogin.isPending ? "جاري الدخول..." : "دخول بوابة السائق"}
               </Button>
             </form>
           </CardContent>
