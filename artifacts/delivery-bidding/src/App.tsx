@@ -15,15 +15,20 @@ import AdminLoginPage from "@/pages/auth/AdminLoginPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import CreateRequest from "@/pages/client/CreateRequest";
 import RequestDetails from "@/pages/client/RequestDetails";
+import ClientProfile from "@/pages/client/ClientProfile";
 
 import DriverLogin from "@/pages/driver/DriverLogin";
 import DriverDashboard from "@/pages/driver/DriverDashboard";
 import SubmitOffer from "@/pages/driver/SubmitOffer";
+import DriverProfile from "@/pages/driver/DriverProfile";
+import DriverRequests from "@/pages/driver/DriverRequests";
 
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
 import AdminDrivers from "@/pages/admin/AdminDrivers";
 import AdminOffers from "@/pages/admin/AdminOffers";
+import AdminClients from "@/pages/admin/AdminClients";
+import AdminSettings from "@/pages/admin/AdminSettings";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -60,6 +65,9 @@ function Router() {
       <Route path="/client">
         <ClientGuard><ClientDashboard /></ClientGuard>
       </Route>
+      <Route path="/client/profile">
+        <ClientGuard><ClientProfile /></ClientGuard>
+      </Route>
       <Route path="/client/request/new">
         <ClientGuard><CreateRequest /></ClientGuard>
       </Route>
@@ -71,6 +79,12 @@ function Router() {
       <Route path="/driver" component={DriverLogin} />
       <Route path="/driver/dashboard">
         <DriverGuard><DriverDashboard /></DriverGuard>
+      </Route>
+      <Route path="/driver/profile">
+        <DriverGuard><DriverProfile /></DriverGuard>
+      </Route>
+      <Route path="/driver/requests">
+        <DriverGuard><DriverRequests /></DriverGuard>
       </Route>
       <Route path="/driver/request/:id">
         <DriverGuard><SubmitOffer /></DriverGuard>
@@ -86,8 +100,14 @@ function Router() {
       <Route path="/admin/drivers">
         <AdminGuard><AdminDrivers /></AdminGuard>
       </Route>
+      <Route path="/admin/clients">
+        <AdminGuard><AdminClients /></AdminGuard>
+      </Route>
       <Route path="/admin/offers">
         <AdminGuard><AdminOffers /></AdminGuard>
+      </Route>
+      <Route path="/admin/settings">
+        <AdminGuard><AdminSettings /></AdminGuard>
       </Route>
 
       <Route component={NotFound} />

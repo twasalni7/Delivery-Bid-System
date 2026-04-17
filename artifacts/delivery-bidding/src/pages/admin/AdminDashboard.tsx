@@ -3,7 +3,7 @@ import { useGetAdminStats } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, TrendingUp } from "lucide-react";
+import { Package, Users, FileText, TrendingUp, UserCheck, Settings } from "lucide-react";
 
 export default function AdminDashboard() {
   const { data: stats, isLoading } = useGetAdminStats();
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
         </>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
           <Link href="/admin/requests">
             <Package size={20} className="mb-1" />
@@ -108,9 +108,27 @@ export default function AdminDashboard() {
           </Link>
         </Button>
         <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
+          <Link href="/admin/clients">
+            <UserCheck size={20} className="mb-1" />
+            إدارة العملاء
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
           <Link href="/admin/offers">
             <FileText size={20} className="mb-1" />
             عرض كل العروض
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
+          <Link href="/admin/settings">
+            <Settings size={20} className="mb-1" />
+            الإعدادات
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="h-20 font-bold flex-col gap-1 border-2 hover:border-primary transition-colors">
+          <Link href="/admin/offers">
+            <TrendingUp size={20} className="mb-1" />
+            إحصائيات العروض
           </Link>
         </Button>
       </div>

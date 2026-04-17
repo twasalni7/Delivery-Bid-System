@@ -5,7 +5,7 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -131,7 +131,7 @@ export default function RequestDetails() {
           </CardContent>
         </Card>
 
-        {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE") && (
+        {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
           <Card className="border-2 border-green-300 bg-green-50/30 mb-6">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-start gap-3">
@@ -139,18 +139,35 @@ export default function RequestDetails() {
                   <CheckCircle size={18} className="text-green-700" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-green-800 mb-0.5">تم اختيار السائق</p>
+                  <p className="font-bold text-green-800 mb-0.5">
+                    {request.status === "COMPLETED" ? "تمت الاتفاقية — بيانات التواصل" : "تم اختيار السائق"}
+                  </p>
                   <p className="text-base font-black">{request.selectedDriver.name}</p>
-                  {request.selectedDriver.mobile ? (
-                    <a href={`tel:${request.selectedDriver.mobile}`} dir="ltr"
-                      className="inline-flex items-center gap-1.5 mt-1.5 text-sm font-bold text-primary hover:underline">
-                      <Phone size={14} /> {request.selectedDriver.mobile}
-                    </a>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-1">رقم الجوال غير متاح</p>
-                  )}
                   {request.selectedDriver.carType && (
                     <p className="text-xs text-muted-foreground mt-0.5">{request.selectedDriver.carType}</p>
+                  )}
+                  {request.selectedDriver.mobile ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <a
+                        href={`tel:${request.selectedDriver.mobile}`}
+                        className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+                        dir="ltr"
+                      >
+                        <Phone size={14} /> {request.selectedDriver.mobile}
+                      </a>
+                      <a
+                        href={`https://wa.me/${request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" variant="outline" className="font-bold text-green-700 border-green-300 hover:bg-green-100 gap-1 text-xs">
+                          <MessageCircle size={13} />
+                          واتساب السائق
+                        </Button>
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">رقم الجوال غير متاح</p>
                   )}
                 </div>
               </div>

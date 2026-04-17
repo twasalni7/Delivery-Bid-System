@@ -480,4 +480,118 @@ router.delete("/requests/:id", async (req, res) => {
   res.json({ message: "تم حذف الطلب" });
 });
 
+router.post("/change-code", async (req, res) => {
+  const adminId = req.session.user!.id;
+  const { newCode } = req.body ?? {};
+  if (!newCode || typeof newCode !== "string" || newCode.trim().length < 6) {
+    res.status(400).json({ error: "يجب أن يكون الرمز 6 أحرف أو أكثر" });
+    return;
+  }
+  const existing = await db.query.adminsTable.findFirst({
+    where: eq(adminsTable.loginCode, newCode.trim()),
+  });
+  if (existing && existing.id !== adminId) {
+    res.status(400).json({ error: "هذا الرمز مستخدم مسبقاً" });
+    return;
+  }
+  const [updated] = await db
+    .update(adminsTable)
+    .set({ loginCode: newCode.trim() })
+    .where(eq(adminsTable.id, adminId))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "المشرف غير موجود" });
+    return;
+  }
+  res.json({ message: "تم تغيير الرمز السري بنجاح", loginCode: updated.loginCode });
+});
+
+router.post("/clients", async (req, res) => {
+  const { name, mobile, password } = req.body ?? {};
+  if (!name || !mobile || !password) {
+    res.status(400).json({ error: "يرجى إدخال الاسم والجوال وكلمة المرور" });
+    return;
+  }
+  const existing = await db.query.clientsTable.findFirst({
+    where: eq(clientsTable.mobile, mobile),
+  });
+  if (existing) {
+    res.status(400).json({ error: "رقم الجوال مسجّل مسبقاً" });
+    return;
+  }
+  const { hashPassword } = await import("../lib/auth");
+  const passwordHash = await hashPassword(password);
+  const [client] = await db
+    .insert(clientsTable)
+    .values({ name, mobile, passwordHash })
+    .returning();
+  res.status(201).json({
+    id: client.id,
+    name: client.name,
+    mobile: client.mobile,
+    createdAt: client.createdAt?.toISOString(),
+  });
+});
+
+router.patch("/clients/:id", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const { name, mobile, password } = req.body ?? {};
+  const updates: Record<string, unknown> = {};
+  if (name) updates.name = name;
+  if (mobile) {
+    const existing = await db.query.clientsTable.findFirst({
+      where: eq(clientsTable.mobile, mobile),
+    });
+    if (existing && existing.id !== id) {
+      res.status(400).json({ error: "رقم الجوال مسجّل لعميل آخر" });
+      return;
+    }
+    updates.mobile = mobile;
+  }
+  if (password) {
+    const { hashPassword } = await import("../lib/auth");
+    updates.passwordHash = await hashPassword(password);
+  }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "لا توجد بيانات للتحديث" });
+    return;
+  }
+  const [updated] = await db
+    .update(clientsTable)
+    .set(updates)
+    .where(eq(clientsTable.id, id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "العميل غير موجود" });
+    return;
+  }
+  res.json({
+    id: updated.id,
+    name: updated.name,
+    mobile: updated.mobile,
+    createdAt: updated.createdAt?.toISOString(),
+  });
+});
+
+router.delete("/clients/:id", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const deleted = await db
+    .delete(clientsTable)
+    .where(eq(clientsTable.id, id))
+    .returning();
+  if (!deleted.length) {
+    res.status(404).json({ error: "العميل غير موجود" });
+    return;
+  }
+  res.json({ message: "تم حذف العميل" });
+});
+
 export default router;

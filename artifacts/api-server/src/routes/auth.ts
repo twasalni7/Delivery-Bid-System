@@ -130,4 +130,75 @@ router.get("/me", (req, res) => {
   res.json(user);
 });
 
+router.patch("/me/client", async (req, res) => {
+  const user = req.session.user;
+  if (!user || user.role !== "client") {
+    res.status(401).json({ error: "غير مصرح" });
+    return;
+  }
+  const { name, mobile } = req.body ?? {};
+  const updates: Record<string, unknown> = {};
+  if (name && typeof name === "string") updates.name = name.trim();
+  if (mobile && typeof mobile === "string") {
+    const existing = await db.query.clientsTable.findFirst({
+      where: eq(clientsTable.mobile, mobile),
+    });
+    if (existing && existing.id !== user.id) {
+      res.status(400).json({ error: "رقم الجوال مسجّل لعميل آخر" });
+      return;
+    }
+    updates.mobile = mobile;
+  }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "لا توجد بيانات للتحديث" });
+    return;
+  }
+  const [updated] = await db
+    .update(clientsTable)
+    .set(updates)
+    .where(eq(clientsTable.id, user.id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "العميل غير موجود" });
+    return;
+  }
+  req.session.user = { ...user, name: updated.name };
+  res.json({ id: updated.id, name: updated.name, mobile: updated.mobile });
+});
+
+router.patch("/me/password", async (req, res) => {
+  const user = req.session.user;
+  if (!user || user.role !== "client") {
+    res.status(401).json({ error: "غير مصرح" });
+    return;
+  }
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ error: "يرجى إدخال كلمة المرور الحالية والجديدة" });
+    return;
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    res.status(400).json({ error: "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل" });
+    return;
+  }
+  const client = await db.query.clientsTable.findFirst({
+    where: eq(clientsTable.id, user.id),
+  });
+  if (!client) {
+    res.status(404).json({ error: "العميل غير موجود" });
+    return;
+  }
+  const valid = await comparePassword(currentPassword, client.passwordHash);
+  if (!valid) {
+    res.status(400).json({ error: "كلمة المرور الحالية غير صحيحة" });
+    return;
+  }
+  const newHash = await hashPassword(newPassword);
+  await db
+    .update(clientsTable)
+    .set({ passwordHash: newHash })
+    .where(eq(clientsTable.id, user.id));
+  res.json({ message: "تم تغيير كلمة المرور بنجاح" });
+});
+
 export default router;

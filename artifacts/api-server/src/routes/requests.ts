@@ -29,7 +29,7 @@ function canSeePhone(
   if (
     user.role === "driver" &&
     r.selectedDriverId === user.id &&
-    (r.status === "SELECTED" || r.status === "ACTIVE")
+    (r.status === "SELECTED" || r.status === "ACTIVE" || r.status === "COMPLETED")
   )
     return true;
   return false;
@@ -63,7 +63,7 @@ function formatRequest(
     user?.role === "admin" ||
     (user?.role === "client" &&
       r.clientId === user.id &&
-      (r.status === "SELECTED" || r.status === "ACTIVE"));
+      (r.status === "SELECTED" || r.status === "ACTIVE" || r.status === "COMPLETED"));
   return {
     id: r.id,
     clientId: r.clientId,
@@ -277,7 +277,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 
   const [updated] = await db
     .update(requestsTable)
-    .set({ status: "SELECTED", selectedDriverId: driver.id })
+    .set({ status: "COMPLETED", selectedDriverId: driver.id })
     .where(eq(requestsTable.id, id))
     .returning();
 

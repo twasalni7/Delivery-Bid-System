@@ -15,15 +15,22 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
     role === "client"
       ? [
           { href: "/client", label: "طلباتي" },
+          { href: "/client/profile", label: "حسابي" },
           { href: "/client/request/new", label: "طلب جديد", primary: true },
         ]
       : role === "driver"
-      ? [{ href: "/driver/dashboard", label: "لوحة السائق" }]
+      ? [
+          { href: "/driver/dashboard", label: "لوحة السائق" },
+          { href: "/driver/requests", label: "اتفاقياتي" },
+          { href: "/driver/profile", label: "حسابي" },
+        ]
       : [
           { href: "/admin", label: "الرئيسية" },
           { href: "/admin/requests", label: "الطلبات" },
           { href: "/admin/drivers", label: "السائقون" },
+          { href: "/admin/clients", label: "العملاء" },
           { href: "/admin/offers", label: "العروض" },
+          { href: "/admin/settings", label: "الإعدادات" },
         ];
 
   return (

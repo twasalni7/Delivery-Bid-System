@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { driversTable, transactionsTable } from "@workspace/db";
+import { driversTable, transactionsTable, requestsTable } from "@workspace/db";
 import { eq, ne } from "drizzle-orm";
 import { AddDriverBalanceBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
@@ -49,6 +49,31 @@ router.get("/me", requireAuth("driver"), async (req, res) => {
     warningCount: driver.warningCount,
     createdAt: driver.createdAt?.toISOString(),
   });
+});
+
+router.get("/me/requests", requireAuth("driver"), async (req, res) => {
+  const driverId = req.session.user!.id;
+  const rows = await db
+    .select()
+    .from(requestsTable)
+    .where(eq(requestsTable.selectedDriverId, driverId))
+    .orderBy(requestsTable.createdAt);
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      clientId: r.clientId,
+      homeLocation: r.homeLocation,
+      workLocation: r.workLocation,
+      numberOfPeople: r.numberOfPeople,
+      workingDaysPerWeek: r.workingDaysPerWeek,
+      morningTime: r.morningTime,
+      eveningTime: r.eveningTime,
+      status: r.status,
+      selectedDriverId: r.selectedDriverId,
+      phone: r.phone,
+      createdAt: r.createdAt?.toISOString(),
+    }))
+  );
 });
 
 router.get("/:id", async (req, res) => {
