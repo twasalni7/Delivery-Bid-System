@@ -1,232 +1,143 @@
-import { useState, useEffect } from "react";
-import { useParams, Link, useLocation } from "wouter";
+import { useState } from "react";
+import { useRoute, Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  useGetRequest,
-  useCreateOffer,
-  useGetDriver,
-  getGetRequestQueryKey,
-  getGetDriverQueryKey,
-  getListRequestsQueryKey,
-} from "@workspace/api-client-react";
-import { useDriverSession } from "@/hooks/use-driver-session";
+import { useGetRequest, useCreateOffer, getGetRequestQueryKey } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, MapPin, Phone, AlertTriangle, Clock, Users, Calendar } from "lucide-react";
+import { ArrowRight, MapPin, Clock, Users } from "lucide-react";
 
 export default function SubmitOffer() {
-  const { id } = useParams<{ id: string }>();
-  const reqId = parseInt(id);
+  const [, params] = useRoute("/driver/request/:id");
+  const requestId = parseInt(params?.id ?? "0");
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { driverId } = useDriverSession();
-
-  useEffect(() => {
-    if (!driverId) {
-      setLocation("/driver");
-    }
-  }, [driverId, setLocation]);
-
-  const { data: request, isLoading: loadingRequest } = useGetRequest(reqId, {
-    query: { enabled: !!reqId, queryKey: getGetRequestQueryKey(reqId) },
-  });
-
-  const { data: driver } = useGetDriver(driverId!, {
-    query: { enabled: !!driverId, queryKey: getGetDriverQueryKey(driverId!) },
-  });
-
+  const { data: request, isLoading } = useGetRequest(requestId, { query: { enabled: !!requestId } });
   const createOffer = useCreateOffer();
 
   const [price, setPrice] = useState("");
   const [carType, setCarType] = useState("");
   const [nationality, setNationality] = useState("");
 
-  const hasEnoughBalance = driver ? driver.balance >= 50 : false;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!price || !carType.trim() || !nationality.trim()) {
-      toast({ title: "يرجى ملء جميع الحقول", variant: "destructive" });
+    const numPrice = parseFloat(price);
+    if (isNaN(numPrice) || numPrice <= 0) {
+      toast({ title: "يرجى إدخال سعر صحيح", variant: "destructive" });
       return;
     }
-    if (!driverId) {
-      toast({ title: "يرجى تسجيل الدخول أولاً", variant: "destructive" });
-      return;
-    }
-    if (!hasEnoughBalance) {
-      toast({ title: "رصيد غير كافٍ", description: "تحتاج إلى 50 ريال على الأقل لتقديم عرض", variant: "destructive" });
-      return;
-    }
-
     createOffer.mutate(
-      {
-        data: {
-          driverId,
-          requestId: reqId,
-          price: parseFloat(price),
-          carType: carType.trim(),
-          nationality: nationality.trim(),
-        },
-      },
+      { data: { requestId, price: numPrice, carType: carType.trim() || "—", nationality: nationality.trim() || "—" } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey({ status: "OPEN" }) });
-          toast({ title: "تم إرسال العرض!", description: "سيراجع العميل عرضك قريباً." });
+          queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(requestId) });
+          toast({ title: "تم تقديم العرض بنجاح!" });
           setLocation("/driver/dashboard");
         },
-        onError: (error: { data?: { error?: string } }) => {
-          toast({
-            title: "فشل إرسال العرض",
-            description: error?.data?.error || "حدث خطأ ما.",
-            variant: "destructive",
-          });
+        onError: (err: any) => {
+          toast({ title: (err as any)?.message ?? "فشل تقديم العرض", variant: "destructive" });
         },
       }
     );
   };
 
-  if (!driverId) return null;
+  if (!user) {
+    setLocation("/driver/login");
+    return null;
+  }
+
+  if (isLoading) {
+    return <Layout role="driver"><div className="text-center py-20 text-muted-foreground">جاري التحميل...</div></Layout>;
+  }
+
+  if (!request) {
+    return (
+      <Layout role="driver">
+        <div className="text-center py-20">
+          <p className="font-bold">الطلب غير موجود</p>
+          <Button asChild className="mt-4"><Link href="/driver/dashboard">العودة</Link></Button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout role="driver">
-      <div className="max-w-xl mx-auto">
+      <div className="max-w-lg mx-auto" dir="rtl">
         <Link href="/driver/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
           <ArrowRight size={14} /> العودة للوحة السائق
         </Link>
 
-        {loadingRequest && (
-          <div className="text-center py-16 text-muted-foreground">جاري تحميل الطلب...</div>
-        )}
+        <h1 className="text-2xl font-black mb-2">تقديم عرض</h1>
+        <p className="text-muted-foreground text-sm mb-6">طلب #{request.id}</p>
 
-        {request && (
-          <>
-            <Card className="border-2 mb-6">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-black flex items-center justify-between">
-                  طلب دوام رقم #{request.id}
-                  <span className="text-xs bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-sm font-bold">مفتوح</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2">
-                    <MapPin size={14} className="text-muted-foreground shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">المنزل</p>
-                      <p className="font-medium">{request.homeLocation}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin size={14} className="text-primary shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">العمل</p>
-                      <p className="font-medium">{request.workLocation}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t">
-                  <div className="flex items-center gap-1">
-                    <Users size={12} className="text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">الأشخاص:</span>
-                    <span className="font-bold text-xs">{request.numberOfPeople}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar size={12} className="text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">الأيام:</span>
-                    <span className="font-bold text-xs">{request.workingDaysPerWeek}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Phone size={12} className="text-muted-foreground" />
-                    <span dir="ltr" className="text-xs">{request.phone}</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t">
-                  <div className="flex items-center gap-1">
-                    <Clock size={12} className="text-amber-500" />
-                    <span className="text-xs text-muted-foreground">الذهاب:</span>
-                    <span dir="ltr" className="font-bold text-xs">{request.morningTime}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock size={12} className="text-blue-500" />
-                    <span className="text-xs text-muted-foreground">العودة:</span>
-                    <span dir="ltr" className="font-bold text-xs">{request.eveningTime}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <Card className="border-2 mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold">تفاصيل الرحلة</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin size={13} className="text-primary shrink-0" />
+              <span>{request.homeLocation} → {request.workLocation}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock size={13} className="text-primary shrink-0" />
+              <span dir="ltr">{request.morningTime} – {request.eveningTime}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Users size={13} className="text-primary shrink-0" />
+              <span>{request.numberOfPeople} أشخاص • {request.workingDaysPerWeek} أيام/أسبوع</span>
+            </div>
+          </CardContent>
+        </Card>
 
-            {!hasEnoughBalance && driver && (
-              <div className="flex items-start gap-3 bg-red-50 border-2 border-red-300 rounded-sm px-4 py-3 mb-6">
-                <AlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-bold text-red-800 text-sm">لا يمكن تقديم العرض</p>
-                  <p className="text-red-700 text-xs mt-0.5">
-                    رصيدك ({driver.balance.toFixed(2)} ر.س) أقل من الحد المطلوب (50 ر.س). تواصل مع الإدارة لشحن رصيدك.
-                  </p>
-                </div>
+        <Card className="border-2">
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="price" className="font-bold text-xs">السعر الشهري (ريال)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  placeholder="مثال: 850"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  dir="ltr"
+                  autoFocus
+                />
               </div>
-            )}
-
-            <Card className="border-2">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-black">تقديم عرضك</CardTitle>
-                <CardDescription className="text-xs">
-                  مسجّل دخول بـ <strong>{driver?.name}</strong> — الرصيد: {driver?.balance.toFixed(2) ?? "0.00"} ر.س
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="price" className="font-bold text-xs">سعرك الشهري (ر.س)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="مثال: 600.00"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      dir="ltr"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="carType" className="font-bold text-xs">نوع السيارة</Label>
-                    <Input
-                      id="carType"
-                      placeholder="مثال: تويوتا كامري، هايلكس، GMC"
-                      value={carType}
-                      onChange={(e) => setCarType(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="nationality" className="font-bold text-xs">الجنسية</Label>
-                    <Input
-                      id="nationality"
-                      placeholder="مثال: سعودي، مصري، باكستاني"
-                      value={nationality}
-                      onChange={(e) => setNationality(e.target.value)}
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full font-bold"
-                    disabled={createOffer.isPending || !hasEnoughBalance}
-                  >
-                    {createOffer.isPending ? "جاري الإرسال..." : "إرسال العرض"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </>
-        )}
+              <div className="space-y-1.5">
+                <Label htmlFor="carType" className="font-bold text-xs">نوع السيارة</Label>
+                <Input
+                  id="carType"
+                  placeholder="مثال: تويوتا كامري 2022"
+                  value={carType}
+                  onChange={(e) => setCarType(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nationality" className="font-bold text-xs">الجنسية</Label>
+                <Input
+                  id="nationality"
+                  placeholder="مثال: سعودي"
+                  value={nationality}
+                  onChange={(e) => setNationality(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full font-bold" disabled={createOffer.isPending}>
+                {createOffer.isPending ? "جاري الإرسال..." : "تقديم العرض"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

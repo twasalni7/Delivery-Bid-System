@@ -1,65 +1,114 @@
 import { Link, useLocation } from "wouter";
-import { Bus, LogOut } from "lucide-react";
-import { useDriverSession } from "../hooks/use-driver-session";
+import { Bus, LogOut, Menu, X } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "./ui/button";
+import { useState } from "react";
 
-export function Layout({ children, role }: { children: React.ReactNode, role: "client" | "driver" | "admin" }) {
-  const [location, setLocation] = useLocation();
-  const { driverId, setDriverId } = useDriverSession();
-
-  const handleLogout = () => {
-    if (role === "driver") {
-      setDriverId(null);
-      setLocation("/driver");
-    }
-  };
+export function Layout({ children, role }: { children: React.ReactNode; role: "client" | "driver" | "admin" }) {
+  const [location] = useLocation();
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const roleLabel = role === "client" ? "عميل" : role === "driver" ? "سائق" : "مدير";
 
+  const navLinks =
+    role === "client"
+      ? [
+          { href: "/client", label: "طلباتي" },
+          { href: "/client/request/new", label: "طلب جديد", primary: true },
+        ]
+      : role === "driver"
+      ? [{ href: "/driver/dashboard", label: "لوحة السائق" }]
+      : [
+          { href: "/admin", label: "الرئيسية" },
+          { href: "/admin/requests", label: "الطلبات" },
+          { href: "/admin/drivers", label: "السائقون" },
+          { href: "/admin/offers", label: "العروض" },
+        ];
+
   return (
-    <div className="min-h-[100dvh] flex flex-col w-full bg-background font-sans">
-      <header className="border-b bg-card sticky top-0 z-10">
+    <div className="min-h-[100dvh] flex flex-col w-full bg-background font-sans" dir="rtl">
+      <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight hover:opacity-80 transition-opacity shrink-0">
             <div className="bg-primary text-primary-foreground p-1 rounded-sm">
               <Bus size={20} />
             </div>
-            دوامات شهرية
-            <span className="text-muted-foreground font-normal mr-1">| {roleLabel}</span>
+            <span>دوامات شهرية</span>
+            <span className="text-muted-foreground font-normal text-sm hidden sm:inline">| {roleLabel}</span>
           </Link>
 
-          <nav className="flex items-center gap-4 text-sm font-medium">
-            {role === "client" && (
-              <>
-                <Link href="/client" className={`hover:text-primary transition-colors ${location === "/client" ? "text-primary" : "text-muted-foreground"}`}>طلباتي</Link>
-                <Button asChild size="sm" className="font-bold">
-                  <Link href="/client/request/new">طلب جديد</Link>
+          <nav className="hidden sm:flex items-center gap-3 text-sm font-medium">
+            {navLinks.map((link) =>
+              link.primary ? (
+                <Button key={link.href} asChild size="sm" className="font-bold">
+                  <Link href={link.href}>{link.label}</Link>
                 </Button>
-              </>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`hover:text-primary transition-colors px-1 ${
+                    location === link.href || (link.href.length > 1 && location.startsWith(link.href))
+                      ? "text-primary font-bold"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              )
             )}
-            
-            {role === "driver" && driverId && (
-              <>
-                <Link href="/driver/dashboard" className={`hover:text-primary transition-colors ${location === "/driver/dashboard" ? "text-primary" : "text-muted-foreground"}`}>لوحة السائق</Link>
-                <Button variant="ghost" size="icon" onClick={handleLogout} title="تسجيل خروج">
-                  <LogOut size={16} />
-                </Button>
-              </>
-            )}
-
-            {role === "admin" && (
-              <>
-                <Link href="/admin" className={`hover:text-primary transition-colors ${location === "/admin" ? "text-primary" : "text-muted-foreground"}`}>الرئيسية</Link>
-                <Link href="/admin/requests" className={`hover:text-primary transition-colors ${location.startsWith("/admin/requests") ? "text-primary" : "text-muted-foreground"}`}>الطلبات</Link>
-                <Link href="/admin/drivers" className={`hover:text-primary transition-colors ${location.startsWith("/admin/drivers") ? "text-primary" : "text-muted-foreground"}`}>السائقون</Link>
-                <Link href="/admin/offers" className={`hover:text-primary transition-colors ${location.startsWith("/admin/offers") ? "text-primary" : "text-muted-foreground"}`}>العروض</Link>
-              </>
+            {user && (
+              <Button variant="ghost" size="icon" onClick={logout} title="تسجيل خروج">
+                <LogOut size={16} />
+              </Button>
             )}
           </nav>
+
+          <button
+            className="sm:hidden p-2 rounded-md hover:bg-muted transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="القائمة"
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
+
+        {menuOpen && (
+          <div className="sm:hidden border-t bg-card px-4 py-3 flex flex-col gap-2">
+            {navLinks.map((link) =>
+              link.primary ? (
+                <Button key={link.href} asChild size="sm" className="font-bold w-full" onClick={() => setMenuOpen(false)}>
+                  <Link href={link.href}>{link.label}</Link>
+                </Button>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`py-1.5 text-sm font-medium hover:text-primary transition-colors ${
+                    location === link.href || (link.href.length > 1 && location.startsWith(link.href))
+                      ? "text-primary font-bold"
+                      : "text-muted-foreground"
+                  }`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
+            {user && (
+              <button
+                onClick={() => { logout(); setMenuOpen(false); }}
+                className="flex items-center gap-2 text-sm text-destructive font-medium py-1.5 hover:opacity-80"
+              >
+                <LogOut size={14} /> تسجيل الخروج
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-6">
         {children}
       </main>
     </div>

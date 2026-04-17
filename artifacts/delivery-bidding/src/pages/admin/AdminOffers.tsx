@@ -1,72 +1,57 @@
 import { useListOffers } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Link } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { Banknote, User } from "lucide-react";
 
 export default function AdminOffers() {
   const { data: offers, isLoading } = useListOffers();
 
   return (
     <Layout role="admin">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black">جميع العروض</h1>
-        <p className="text-muted-foreground text-sm mt-1">كل العروض المقدّمة من السائقين على جميع الطلبات</p>
+      <div dir="rtl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-black">العروض</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">جميع عروض السائقين على الطلبات</p>
+        </div>
+
+        {isLoading && <div className="text-center py-16 text-muted-foreground">جاري التحميل...</div>}
+
+        {!isLoading && (!offers || offers.length === 0) && (
+          <div className="text-center py-20 border-2 border-dashed rounded-md">
+            <p className="font-bold">لا توجد عروض بعد</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3">
+          {offers?.map((offer) => (
+            <Card key={offer.id} className="border-2">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-xs text-muted-foreground font-mono">طلب #{offer.requestId}</span>
+                      {offer.isSelected && (
+                        <span className="text-xs bg-green-100 text-green-800 border border-green-300 px-2 py-0.5 rounded font-bold">محدد</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap text-sm">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <User size={13} className="text-primary" />
+                        <span>{offer.driverName ?? `سائق #${offer.driverId}`}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 font-bold text-primary">
+                        <Banknote size={13} />
+                        <span dir="ltr">{offer.monthlyPrice?.toFixed(2)} ر.س/شهر</span>
+                      </div>
+                    </div>
+                    {offer.notes && <p className="text-xs text-muted-foreground mt-1">{offer.notes}</p>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-
-      {isLoading && (
-        <div className="text-center py-16 text-muted-foreground">جاري تحميل العروض...</div>
-      )}
-
-      {!isLoading && (!offers || offers.length === 0) && (
-        <div className="text-center py-20 border-2 border-dashed rounded-sm">
-          <p className="font-bold">لا توجد عروض بعد</p>
-          <p className="text-muted-foreground text-sm mt-1">ستظهر العروض هنا عندما يقدّم السائقون عطاءاتهم</p>
-        </div>
-      )}
-
-      {offers && offers.length > 0 && (
-        <div className="border rounded-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-bold text-xs">رقم</TableHead>
-                <TableHead className="font-bold text-xs">السائق</TableHead>
-                <TableHead className="font-bold text-xs">الطلب</TableHead>
-                <TableHead className="font-bold text-xs">السعر الشهري</TableHead>
-                <TableHead className="font-bold text-xs">نوع السيارة</TableHead>
-                <TableHead className="font-bold text-xs">الجنسية</TableHead>
-                <TableHead className="font-bold text-xs">تاريخ التقديم</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {offers.map((offer) => (
-                <TableRow key={offer.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="text-xs text-muted-foreground">#{offer.id}</TableCell>
-                  <TableCell className="font-bold">{offer.driver?.name ?? `#${offer.driverId}`}</TableCell>
-                  <TableCell>
-                    <Link href={`/client/request/${offer.requestId}`} className="text-primary hover:underline text-sm">
-                      #{offer.requestId}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="font-bold text-primary" dir="ltr">{offer.price.toFixed(2)} ر.س</TableCell>
-                  <TableCell className="text-sm">{offer.carType}</TableCell>
-                  <TableCell className="text-sm">{offer.nationality}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {offer.createdAt ? new Date(offer.createdAt).toLocaleDateString("ar-SA") : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
     </Layout>
   );
 }

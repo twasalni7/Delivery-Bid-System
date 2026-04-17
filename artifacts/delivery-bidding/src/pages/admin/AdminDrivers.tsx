@@ -1,173 +1,281 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useListDrivers,
-  useAddDriverBalance,
-  getListDriversQueryKey,
-  getGetDriverQueryKey,
+  useAdminListDrivers,
+  useAdminCreateDriver,
+  useAdminUpdateDriver,
+  useAdminDeleteDriver,
+  useAdminBlockDriver,
+  useAdminUnblockDriver,
+  useAdminWarnDriver,
+  useAdminRestoreDriver,
+  useAdminUpdateDriverBalance,
+  useAdminRegenerateDriverCode,
+  getAdminListDriversQueryKey,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Banknote, PlusCircle } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote } from "lucide-react";
+import type { DriverDetail } from "@workspace/api-client-react";
+
+type DialogMode = "create" | "edit" | "balance" | "code" | null;
 
 export default function AdminDrivers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: drivers, isLoading } = useListDrivers();
-  const addBalance = useAddDriverBalance();
+  const { data: drivers, isLoading } = useAdminListDrivers();
+  const createDriver = useAdminCreateDriver();
+  const updateDriver = useAdminUpdateDriver();
+  const deleteDriver = useAdminDeleteDriver();
+  const blockDriver = useAdminBlockDriver();
+  const unblockDriver = useAdminUnblockDriver();
+  const warnDriver = useAdminWarnDriver();
+  const restoreDriver = useAdminRestoreDriver();
+  const updateBalance = useAdminUpdateDriverBalance();
+  const regenCode = useAdminRegenerateDriverCode();
 
-  const [selectedDriver, setSelectedDriver] = useState<{ id: number; name: string } | null>(null);
-  const [amount, setAmount] = useState("");
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
+  const [selectedDriver, setSelectedDriver] = useState<DriverDetail | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formMobile, setFormMobile] = useState("");
+  const [formCar, setFormCar] = useState("");
+  const [formBalance, setFormBalance] = useState("");
 
-  const handleAddBalance = () => {
-    if (!selectedDriver || !amount) return;
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast({ title: "مبلغ غير صحيح", variant: "destructive" });
-      return;
-    }
+  const refetch = () => queryClient.invalidateQueries({ queryKey: getAdminListDriversQueryKey() });
 
-    addBalance.mutate(
-      { id: selectedDriver.id, data: { amount: numAmount } },
+  const openCreate = () => {
+    setFormName(""); setFormMobile(""); setFormCar(""); setFormBalance("");
+    setSelectedDriver(null); setDialogMode("create");
+  };
+
+  const openEdit = (d: DriverDetail) => {
+    setSelectedDriver(d); setFormName(d.name); setFormMobile(d.mobile); setFormCar(d.carType ?? "");
+    setDialogMode("edit");
+  };
+
+  const openBalance = (d: DriverDetail) => {
+    setSelectedDriver(d); setFormBalance(""); setDialogMode("balance");
+  };
+
+  const handleCreate = () => {
+    createDriver.mutate(
+      { data: { name: formName.trim(), mobile: formMobile.trim(), carType: formCar.trim() || undefined } },
       {
-        onSuccess: (driver) => {
-          queryClient.invalidateQueries({ queryKey: getListDriversQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetDriverQueryKey(selectedDriver.id) });
-          toast({ title: "تم شحن الرصيد!", description: `رصيد ${selectedDriver.name} الآن: ${driver.balance.toFixed(2)} ر.س` });
-          setSelectedDriver(null);
-          setAmount("");
+        onSuccess: (data) => {
+          refetch();
+          toast({ title: `تم إنشاء السائق!`, description: `رمز الدخول: ${data.loginCode}` });
+          setDialogMode(null);
         },
-        onError: () => {
-          toast({ title: "فشل شحن الرصيد", variant: "destructive" });
-        },
+        onError: (err: any) => toast({ title: err?.message ?? "فشل الإنشاء", variant: "destructive" }),
       }
     );
   };
 
+  const handleEdit = () => {
+    if (!selectedDriver) return;
+    updateDriver.mutate(
+      { id: selectedDriver.id, data: { name: formName.trim(), mobile: formMobile.trim(), carType: formCar.trim() || undefined } },
+      {
+        onSuccess: () => { refetch(); toast({ title: "تم التحديث!" }); setDialogMode(null); },
+        onError: (err: any) => toast({ title: err?.message ?? "فشل التحديث", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleDelete = (d: DriverDetail) => {
+    if (!confirm(`هل أنت متأكد من حذف ${d.name}؟`)) return;
+    deleteDriver.mutate(
+      { id: d.id },
+      {
+        onSuccess: () => { refetch(); toast({ title: "تم الحذف!" }); },
+        onError: (err: any) => toast({ title: err?.message ?? "فشل الحذف", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleBlock = (d: DriverDetail) => {
+    blockDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم الحظر" }); } });
+  };
+
+  const handleUnblock = (d: DriverDetail) => {
+    unblockDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم رفع الحظر" }); } });
+  };
+
+  const handleWarn = (d: DriverDetail) => {
+    warnDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم إصدار تحذير" }); } });
+  };
+
+  const handleRestore = (d: DriverDetail) => {
+    restoreDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم الاسترداد" }); } });
+  };
+
+  const handleBalance = () => {
+    if (!selectedDriver) return;
+    const amount = parseFloat(formBalance);
+    if (isNaN(amount) || amount === 0) { toast({ title: "مبلغ غير صحيح", variant: "destructive" }); return; }
+    updateBalance.mutate(
+      { id: selectedDriver.id, data: { amount } },
+      {
+        onSuccess: (d) => { refetch(); toast({ title: "تم تعديل الرصيد!", description: `الرصيد الجديد: ${d.balance.toFixed(2)} ر.س` }); setDialogMode(null); },
+        onError: (err: any) => toast({ title: err?.message ?? "فشل", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleRegenCode = (d: DriverDetail) => {
+    regenCode.mutate({ id: d.id }, {
+      onSuccess: (res) => { refetch(); toast({ title: "رمز جديد!", description: `الرمز: ${res.loginCode}` }); },
+      onError: (err: any) => toast({ title: err?.message ?? "فشل", variant: "destructive" }),
+    });
+  };
+
+  const STATUS_BADGE: Record<string, string> = {
+    ACTIVE: "bg-green-100 text-green-800 border-green-200",
+    BLOCKED: "bg-red-100 text-red-800 border-red-200",
+    WARNED: "bg-amber-100 text-amber-800 border-amber-200",
+    SUSPENDED: "bg-gray-100 text-gray-700 border-gray-200",
+  };
+  const STATUS_LABEL: Record<string, string> = {
+    ACTIVE: "نشط", BLOCKED: "محظور", WARNED: "محذّر", SUSPENDED: "موقوف",
+  };
+
   return (
     <Layout role="admin">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black">السائقون</h1>
-        <p className="text-muted-foreground text-sm mt-1">إدارة حسابات السائقين وأرصدتهم</p>
-      </div>
-
-      {isLoading && (
-        <div className="text-center py-16 text-muted-foreground">جاري تحميل السائقين...</div>
-      )}
-
-      {!isLoading && (!drivers || drivers.length === 0) && (
-        <div className="text-center py-20 border-2 border-dashed rounded-sm">
-          <p className="font-bold">لا يوجد سائقون مسجّلون</p>
-          <p className="text-muted-foreground text-sm mt-1">يسجّل السائقون عبر بوابة السائق بإدخال أسمائهم</p>
+      <div dir="rtl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-black">السائقون</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">إدارة حسابات السائقين</p>
+          </div>
+          <Button className="font-bold" onClick={openCreate}>
+            <PlusCircle size={16} className="ml-1" /> إضافة سائق
+          </Button>
         </div>
-      )}
 
-      {drivers && drivers.length > 0 && (
-        <div className="border rounded-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-bold text-xs">رقم</TableHead>
-                <TableHead className="font-bold text-xs">الاسم</TableHead>
-                <TableHead className="font-bold text-xs">الرصيد</TableHead>
-                <TableHead className="font-bold text-xs">نوع السيارة</TableHead>
-                <TableHead className="font-bold text-xs">الجنسية</TableHead>
-                <TableHead className="font-bold text-xs">إجراء</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {drivers.map((driver) => (
-                <TableRow key={driver.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="text-xs text-muted-foreground">#{driver.id}</TableCell>
-                  <TableCell className="font-bold">{driver.name}</TableCell>
-                  <TableCell>
-                    <span className={`font-bold ${driver.balance >= 50 ? "text-green-700" : "text-red-600"}`} dir="ltr">
-                      {driver.balance.toFixed(2)} ر.س
-                    </span>
-                    {driver.balance < 50 && (
-                      <span className="mr-2 text-xs text-red-500">(أقل من الحد)</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">{driver.carType ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{driver.nationality ?? "—"}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="font-bold text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-                      onClick={() => {
-                        setSelectedDriver({ id: driver.id, name: driver.name });
-                        setAmount("");
-                      }}
-                    >
-                      <PlusCircle size={12} className="ml-1" /> شحن رصيد
+        {isLoading && <div className="text-center py-16 text-muted-foreground">جاري التحميل...</div>}
+
+        {!isLoading && (!drivers || drivers.length === 0) && (
+          <div className="text-center py-20 border-2 border-dashed rounded-md">
+            <p className="font-bold">لا يوجد سائقون</p>
+            <Button className="mt-4 font-bold" onClick={openCreate}>إضافة أول سائق</Button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3">
+          {drivers?.map((d) => (
+            <Card key={d.id} className="border-2">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <p className="font-black text-base">{d.name}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded border font-bold ${STATUS_BADGE[d.status] ?? ""}`}>
+                        {STATUS_LABEL[d.status] ?? d.status}
+                      </span>
+                      {d.warningCount > 0 && (
+                        <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-bold">
+                          {d.warningCount} تحذير
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span dir="ltr">{d.mobile}</span>
+                      <span>رصيد: <strong dir="ltr">{d.balance.toFixed(2)} ر.س</strong></span>
+                      {d.carType && <span>{d.carType}</span>}
+                      <span className="font-mono bg-muted px-1.5 py-0.5 rounded">رمز: {d.loginCode}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 shrink-0">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(d)} title="تعديل">
+                      <Pencil size={13} />
                     </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <Button size="sm" variant="outline" onClick={() => openBalance(d)} title="تعديل الرصيد">
+                      <Banknote size={13} />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleRegenCode(d)} title="رمز جديد">
+                      <RefreshCw size={13} />
+                    </Button>
+                    {d.status === "ACTIVE" || d.status === "WARNED" ? (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => handleWarn(d)} title="تحذير" className="text-amber-600 border-amber-300 hover:bg-amber-50">
+                          <AlertTriangle size={13} />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleBlock(d)} title="حظر" className="text-destructive border-destructive/30 hover:bg-destructive/5">
+                          <ShieldOff size={13} />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={() => handleUnblock(d)} title="رفع الحظر" className="text-green-600 border-green-300 hover:bg-green-50">
+                        <ShieldCheck size={13} />
+                      </Button>
+                    )}
+                    {d.warningCount > 0 && (
+                      <Button size="sm" variant="outline" onClick={() => handleRestore(d)} title="استرداد" className="text-blue-600 border-blue-300 hover:bg-blue-50">
+                        استرداد
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" onClick={() => handleDelete(d)} title="حذف" className="text-destructive border-destructive/30 hover:bg-destructive/5">
+                      <Trash2 size={13} />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      )}
 
-      <Dialog open={!!selectedDriver} onOpenChange={(open) => { if (!open) setSelectedDriver(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-black">شحن الرصيد</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              إضافة رصيد إلى حساب <strong className="text-foreground">{selectedDriver?.name}</strong>
-            </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="amount" className="font-bold text-xs">المبلغ (ر.س)</Label>
-              <div className="relative">
-                <Banknote size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="amount"
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="100"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="pr-8"
-                  dir="ltr"
-                  onKeyDown={(e) => { if (e.key === "Enter") handleAddBalance(); }}
-                />
+        <Dialog open={dialogMode === "create" || dialogMode === "edit"} onOpenChange={(o) => !o && setDialogMode(null)}>
+          <DialogContent dir="rtl">
+            <DialogHeader>
+              <DialogTitle>{dialogMode === "create" ? "إضافة سائق جديد" : "تعديل بيانات السائق"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="font-bold text-xs">الاسم الكامل</Label>
+                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم السائق" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="font-bold text-xs">رقم الجوال</Label>
+                <Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="font-bold text-xs">معلومات المركبة (اختياري)</Label>
+                <Input value={formCar} onChange={(e) => setFormCar(e.target.value)} placeholder="مثال: تويوتا كامري 2022" />
               </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedDriver(null)}>إلغاء</Button>
-            <Button
-              onClick={handleAddBalance}
-              disabled={addBalance.isPending}
-              className="font-bold"
-            >
-              {addBalance.isPending ? "جاري الشحن..." : "شحن الرصيد"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="gap-2 flex-row-reverse">
+              <Button onClick={dialogMode === "create" ? handleCreate : handleEdit} disabled={!formName.trim() || !formMobile.trim() || createDriver.isPending || updateDriver.isPending} className="font-bold">
+                {dialogMode === "create" ? "إضافة" : "حفظ"}
+              </Button>
+              <Button variant="outline" onClick={() => setDialogMode(null)}>إلغاء</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={dialogMode === "balance"} onOpenChange={(o) => !o && setDialogMode(null)}>
+          <DialogContent dir="rtl">
+            <DialogHeader>
+              <DialogTitle>تعديل رصيد {selectedDriver?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">الرصيد الحالي: <strong dir="ltr">{selectedDriver?.balance.toFixed(2)} ر.س</strong></p>
+              <Label className="font-bold text-xs">المبلغ (+ إيداع / - خصم)</Label>
+              <Input value={formBalance} onChange={(e) => setFormBalance(e.target.value)} placeholder="مثال: 100 أو -50" type="number" step="0.01" dir="ltr" />
+            </div>
+            <DialogFooter className="gap-2 flex-row-reverse">
+              <Button onClick={handleBalance} disabled={!formBalance || updateBalance.isPending} className="font-bold">تأكيد</Button>
+              <Button variant="outline" onClick={() => setDialogMode(null)}>إلغاء</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
 }
