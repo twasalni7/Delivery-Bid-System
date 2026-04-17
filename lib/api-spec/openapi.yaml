@@ -450,6 +450,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminStats"
 
+  /admin/analytics:
+    get:
+      operationId: getAdminAnalytics
+      tags: [admin]
+      summary: Get admin dashboard analytics (admin only)
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAnalytics"
+
   /admin/drivers:
     get:
       operationId: adminListDrivers
@@ -1164,3 +1177,60 @@ components:
         - totalDrivers
         - totalOffers
         - totalClients
+
+    MonthlyRequestPoint:
+      type: object
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+        count:
+          type: integer
+      required:
+        - year
+        - month
+        - count
+
+    RequestStatusSplit:
+      type: object
+      properties:
+        selected:
+          type: integer
+        open:
+          type: integer
+      required:
+        - selected
+        - open
+
+    TopDriver:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        acceptedBids:
+          type: integer
+      required:
+        - id
+        - name
+        - acceptedBids
+
+    AdminAnalytics:
+      type: object
+      properties:
+        monthlyRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyRequestPoint"
+        requestStatusSplit:
+          $ref: "#/components/schemas/RequestStatusSplit"
+        topDrivers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopDriver"
+      required:
+        - monthlyRequests
+        - requestStatusSplit
+        - topDrivers

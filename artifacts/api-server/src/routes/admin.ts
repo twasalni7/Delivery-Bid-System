@@ -7,7 +7,7 @@ import {
   adminsTable,
   clientsTable,
 } from "@workspace/db";
-import { eq, count, ne } from "drizzle-orm";
+import { eq, count, ne, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
 
@@ -73,6 +73,64 @@ router.get("/stats", async (_req, res) => {
     totalDrivers: Number(totalDriversResult.count),
     totalOffers: Number(totalOffersResult.count),
     totalClients: Number(totalClientsResult.count),
+  });
+});
+
+router.get("/analytics", async (_req, res) => {
+  const monthlyRequests = await db
+    .select({
+      year: sql<number>`EXTRACT(year FROM ${requestsTable.createdAt})::int`,
+      month: sql<number>`EXTRACT(month FROM ${requestsTable.createdAt})::int`,
+      count: count(),
+    })
+    .from(requestsTable)
+    .where(sql`${requestsTable.createdAt} > NOW() - INTERVAL '12 months'`)
+    .groupBy(
+      sql`EXTRACT(year FROM ${requestsTable.createdAt})`,
+      sql`EXTRACT(month FROM ${requestsTable.createdAt})`
+    )
+    .orderBy(
+      sql`EXTRACT(year FROM ${requestsTable.createdAt})`,
+      sql`EXTRACT(month FROM ${requestsTable.createdAt})`
+    );
+
+  const topDrivers = await db
+    .select({
+      id: driversTable.id,
+      name: driversTable.name,
+      acceptedBids: count(requestsTable.id),
+    })
+    .from(driversTable)
+    .innerJoin(requestsTable, eq(requestsTable.selectedDriverId, driversTable.id))
+    .groupBy(driversTable.id, driversTable.name)
+    .orderBy(desc(count(requestsTable.id)))
+    .limit(10);
+
+  const [openCount] = await db
+    .select({ count: count() })
+    .from(requestsTable)
+    .where(eq(requestsTable.status, "OPEN"));
+
+  const [selectedCount] = await db
+    .select({ count: count() })
+    .from(requestsTable)
+    .where(ne(requestsTable.status, "OPEN"));
+
+  res.json({
+    monthlyRequests: monthlyRequests.map((r) => ({
+      year: r.year,
+      month: r.month,
+      count: Number(r.count),
+    })),
+    requestStatusSplit: {
+      selected: Number(selectedCount.count),
+      open: Number(openCount.count),
+    },
+    topDrivers: topDrivers.map((d) => ({
+      id: d.id,
+      name: d.name,
+      acceptedBids: Number(d.acceptedBids),
+    })),
   });
 });
 

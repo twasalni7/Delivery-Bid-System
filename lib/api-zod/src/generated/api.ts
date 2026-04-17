@@ -532,6 +532,30 @@ export const GetAdminStatsResponse = zod.object({
 });
 
 /**
+ * @summary Get admin dashboard analytics (admin only)
+ */
+export const GetAdminAnalyticsResponse = zod.object({
+  monthlyRequests: zod.array(
+    zod.object({
+      year: zod.number(),
+      month: zod.number(),
+      count: zod.number(),
+    }),
+  ),
+  requestStatusSplit: zod.object({
+    selected: zod.number(),
+    open: zod.number(),
+  }),
+  topDrivers: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      acceptedBids: zod.number(),
+    }),
+  ),
+});
+
+/**
  * @summary List all drivers with full details (admin only)
  */
 export const AdminListDriversResponseItem = zod.object({

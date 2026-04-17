@@ -18,6 +18,7 @@ import type {
 
 import type {
   AddBalanceBody,
+  AdminAnalytics,
   AdminCreateDriverBody,
   AdminLoginBody,
   AdminRegenerateDriverCode200,
@@ -1951,6 +1952,81 @@ export function useGetAdminStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAdminStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get admin dashboard analytics (admin only)
+ */
+export const getGetAdminAnalyticsUrl = () => {
+  return `/api/admin/analytics`;
+};
+
+export const getAdminAnalytics = async (
+  options?: RequestInit,
+): Promise<AdminAnalytics> => {
+  return customFetch<AdminAnalytics>(getGetAdminAnalyticsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminAnalyticsQueryKey = () => {
+  return [`/api/admin/analytics`] as const;
+};
+
+export const getGetAdminAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminAnalytics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminAnalyticsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAdminAnalytics>>
+  > = ({ signal }) => getAdminAnalytics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminAnalytics>>
+>;
+export type GetAdminAnalyticsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get admin dashboard analytics (admin only)
+ */
+
+export function useGetAdminAnalytics<
+  TData = Awaited<ReturnType<typeof getAdminAnalytics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminAnalyticsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

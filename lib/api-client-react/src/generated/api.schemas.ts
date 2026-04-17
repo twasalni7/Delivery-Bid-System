@@ -236,6 +236,29 @@ export interface AdminStats {
   totalClients: number;
 }
 
+export interface MonthlyRequestPoint {
+  year: number;
+  month: number;
+  count: number;
+}
+
+export interface RequestStatusSplit {
+  selected: number;
+  open: number;
+}
+
+export interface TopDriver {
+  id: number;
+  name: string;
+  acceptedBids: number;
+}
+
+export interface AdminAnalytics {
+  monthlyRequests: MonthlyRequestPoint[];
+  requestStatusSplit: RequestStatusSplit;
+  topDrivers: TopDriver[];
+}
+
 export type ListRequestsParams = {
   status?: ListRequestsStatus;
 };
