@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useListRequests, useAdminUpdateRequest, useAdminDeleteRequest, getListRequestsQueryKey } from "@workspace/api-client-react";
+import { useListRequests, useAdminUpdateRequest, useAdminDeleteRequest, getListRequestsQueryKey, UpdateStatusBodyStatus } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,10 +41,10 @@ export default function AdminRequests() {
   const handleSave = () => {
     if (!editDialog) return;
     updateRequest.mutate(
-      { id: editDialog.id, data: { status: editStatus as any } },
+      { id: editDialog.id, data: { status: editStatus as UpdateStatusBodyStatus } },
       {
         onSuccess: () => { refetch(); toast({ title: "تم التحديث!" }); setEditDialog(null); },
-        onError: (err: any) => toast({ title: err?.message ?? "فشل التحديث", variant: "destructive" }),
+        onError: (err: Error) => toast({ title: err.message ?? "فشل التحديث", variant: "destructive" }),
       }
     );
   };
@@ -55,7 +55,7 @@ export default function AdminRequests() {
       { id: req.id },
       {
         onSuccess: () => { refetch(); toast({ title: "تم الحذف!" }); },
-        onError: (err: any) => toast({ title: err?.message ?? "فشل الحذف", variant: "destructive" }),
+        onError: (err: Error) => toast({ title: err.message ?? "فشل الحذف", variant: "destructive" }),
       }
     );
   };

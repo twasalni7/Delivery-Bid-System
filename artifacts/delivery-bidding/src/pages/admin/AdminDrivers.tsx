@@ -46,17 +46,21 @@ export default function AdminDrivers() {
   const [formName, setFormName] = useState("");
   const [formMobile, setFormMobile] = useState("");
   const [formCar, setFormCar] = useState("");
+  const [formNationality, setFormNationality] = useState("");
+  const [formAge, setFormAge] = useState("");
+  const [formNationalId, setFormNationalId] = useState("");
   const [formBalance, setFormBalance] = useState("");
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: getAdminListDriversQueryKey() });
 
   const openCreate = () => {
-    setFormName(""); setFormMobile(""); setFormCar(""); setFormBalance("");
+    setFormName(""); setFormMobile(""); setFormCar(""); setFormNationality(""); setFormAge(""); setFormNationalId(""); setFormBalance("");
     setSelectedDriver(null); setDialogMode("create");
   };
 
   const openEdit = (d: DriverDetail) => {
-    setSelectedDriver(d); setFormName(d.name); setFormMobile(d.mobile); setFormCar(d.carType ?? "");
+    setSelectedDriver(d); setFormName(d.name); setFormMobile(d.mobile ?? ""); setFormCar(d.carType ?? "");
+    setFormNationality(d.nationality ?? ""); setFormAge(d.age ? String(d.age) : ""); setFormNationalId(d.nationalId ?? "");
     setDialogMode("edit");
   };
 
@@ -66,14 +70,26 @@ export default function AdminDrivers() {
 
   const handleCreate = () => {
     createDriver.mutate(
-      { data: { name: formName.trim(), mobile: formMobile.trim(), carType: formCar.trim() || undefined } },
+      {
+        data: {
+          name: formName.trim(),
+          mobile: formMobile.trim(),
+          carType: formCar.trim() || undefined,
+          nationality: formNationality.trim() || undefined,
+          age: formAge ? parseInt(formAge) : undefined,
+          nationalId: formNationalId.trim() || undefined,
+        },
+      },
       {
         onSuccess: (data) => {
           refetch();
           toast({ title: `تم إنشاء السائق!`, description: `رمز الدخول: ${data.loginCode}` });
           setDialogMode(null);
         },
-        onError: (err: any) => toast({ title: err?.message ?? "فشل الإنشاء", variant: "destructive" }),
+        onError: (err: unknown) => {
+          const message = err instanceof Error ? err.message : "فشل الإنشاء";
+          toast({ title: message, variant: "destructive" });
+        },
       }
     );
   };
@@ -81,10 +97,23 @@ export default function AdminDrivers() {
   const handleEdit = () => {
     if (!selectedDriver) return;
     updateDriver.mutate(
-      { id: selectedDriver.id, data: { name: formName.trim(), mobile: formMobile.trim(), carType: formCar.trim() || undefined } },
+      {
+        id: selectedDriver.id,
+        data: {
+          name: formName.trim(),
+          mobile: formMobile.trim(),
+          carType: formCar.trim() || undefined,
+          nationality: formNationality.trim() || undefined,
+          age: formAge ? parseInt(formAge) : undefined,
+          nationalId: formNationalId.trim() || undefined,
+        },
+      },
       {
         onSuccess: () => { refetch(); toast({ title: "تم التحديث!" }); setDialogMode(null); },
-        onError: (err: any) => toast({ title: err?.message ?? "فشل التحديث", variant: "destructive" }),
+        onError: (err: unknown) => {
+          const message = err instanceof Error ? err.message : "فشل التحديث";
+          toast({ title: message, variant: "destructive" });
+        },
       }
     );
   };
@@ -95,7 +124,7 @@ export default function AdminDrivers() {
       { id: d.id },
       {
         onSuccess: () => { refetch(); toast({ title: "تم الحذف!" }); },
-        onError: (err: any) => toast({ title: err?.message ?? "فشل الحذف", variant: "destructive" }),
+        onError: (err: Error) => toast({ title: err.message ?? "فشل الحذف", variant: "destructive" }),
       }
     );
   };
@@ -124,7 +153,7 @@ export default function AdminDrivers() {
       { id: selectedDriver.id, data: { amount } },
       {
         onSuccess: (d) => { refetch(); toast({ title: "تم تعديل الرصيد!", description: `الرصيد الجديد: ${d.balance.toFixed(2)} ر.س` }); setDialogMode(null); },
-        onError: (err: any) => toast({ title: err?.message ?? "فشل", variant: "destructive" }),
+        onError: (err: Error) => toast({ title: err.message ?? "فشل", variant: "destructive" }),
       }
     );
   };
@@ -132,7 +161,7 @@ export default function AdminDrivers() {
   const handleRegenCode = (d: DriverDetail) => {
     regenCode.mutate({ id: d.id }, {
       onSuccess: (res) => { refetch(); toast({ title: "رمز جديد!", description: `الرمز: ${res.loginCode}` }); },
-      onError: (err: any) => toast({ title: err?.message ?? "فشل", variant: "destructive" }),
+      onError: (err: Error) => toast({ title: err.message ?? "فشل", variant: "destructive" }),
     });
   };
 
@@ -202,7 +231,7 @@ export default function AdminDrivers() {
                     <Button size="sm" variant="outline" onClick={() => handleRegenCode(d)} title="رمز جديد">
                       <RefreshCw size={13} />
                     </Button>
-                    {d.status === "ACTIVE" || d.status === "WARNED" ? (
+                    {d.status === "ACTIVE" ? (
                       <>
                         <Button size="sm" variant="outline" onClick={() => handleWarn(d)} title="تحذير" className="text-amber-600 border-amber-300 hover:bg-amber-50">
                           <AlertTriangle size={13} />
@@ -237,17 +266,33 @@ export default function AdminDrivers() {
               <DialogTitle>{dialogMode === "create" ? "إضافة سائق جديد" : "تعديل بيانات السائق"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="font-bold text-xs">الاسم الكامل</Label>
-                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم السائق" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="font-bold text-xs">رقم الجوال</Label>
-                <Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="font-bold text-xs">معلومات المركبة (اختياري)</Label>
-                <Input value={formCar} onChange={(e) => setFormCar(e.target.value)} placeholder="مثال: تويوتا كامري 2022" />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-xs">الاسم الكامل</Label>
+                  <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم السائق" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-xs">رقم الجوال</Label>
+                  <Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs">الجنسية (اختياري)</Label>
+                    <Input value={formNationality} onChange={(e) => setFormNationality(e.target.value)} placeholder="سعودي" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs">العمر (اختياري)</Label>
+                    <Input type="number" min="18" max="70" value={formAge} onChange={(e) => setFormAge(e.target.value)} placeholder="35" dir="ltr" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-xs">رقم الهوية (اختياري)</Label>
+                  <Input value={formNationalId} onChange={(e) => setFormNationalId(e.target.value)} placeholder="10xxxxxxxxx" dir="ltr" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-xs">نوع المركبة (اختياري)</Label>
+                  <Input value={formCar} onChange={(e) => setFormCar(e.target.value)} placeholder="مثال: تويوتا كامري 2022" />
+                </div>
               </div>
             </div>
             <DialogFooter className="gap-2 flex-row-reverse">

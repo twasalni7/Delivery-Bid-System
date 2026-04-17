@@ -29,8 +29,8 @@ export default function AdminLoginPage() {
           await refetch();
           setLocation("/admin");
         },
-        onError: (err: any) => {
-          toast({ title: err?.message ?? "رمز الدخول غير صحيح", variant: "destructive" });
+        onError: (err: Error) => {
+          toast({ title: err.message ?? "رمز الدخول غير صحيح", variant: "destructive" });
         },
       }
     );

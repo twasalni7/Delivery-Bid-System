@@ -18,7 +18,7 @@ export default function SubmitOffer() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: request, isLoading } = useGetRequest(requestId, { query: { enabled: !!requestId } });
+  const { data: request, isLoading } = useGetRequest(requestId, { query: { queryKey: getGetRequestQueryKey(requestId), enabled: !!requestId } });
   const createOffer = useCreateOffer();
 
   const [price, setPrice] = useState("");
@@ -40,8 +40,8 @@ export default function SubmitOffer() {
           toast({ title: "تم تقديم العرض بنجاح!" });
           setLocation("/driver/dashboard");
         },
-        onError: (err: any) => {
-          toast({ title: (err as any)?.message ?? "فشل تقديم العرض", variant: "destructive" });
+        onError: (err: Error) => {
+          toast({ title: err.message ?? "فشل تقديم العرض", variant: "destructive" });
         },
       }
     );

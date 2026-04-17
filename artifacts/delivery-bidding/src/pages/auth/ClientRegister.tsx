@@ -37,8 +37,8 @@ export default function ClientRegister() {
           await refetch();
           setLocation("/client");
         },
-        onError: (err: any) => {
-          toast({ title: err?.message ?? "فشل إنشاء الحساب", variant: "destructive" });
+        onError: (err: Error) => {
+          toast({ title: err.message ?? "فشل إنشاء الحساب", variant: "destructive" });
         },
       }
     );

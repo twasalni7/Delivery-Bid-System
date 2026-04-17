@@ -30,7 +30,6 @@ export default function CreateRequest() {
   const [numberOfPeople, setNumberOfPeople] = useState("1");
   const [workingDaysPerWeek, setWorkingDaysPerWeek] = useState("5");
   const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
 
   const canProceedStep1 = homeLocation.trim() && workLocation.trim();
   const canProceedStep2 = morningTime && eveningTime;
@@ -47,7 +46,6 @@ export default function CreateRequest() {
           workingDaysPerWeek: parseInt(workingDaysPerWeek) || 5,
           morningTime,
           eveningTime,
-          notes: notes.trim() || undefined,
         },
       },
       {
@@ -56,8 +54,8 @@ export default function CreateRequest() {
           toast({ title: "تم إضافة الطلب!", description: `طلب الدوام رقم #${req.id} مفتوح الآن.` });
           setLocation(`/client/request/${req.id}`);
         },
-        onError: (err: any) => {
-          toast({ title: (err as any)?.message ?? "فشل إضافة الطلب", variant: "destructive" });
+        onError: (err: Error) => {
+          toast({ title: err.message ?? "فشل إضافة الطلب", variant: "destructive" });
         },
       }
     );
@@ -160,10 +158,6 @@ export default function CreateRequest() {
                   <Label htmlFor="phone" className="font-bold text-xs">رقم الجوال للتواصل</Label>
                   <Input id="phone" type="tel" placeholder="05xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} dir="ltr" />
                   <p className="text-xs text-muted-foreground">يُخفى عن السائقين حتى يتم اختيار أحدهم</p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="notes" className="font-bold text-xs">ملاحظات (اختياري)</Label>
-                  <Input id="notes" placeholder="أي تفاصيل إضافية..." value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(2)} className="flex-1"><ArrowRight size={16} className="ml-1" /> السابق</Button>

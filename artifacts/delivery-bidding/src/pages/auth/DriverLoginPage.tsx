@@ -31,8 +31,8 @@ export default function DriverLoginPage() {
           await refetch();
           setLocation("/driver/dashboard");
         },
-        onError: (err: any) => {
-          toast({ title: err?.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" });
+        onError: (err: Error) => {
+          toast({ title: err.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" });
         },
       }
     );

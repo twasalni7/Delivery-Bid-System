@@ -30,21 +30,23 @@ export default function AdminOffers() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="text-xs text-muted-foreground font-mono">طلب #{offer.requestId}</span>
-                      {offer.isSelected && (
-                        <span className="text-xs bg-green-100 text-green-800 border border-green-300 px-2 py-0.5 rounded font-bold">محدد</span>
-                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap text-sm">
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <User size={13} className="text-primary" />
-                        <span>{offer.driverName ?? `سائق #${offer.driverId}`}</span>
+                        <span>{offer.driver?.name ?? `سائق #${offer.driverId}`}</span>
                       </div>
                       <div className="flex items-center gap-1.5 font-bold text-primary">
                         <Banknote size={13} />
-                        <span dir="ltr">{offer.monthlyPrice?.toFixed(2)} ر.س/شهر</span>
+                        <span dir="ltr">{offer.price.toFixed(2)} ر.س/شهر</span>
                       </div>
+                      {offer.carType && (
+                        <span className="text-xs text-muted-foreground">{offer.carType}</span>
+                      )}
+                      {offer.nationality && (
+                        <span className="text-xs text-muted-foreground">{offer.nationality}</span>
+                      )}
                     </div>
-                    {offer.notes && <p className="text-xs text-muted-foreground mt-1">{offer.notes}</p>}
                   </div>
                 </div>
               </CardContent>

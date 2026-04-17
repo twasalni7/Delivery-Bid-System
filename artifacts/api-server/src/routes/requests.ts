@@ -6,7 +6,7 @@ import {
   offersTable,
   transactionsTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
   CreateRequestBody,
   UpdateRequestStatusBody,
@@ -85,18 +85,15 @@ function formatRequest(
 router.get("/", async (req, res) => {
   const parsed = ListRequestsQueryParams.safeParse(req.query);
   const status = parsed.success ? parsed.data.status : undefined;
+  const sessionUser = req.session?.user;
+  const isClient = sessionUser?.role === "client";
 
-  const rows = status
-    ? await db
-        .select()
-        .from(requestsTable)
-        .where(
-          eq(
-            requestsTable.status,
-            status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED"
-          )
-        )
-        .orderBy(requestsTable.createdAt)
+  const conditions = [];
+  if (status) conditions.push(eq(requestsTable.status, status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED"));
+  if (isClient) conditions.push(eq(requestsTable.clientId, sessionUser!.id));
+
+  const rows = conditions.length > 0
+    ? await db.select().from(requestsTable).where(and(...conditions)).orderBy(requestsTable.createdAt)
     : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
 
   const results = await Promise.all(

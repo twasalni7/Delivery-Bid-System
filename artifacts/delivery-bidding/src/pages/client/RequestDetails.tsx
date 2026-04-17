@@ -24,8 +24,8 @@ export default function RequestDetails() {
   const id = parseInt(params?.id ?? "0");
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: request, isLoading: loadingReq } = useGetRequest(id, { query: { enabled: !!id } });
-  const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, { query: { enabled: !!id } });
+  const { data: request, isLoading: loadingReq } = useGetRequest(id, { query: { queryKey: getGetRequestQueryKey(id), enabled: !!id } });
+  const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, { query: { queryKey: getGetRequestOffersQueryKey(id), enabled: !!id } });
   const selectOffer = useSelectOffer();
 
   const handleSelect = (offerId: number) => {
@@ -37,8 +37,8 @@ export default function RequestDetails() {
           queryClient.invalidateQueries({ queryKey: getGetRequestOffersQueryKey(id) });
           toast({ title: "تم اختيار السائق بنجاح!" });
         },
-        onError: (err: any) => {
-          toast({ title: (err as any)?.message ?? "فشل الاختيار", variant: "destructive" });
+        onError: (err: Error) => {
+          toast({ title: err.message ?? "فشل الاختيار", variant: "destructive" });
         },
       }
     );

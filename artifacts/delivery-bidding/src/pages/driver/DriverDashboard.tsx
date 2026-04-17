@@ -1,17 +1,18 @@
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
-import { useListRequests, useGetDriverMe } from "@workspace/api-client-react";
+import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Banknote, MapPin, Clock, Users, ChevronLeft } from "lucide-react";
+import { AlertTriangle, Banknote, MapPin, Clock, Users, ChevronLeft, CheckCircle, Phone } from "lucide-react";
 
 export default function DriverDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { data: driver } = useGetDriverMe({ query: { enabled: !!user } });
-  const { data: requests, isLoading } = useListRequests({ status: "OPEN" });
+  const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
+  const { data: openRequests, isLoading } = useListRequests({ status: "OPEN" });
+  const { data: selectedRequests } = useListRequests({ status: "SELECTED" });
 
   useEffect(() => {
     if (!user) setLocation("/driver/login");
@@ -20,6 +21,7 @@ export default function DriverDashboard() {
   if (!user) return null;
 
   const hasEnoughBalance = driver ? driver.balance >= 50 : false;
+  const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === user.id) ?? [];
 
   return (
     <Layout role="driver">
@@ -58,9 +60,39 @@ export default function DriverDashboard() {
                 <CardTitle className="text-xs font-bold text-muted-foreground">طلبات مفتوحة</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-3">
-                <p className="text-lg font-black">{requests?.length ?? "—"}</p>
+                <p className="text-lg font-black">{openRequests?.length ?? "—"}</p>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {mySelectedJobs.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-lg font-black mb-3 text-green-700">🎉 تم اختيارك!</h2>
+            <div className="space-y-3">
+              {mySelectedJobs.map((req) => (
+                <div key={req.id} className="flex items-start gap-3 bg-green-50 border-2 border-green-300 rounded-md px-4 py-4">
+                  <CheckCircle size={20} className="text-green-600 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-green-800 text-sm mb-1">تم اختيارك لطلب #{req.id}</p>
+                    <div className="flex items-center gap-1.5 text-green-700 text-xs mb-1">
+                      <MapPin size={11} className="shrink-0" />
+                      <span className="truncate">{req.homeLocation} → {req.workLocation}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-green-700 text-xs" dir="ltr">
+                      <Clock size={11} className="shrink-0" />
+                      <span>{req.morningTime} – {req.eveningTime}</span>
+                    </div>
+                    {req.phone && (
+                      <div className="flex items-center gap-1.5 text-green-800 text-sm font-bold mt-2">
+                        <Phone size={13} className="shrink-0" />
+                        <span dir="ltr">{req.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -76,18 +108,20 @@ export default function DriverDashboard() {
           </div>
         )}
 
+        <h2 className="text-base font-black mb-3">الطلبات المتاحة</h2>
+
         {isLoading && <div className="text-center py-16 text-muted-foreground">جاري تحميل الطلبات...</div>}
 
-        {!isLoading && (!requests || requests.length === 0) && (
+        {!isLoading && (!openRequests || openRequests.length === 0) && (
           <div className="text-center py-16 border-2 border-dashed rounded-md">
             <p className="text-xl font-bold">لا توجد طلبات مفتوحة</p>
             <p className="text-muted-foreground text-sm mt-2">تحقق لاحقاً لعروض دوام جديدة</p>
           </div>
         )}
 
-        {requests && requests.length > 0 && (
+        {openRequests && openRequests.length > 0 && (
           <div className="grid grid-cols-1 gap-4">
-            {requests.map((req) => (
+            {openRequests.map((req) => (
               <Card key={req.id} className="border-2 hover:border-primary/50 transition-colors">
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-start justify-between gap-3">

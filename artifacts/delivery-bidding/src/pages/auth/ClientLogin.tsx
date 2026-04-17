@@ -31,8 +31,8 @@ export default function ClientLogin() {
           await refetch();
           setLocation("/client");
         },
-        onError: (err: any) => {
-          toast({ title: err?.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" });
+        onError: (err: Error) => {
+          toast({ title: err.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" });
         },
       }
     );

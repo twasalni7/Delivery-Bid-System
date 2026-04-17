@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { useGetMe, useLogout } from "@workspace/api-client-react";
+import { useGetMe, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
 import type { AuthUser } from "@workspace/api-client-react";
 
 interface AuthContextType {
@@ -14,7 +14,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(true);
   const { data: user, isLoading, isFetching, refetch: refetchQuery } = useGetMe({
-    query: { retry: false, enabled },
+    query: { queryKey: getGetMeQueryKey(), retry: false, enabled },
   });
   const logoutMutation = useLogout();
 
