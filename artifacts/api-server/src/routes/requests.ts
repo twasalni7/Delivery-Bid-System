@@ -18,11 +18,6 @@ import { getSessionUser } from "../lib/session";
 
 const router = Router();
 
-function maskPhone(phone: string): string {
-  if (phone.length <= 4) return "****";
-  return phone.slice(0, -4).replace(/./g, "*") + phone.slice(-4);
-}
-
 function canSeePhone(
   req: Request,
   r: typeof requestsTable.$inferSelect
@@ -73,7 +68,7 @@ function formatRequest(
     clientId: r.clientId,
     homeLocation: r.homeLocation,
     workLocation: r.workLocation,
-    phone: showPhone ? r.phone : maskPhone(r.phone),
+    phone: showPhone ? r.phone : null,
     phoneHidden: !showPhone,
     numberOfPeople: r.numberOfPeople,
     workingDaysPerWeek: r.workingDaysPerWeek,
@@ -230,7 +225,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
     return;
   }
 
-  if (request.clientId !== null && request.clientId !== clientId) {
+  if (request.clientId == null || request.clientId !== clientId) {
     res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
     return;
   }
