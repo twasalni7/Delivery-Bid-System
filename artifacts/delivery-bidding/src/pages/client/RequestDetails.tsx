@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useRoute, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey } from "@workspace/api-client-react";
@@ -5,7 +6,7 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle, Bell } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -19,13 +20,48 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-800 border-red-200",
 };
 
+const SEEN_KEY = (id: number) => `seen_offers_${id}`;
+
 export default function RequestDetails() {
   const [, params] = useRoute("/client/request/:id");
   const id = parseInt(params?.id ?? "0");
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: request, isLoading: loadingReq } = useGetRequest(id, { query: { queryKey: getGetRequestQueryKey(id), enabled: !!id } });
-  const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, { query: { queryKey: getGetRequestOffersQueryKey(id), enabled: !!id } });
+
+  const { data: request, isLoading: loadingReq } = useGetRequest(id, {
+    query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 30_000 },
+  });
+  const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, {
+    query: {
+      queryKey: getGetRequestOffersQueryKey(id),
+      enabled: !!id,
+      refetchInterval: 30_000,
+    },
+  });
+
+  const prevCountRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!offers || !id) return;
+
+    const currentCount = offers.length;
+    const storedSeen = parseInt(localStorage.getItem(SEEN_KEY(id)) ?? "-1", 10);
+
+    if (prevCountRef.current !== null && currentCount > prevCountRef.current) {
+      const newCount = currentCount - prevCountRef.current;
+      toast({
+        title: `وصل ${newCount} عرض جديد!`,
+        description: "تحقق من أحدث عروض السائقين أدناه.",
+      });
+    }
+
+    prevCountRef.current = currentCount;
+
+    if (currentCount > storedSeen) {
+      localStorage.setItem(SEEN_KEY(id), String(currentCount));
+    }
+  }, [offers, id, toast]);
+
   const selectOffer = useSelectOffer();
 
   const handleSelect = (offerId: number) => {
@@ -75,6 +111,12 @@ export default function RequestDetails() {
               {STATUS_LABELS[request.status] || request.status}
             </span>
           </div>
+          {isOpen && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1.5 rounded-md">
+              <Bell size={12} className="text-primary" />
+              يتجدد كل 30 ثانية
+            </div>
+          )}
         </div>
 
         <Card className="border-2 mb-6">
@@ -185,7 +227,7 @@ export default function RequestDetails() {
           {!loadingOffers && (!offers || offers.length === 0) && (
             <div className="text-center py-12 border-2 border-dashed rounded-md">
               <p className="font-bold">لا توجد عروض بعد</p>
-              <p className="text-muted-foreground text-sm mt-1">ستظهر عروض السائقين هنا</p>
+              <p className="text-muted-foreground text-sm mt-1">ستظهر عروض السائقين هنا تلقائياً</p>
             </div>
           )}
 

@@ -6,7 +6,7 @@ import {
   offersTable,
   transactionsTable,
 } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count, inArray } from "drizzle-orm";
 import {
   CreateRequestBody,
   UpdateRequestStatusBody,
@@ -96,15 +96,29 @@ router.get("/", async (req, res) => {
     ? await db.select().from(requestsTable).where(and(...conditions)).orderBy(requestsTable.createdAt)
     : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
 
+  const requestIds = rows.map((r) => r.id);
+  const offerCounts: Record<number, number> = {};
+  if (requestIds.length > 0) {
+    const countRows = await db
+      .select({ requestId: offersTable.requestId, total: count() })
+      .from(offersTable)
+      .where(inArray(offersTable.requestId, requestIds))
+      .groupBy(offersTable.requestId);
+    for (const row of countRows) {
+      if (row.requestId != null) offerCounts[row.requestId] = row.total;
+    }
+  }
+
   const results = await Promise.all(
     rows.map(async (r) => {
+      const offerCount = offerCounts[r.id] ?? 0;
       if (r.selectedDriverId) {
         const driver = await db.query.driversTable.findFirst({
           where: eq(driversTable.id, r.selectedDriverId),
         });
-        return formatRequest(req, r, driver);
+        return { ...formatRequest(req, r, driver), offerCount };
       }
-      return formatRequest(req, r, null);
+      return { ...formatRequest(req, r, null), offerCount };
     })
   );
 

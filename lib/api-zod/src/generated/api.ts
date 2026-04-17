@@ -235,6 +235,10 @@ export const ListRequestsResponseItem = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  offerCount: zod
+    .number()
+    .nullish()
+    .describe("number of offers submitted for this request"),
 });
 export const ListRequestsResponse = zod.array(ListRequestsResponseItem);
 
@@ -291,6 +295,10 @@ export const GetRequestResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  offerCount: zod
+    .number()
+    .nullish()
+    .describe("number of offers submitted for this request"),
 });
 
 /**
@@ -338,6 +346,10 @@ export const AdminUpdateRequestByPathResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  offerCount: zod
+    .number()
+    .nullish()
+    .describe("number of offers submitted for this request"),
 });
 
 /**
@@ -395,6 +407,10 @@ export const UpdateRequestStatusResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  offerCount: zod
+    .number()
+    .nullish()
+    .describe("number of offers submitted for this request"),
 });
 
 /**
@@ -441,6 +457,10 @@ export const SelectOfferResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  offerCount: zod
+    .number()
+    .nullish()
+    .describe("number of offers submitted for this request"),
 });
 
 /**
@@ -802,6 +822,10 @@ export const AdminListRequestsResponseItem = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  offerCount: zod
+    .number()
+    .nullish()
+    .describe("number of offers submitted for this request"),
 });
 export const AdminListRequestsResponse = zod.array(
   AdminListRequestsResponseItem,
@@ -852,6 +876,10 @@ export const AdminUpdateRequestResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  offerCount: zod
+    .number()
+    .nullish()
+    .describe("number of offers submitted for this request"),
 });
 
 /**
