@@ -148,6 +148,12 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
+  const sessionUser = getSessionUser(req);
+  if (sessionUser?.role === "client" && request.clientId !== sessionUser.id) {
+    res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
+    return;
+  }
+
   let driver = null;
   if (request.selectedDriverId) {
     driver = await db.query.driversTable.findFirst({

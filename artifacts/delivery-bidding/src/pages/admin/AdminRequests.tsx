@@ -24,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AdminRequests() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const { data: requests, isLoading } = useListRequests();
   const updateRequest = useAdminUpdateRequest();
   const deleteRequest = useAdminDeleteRequest();
@@ -32,6 +33,10 @@ export default function AdminRequests() {
   const [editStatus, setEditStatus] = useState("");
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+
+  const filteredRequests = statusFilter === "ALL"
+    ? requests
+    : requests?.filter((r) => r.status === statusFilter);
 
   const handleEdit = (req: CommuteRequest) => {
     setEditStatus(req.status);
@@ -63,21 +68,34 @@ export default function AdminRequests() {
   return (
     <Layout role="admin">
       <div dir="rtl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-black">الطلبات</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">إدارة طلبات الدوام الشهري</p>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1">
+            <h1 className="text-2xl font-black">الطلبات</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">إدارة طلبات الدوام الشهري</p>
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="كل الحالات" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">كل الحالات</SelectItem>
+              {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                <SelectItem key={val} value={val}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading && <div className="text-center py-16 text-muted-foreground">جاري التحميل...</div>}
 
-        {!isLoading && (!requests || requests.length === 0) && (
+        {!isLoading && (!filteredRequests || filteredRequests.length === 0) && (
           <div className="text-center py-20 border-2 border-dashed rounded-md">
-            <p className="font-bold">لا توجد طلبات</p>
+            <p className="font-bold">{statusFilter === "ALL" ? "لا توجد طلبات" : "لا توجد طلبات بهذه الحالة"}</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-3">
-          {requests?.map((req) => (
+          {filteredRequests?.map((req) => (
             <Card key={req.id} className="border-2">
               <CardContent className="pt-4 pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3">

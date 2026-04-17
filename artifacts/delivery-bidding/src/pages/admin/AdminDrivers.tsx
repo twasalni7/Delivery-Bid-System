@@ -8,7 +8,6 @@ import {
   useAdminBlockDriver,
   useAdminUnblockDriver,
   useAdminWarnDriver,
-  useAdminRestoreDriver,
   useAdminUpdateDriverBalance,
   useAdminRegenerateDriverCode,
   getAdminListDriversQueryKey,
@@ -37,7 +36,6 @@ export default function AdminDrivers() {
   const blockDriver = useAdminBlockDriver();
   const unblockDriver = useAdminUnblockDriver();
   const warnDriver = useAdminWarnDriver();
-  const restoreDriver = useAdminRestoreDriver();
   const updateBalance = useAdminUpdateDriverBalance();
   const regenCode = useAdminRegenerateDriverCode();
 
@@ -141,10 +139,6 @@ export default function AdminDrivers() {
     warnDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم إصدار تحذير" }); } });
   };
 
-  const handleRestore = (d: DriverDetail) => {
-    restoreDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم الاسترداد" }); } });
-  };
-
   const handleBalance = () => {
     if (!selectedDriver) return;
     const amount = parseFloat(formBalance);
@@ -231,7 +225,7 @@ export default function AdminDrivers() {
                     <Button size="sm" variant="outline" onClick={() => handleRegenCode(d)} title="رمز جديد">
                       <RefreshCw size={13} />
                     </Button>
-                    {d.status === "ACTIVE" ? (
+                    {d.status === "ACTIVE" && (
                       <>
                         <Button size="sm" variant="outline" onClick={() => handleWarn(d)} title="تحذير" className="text-amber-600 border-amber-300 hover:bg-amber-50">
                           <AlertTriangle size={13} />
@@ -240,14 +234,10 @@ export default function AdminDrivers() {
                           <ShieldOff size={13} />
                         </Button>
                       </>
-                    ) : (
+                    )}
+                    {d.status === "BLOCKED" && (
                       <Button size="sm" variant="outline" onClick={() => handleUnblock(d)} title="رفع الحظر" className="text-green-600 border-green-300 hover:bg-green-50">
                         <ShieldCheck size={13} />
-                      </Button>
-                    )}
-                    {d.warningCount > 0 && (
-                      <Button size="sm" variant="outline" onClick={() => handleRestore(d)} title="استرداد" className="text-blue-600 border-blue-300 hover:bg-blue-50">
-                        استرداد
                       </Button>
                     )}
                     <Button size="sm" variant="outline" onClick={() => handleDelete(d)} title="حذف" className="text-destructive border-destructive/30 hover:bg-destructive/5">
