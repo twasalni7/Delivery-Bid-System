@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useAdminListDrivers,
   useAdminCreateDriver,
@@ -8,6 +8,7 @@ import {
   useAdminBlockDriver,
   useAdminUnblockDriver,
   useAdminWarnDriver,
+  useAdminRestoreDriver,
   useAdminUpdateDriverBalance,
   useAdminRegenerateDriverCode,
   getAdminListDriversQueryKey,
@@ -21,7 +22,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import type { DriverDetail } from "@workspace/api-client-react";
 
 type DialogMode = "create" | "edit" | "balance" | "code" | null;
@@ -29,13 +30,20 @@ type DialogMode = "create" | "edit" | "balance" | "code" | null;
 export default function AdminDrivers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [showDeleted, setShowDeleted] = useState(false);
   const { data: drivers, isLoading } = useAdminListDrivers();
+  const { data: deletedDrivers, isLoading: loadingDeleted, refetch: refetchDeleted } = useQuery<DriverDetail[]>({
+    queryKey: ["admin-drivers-deleted"],
+    queryFn: () => fetch("/api/admin/drivers?status=DELETED", { credentials: "include" }).then((r) => r.json()),
+    enabled: showDeleted,
+  });
   const createDriver = useAdminCreateDriver();
   const updateDriver = useAdminUpdateDriver();
   const deleteDriver = useAdminDeleteDriver();
   const blockDriver = useAdminBlockDriver();
   const unblockDriver = useAdminUnblockDriver();
   const warnDriver = useAdminWarnDriver();
+  const restoreDriver = useAdminRestoreDriver();
   const updateBalance = useAdminUpdateDriverBalance();
   const regenCode = useAdminRegenerateDriverCode();
 
@@ -159,14 +167,24 @@ export default function AdminDrivers() {
     });
   };
 
+  const handleRestore = (d: DriverDetail) => {
+    restoreDriver.mutate({ id: d.id }, {
+      onSuccess: () => {
+        refetch();
+        void refetchDeleted();
+        toast({ title: "تم استرداد السائق وتفعيله" });
+      },
+      onError: (err: Error) => toast({ title: err.message ?? "فشل الاسترداد", variant: "destructive" }),
+    });
+  };
+
   const STATUS_BADGE: Record<string, string> = {
     ACTIVE: "bg-green-100 text-green-800 border-green-200",
     BLOCKED: "bg-red-100 text-red-800 border-red-200",
-    WARNED: "bg-amber-100 text-amber-800 border-amber-200",
-    SUSPENDED: "bg-gray-100 text-gray-700 border-gray-200",
+    DELETED: "bg-gray-100 text-gray-500 border-gray-200",
   };
   const STATUS_LABEL: Record<string, string> = {
-    ACTIVE: "نشط", BLOCKED: "محظور", WARNED: "محذّر", SUSPENDED: "موقوف",
+    ACTIVE: "نشط", BLOCKED: "محظور", DELETED: "محذوف",
   };
 
   return (
@@ -248,6 +266,51 @@ export default function AdminDrivers() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        <div className="mt-6">
+          <Button
+            variant="outline"
+            className="w-full text-muted-foreground text-sm"
+            onClick={() => setShowDeleted((p) => !p)}
+          >
+            {showDeleted ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+            {showDeleted ? "إخفاء السائقين المحذوفين" : "عرض السائقين المحذوفين"}
+          </Button>
+
+          {showDeleted && (
+            <div className="mt-3">
+              {loadingDeleted && <div className="text-center py-6 text-muted-foreground text-sm">جاري التحميل...</div>}
+              {!loadingDeleted && (!deletedDrivers || deletedDrivers.length === 0) && (
+                <div className="text-center py-8 border border-dashed rounded-md">
+                  <p className="text-sm text-muted-foreground">لا يوجد سائقون محذوفون</p>
+                </div>
+              )}
+              <div className="grid grid-cols-1 gap-2">
+                {deletedDrivers?.map((d) => (
+                  <Card key={d.id} className="border border-gray-200 bg-gray-50/50">
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-muted-foreground">{d.name}</p>
+                          <span dir="ltr" className="text-xs text-muted-foreground">{d.mobile}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRestore(d)}
+                          title="استرداد السائق"
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 shrink-0"
+                        >
+                          <RotateCcw size={13} className="ml-1" /> استرداد
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <Dialog open={dialogMode === "create" || dialogMode === "edit"} onOpenChange={(o) => !o && setDialogMode(null)}>

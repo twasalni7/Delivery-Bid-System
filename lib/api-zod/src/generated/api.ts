@@ -99,6 +99,10 @@ export const ListDriversResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
   balance: zod.number(),
+  mobile: zod
+    .string()
+    .nullish()
+    .describe("null when caller is not authorized to see it"),
   carType: zod.string().nullish(),
   nationality: zod.string().nullish(),
   status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -136,6 +140,10 @@ export const GetDriverResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
   balance: zod.number(),
+  mobile: zod
+    .string()
+    .nullish()
+    .describe("null when caller is not authorized to see it"),
   carType: zod.string().nullish(),
   nationality: zod.string().nullish(),
   status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -158,6 +166,10 @@ export const AddDriverBalanceResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
   balance: zod.number(),
+  mobile: zod
+    .string()
+    .nullish()
+    .describe("null when caller is not authorized to see it"),
   carType: zod.string().nullish(),
   nationality: zod.string().nullish(),
   status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -211,6 +223,10 @@ export const ListRequestsResponseItem = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -263,6 +279,10 @@ export const GetRequestResponse = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -306,6 +326,10 @@ export const AdminUpdateRequestByPathResponse = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -359,6 +383,10 @@ export const UpdateRequestStatusResponse = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -401,6 +429,10 @@ export const SelectOfferResponse = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -430,6 +462,10 @@ export const GetRequestOffersResponseItem = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -456,6 +492,10 @@ export const ListOffersResponseItem = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -726,6 +766,10 @@ export const AdminListRequestsResponseItem = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
@@ -772,6 +816,10 @@ export const AdminUpdateRequestResponse = zod.object({
       id: zod.number(),
       name: zod.string(),
       balance: zod.number(),
+      mobile: zod
+        .string()
+        .nullish()
+        .describe("null when caller is not authorized to see it"),
       carType: zod.string().nullish(),
       nationality: zod.string().nullish(),
       status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),

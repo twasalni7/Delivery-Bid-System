@@ -11,14 +11,13 @@ import { Trash2, Edit2, MapPin, Clock, Users } from "lucide-react";
 import type { CommuteRequest } from "@workspace/api-client-react";
 
 const STATUS_LABELS: Record<string, string> = {
-  OPEN: "مفتوح", SELECTED: "تم الاختيار", ACTIVE: "نشط", COMPLETED: "مكتمل", CANCELLED: "ملغى",
+  OPEN: "مفتوح", SELECTED: "تم الاختيار", ACTIVE: "نشط", COMPLETED: "مكتمل",
 };
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-800 border-blue-200",
   SELECTED: "bg-amber-100 text-amber-800 border-amber-200",
   ACTIVE: "bg-green-100 text-green-800 border-green-200",
   COMPLETED: "bg-gray-100 text-gray-700 border-gray-200",
-  CANCELLED: "bg-red-100 text-red-800 border-red-200",
 };
 
 export default function AdminRequests() {

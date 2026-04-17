@@ -856,6 +856,10 @@ components:
           type: string
         balance:
           type: number
+        mobile:
+          type: string
+          nullable: true
+          description: "null when caller is not authorized to see it"
         carType:
           type: string
           nullable: true

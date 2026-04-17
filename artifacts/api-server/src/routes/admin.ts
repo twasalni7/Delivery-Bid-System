@@ -76,11 +76,12 @@ router.get("/stats", async (_req, res) => {
   });
 });
 
-router.get("/drivers", async (_req, res) => {
+router.get("/drivers", async (req, res) => {
+  const showDeleted = req.query["status"] === "DELETED";
   const drivers = await db
     .select()
     .from(driversTable)
-    .where(ne(driversTable.status, "DELETED"))
+    .where(showDeleted ? eq(driversTable.status, "DELETED") : ne(driversTable.status, "DELETED"))
     .orderBy(driversTable.createdAt);
   res.json(
     drivers.map((d) => ({

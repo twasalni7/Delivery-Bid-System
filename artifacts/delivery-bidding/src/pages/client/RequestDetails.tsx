@@ -118,21 +118,45 @@ export default function RequestDetails() {
                   <p>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</p>
                 </div>
               </div>
-              {request.selectedDriver && (
+              {request.phone && (
                 <div className="flex items-start gap-2">
                   <Phone size={15} className="text-primary shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-xs text-muted-foreground mb-0.5">السائق المختار</p>
-                    <p className="font-bold text-green-700">{request.selectedDriver.name}</p>
-                    {!request.phoneHidden && request.phone && (
-                      <p dir="ltr" className="text-xs text-muted-foreground mt-0.5">{request.phone}</p>
-                    )}
+                    <p className="font-bold text-xs text-muted-foreground mb-0.5">رقم تواصلك</p>
+                    <p dir="ltr">{request.phone}</p>
                   </div>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE") && (
+          <Card className="border-2 border-green-300 bg-green-50/30 mb-6">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <CheckCircle size={18} className="text-green-700" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-green-800 mb-0.5">تم اختيار السائق</p>
+                  <p className="text-base font-black">{request.selectedDriver.name}</p>
+                  {request.selectedDriver.mobile ? (
+                    <a href={`tel:${request.selectedDriver.mobile}`} dir="ltr"
+                      className="inline-flex items-center gap-1.5 mt-1.5 text-sm font-bold text-primary hover:underline">
+                      <Phone size={14} /> {request.selectedDriver.mobile}
+                    </a>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">رقم الجوال غير متاح</p>
+                  )}
+                  {request.selectedDriver.carType && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{request.selectedDriver.carType}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div>
           <h2 className="text-lg font-black mb-4">

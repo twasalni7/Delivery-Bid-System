@@ -81,6 +81,8 @@ export interface Driver {
   id: number;
   name: string;
   balance: number;
+  /** null when caller is not authorized to see it */
+  mobile?: string | null;
   carType?: string | null;
   nationality?: string | null;
   status: DriverStatus;
