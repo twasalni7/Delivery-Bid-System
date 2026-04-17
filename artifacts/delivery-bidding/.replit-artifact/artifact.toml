@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Delivery Bidding System"
+version = "1.0.0"
+id = "artifacts/delivery-bidding"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26124
+
+[services.development]
+run = "pnpm --filter @workspace/delivery-bidding run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/delivery-bidding", "run", "build" ]
+publicDir = "artifacts/delivery-bidding/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26124"
+BASE_PATH = "/"

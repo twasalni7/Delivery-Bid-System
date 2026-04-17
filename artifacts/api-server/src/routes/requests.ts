@@ -1,0 +1,257 @@
+import { Router } from "express";
+import { db } from "@workspace/db";
+import {
+  requestsTable,
+  driversTable,
+  offersTable,
+  transactionsTable,
+} from "@workspace/db";
+import { eq } from "drizzle-orm";
+import {
+  CreateRequestBody,
+  UpdateRequestStatusBody,
+  SelectOfferBody,
+  ListRequestsQueryParams,
+} from "@workspace/api-zod";
+
+const router = Router();
+
+function formatDriver(d: typeof driversTable.$inferSelect) {
+  return {
+    id: d.id,
+    name: d.name,
+    balance: d.balance,
+    carType: d.carType,
+    nationality: d.nationality,
+    createdAt: d.createdAt?.toISOString(),
+  };
+}
+
+function formatRequest(
+  r: typeof requestsTable.$inferSelect,
+  driver?: typeof driversTable.$inferSelect | null
+) {
+  return {
+    id: r.id,
+    pickup: r.pickup,
+    dropoff: r.dropoff,
+    phone: r.phone,
+    status: r.status,
+    selectedDriverId: r.selectedDriverId,
+    selectedDriver: driver ? formatDriver(driver) : null,
+    createdAt: r.createdAt?.toISOString(),
+  };
+}
+
+router.get("/", async (req, res) => {
+  const parsed = ListRequestsQueryParams.safeParse(req.query);
+  const status = parsed.success ? parsed.data.status : undefined;
+
+  const rows = status
+    ? await db.select().from(requestsTable).where(eq(requestsTable.status, status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED")).orderBy(requestsTable.createdAt)
+    : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
+
+  const results = await Promise.all(
+    rows.map(async (r) => {
+      if (r.selectedDriverId) {
+        const driver = await db.query.driversTable.findFirst({
+          where: eq(driversTable.id, r.selectedDriverId),
+        });
+        return formatRequest(r, driver);
+      }
+      return formatRequest(r, null);
+    })
+  );
+
+  res.json(results);
+});
+
+router.post("/", async (req, res) => {
+  const parsed = CreateRequestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const [created] = await db
+    .insert(requestsTable)
+    .values({
+      ...parsed.data,
+      status: "OPEN",
+    })
+    .returning();
+
+  res.status(201).json(formatRequest(created, null));
+});
+
+router.get("/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const request = await db.query.requestsTable.findFirst({
+    where: eq(requestsTable.id, id),
+  });
+
+  if (!request) {
+    res.status(404).json({ error: "Request not found" });
+    return;
+  }
+
+  let driver = null;
+  if (request.selectedDriverId) {
+    driver = await db.query.driversTable.findFirst({
+      where: eq(driversTable.id, request.selectedDriverId),
+    });
+  }
+
+  res.json(formatRequest(request, driver));
+});
+
+router.patch("/:id/status", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const parsed = UpdateRequestStatusBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(requestsTable)
+    .set({ status: parsed.data.status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED" })
+    .where(eq(requestsTable.id, id))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "Request not found" });
+    return;
+  }
+
+  let driver = null;
+  if (updated.selectedDriverId) {
+    driver = await db.query.driversTable.findFirst({
+      where: eq(driversTable.id, updated.selectedDriverId),
+    });
+  }
+
+  res.json(formatRequest(updated, driver));
+});
+
+router.post("/:id/select-offer", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const parsed = SelectOfferBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const { offerId } = parsed.data;
+
+  const request = await db.query.requestsTable.findFirst({
+    where: eq(requestsTable.id, id),
+  });
+
+  if (!request) {
+    res.status(404).json({ error: "Request not found" });
+    return;
+  }
+
+  if (request.status !== "OPEN") {
+    res.status(400).json({ error: "Request is not open for offers" });
+    return;
+  }
+
+  const offer = await db.query.offersTable.findFirst({
+    where: eq(offersTable.id, offerId),
+  });
+
+  if (!offer || offer.requestId !== id) {
+    res.status(404).json({ error: "Offer not found for this request" });
+    return;
+  }
+
+  const driver = await db.query.driversTable.findFirst({
+    where: eq(driversTable.id, offer.driverId),
+  });
+
+  if (!driver) {
+    res.status(404).json({ error: "Driver not found" });
+    return;
+  }
+
+  if (driver.balance < 50) {
+    res.status(400).json({ error: "Driver has insufficient balance" });
+    return;
+  }
+
+  await db
+    .update(driversTable)
+    .set({ balance: driver.balance - 50 })
+    .where(eq(driversTable.id, driver.id));
+
+  await db.insert(transactionsTable).values({
+    driverId: driver.id,
+    amount: -50,
+    type: "DEBIT",
+  });
+
+  const [updated] = await db
+    .update(requestsTable)
+    .set({ status: "SELECTED", selectedDriverId: driver.id })
+    .where(eq(requestsTable.id, id))
+    .returning();
+
+  const updatedDriver = await db.query.driversTable.findFirst({
+    where: eq(driversTable.id, driver.id),
+  });
+
+  res.json(formatRequest(updated, updatedDriver));
+});
+
+router.get("/:id/offers", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const offers = await db
+    .select()
+    .from(offersTable)
+    .where(eq(offersTable.requestId, id))
+    .orderBy(offersTable.price);
+
+  const results = await Promise.all(
+    offers.map(async (o) => {
+      const driver = await db.query.driversTable.findFirst({
+        where: eq(driversTable.id, o.driverId),
+      });
+      return {
+        id: o.id,
+        driverId: o.driverId,
+        requestId: o.requestId,
+        price: o.price,
+        carType: o.carType,
+        nationality: o.nationality,
+        driver: driver ? formatDriver(driver) : null,
+        createdAt: o.createdAt?.toISOString(),
+      };
+    })
+  );
+
+  res.json(results);
+});
+
+export default router;

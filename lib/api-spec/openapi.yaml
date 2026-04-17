@@ -3,20 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Delivery Bidding System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: drivers
+    description: Driver operations
+  - name: requests
+    description: Delivery request operations
+  - name: offers
+    description: Offer operations
+  - name: admin
+    description: Admin operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +31,280 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /drivers/login:
+    post:
+      operationId: driverLogin
+      tags: [drivers]
+      summary: Login or register driver by name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverLoginBody"
+      responses:
+        "200":
+          description: Driver logged in or created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /drivers:
+    get:
+      operationId: listDrivers
+      tags: [drivers]
+      summary: List all drivers
+      responses:
+        "200":
+          description: List of drivers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Driver"
+
+  /drivers/{id}:
+    get:
+      operationId: getDriver
+      tags: [drivers]
+      summary: Get driver by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /drivers/{id}/balance:
+    patch:
+      operationId: addDriverBalance
+      tags: [drivers]
+      summary: Add balance to driver
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBalanceBody"
+      responses:
+        "200":
+          description: Updated driver
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /drivers/{id}/transactions:
+    get:
+      operationId: getDriverTransactions
+      tags: [drivers]
+      summary: Get driver transactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /requests:
+    get:
+      operationId: listRequests
+      tags: [requests]
+      summary: List delivery requests
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, SELECTED, ACTIVE, COMPLETED]
+      responses:
+        "200":
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeliveryRequest"
+    post:
+      operationId: createRequest
+      tags: [requests]
+      summary: Create a delivery request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRequestBody"
+      responses:
+        "201":
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequest"
+
+  /requests/{id}:
+    get:
+      operationId: getRequest
+      tags: [requests]
+      summary: Get request by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequest"
+
+  /requests/{id}/status:
+    patch:
+      operationId: updateRequestStatus
+      tags: [requests]
+      summary: Update request status (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusBody"
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequest"
+
+  /requests/{id}/select-offer:
+    post:
+      operationId: selectOffer
+      tags: [requests]
+      summary: Client selects an offer for their request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelectOfferBody"
+      responses:
+        "200":
+          description: Offer selected, driver assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequest"
+
+  /requests/{id}/offers:
+    get:
+      operationId: getRequestOffers
+      tags: [offers]
+      summary: Get all offers for a request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Offer"
+
+  /offers:
+    get:
+      operationId: listOffers
+      tags: [offers]
+      summary: List all offers (admin)
+      responses:
+        "200":
+          description: List of all offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Offer"
+    post:
+      operationId: createOffer
+      tags: [offers]
+      summary: Driver submits an offer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOfferBody"
+      responses:
+        "201":
+          description: Offer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin dashboard statistics
+      responses:
+        "200":
+          description: Statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +315,193 @@ components:
       required:
         - status
 
+    Driver:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        balance:
+          type: number
+        carType:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - balance
+
+    DriverLoginBody:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    AddBalanceBody:
+      type: object
+      properties:
+        amount:
+          type: number
+      required:
+        - amount
+
+    DeliveryRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        pickup:
+          type: string
+        dropoff:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, SELECTED, ACTIVE, COMPLETED]
+        selectedDriverId:
+          type: integer
+          nullable: true
+        selectedDriver:
+          $ref: "#/components/schemas/Driver"
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - pickup
+        - dropoff
+        - phone
+        - status
+
+    CreateRequestBody:
+      type: object
+      properties:
+        pickup:
+          type: string
+        dropoff:
+          type: string
+        phone:
+          type: string
+      required:
+        - pickup
+        - dropoff
+        - phone
+
+    UpdateStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [OPEN, SELECTED, ACTIVE, COMPLETED]
+      required:
+        - status
+
+    SelectOfferBody:
+      type: object
+      properties:
+        offerId:
+          type: integer
+      required:
+        - offerId
+
+    Offer:
+      type: object
+      properties:
+        id:
+          type: integer
+        driverId:
+          type: integer
+        requestId:
+          type: integer
+        price:
+          type: number
+        carType:
+          type: string
+        nationality:
+          type: string
+        driver:
+          $ref: "#/components/schemas/Driver"
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - driverId
+        - requestId
+        - price
+        - carType
+        - nationality
+
+    CreateOfferBody:
+      type: object
+      properties:
+        driverId:
+          type: integer
+        requestId:
+          type: integer
+        price:
+          type: number
+        carType:
+          type: string
+        nationality:
+          type: string
+      required:
+        - driverId
+        - requestId
+        - price
+        - carType
+        - nationality
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        driverId:
+          type: integer
+        amount:
+          type: number
+        type:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - driverId
+        - amount
+        - type
+
+    AdminStats:
+      type: object
+      properties:
+        totalRequests:
+          type: integer
+        openRequests:
+          type: integer
+        selectedRequests:
+          type: integer
+        activeRequests:
+          type: integer
+        completedRequests:
+          type: integer
+        totalDrivers:
+          type: integer
+        totalOffers:
+          type: integer
+      required:
+        - totalRequests
+        - openRequests
+        - selectedRequests
+        - activeRequests
+        - completedRequests
+        - totalDrivers
+        - totalOffers
