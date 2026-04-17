@@ -47,6 +47,7 @@ function formatDriver(
     nationality: d.nationality,
     mobile: showContact ? d.mobile : null,
     status: d.status,
+    warningCount: d.warningCount,
     createdAt: d.createdAt?.toISOString(),
   };
 }
@@ -337,6 +338,60 @@ router.get("/:id/offers", async (req, res) => {
   );
 
   res.json(results);
+});
+
+router.patch("/:id", requireAuth("admin"), async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const { status, selectedDriverId } = req.body ?? {};
+  const updates: Record<string, unknown> = {};
+  if (status !== undefined)
+    updates.status = status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED";
+  if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "لا توجد بيانات للتحديث" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(requestsTable)
+    .set(updates)
+    .where(eq(requestsTable.id, id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+
+  let driver = null;
+  if (updated.selectedDriverId) {
+    driver = await db.query.driversTable.findFirst({
+      where: eq(driversTable.id, updated.selectedDriverId),
+    });
+  }
+
+  res.json(formatRequest(req, updated, driver));
+});
+
+router.delete("/:id", requireAuth("admin"), async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const deleted = await db
+    .delete(requestsTable)
+    .where(eq(requestsTable.id, id))
+    .returning();
+  if (!deleted.length) {
+    res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+  res.json({ message: "تم حذف الطلب" });
 });
 
 export default router;

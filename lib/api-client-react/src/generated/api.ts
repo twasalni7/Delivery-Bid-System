@@ -24,6 +24,7 @@ import type {
   AdminStats,
   AdminUpdateDriverBody,
   AdminUpdateRequestBody,
+  AdminUpdateRequestByPathBody,
   AuthUser,
   ClientLoginBody,
   ClientRegisterBody,
@@ -32,6 +33,7 @@ import type {
   CreateOfferBody,
   CreateRequestBody,
   Driver,
+  DriverActionResponse,
   DriverDetail,
   DriverLoginBody,
   HealthStatus,
@@ -1291,6 +1293,178 @@ export function useGetRequest<
 }
 
 /**
+ * @summary Admin updates request status or reassigns selectedDriverId
+ */
+export const getAdminUpdateRequestByPathUrl = (id: number) => {
+  return `/api/requests/${id}`;
+};
+
+export const adminUpdateRequestByPath = async (
+  id: number,
+  adminUpdateRequestByPathBody: AdminUpdateRequestByPathBody,
+  options?: RequestInit,
+): Promise<CommuteRequest> => {
+  return customFetch<CommuteRequest>(getAdminUpdateRequestByPathUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateRequestByPathBody),
+  });
+};
+
+export const getAdminUpdateRequestByPathMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateRequestByPath>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateRequestByPathBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateRequestByPath>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateRequestByPathBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateRequestByPath"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateRequestByPath>>,
+    { id: number; data: BodyType<AdminUpdateRequestByPathBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateRequestByPath(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateRequestByPathMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateRequestByPath>>
+>;
+export type AdminUpdateRequestByPathMutationBody =
+  BodyType<AdminUpdateRequestByPathBody>;
+export type AdminUpdateRequestByPathMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Admin updates request status or reassigns selectedDriverId
+ */
+export const useAdminUpdateRequestByPath = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateRequestByPath>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateRequestByPathBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateRequestByPath>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateRequestByPathBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateRequestByPathMutationOptions(options));
+};
+
+/**
+ * @summary Admin deletes a request
+ */
+export const getAdminDeleteRequestByPathUrl = (id: number) => {
+  return `/api/requests/${id}`;
+};
+
+export const adminDeleteRequestByPath = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminDeleteRequestByPathUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteRequestByPathMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteRequestByPath>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteRequestByPath>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteRequestByPath"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteRequestByPath>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteRequestByPath(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteRequestByPathMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteRequestByPath>>
+>;
+
+export type AdminDeleteRequestByPathMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Admin deletes a request
+ */
+export const useAdminDeleteRequestByPath = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteRequestByPath>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteRequestByPath>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteRequestByPathMutationOptions(options));
+};
+
+/**
  * @summary Update request status (admin only)
  */
 export const getUpdateRequestStatusUrl = (id: number) => {
@@ -2214,8 +2388,8 @@ export const getAdminBlockDriverUrl = (id: number) => {
 export const adminBlockDriver = async (
   id: number,
   options?: RequestInit,
-): Promise<MessageResponse> => {
-  return customFetch<MessageResponse>(getAdminBlockDriverUrl(id), {
+): Promise<DriverActionResponse> => {
+  return customFetch<DriverActionResponse>(getAdminBlockDriverUrl(id), {
     ...options,
     method: "POST",
   });
@@ -2298,8 +2472,8 @@ export const getAdminUnblockDriverUrl = (id: number) => {
 export const adminUnblockDriver = async (
   id: number,
   options?: RequestInit,
-): Promise<MessageResponse> => {
-  return customFetch<MessageResponse>(getAdminUnblockDriverUrl(id), {
+): Promise<DriverActionResponse> => {
+  return customFetch<DriverActionResponse>(getAdminUnblockDriverUrl(id), {
     ...options,
     method: "POST",
   });
@@ -2382,8 +2556,8 @@ export const getAdminWarnDriverUrl = (id: number) => {
 export const adminWarnDriver = async (
   id: number,
   options?: RequestInit,
-): Promise<MessageResponse> => {
-  return customFetch<MessageResponse>(getAdminWarnDriverUrl(id), {
+): Promise<DriverActionResponse> => {
+  return customFetch<DriverActionResponse>(getAdminWarnDriverUrl(id), {
     ...options,
     method: "POST",
   });
@@ -2466,8 +2640,8 @@ export const getAdminRestoreDriverUrl = (id: number) => {
 export const adminRestoreDriver = async (
   id: number,
   options?: RequestInit,
-): Promise<MessageResponse> => {
-  return customFetch<MessageResponse>(getAdminRestoreDriverUrl(id), {
+): Promise<DriverActionResponse> => {
+  return customFetch<DriverActionResponse>(getAdminRestoreDriverUrl(id), {
     ...options,
     method: "POST",
   });

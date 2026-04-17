@@ -286,6 +286,53 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CommuteRequest"
+    patch:
+      operationId: adminUpdateRequestByPath
+      tags: [requests, admin]
+      summary: Admin updates request status or reassigns selectedDriverId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [OPEN, SELECTED, ACTIVE, COMPLETED]
+                selectedDriverId:
+                  type: integer
+                  nullable: true
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommuteRequest"
+    delete:
+      operationId: adminDeleteRequestByPath
+      tags: [requests, admin]
+      summary: Admin deletes a request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
 
   /requests/{id}/status:
     patch:
@@ -511,7 +558,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: "#/components/schemas/DriverActionResponse"
 
   /admin/drivers/{id}/unblock:
     post:
@@ -530,7 +577,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: "#/components/schemas/DriverActionResponse"
 
   /admin/drivers/{id}/warn:
     post:
@@ -549,7 +596,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: "#/components/schemas/DriverActionResponse"
 
   /admin/drivers/{id}/restore:
     post:
@@ -568,7 +615,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: "#/components/schemas/DriverActionResponse"
 
   /admin/drivers/{id}/balance:
     patch:
@@ -713,6 +760,22 @@ components:
       properties:
         message:
           type: string
+      required:
+        - message
+
+    DriverActionResponse:
+      type: object
+      description: Response from driver action endpoints (block, unblock, warn, restore)
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, DELETED]
+          nullable: true
+        warningCount:
+          type: integer
+          nullable: true
       required:
         - message
 

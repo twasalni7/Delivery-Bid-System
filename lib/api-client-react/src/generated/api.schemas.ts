@@ -13,6 +13,25 @@ export interface MessageResponse {
   message: string;
 }
 
+export type DriverActionResponseStatus =
+  | (typeof DriverActionResponseStatus)[keyof typeof DriverActionResponseStatus]
+  | null;
+
+export const DriverActionResponseStatus = {
+  ACTIVE: "ACTIVE",
+  BLOCKED: "BLOCKED",
+  DELETED: "DELETED",
+} as const;
+
+/**
+ * Response from driver action endpoints (block, unblock, warn, restore)
+ */
+export interface DriverActionResponse {
+  message: string;
+  status?: DriverActionResponseStatus;
+  warningCount?: number | null;
+}
+
 export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
 
 export const AuthUserRole = {
@@ -228,6 +247,21 @@ export const ListRequestsStatus = {
   ACTIVE: "ACTIVE",
   COMPLETED: "COMPLETED",
 } as const;
+
+export type AdminUpdateRequestByPathBodyStatus =
+  (typeof AdminUpdateRequestByPathBodyStatus)[keyof typeof AdminUpdateRequestByPathBodyStatus];
+
+export const AdminUpdateRequestByPathBodyStatus = {
+  OPEN: "OPEN",
+  SELECTED: "SELECTED",
+  ACTIVE: "ACTIVE",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export type AdminUpdateRequestByPathBody = {
+  status?: AdminUpdateRequestByPathBodyStatus;
+  selectedDriverId?: number | null;
+};
 
 export type AdminRegenerateDriverCode200 = {
   loginCode: string;

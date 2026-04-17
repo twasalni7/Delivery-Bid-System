@@ -274,6 +274,60 @@ export const GetRequestResponse = zod.object({
 });
 
 /**
+ * @summary Admin updates request status or reassigns selectedDriverId
+ */
+export const AdminUpdateRequestByPathParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateRequestByPathBody = zod.object({
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
+  selectedDriverId: zod.number().nullish(),
+});
+
+export const AdminUpdateRequestByPathResponse = zod.object({
+  id: zod.number(),
+  clientId: zod.number().nullish(),
+  homeLocation: zod.string(),
+  workLocation: zod.string(),
+  phone: zod
+    .string()
+    .nullable()
+    .describe("null when caller is not authorized to see it"),
+  phoneHidden: zod.boolean(),
+  numberOfPeople: zod.number(),
+  workingDaysPerWeek: zod.number(),
+  morningTime: zod.string(),
+  eveningTime: zod.string(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  selectedDriverId: zod.number().nullish(),
+  selectedDriver: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      balance: zod.number(),
+      carType: zod.string().nullish(),
+      nationality: zod.string().nullish(),
+      status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]),
+      warningCount: zod.number(),
+      createdAt: zod.string().optional(),
+    })
+    .nullish(),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Admin deletes a request
+ */
+export const AdminDeleteRequestByPathParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteRequestByPathResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
  * @summary Update request status (admin only)
  */
 export const UpdateRequestStatusParams = zod.object({
@@ -539,9 +593,15 @@ export const AdminBlockDriverParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const AdminBlockDriverResponse = zod.object({
-  message: zod.string(),
-});
+export const AdminBlockDriverResponse = zod
+  .object({
+    message: zod.string(),
+    status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]).nullish(),
+    warningCount: zod.number().nullish(),
+  })
+  .describe(
+    "Response from driver action endpoints (block, unblock, warn, restore)",
+  );
 
 /**
  * @summary Unblock a driver (admin only)
@@ -550,9 +610,15 @@ export const AdminUnblockDriverParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const AdminUnblockDriverResponse = zod.object({
-  message: zod.string(),
-});
+export const AdminUnblockDriverResponse = zod
+  .object({
+    message: zod.string(),
+    status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]).nullish(),
+    warningCount: zod.number().nullish(),
+  })
+  .describe(
+    "Response from driver action endpoints (block, unblock, warn, restore)",
+  );
 
 /**
  * @summary Add warning to driver (admin only)
@@ -561,9 +627,15 @@ export const AdminWarnDriverParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const AdminWarnDriverResponse = zod.object({
-  message: zod.string(),
-});
+export const AdminWarnDriverResponse = zod
+  .object({
+    message: zod.string(),
+    status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]).nullish(),
+    warningCount: zod.number().nullish(),
+  })
+  .describe(
+    "Response from driver action endpoints (block, unblock, warn, restore)",
+  );
 
 /**
  * @summary Restore a soft-deleted driver (admin only)
@@ -572,9 +644,15 @@ export const AdminRestoreDriverParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const AdminRestoreDriverResponse = zod.object({
-  message: zod.string(),
-});
+export const AdminRestoreDriverResponse = zod
+  .object({
+    message: zod.string(),
+    status: zod.enum(["ACTIVE", "BLOCKED", "DELETED"]).nullish(),
+    warningCount: zod.number().nullish(),
+  })
+  .describe(
+    "Response from driver action endpoints (block, unblock, warn, restore)",
+  );
 
 /**
  * @summary Update driver balance (admin only)
