@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "outputDirectory": "artifacts/api-server/dist"
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist"
 }
- 
