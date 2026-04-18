@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useAdminListDrivers, useAdminCreateDriver, useAdminUpdateDriver, useAdminDeleteDriver,
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet, Search, X } from "lucide-react";
 import type { DriverDetail } from "@workspace/api-client-react";
 import * as XLSX from "xlsx";
 
@@ -437,7 +437,23 @@ export default function AdminDrivers() {
   const [formNationalId, setFormNationalId] = useState("");
   const [formBalance, setFormBalance] = useState("");
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+
   const refetch = () => queryClient.invalidateQueries({ queryKey: getAdminListDriversQueryKey() });
+
+  const filteredDrivers = useMemo(() => {
+    if (!drivers) return [];
+    const q = search.trim().toLowerCase();
+    return drivers.filter((d) => {
+      if (statusFilter !== "ALL" && d.status !== statusFilter) return false;
+      if (q) {
+        const hay = [d.name, d.mobile ?? "", d.nationality ?? "", d.carType ?? "", d.loginCode ?? "", String(d.id)].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [drivers, search, statusFilter]);
 
   const openCreate = () => {
     setFormName(""); setFormMobile(""); setFormCar(""); setFormNationality(""); setFormAge(""); setFormNationalId("");
@@ -505,10 +521,12 @@ export default function AdminDrivers() {
     <Layout role="admin">
       <div dir="rtl">
         {/* Header */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-3 mb-5">
           <div className="flex-1">
             <h1 className="text-3xl font-black text-gray-900">السائقون</h1>
-            <p className="text-gray-500 text-base mt-0.5">إدارة حسابات السائقين</p>
+            <p className="text-gray-500 text-base mt-0.5">
+              {drivers ? `${filteredDrivers.length} من ${drivers.length} سائق` : "إدارة حسابات السائقين"}
+            </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setDialogMode("import")}
@@ -522,6 +540,43 @@ export default function AdminDrivers() {
             </button>
           </div>
         </div>
+
+        {/* Search + filter */}
+        {!isLoading && drivers && drivers.length > 0 && (
+          <div className="space-y-3 mb-5">
+            <div className="flex items-center gap-2 bg-white rounded-2xl border border-gray-200 px-4 py-2.5 shadow-sm focus-within:border-violet-400 transition-colors">
+              <Search size={17} className="text-gray-400 shrink-0" />
+              <input
+                type="text"
+                placeholder="ابحث بالاسم، الجوال، الجنسية، المركبة، رمز الدخول..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 text-base bg-transparent outline-none text-gray-800 placeholder-gray-400"
+              />
+              {search && <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600"><X size={15} /></button>}
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              {[
+                { val: "ALL", label: "الكل", count: drivers.length },
+                { val: "ACTIVE", label: "نشط", count: drivers.filter((d) => d.status === "ACTIVE").length },
+                { val: "BLOCKED", label: "محظور", count: drivers.filter((d) => d.status === "BLOCKED").length },
+              ].map((s) => (
+                <button key={s.val} onClick={() => setStatusFilter(s.val)}
+                  className={`h-9 px-3.5 rounded-xl text-sm font-bold border transition-colors flex items-center gap-1.5 ${statusFilter === s.val ? "text-white border-violet-500" : "bg-white border-gray-200 text-gray-500 hover:border-violet-300"}`}
+                  style={statusFilter === s.val ? { background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" } : {}}>
+                  {s.label}
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-black ${statusFilter === s.val ? "bg-white/25" : "bg-gray-100 text-gray-600"}`}>{s.count}</span>
+                </button>
+              ))}
+              {(search || statusFilter !== "ALL") && (
+                <button onClick={() => { setSearch(""); setStatusFilter("ALL"); }}
+                  className="h-9 px-3.5 rounded-xl text-sm font-bold text-red-500 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors flex items-center gap-1.5">
+                  <X size={13} /> مسح الفلاتر
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {isLoading && <div className="text-center py-20 text-gray-400 text-lg">جاري التحميل...</div>}
 
@@ -540,7 +595,16 @@ export default function AdminDrivers() {
           </div>
         )}
 
-        {drivers && drivers.length > 0 && (
+        {drivers && drivers.length > 0 && filteredDrivers.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+            <p className="text-5xl mb-4">🔍</p>
+            <p className="text-xl font-bold text-gray-600">لا توجد نتائج مطابقة</p>
+            <button onClick={() => { setSearch(""); setStatusFilter("ALL"); }}
+              className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-violet-600 border border-violet-200 hover:bg-violet-50">مسح الفلاتر</button>
+          </div>
+        )}
+
+        {filteredDrivers.length > 0 && (
           <>
             {/* Desktop table */}
             <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -557,7 +621,7 @@ export default function AdminDrivers() {
                   </tr>
                 </thead>
                 <tbody>
-                  {drivers.map((d, idx) => (
+                  {filteredDrivers.map((d, idx) => (
                     <tr key={d.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
@@ -606,13 +670,13 @@ export default function AdminDrivers() {
                 </tbody>
               </table>
               <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-400">
-                إجمالي: <strong className="text-gray-700">{drivers.length}</strong> سائق
+                يُعرض <strong className="text-gray-700">{filteredDrivers.length}</strong> من <strong className="text-gray-700">{drivers?.length ?? 0}</strong> سائق
               </div>
             </div>
 
             {/* Mobile / tablet cards */}
             <div className="lg:hidden space-y-3">
-              {drivers.map((d) => (
+              {filteredDrivers.map((d) => (
                 <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex-1 min-w-0">

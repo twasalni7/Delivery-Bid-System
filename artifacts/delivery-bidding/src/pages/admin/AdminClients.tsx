@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
 type Client = { id: number; name: string; mobile: string; createdAt: string };
@@ -23,12 +23,24 @@ export default function AdminClients() {
   const { data: clients, isLoading } = useQuery<Client[]>({
     queryKey: ["admin-clients"],
     queryFn: () => apiFetch("/api/admin/clients"),
+    refetchInterval: 30_000,
   });
+
+  const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Client | null>(null);
   const [formName, setFormName] = useState("");
   const [formMobile, setFormMobile] = useState("");
   const [formPassword, setFormPassword] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!clients) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return clients;
+    return clients.filter((c) =>
+      c.name.toLowerCase().includes(q) || c.mobile.includes(q) || String(c.id).includes(q)
+    );
+  }, [clients, search]);
 
   const openCreate = () => { setEditTarget(null); setFormName(""); setFormMobile(""); setFormPassword(""); setDialogOpen(true); };
   const openEdit = (c: Client) => { setEditTarget(c); setFormName(c.name); setFormMobile(c.mobile); setFormPassword(""); setDialogOpen(true); };
@@ -64,10 +76,12 @@ export default function AdminClients() {
     <Layout role="admin">
       <div dir="rtl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-3xl font-black text-gray-900">إدارة العملاء</h1>
-            <p className="text-gray-500 text-base mt-0.5">قائمة العملاء المسجّلين في المنصة</p>
+            <h1 className="text-3xl font-black text-gray-900">العملاء</h1>
+            <p className="text-gray-500 text-base mt-0.5">
+              {clients ? `${filtered.length} من ${clients.length} عميل` : "قائمة العملاء المسجّلين"}
+            </p>
           </div>
           <button onClick={openCreate}
             className="flex items-center gap-2 px-5 py-3 rounded-xl text-white font-black text-base shadow-md"
@@ -76,18 +90,37 @@ export default function AdminClients() {
           </button>
         </div>
 
+        {/* Search bar */}
+        <div className="flex items-center gap-2 bg-white rounded-2xl border border-gray-200 px-4 py-2.5 shadow-sm focus-within:border-violet-400 transition-colors mb-5">
+          <Search size={17} className="text-gray-400 shrink-0" />
+          <input
+            type="text"
+            placeholder="ابحث بالاسم، رقم الجوال، أو الرقم التعريفي..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 text-base bg-transparent outline-none text-gray-800 placeholder-gray-400"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600"><X size={15} /></button>
+          )}
+        </div>
+
         {isLoading && <div className="text-center py-20 text-gray-400 text-lg">جاري التحميل...</div>}
 
-        {!isLoading && (!clients || clients.length === 0) && (
+        {!isLoading && filtered.length === 0 && (
           <div className="text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-            <p className="text-5xl mb-4">👤</p>
-            <p className="text-xl font-bold text-gray-600">لا يوجد عملاء</p>
-            <button onClick={openCreate} className="mt-5 px-6 py-3 rounded-xl text-white font-black text-base"
-              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>إضافة عميل</button>
+            <p className="text-5xl mb-4">{search ? "🔍" : "👤"}</p>
+            <p className="text-xl font-bold text-gray-600">{search ? "لا توجد نتائج مطابقة" : "لا يوجد عملاء"}</p>
+            {search ? (
+              <button onClick={() => setSearch("")} className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-violet-600 border border-violet-200 hover:bg-violet-50">مسح البحث</button>
+            ) : (
+              <button onClick={openCreate} className="mt-5 px-6 py-3 rounded-xl text-white font-black text-base"
+                style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>إضافة عميل</button>
+            )}
           </div>
         )}
 
-        {clients && clients.length > 0 && (
+        {filtered.length > 0 && (
           <>
             {/* Desktop table */}
             <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -102,7 +135,7 @@ export default function AdminClients() {
                   </tr>
                 </thead>
                 <tbody>
-                  {clients.map((c, idx) => (
+                  {filtered.map((c, idx) => (
                     <tr key={c.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}>
                       <td className="px-5 py-4 text-sm font-mono text-gray-400 font-bold">#{c.id}</td>
                       <td className="px-5 py-4">
@@ -117,14 +150,8 @@ export default function AdminClients() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => openEdit(c)}
-                            className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-violet-400 hover:bg-violet-50 transition-colors">
-                            <Pencil size={14} />
-                          </button>
-                          <button onClick={() => handleDelete(c)}
-                            className="w-9 h-9 rounded-xl border border-red-200 bg-red-50 flex items-center justify-center text-red-500 hover:border-red-400 transition-colors">
-                            <Trash2 size={14} />
-                          </button>
+                          <button onClick={() => openEdit(c)} className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-violet-400 hover:bg-violet-50 transition-colors"><Pencil size={14} /></button>
+                          <button onClick={() => handleDelete(c)} className="w-9 h-9 rounded-xl border border-red-200 bg-red-50 flex items-center justify-center text-red-500 hover:border-red-400 transition-colors"><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -132,13 +159,13 @@ export default function AdminClients() {
                 </tbody>
               </table>
               <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-400">
-                إجمالي: <strong className="text-gray-700">{clients.length}</strong> عميل
+                يُعرض <strong className="text-gray-700">{filtered.length}</strong> من <strong className="text-gray-700">{clients?.length ?? 0}</strong> عميل
               </div>
             </div>
 
             {/* Mobile cards */}
             <div className="md:hidden space-y-3">
-              {clients.map((c) => (
+              {filtered.map((c) => (
                 <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -150,14 +177,8 @@ export default function AdminClients() {
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button onClick={() => openEdit(c)}
-                        className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-violet-400 transition-colors">
-                        <Pencil size={15} />
-                      </button>
-                      <button onClick={() => handleDelete(c)}
-                        className="w-10 h-10 rounded-xl border border-red-200 bg-red-50 flex items-center justify-center text-red-500 hover:border-red-400 transition-colors">
-                        <Trash2 size={15} />
-                      </button>
+                      <button onClick={() => openEdit(c)} className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-violet-400 transition-colors"><Pencil size={15} /></button>
+                      <button onClick={() => handleDelete(c)} className="w-10 h-10 rounded-xl border border-red-200 bg-red-50 flex items-center justify-center text-red-500 hover:border-red-400 transition-colors"><Trash2 size={15} /></button>
                     </div>
                   </div>
                 </div>
@@ -191,8 +212,7 @@ export default function AdminClients() {
                 style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
                 {saveMutation.isPending ? "جاري الحفظ..." : "حفظ"}
               </button>
-              <button type="button" onClick={() => setDialogOpen(false)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 text-base">إلغاء</button>
+              <button type="button" onClick={() => setDialogOpen(false)} className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 text-base">إلغاء</button>
             </div>
           </form>
         </DialogContent>
