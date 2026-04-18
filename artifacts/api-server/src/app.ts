@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import * as pinoHttp from "pino-http"; 
+import pinoHttp = require("pino-http");
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
