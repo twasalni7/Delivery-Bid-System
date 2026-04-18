@@ -25,6 +25,7 @@ export default function DriverDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>("available");
   const [editingOffer, setEditingOffer] = useState<{ id: number; price: string; carType: string; nationality: string } | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [withdrawConfirmId, setWithdrawConfirmId] = useState<number | null>(null);
 
   const updateOffer = useUpdateOffer();
   const withdrawOffer = useWithdrawOffer();
@@ -90,19 +91,23 @@ export default function DriverDashboard() {
         nationality: editingOffer.nationality.trim() || "—",
       });
       setEditingOffer(null); setEditError(null);
+      toast({ title: "تم التعديل", description: "تم تحديث عرضك بنجاح" });
     } catch (err: unknown) {
       const apiErr = err as { data?: { error?: string } };
-      setEditError(apiErr?.data?.error ?? "حدث خطأ أثناء التعديل");
+      const message = apiErr?.data?.error ?? "حدث خطأ أثناء التعديل";
+      setEditError(message);
+      toast({ title: "خطأ في التعديل", description: message, variant: "destructive" });
     }
   }
 
-  async function handleWithdraw(offerId: number) {
-    if (!confirm("هل أنت متأكد من سحب هذا العرض؟")) return;
+  async function confirmWithdraw(offerId: number) {
+    setWithdrawConfirmId(null);
     try {
       await withdrawOffer.mutateAsync({ offerId });
+      toast({ title: "تم السحب", description: "تم سحب عرضك بنجاح" });
     } catch (err: unknown) {
       const apiErr = err as { data?: { error?: string } };
-      alert(apiErr?.data?.error ?? "حدث خطأ أثناء سحب العرض");
+      toast({ title: "خطأ في السحب", description: apiErr?.data?.error ?? "حدث خطأ أثناء سحب العرض", variant: "destructive" });
     }
   }
 
@@ -421,16 +426,35 @@ export default function DriverDashboard() {
                             </p>
                           )}
                           {editingOffer?.id !== offer.id && (
-                            <div className="flex gap-2">
-                              <button onClick={() => startEdit(offer)}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">
-                                <Pencil size={13} /> تعديل
-                              </button>
-                              <button onClick={() => handleWithdraw(offer.id)} disabled={withdrawOffer.isPending}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-sm font-bold text-red-500 hover:bg-red-50">
-                                <Trash2 size={13} /> سحب
-                              </button>
-                            </div>
+                            withdrawConfirmId === offer.id ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-bold text-gray-700">تأكيد سحب العرض؟</span>
+                                <button
+                                  onClick={() => confirmWithdraw(offer.id)}
+                                  disabled={withdrawOffer.isPending}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 disabled:opacity-50"
+                                >
+                                  <Check size={13} /> نعم، سحب
+                                </button>
+                                <button
+                                  onClick={() => setWithdrawConfirmId(null)}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50"
+                                >
+                                  <X size={13} /> إلغاء
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button onClick={() => startEdit(offer)}
+                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">
+                                  <Pencil size={13} /> تعديل
+                                </button>
+                                <button onClick={() => setWithdrawConfirmId(offer.id)} disabled={withdrawOffer.isPending}
+                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-sm font-bold text-red-500 hover:bg-red-50">
+                                  <Trash2 size={13} /> سحب
+                                </button>
+                              </div>
+                            )
                           )}
                         </div>
                       </div>
