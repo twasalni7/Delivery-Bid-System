@@ -62,6 +62,7 @@ Admin can also set: `CANCELLED`, `EXPIRED`, `FROZEN`
 - `offers` — (id, requestId FK→requests, driverId FK→drivers, price, carType, nationality, createdAt)
 - `transactions` — (id, driverId FK→drivers, amount, type[CREDIT/DEBIT], createdAt)
 - `support_tickets` — (id, clientId FK→clients, driverId FK→drivers, requestId FK→requests, type, message, status[OPEN/IN_PROGRESS/RESOLVED/CLOSED], adminReply TEXT, createdAt, updatedAt)
+- `notifications` — (id, userId INT, userRole TEXT, title TEXT, message TEXT, type[offer/request/system/support], isRead BOOL, relatedId INT, createdAt) — In-app notification store for bell UI
 - `user_sessions` — Session store (auto-managed by connect-pg-simple)
 
 ## API Routes
@@ -114,34 +115,50 @@ Both naming conventions supported (RESTful path + flat alias):
 - `DELETE /admin/requests/:id` — Delete request
 
 ### Support Tickets (`/api/support-tickets`)
-- `GET /support-tickets` — Client: list own tickets; Admin: list all tickets
+- `GET /support-tickets/my` — Client: list own tickets
 - `POST /support-tickets` — Client: create ticket (type, message, requestId optional)
-- `PATCH /support-tickets/:id/reply` — Admin: reply to ticket
-- `PATCH /support-tickets/:id/status` — Admin: update ticket status
+- `GET /support-tickets` — Admin: list all tickets
+- `PATCH /support-tickets/:id` — Admin: reply + update status
 - `DELETE /support-tickets/:id` — Admin: delete ticket
+
+### Notifications (`/api/notifications`)
+- `GET /notifications` — Get own notifications (last 50, newest first), polls every 15s on frontend
+- `GET /notifications/unread-count` — Count of unread notifications
+- `PATCH /notifications/mark-all-read` — Mark all as read
+- `PATCH /notifications/:id/read` — Mark single notification as read
+
+### Notification Triggers (automatic)
+- Driver submits offer → client receives "عرض جديد على طلبك"
+- Client selects offer → driver receives "تم اختيار عرضك"
+- Admin changes request status → client receives status-specific message
+- Admin replies to support ticket → ticket submitter receives "رد الإدارة"
 
 ## Frontend Pages
 
 ### Client Role (`/client/*`)
-- `/client` — Dashboard (طلباتي) — list requests with status badges + unread offer notifications
-- `/client/request/new` — Create request wizard (clientType, locations, times, notes, shifts)
-- `/client/request/:id` — Request detail + offer list + select offer
+- `/client` — Dashboard (اشتراكاتي) — list requests with status badges, polls every 20s
+- `/client/request/new` — Create request wizard (clientType, locations, times, days, notes)
+- `/client/request/:id` — Request detail + offer list + select offer (polls every 10s)
 - `/client/profile` — Client profile
-- `/client/support` — Support tickets (create + view replies)
+- `/client/support` — Support tickets (create + view replies, polls every 30s)
 
 ### Driver Role (`/driver/*`)
-- `/driver/dashboard` — Available requests (OPEN + BIDDING) + my offers + selected jobs
-- `/driver/request/:id/offer` — Submit/view offer
+- `/driver/dashboard` — Available requests (OPEN + BIDDING) + my offers + selected jobs (polls 30s)
+- `/driver/requests` — My agreements/selected requests
+- `/driver/request/:id` — Submit/view offer
 - `/driver/profile` — Driver profile
 
 ### Admin Role (`/admin/*`)
 - `/admin` — Dashboard with stats/analytics
-- `/admin/requests` — All requests with status filter + edit/delete
-- `/admin/drivers` — Driver CRUD
-- `/admin/offers` — All offers
-- `/admin/clients` — Client list
+- `/admin/requests` — All requests with status filter + search + edit/delete
+- `/admin/drivers` — Driver CRUD + search + block/warn/restore
+- `/admin/offers` — All offers with search/filter
+- `/admin/clients` — Client list with search
 - `/admin/settings` — Admin settings
-- `/admin/support` — Support ticket management (reply, change status, delete)
+- `/admin/support` — Support ticket management (reply, change status, delete, search/filter)
+
+### Shared UI
+- **NotificationsBell** — Bell icon in header for all logged-in users, polls every 15s, shows unread count badge, dropdown with last 50 notifications (by type icon, time ago), mark-all-read + mark-one-read
 
 ## Important Notes
 

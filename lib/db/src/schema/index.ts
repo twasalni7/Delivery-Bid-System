@@ -5,3 +5,4 @@ export * from "./transactions";
 export * from "./clients";
 export * from "./admins";
 export * from "./support-tickets";
+export * from "./notifications";

@@ -7,6 +7,7 @@ import {
   transactionsTable,
 } from "@workspace/db";
 import { eq, and, count, inArray, desc, gte, lte } from "drizzle-orm";
+import { notify } from "../lib/notify";
 import {
   CreateRequestBody,
   UpdateRequestStatusBody,
@@ -235,6 +236,28 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
     return;
   }
 
+  // Notify the client about status change
+  if (updated.clientId) {
+    const statusMessages: Record<string, string> = {
+      ACTIVE: "🚀 طلبك أصبح نشطاً — ابدأ رحلتك مع السائق",
+      COMPLETED: "✅ تم إتمام طلبك بنجاح",
+      CANCELLED: "❌ تم إلغاء طلبك من قِبل الإدارة",
+      FROZEN: "⏸️ تم تجميد طلبك مؤقتاً",
+      EXPIRED: "⏰ انتهت صلاحية طلبك",
+    };
+    const msg = statusMessages[parsed.data.status];
+    if (msg) {
+      void notify({
+        userId: updated.clientId,
+        userRole: "client",
+        title: "تحديث حالة طلبك",
+        message: msg,
+        type: "request",
+        relatedId: updated.id,
+      });
+    }
+  }
+
   let driver = null;
   if (updated.selectedDriverId) {
     driver = await db.query.driversTable.findFirst({
@@ -324,6 +347,16 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 
   const updatedDriver = await db.query.driversTable.findFirst({
     where: eq(driversTable.id, driver.id),
+  });
+
+  // Notify the selected driver
+  void notify({
+    userId: driver.id,
+    userRole: "driver",
+    title: "🎉 تم اختيار عرضك!",
+    message: `اختار العميل عرضك على الطلب من ${request.homeLocation} إلى ${request.workLocation} بسعر ${offer.price.toFixed(0)} ر.س/شهر`,
+    type: "request",
+    relatedId: request.id,
   });
 
   res.json(formatRequest(req, updated, updatedDriver));

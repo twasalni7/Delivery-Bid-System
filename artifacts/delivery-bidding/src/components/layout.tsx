@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { LogOut, Menu, X, Home, FileText, User, LifeBuoy, Settings, Users, Car, BarChart2, ClipboardList } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
+import { NotificationsBell } from "@/components/notifications-bell";
 
 const ROLE_COLORS = {
   client: { from: "#3B82F6", to: "#1D4ED8" },
@@ -85,6 +86,7 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
                 </Link>
               );
             })}
+            {user && <NotificationsBell />}
             {user && (
               <button
                 onClick={logout}
@@ -107,15 +109,18 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
             </button>
           )}
 
-          {/* Client/driver: logout button on header (mobile) */}
+          {/* Client/driver: bell + logout on header (mobile) */}
           {isClientOrDriver && user && (
-            <button
-              onClick={logout}
-              className="sm:hidden p-2.5 rounded-xl bg-white/15 text-white hover:bg-white/25 transition-colors"
-              title="تسجيل خروج"
-            >
-              <LogOut size={18} />
-            </button>
+            <div className="sm:hidden flex items-center gap-1">
+              <NotificationsBell />
+              <button
+                onClick={logout}
+                className="p-2.5 rounded-xl bg-white/15 text-white hover:bg-white/25 transition-colors"
+                title="تسجيل خروج"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
           )}
         </div>
 

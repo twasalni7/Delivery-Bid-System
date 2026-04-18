@@ -4,6 +4,7 @@ import { supportTicketsTable, clientsTable, driversTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
+import { notify } from "../lib/notify";
 
 const router = Router();
 
@@ -118,6 +119,29 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   if (!updated) {
     res.status(404).json({ error: "التذكرة غير موجودة" });
     return;
+  }
+
+  // Notify the ticket submitter if admin added/updated a reply
+  if (adminReply !== undefined) {
+    if (updated.clientId) {
+      void notify({
+        userId: updated.clientId,
+        userRole: "client",
+        title: "رد الإدارة على تذكرة الدعم",
+        message: `ردّت الإدارة على تذكرتك: "${String(adminReply).trim().substring(0, 80)}${String(adminReply).trim().length > 80 ? "..." : ""}"`,
+        type: "support",
+        relatedId: updated.id,
+      });
+    } else if (updated.driverId) {
+      void notify({
+        userId: updated.driverId,
+        userRole: "driver",
+        title: "رد الإدارة على تذكرة الدعم",
+        message: `ردّت الإدارة على تذكرتك: "${String(adminReply).trim().substring(0, 80)}${String(adminReply).trim().length > 80 ? "..." : ""}"`,
+        type: "support",
+        relatedId: updated.id,
+      });
+    }
   }
 
   res.json(formatTicket(updated));

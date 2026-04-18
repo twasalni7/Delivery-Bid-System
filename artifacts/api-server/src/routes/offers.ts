@@ -4,6 +4,7 @@ import { offersTable, driversTable, requestsTable } from "@workspace/db";
 import { eq, and, count } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
+import { notify } from "../lib/notify";
 
 const router = Router();
 
@@ -254,6 +255,18 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     .insert(offersTable)
     .values({ driverId, requestId, price, carType, nationality })
     .returning();
+
+  // Notify the client that a new offer was submitted
+  if (request.clientId) {
+    void notify({
+      userId: request.clientId,
+      userRole: "client",
+      title: "عرض جديد على طلبك",
+      message: `قدّم السائق ${driver.name} عرضاً بسعر ${price.toFixed(0)} ر.س/شهر على طلبك من ${request.homeLocation}`,
+      type: "offer",
+      relatedId: request.id,
+    });
+  }
 
   // Auto-transition OPEN → BIDDING when first offer is placed
   if (request.status === "OPEN") {
