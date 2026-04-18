@@ -4,15 +4,9 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes";
 
-// ملاحظة: تأكد أنك تستورد 'pool' من ملف قاعدة البيانات الخاص بك
-// إذا كان الملف اسمه db.ts، فعل هذا السطر:
-// import { pool } from "./db"; 
-
 const app = express();
 
-/**
- * Middleware أساسي مع تحديد الأنواع كـ any لتجنب أخطاء TypeScript
- */
+// Middleware لتجاوز تدقيق TypeScript على الطلبات
 app.use((req: any, res: any, next: any) => {
   next();
 });
@@ -36,7 +30,6 @@ const isProduction = process.env["NODE_ENV"] === "production";
 app.use(
   session({
     store: new PgSession({
-      // pool, // فك التعليق عن هذا السطر بعد استيراد pool
       tableName: "user_sessions",
       createTableIfMissing: true,
     }),
