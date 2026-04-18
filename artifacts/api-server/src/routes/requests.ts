@@ -6,7 +6,7 @@ import {
   offersTable,
   transactionsTable,
 } from "@workspace/db";
-import { eq, and, count, inArray } from "drizzle-orm";
+import { eq, and, count, inArray, desc, gte, lte } from "drizzle-orm";
 import {
   CreateRequestBody,
   UpdateRequestStatusBody,
@@ -351,11 +351,30 @@ router.get("/:id/offers", async (req, res) => {
   const postSelection =
     request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED";
 
+  const sort = (req.query["sort"] as string) ?? "price_asc";
+  const minPrice = req.query["minPrice"] ? Number(req.query["minPrice"]) : undefined;
+  const maxPrice = req.query["maxPrice"] ? Number(req.query["maxPrice"]) : undefined;
+
+  const orderCol =
+    sort === "date_desc"
+      ? desc(offersTable.createdAt)
+      : sort === "price_desc"
+      ? desc(offersTable.price)
+      : offersTable.price;
+
+  const whereConditions = [eq(offersTable.requestId, id)];
+  if (minPrice !== undefined && !isNaN(minPrice)) {
+    whereConditions.push(gte(offersTable.price, minPrice));
+  }
+  if (maxPrice !== undefined && !isNaN(maxPrice)) {
+    whereConditions.push(lte(offersTable.price, maxPrice));
+  }
+
   const offers = await db
     .select()
     .from(offersTable)
-    .where(eq(offersTable.requestId, id))
-    .orderBy(offersTable.price);
+    .where(and(...whereConditions))
+    .orderBy(orderCol);
 
   const results = await Promise.all(
     offers.map(async (o) => {

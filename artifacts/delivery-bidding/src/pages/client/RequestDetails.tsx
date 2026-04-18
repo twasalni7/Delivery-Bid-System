@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
@@ -24,11 +24,24 @@ const STATUS_GRADIENT: Record<string, string> = {
   FROZEN:    "linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)",
 };
 
+type SortOption = "price_asc" | "price_desc" | "date_desc";
+
+const SORT_LABELS: Record<SortOption, string> = {
+  price_asc: "الأرخص أولاً",
+  price_desc: "الأغلى أولاً",
+  date_desc: "الأحدث أولاً",
+};
+
 export default function RequestDetails() {
   const [, params] = useRoute("/client/request/:id");
   const id = parseInt(params?.id ?? "0");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const [sort, setSort] = useState<SortOption>("price_asc");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: request, isLoading: loadingReq } = useGetRequest(id, {
     query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
@@ -70,6 +83,38 @@ export default function RequestDetails() {
       }
     );
   };
+
+  const filteredAndSortedOffers = (() => {
+    if (!offers) return [];
+    let result = [...offers];
+
+    const min = minPrice !== "" ? parseFloat(minPrice) : undefined;
+    const max = maxPrice !== "" ? parseFloat(maxPrice) : undefined;
+
+    if (min !== undefined && !isNaN(min)) {
+      result = result.filter((o) => (o.price ?? 0) >= min);
+    }
+    if (max !== undefined && !isNaN(max)) {
+      result = result.filter((o) => (o.price ?? 0) <= max);
+    }
+
+    if (sort === "price_asc") {
+      result.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+    } else if (sort === "price_desc") {
+      result.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+    } else if (sort === "date_desc") {
+      result.sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const db2 = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return db2 - da;
+      });
+    }
+
+    return result;
+  })();
+
+  const hasActiveFilter =
+    minPrice !== "" || maxPrice !== "" || sort !== "price_asc";
 
   if (loadingReq) {
     return <Layout role="client"><div className="text-center py-20 text-gray-400">جاري التحميل...</div></Layout>;
@@ -187,11 +232,78 @@ export default function RequestDetails() {
         )}
 
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-black text-gray-900">
               عروض السائقين {offers ? `(${offers.length})` : ""}
             </h2>
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${
+                hasActiveFilter
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+              }`}
+            >
+              <SlidersHorizontal size={12} />
+              تصفية وترتيب
+              {hasActiveFilter && <span className="bg-white text-blue-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-black">!</span>}
+            </button>
           </div>
+
+          {showFilters && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 space-y-4">
+              <div>
+                <p className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1"><ArrowUpDown size={11} /> الترتيب</p>
+                <div className="flex gap-2 flex-wrap">
+                  {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => setSort(key)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${
+                        sort === key
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+                      }`}
+                    >
+                      {SORT_LABELS[key]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-gray-500 mb-2">نطاق السعر (ر.س / شهر)</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="من"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    min={0}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
+                  <span className="text-gray-400 text-sm shrink-0">—</span>
+                  <input
+                    type="number"
+                    placeholder="إلى"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    min={0}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
+                </div>
+              </div>
+
+              {hasActiveFilter && (
+                <button
+                  onClick={() => { setSort("price_asc"); setMinPrice(""); setMaxPrice(""); }}
+                  className="text-xs text-red-500 font-bold hover:underline"
+                >
+                  إعادة ضبط الفلتر
+                </button>
+              )}
+            </div>
+          )}
 
           {loadingOffers && <div className="text-center py-8 text-gray-400 text-sm">جاري التحميل...</div>}
 
@@ -203,8 +315,21 @@ export default function RequestDetails() {
             </div>
           )}
 
+          {!loadingOffers && offers && offers.length > 0 && filteredAndSortedOffers.length === 0 && (
+            <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-2xl bg-white">
+              <p className="text-3xl mb-2">🔍</p>
+              <p className="font-bold text-gray-700">لا توجد عروض ضمن النطاق المحدد</p>
+              <button
+                onClick={() => { setMinPrice(""); setMaxPrice(""); }}
+                className="mt-2 text-sm text-blue-600 font-bold hover:underline"
+              >
+                إزالة فلتر السعر
+              </button>
+            </div>
+          )}
+
           <div className="space-y-3">
-            {offers?.map((offer: Offer) => {
+            {filteredAndSortedOffers.map((offer: Offer) => {
               const isSelected = request.selectedDriverId === offer.driverId;
               return (
                 <div key={offer.id} className={`rounded-2xl overflow-hidden shadow-sm ${isSelected ? "shadow-md" : ""}`}>
