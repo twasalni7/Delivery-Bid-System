@@ -246,10 +246,10 @@ export const ListRequestsResponse = zod.array(ListRequestsResponseItem);
  * @summary Create a commute request (requires client auth)
  */
 export const CreateRequestBody = zod.object({
-  clientType: zod.enum([موظفات, طلاب, مدارس, جامعات, معلمات, غيره]).optional(),
+  clientType: zod.enum(["موظفات", "طلاب", "مدارس", "جامعات", "معلمات", "غيره"]).optional(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  additionalLocations: zod.array(zod.object({ type: zod.enum([pickup, dropoff]), address: zod.string() })).optional(),
+  additionalLocations: zod.array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() })).optional(),
   phone: zod.string(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
