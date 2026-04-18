@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: delivery-bid-api
+    env: node
+    plan: standard
+    branch: main
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm run start --prefix artifacts/api-server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: delivery_db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: LOG_LEVEL
+        value: info
+      - key: TRUST_PROXY
+        value: "1"
+
+databases:
+  - name: delivery_db
+    databaseName: delivery_bid_system
+    user: delivery_user
+    plan: standard
+    region: ohio
