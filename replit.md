@@ -160,6 +160,30 @@ Both naming conventions supported (RESTful path + flat alias):
 ### Shared UI
 - **NotificationsBell** — Bell icon in header for all logged-in users, polls every 15s, shows unread count badge, dropdown with last 50 notifications (by type icon, time ago), mark-all-read + mark-one-read
 
+## Security Model (Supabase RLS)
+
+### Architecture
+The backend connects to Supabase as `postgres` (superuser via Transaction Pooler port 6543). Superuser connections **automatically bypass RLS** — so the Express API works without any policy changes.
+
+### Applied Security Layers
+1. **RLS ENABLED** on all 9 tables: admins, clients, drivers, requests, offers, transactions, support_tickets, notifications, user_sessions
+2. **Privileges REVOKED** from `anon` and `authenticated` roles on all tables — direct Supabase REST API calls are blocked at the GRANT level too
+3. **service_role bypass policies** added (defense in depth) — only postgres/service_role can access data via RLS policies
+4. **No Supabase Auth** used — `auth.uid()` is not applicable; all auth enforced in Express middleware
+
+### Application-Level Security (Express)
+- `requireAuth(role?)` middleware — session-based auth check on every protected route
+- IDOR protection — `select-offer` verifies `clientId == request.clientId`
+- Phone privacy — phone number hidden until offer selected
+- Driver balance check — 50 SAR minimum to submit offers
+- Soft-delete for drivers — `status=DELETED` instead of hard delete
+
+### Re-applying RLS
+If new tables are added, run:
+```
+node scripts/apply-rls.mjs
+```
+
 ## Important Notes
 
 - After running codegen, `lib/api-zod/src/index.ts` must be manually set to `export * from "./generated/api";` only — orval overwrites it with a broken dual-export
