@@ -16,9 +16,9 @@ export default function DriverDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
-  const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
+  const { data: allRequests, isLoading } = useListRequests(undefined, {});
   const { data: selectedRequests } = useListRequests({ status: "SELECTED" });
-  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user, refetchInterval: 30_000 } });
+  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user } });
   const openRequests = allRequests?.filter((r) => r.status === "OPEN" || r.status === "BIDDING");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");

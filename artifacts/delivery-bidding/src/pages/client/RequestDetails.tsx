@@ -20,13 +20,12 @@ export default function RequestDetails() {
   const { toast } = useToast();
 
   const { data: request, isLoading: loadingReq } = useGetRequest(id, {
-    query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 30_000 },
+    query: { queryKey: getGetRequestQueryKey(id), enabled: !!id },
   });
   const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, {
     query: {
       queryKey: getGetRequestOffersQueryKey(id),
       enabled: !!id,
-      refetchInterval: 30_000,
     },
   });
 

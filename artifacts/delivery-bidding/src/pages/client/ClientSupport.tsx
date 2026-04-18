@@ -32,7 +32,6 @@ function useMyTickets() {
       if (!r.ok) throw new Error("فشل تحميل التذاكر");
       return r.json();
     },
-    refetchInterval: 30_000,
   });
 }
 

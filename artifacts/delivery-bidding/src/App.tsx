@@ -33,7 +33,7 @@ import AdminSupport from "@/pages/admin/AdminSupport";
 import ClientSupport from "@/pages/client/ClientSupport";
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 20_000, refetchInterval: 30_000 } },
+  defaultOptions: { queries: { retry: 1, staleTime: 20_000 } },
 });
 
 function ClientGuard({ children }: { children: React.ReactNode }) {

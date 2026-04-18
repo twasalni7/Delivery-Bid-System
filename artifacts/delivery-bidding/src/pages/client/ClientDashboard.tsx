@@ -14,7 +14,6 @@ export default function ClientDashboard() {
   const { data: requests, isLoading } = useListRequests(undefined, {
     query: {
       queryKey: getListRequestsQueryKey(),
-      refetchInterval: 30_000,
     },
   });
 
