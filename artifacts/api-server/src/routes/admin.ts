@@ -261,6 +261,76 @@ router.post("/drivers", async (req, res) => {
   });
 });
 
+router.post("/drivers/import", async (req, res) => {
+  const { drivers } = req.body ?? {};
+  if (!Array.isArray(drivers) || drivers.length === 0) {
+    res.status(400).json({ error: "لا توجد بيانات سائقين" });
+    return;
+  }
+  if (drivers.length > 500) {
+    res.status(400).json({ error: "الحد الأقصى 500 سائق لكل استيراد" });
+    return;
+  }
+
+  const results: {
+    created: { name: string; mobile: string; loginCode: string }[];
+    skipped: { name: string; mobile: string; reason: string }[];
+  } = { created: [], skipped: [] };
+
+  const seenMobiles = new Set<string>();
+
+  for (const row of drivers) {
+    const name = String(row.name ?? "").trim();
+    const mobile = String(row.mobile ?? "").trim();
+
+    if (!name || !mobile) {
+      results.skipped.push({ name: name || "—", mobile: mobile || "—", reason: "بيانات ناقصة (الاسم أو الجوال)" });
+      continue;
+    }
+    if (seenMobiles.has(mobile)) {
+      results.skipped.push({ name, mobile, reason: "رقم مكرر داخل الملف" });
+      continue;
+    }
+    seenMobiles.add(mobile);
+
+    const existing = await db.query.driversTable.findFirst({
+      where: eq(driversTable.mobile, mobile),
+    });
+    if (existing) {
+      results.skipped.push({ name, mobile, reason: "رقم الجوال مسجّل مسبقاً" });
+      continue;
+    }
+
+    const rawCode = String(row.loginCode ?? row.pin ?? "").trim();
+    let finalCode: string;
+    if (rawCode) {
+      const codeExists = await db.query.driversTable.findFirst({
+        where: eq(driversTable.loginCode, rawCode),
+      });
+      finalCode = codeExists ? await generateUniqueLoginCode() : rawCode;
+    } else {
+      finalCode = await generateUniqueLoginCode();
+    }
+
+    const carTypeParts = [row.carType, row.carYear].filter(Boolean).join(" ");
+
+    await db.insert(driversTable).values({
+      name,
+      mobile,
+      loginCode: finalCode,
+      carType: carTypeParts || null,
+      nationality: row.nationality ? String(row.nationality) : null,
+      age: row.age ? parseInt(String(row.age)) : null,
+      nationalId: row.nationalId ?? row.national_id ? String(row.nationalId ?? row.national_id) : null,
+      balance: 0,
+    });
+
+    results.created.push({ name, mobile, loginCode: finalCode });
+  }
+
+  res.json(results);
+});
+
 router.get("/drivers/:id", async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {

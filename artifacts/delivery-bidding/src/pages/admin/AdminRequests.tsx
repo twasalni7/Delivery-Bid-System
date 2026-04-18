@@ -25,7 +25,7 @@ export default function AdminRequests() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const { data: requests, isLoading } = useListRequests();
+  const { data: requests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
   const updateRequest = useAdminUpdateRequest();
   const deleteRequest = useAdminDeleteRequest();
   const [editDialog, setEditDialog] = useState<CommuteRequest | null>(null);

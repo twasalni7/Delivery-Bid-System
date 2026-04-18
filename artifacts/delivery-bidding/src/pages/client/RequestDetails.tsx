@@ -31,10 +31,10 @@ export default function RequestDetails() {
   const { toast } = useToast();
 
   const { data: request, isLoading: loadingReq } = useGetRequest(id, {
-    query: { queryKey: getGetRequestQueryKey(id), enabled: !!id },
+    query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
   });
   const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, {
-    query: { queryKey: getGetRequestOffersQueryKey(id), enabled: !!id },
+    query: { queryKey: getGetRequestOffersQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
   });
 
   const prevCountRef = useRef<number | null>(null);

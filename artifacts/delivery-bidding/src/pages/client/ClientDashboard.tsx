@@ -27,7 +27,7 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 
 export default function ClientDashboard() {
   const { data: requests, isLoading } = useListRequests(undefined, {
-    query: { queryKey: getListRequestsQueryKey() },
+    query: { queryKey: getListRequestsQueryKey(), refetchInterval: 20_000 },
   });
 
   const [unreadMap, setUnreadMap] = useState<Record<number, number>>({});

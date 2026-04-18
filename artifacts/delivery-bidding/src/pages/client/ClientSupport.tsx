@@ -24,6 +24,7 @@ export default function ClientSupport() {
       if (!r.ok) throw new Error("فشل تحميل التذاكر");
       return r.json();
     },
+    refetchInterval: 30_000,
   });
   const [showForm, setShowForm] = useState(false);
   const [type, setType] = useState<string>("أخرى");
