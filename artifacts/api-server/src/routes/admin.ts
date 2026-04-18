@@ -8,7 +8,7 @@ import {
   clientsTable,
   transactionsTable,
 } from "@workspace/db";
-import { eq, count, ne, desc, sql, sum } from "drizzle-orm";
+import { eq, count, ne, desc, sql, sum, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
 
@@ -87,15 +87,22 @@ router.get("/financial", async (_req, res) => {
       .where(eq(requestsTable.status, status));
     acceptedContractsCount += Number(result.count);
   }
-  const totalFeesCollected = acceptedContractsCount * 50;
 
+  let totalFeesCollected = 0;
   let totalTransactionsAmount = 0;
   try {
+    const [feeSum] = await db
+      .select({ total: sum(transactionsTable.amount) })
+      .from(transactionsTable)
+      .where(inArray(transactionsTable.type, ["fee", "DEBIT"]));
+    totalFeesCollected = Math.abs(Number(feeSum?.total ?? 0));
+
     const [txSum] = await db
       .select({ total: sum(transactionsTable.amount) })
       .from(transactionsTable);
     totalTransactionsAmount = Number(txSum?.total ?? 0);
   } catch {
+    totalFeesCollected = acceptedContractsCount * 50;
     totalTransactionsAmount = 0;
   }
 

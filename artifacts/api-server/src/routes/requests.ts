@@ -336,7 +336,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   await db.insert(transactionsTable).values({
     driverId: driver.id,
     amount: -50,
-    type: "DEBIT",
+    type: "fee",
   });
 
   const [updated] = await db
