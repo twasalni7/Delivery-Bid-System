@@ -6,7 +6,7 @@ import router from "./routes";
 
 const app = express();
 
-// Middleware لتجاوز تدقيق TypeScript على الطلبات
+// إعداد Middleware بسيط مع تحديد الأنواع كـ any لتجنب أخطاء التدقيق
 app.use((req: any, res: any, next: any) => {
   next();
 });
