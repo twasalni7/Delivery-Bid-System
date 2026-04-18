@@ -2,19 +2,14 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useClientRegister } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Bus } from "lucide-react";
 
 export default function ClientRegister() {
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const { toast } = useToast();
   const registerMutation = useClientRegister();
-
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
@@ -33,93 +28,65 @@ export default function ClientRegister() {
     registerMutation.mutate(
       { data: { name: name.trim(), mobile: mobile.trim(), password } },
       {
-        onSuccess: async () => {
-          await refetch();
-          setLocation("/client");
-        },
-        onError: (err: Error) => {
-          toast({ title: err.message ?? "فشل إنشاء الحساب", variant: "destructive" });
-        },
+        onSuccess: async () => { await refetch(); setLocation("/client"); },
+        onError: (err: Error) => { toast({ title: err.message ?? "فشل إنشاء الحساب", variant: "destructive" }); },
       }
     );
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir="rtl">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center bg-primary text-primary-foreground p-3 rounded-md mb-3 shadow">
-          <Bus size={32} />
+    <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl">
+      <div className="p-5 pb-8" style={{ background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}>
+        <Link href="/" className="text-white/70 text-sm flex items-center gap-1 mb-6 hover:text-white">← العودة</Link>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">📦</div>
+          <div>
+            <h1 className="text-2xl font-black text-white">توصّلني</h1>
+            <p className="text-white/70 text-sm">تسجيل عميل جديد</p>
+          </div>
         </div>
-        <h1 className="text-3xl font-black">توصّلني</h1>
-        <p className="text-muted-foreground text-sm mt-1">تسجيل عميل جديد</p>
       </div>
 
-      <Card className="w-full max-w-sm border-2">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl font-black">إنشاء حساب</CardTitle>
-          <CardDescription>أدخل بياناتك لإنشاء حساب عميل</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="flex-1 px-5 -mt-4">
+        <div className="bg-white rounded-2xl shadow-lg p-5">
+          <h2 className="text-xl font-black text-gray-900 mb-1">إنشاء حساب</h2>
+          <p className="text-gray-400 text-sm mb-5">أدخل بياناتك لإنشاء حساب عميل</p>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name" className="font-bold text-xs">الاسم الكامل</Label>
-              <Input
-                id="name"
-                placeholder="مثال: محمد العتيبي"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoFocus
-              />
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1.5 block">الاسم الكامل</label>
+              <Input placeholder="مثال: محمد العتيبي" value={name} onChange={(e) => setName(e.target.value)} autoFocus
+                className="rounded-xl border-gray-200 focus:border-blue-400" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="mobile" className="font-bold text-xs">رقم الجوال</Label>
-              <Input
-                id="mobile"
-                type="tel"
-                placeholder="05xxxxxxxx"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                dir="ltr"
-              />
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1.5 block">رقم الجوال</label>
+              <Input type="tel" placeholder="05xxxxxxxx" value={mobile} onChange={(e) => setMobile(e.target.value)} dir="ltr"
+                className="rounded-xl border-gray-200 focus:border-blue-400" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="font-bold text-xs">كلمة المرور</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                dir="ltr"
-              />
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1.5 block">كلمة المرور</label>
+              <Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr"
+                className="rounded-xl border-gray-200 focus:border-blue-400" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="confirm" className="font-bold text-xs">تأكيد كلمة المرور</Label>
-              <Input
-                id="confirm"
-                type="password"
-                placeholder="••••••••"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                dir="ltr"
-              />
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1.5 block">تأكيد كلمة المرور</label>
+              <Input type="password" placeholder="••••••••" value={confirm} onChange={(e) => setConfirm(e.target.value)} dir="ltr"
+                className="rounded-xl border-gray-200 focus:border-blue-400" />
             </div>
-            <Button type="submit" className="w-full font-bold" disabled={registerMutation.isPending}>
+            <button
+              type="submit"
+              disabled={registerMutation.isPending}
+              className="w-full py-3.5 rounded-2xl text-white font-black shadow-md active:scale-[0.98] transition-transform disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}
+            >
               {registerMutation.isPending ? "جاري التسجيل..." : "إنشاء الحساب"}
-            </Button>
+            </button>
           </form>
-          <p className="text-center text-sm text-muted-foreground mt-4">
+          <p className="text-center text-sm text-gray-400 mt-4">
             لديك حساب بالفعل؟{" "}
-            <Link href="/client/login" className="text-primary font-bold hover:underline">
-              سجّل دخولك
-            </Link>
+            <Link href="/client/login" className="text-blue-600 font-bold hover:underline">سجّل دخولك</Link>
           </p>
-        </CardContent>
-      </Card>
-
-      <Link href="/" className="mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        ← العودة للرئيسية
-      </Link>
+        </div>
+      </div>
     </div>
   );
 }

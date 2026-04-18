@@ -1,65 +1,74 @@
 import { Link } from "wouter";
-import { Bus, User, Truck, ShieldAlert } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir="rtl">
-      <div className="text-center mb-12">
-        <div className="inline-flex items-center justify-center bg-primary text-primary-foreground p-3 rounded-md mb-4 shadow">
-          <Bus size={48} />
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-5" dir="rtl">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 text-3xl shadow-md"
+          style={{ background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}>
+          🚐
         </div>
-        <h1 className="text-5xl font-black tracking-tight mb-2">توصّلني</h1>
-        <p className="text-xl text-muted-foreground">اشتراكات التوصيل الشهري</p>
+        <h1 className="text-2xl font-black text-gray-900">توصّلني</h1>
+        <p className="text-gray-400 text-sm mt-1">Delivery Bid Management System</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-3xl w-full">
-        <Card className="border-2 hover:border-primary transition-colors hover:shadow-md cursor-pointer group">
-          <Link href="/client/login" className="block h-full">
-            <CardHeader className="text-center pb-2">
-              <User className="mx-auto h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
-              <CardTitle className="text-xl mt-3">بوابة العميل</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <CardDescription className="text-sm mb-5">
-                أضف طلب دوام شهري واستعرض عروض السائقين واختر الأنسب.
-              </CardDescription>
-              <Button className="w-full font-bold">دخول كعميل</Button>
-            </CardContent>
-          </Link>
-        </Card>
+      <div className="w-full max-w-sm space-y-4">
+        <Link href="/client/login">
+          <div className="rounded-2xl p-5 cursor-pointer shadow-lg active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-3xl shrink-0">
+                📦
+              </div>
+              <div className="text-white flex-1">
+                <p className="text-xl font-black">عميل</p>
+                <p className="text-sm font-bold opacity-90">Customer</p>
+                <p className="text-xs opacity-75 mt-0.5">اطلب توصيل واستعرض العروض</p>
+                <p className="text-xs opacity-60">Request delivery and view bids</p>
+              </div>
+              <div className="text-white/60 text-2xl">›</div>
+            </div>
+          </div>
+        </Link>
 
-        <Card className="border-2 hover:border-primary transition-colors hover:shadow-md cursor-pointer group">
-          <Link href="/driver/login" className="block h-full">
-            <CardHeader className="text-center pb-2">
-              <Truck className="mx-auto h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
-              <CardTitle className="text-xl mt-3">بوابة السائق</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <CardDescription className="text-sm mb-5">
-                استعرض طلبات الدوام المتاحة وقدّم أفضل عرض لك.
-              </CardDescription>
-              <Button className="w-full font-bold">دخول كسائق</Button>
-            </CardContent>
-          </Link>
-        </Card>
+        <Link href="/driver/login">
+          <div className="rounded-2xl p-5 cursor-pointer shadow-lg active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-3xl shrink-0">
+                🚗
+              </div>
+              <div className="text-white flex-1">
+                <p className="text-xl font-black">سائق</p>
+                <p className="text-sm font-bold opacity-90">Driver</p>
+                <p className="text-xs opacity-75 mt-0.5">استلم طلبات وقدّم عروض</p>
+                <p className="text-xs opacity-60">Accept orders and place bids</p>
+              </div>
+              <div className="text-white/60 text-2xl">›</div>
+            </div>
+          </div>
+        </Link>
 
-        <Card className="border-2 hover:border-primary transition-colors hover:shadow-md cursor-pointer group">
-          <Link href="/admin/login" className="block h-full">
-            <CardHeader className="text-center pb-2">
-              <ShieldAlert className="mx-auto h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
-              <CardTitle className="text-xl mt-3">لوحة الإدارة</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <CardDescription className="text-sm mb-5">
-                إدارة الطلبات والسائقين والعروض والإشراف على المنصة.
-              </CardDescription>
-              <Button className="w-full font-bold">دخول كمدير</Button>
-            </CardContent>
-          </Link>
-        </Card>
+        <Link href="/admin/login">
+          <div className="rounded-2xl p-5 cursor-pointer shadow-lg active:scale-[0.98] transition-transform"
+            style={{ background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)" }}>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-3xl shrink-0">
+                🛡️
+              </div>
+              <div className="text-white flex-1">
+                <p className="text-xl font-black">إدارة</p>
+                <p className="text-sm font-bold opacity-90">Admin</p>
+                <p className="text-xs opacity-75 mt-0.5">إدارة النظام والمستخدمين</p>
+                <p className="text-xs opacity-60">Manage system and users</p>
+              </div>
+              <div className="text-white/60 text-2xl">›</div>
+            </div>
+          </div>
+        </Link>
       </div>
+
+      <p className="text-gray-400 text-xs mt-8">اختر نوع الحساب للدخول إلى النظام</p>
     </div>
   );
 }

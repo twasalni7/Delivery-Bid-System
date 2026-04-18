@@ -3,15 +3,26 @@ import { useRoute, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle, Bell, FileText } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
-import { getStatusColor, getStatusLabel } from "@/lib/status-utils";
+import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 
 const SEEN_KEY = (id: number) => `seen_offers_${id}`;
+
+const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
+
+const STATUS_GRADIENT: Record<string, string> = {
+  OPEN:      "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+  BIDDING:   "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+  SELECTED:  "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+  ACTIVE:    "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+  COMPLETED: "linear-gradient(135deg, #6B7280 0%, #4B5563 100%)",
+  CANCELLED: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
+  EXPIRED:   "linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)",
+  FROZEN:    "linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)",
+};
 
 export default function RequestDetails() {
   const [, params] = useRoute("/client/request/:id");
@@ -23,30 +34,20 @@ export default function RequestDetails() {
     query: { queryKey: getGetRequestQueryKey(id), enabled: !!id },
   });
   const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, {
-    query: {
-      queryKey: getGetRequestOffersQueryKey(id),
-      enabled: !!id,
-    },
+    query: { queryKey: getGetRequestOffersQueryKey(id), enabled: !!id },
   });
 
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!offers || !id) return;
-
     const currentCount = offers.length;
     const storedSeen = parseInt(localStorage.getItem(SEEN_KEY(id)) ?? "-1", 10);
-
     if (prevCountRef.current !== null && currentCount > prevCountRef.current) {
       const newCount = currentCount - prevCountRef.current;
-      toast({
-        title: `وصل ${newCount} عرض جديد!`,
-        description: "تحقق من أحدث عروض السائقين أدناه.",
-      });
+      toast({ title: `وصل ${newCount} عرض جديد!`, description: "تحقق من أحدث عروض السائقين أدناه." });
     }
-
     prevCountRef.current = currentCount;
-
     if (currentCount > storedSeen) {
       localStorage.setItem(SEEN_KEY(id), String(currentCount));
     }
@@ -71,153 +72,134 @@ export default function RequestDetails() {
   };
 
   if (loadingReq) {
-    return <Layout role="client"><div className="text-center py-20 text-muted-foreground">جاري التحميل...</div></Layout>;
+    return <Layout role="client"><div className="text-center py-20 text-gray-400">جاري التحميل...</div></Layout>;
   }
 
   if (!request) {
     return (
       <Layout role="client">
         <div className="text-center py-20">
-          <p className="font-bold text-lg">الطلب غير موجود</p>
-          <Button asChild className="mt-4"><Link href="/client">العودة</Link></Button>
+          <p className="text-5xl mb-3">😕</p>
+          <p className="font-bold text-lg text-gray-700">الطلب غير موجود</p>
+          <Link href="/client">
+            <div className="mt-4 inline-block px-5 py-2 rounded-full bg-blue-600 text-white font-bold text-sm">العودة</div>
+          </Link>
         </div>
       </Layout>
     );
   }
 
   const isOpen = request.status === "OPEN" || request.status === "BIDDING";
+  const gradient = STATUS_GRADIENT[request.status] ?? STATUS_GRADIENT.OPEN;
 
   return (
     <Layout role="client">
-      <div className="max-w-2xl mx-auto" dir="rtl">
-        <Link href="/client" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
-          <ArrowRight size={14} /> العودة للطلبات
+      <div dir="rtl" className="pb-6">
+        <Link href="/client" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-4">
+          <ArrowRight size={14} /> العودة
         </Link>
 
-        <div className="flex items-start justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-2xl font-black">طلب #{request.id}</h1>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border mt-1 ${getStatusColor(request.status)}`}>
-              {getStatusLabel(request.status)}
-            </span>
-          </div>
-          {isOpen && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1.5 rounded-md">
-              <Bell size={12} className="text-primary" />
-              يتجدد كل 30 ثانية
+        <div className="rounded-2xl overflow-hidden shadow-md mb-5">
+          <div className="p-5 text-white" style={{ background: gradient }}>
+            <div className="flex items-start justify-between mb-3">
+              <span className="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-full">
+                {getStatusLabel(request.status)}
+              </span>
+              <span className="text-white/60 text-xs">طلب #{request.id}</span>
             </div>
-          )}
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-white/80 text-sm mt-0.5">📍</span>
+                <div>
+                  <p className="text-white/60 text-xs">من</p>
+                  <p className="text-white font-bold text-sm">{request.homeLocation}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-white/80 text-sm mt-0.5">📍</span>
+                <div>
+                  <p className="text-white/60 text-xs">إلى</p>
+                  <p className="text-white font-bold text-sm">{request.workLocation}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                  <Clock size={13} />
+                  <span dir="ltr">{formatTime12h(request.morningTime)}</span>
+                  {request.eveningTime && <span dir="ltr"> – {formatTime12h(request.eveningTime)}</span>}
+                </div>
+                <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                  <Users size={13} />
+                  <span>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white px-4 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar size={13} className="text-gray-400" />
+              <span className="text-xs text-gray-500">{request.workingDaysPerWeek} أيام/أسبوع</span>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {DAYS_AR.map((d, i) => {
+                const active = i < (request.workingDaysPerWeek ?? 5);
+                return (
+                  <span key={i} className={`text-xs px-2 py-0.5 rounded-full font-medium ${active ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-400"}`}>
+                    {d}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        <Card className="border-2 mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold">تفاصيل الرحلة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-start gap-2">
-                <MapPin size={15} className="text-primary shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-xs text-muted-foreground mb-0.5">من</p>
-                  <p>{request.homeLocation}</p>
-                </div>
+        {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
+          <div className="rounded-2xl overflow-hidden shadow-md mb-5">
+            <div className="p-4 text-white" style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}>
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle size={16} />
+                <span className="font-bold">
+                  {request.status === "COMPLETED" ? "تمت الاتفاقية" : "تم اختيار السائق"}
+                </span>
               </div>
-              <div className="flex items-start gap-2">
-                <MapPin size={15} className="text-primary shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-xs text-muted-foreground mb-0.5">إلى</p>
-                  <p>{request.workLocation}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Clock size={15} className="text-primary shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-xs text-muted-foreground mb-0.5">الأوقات</p>
-                  <p dir="ltr">{formatTime12h(request.morningTime)}{request.eveningTime ? ` ← ${formatTime12h(request.eveningTime)}` : ""}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Calendar size={15} className="text-primary shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-xs text-muted-foreground mb-0.5">الجدول</p>
-                  <p>{request.workingDaysPerWeek} أيام/أسبوع</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Users size={15} className="text-primary shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-xs text-muted-foreground mb-0.5">الأشخاص</p>
-                  <p>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</p>
-                </div>
-              </div>
-              {request.phone && (
-                <div className="flex items-start gap-2">
-                  <Phone size={15} className="text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold text-xs text-muted-foreground mb-0.5">رقم تواصلك</p>
-                    <p dir="ltr">{request.phone}</p>
-                  </div>
-                </div>
+              <p className="text-2xl font-black">{request.selectedDriver.name}</p>
+              {request.selectedDriver.carType && (
+                <p className="text-white/70 text-xs mt-0.5">{request.selectedDriver.carType}</p>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
-          <Card className="border-2 border-green-300 bg-green-50/30 mb-6">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                  <CheckCircle size={18} className="text-green-700" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-green-800 mb-0.5">
-                    {request.status === "COMPLETED" ? "تمت الاتفاقية — بيانات التواصل" : "تم اختيار السائق"}
-                  </p>
-                  <p className="text-base font-black">{request.selectedDriver.name}</p>
-                  {request.selectedDriver.carType && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{request.selectedDriver.carType}</p>
-                  )}
-                  {request.selectedDriver.mobile ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <a
-                        href={`tel:${request.selectedDriver.mobile}`}
-                        className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
-                        dir="ltr"
-                      >
-                        <Phone size={14} /> {request.selectedDriver.mobile}
-                      </a>
-                      <a
-                        href={`https://wa.me/${request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button size="sm" variant="outline" className="font-bold text-green-700 border-green-300 hover:bg-green-100 gap-1 text-xs">
-                          <MessageCircle size={13} />
-                          واتساب السائق
-                        </Button>
-                      </a>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-1">رقم الجوال غير متاح</p>
-                  )}
-                </div>
+            {request.selectedDriver.mobile && (
+              <div className="bg-white px-4 py-3 flex items-center gap-3">
+                <Phone size={14} className="text-green-600" />
+                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-gray-800" dir="ltr">
+                  {request.selectedDriver.mobile}
+                </a>
+                <a
+                  href={`https://wa.me/${request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966")}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="mr-auto bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                >
+                  <MessageCircle size={11} /> واتساب
+                </a>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         )}
 
         <div>
-          <h2 className="text-lg font-black mb-4">
-            عروض السائقين {offers ? `(${offers.length})` : ""}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-black text-gray-900">
+              عروض السائقين {offers ? `(${offers.length})` : ""}
+            </h2>
+          </div>
 
-          {loadingOffers && <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>}
+          {loadingOffers && <div className="text-center py-8 text-gray-400 text-sm">جاري التحميل...</div>}
 
           {!loadingOffers && (!offers || offers.length === 0) && (
-            <div className="text-center py-12 border-2 border-dashed rounded-md">
-              <p className="font-bold">لا توجد عروض بعد</p>
-              <p className="text-muted-foreground text-sm mt-1">ستظهر عروض السائقين هنا تلقائياً</p>
+            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-white">
+              <p className="text-3xl mb-2">⏳</p>
+              <p className="font-bold text-gray-700">لا توجد عروض بعد</p>
+              <p className="text-gray-400 text-sm mt-1">ستظهر عروض السائقين هنا عند تقديمها</p>
             </div>
           )}
 
@@ -225,43 +207,49 @@ export default function RequestDetails() {
             {offers?.map((offer: Offer) => {
               const isSelected = request.selectedDriverId === offer.driverId;
               return (
-                <Card key={offer.id} className={`border-2 transition-colors ${isSelected ? "border-green-400 bg-green-50/30" : "hover:border-primary/40"}`}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center justify-between gap-3">
+                <div key={offer.id} className={`rounded-2xl overflow-hidden shadow-sm ${isSelected ? "shadow-md" : ""}`}>
+                  {isSelected && (
+                    <div className="px-4 py-2 flex items-center gap-2" style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}>
+                      <CheckCircle size={14} className="text-white" />
+                      <span className="text-white text-xs font-bold">السائق المختار</span>
+                    </div>
+                  )}
+                  <div className="bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <p className="font-bold">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                          {isSelected && (
-                            <span className="flex items-center gap-1 text-xs text-green-700 font-bold bg-green-100 px-2 py-0.5 rounded border border-green-300">
-                              <CheckCircle size={12} /> مختار
-                            </span>
-                          )}
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-sm font-black text-blue-600">
+                            {offer.driver?.name?.charAt(0) ?? "س"}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-800">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                            <div className="flex flex-wrap gap-2 text-xs text-gray-400 mt-0.5">
+                              {offer.carType && offer.carType !== "—" && (
+                                <span className="flex items-center gap-1"><Car size={10} /> {offer.carType}</span>
+                              )}
+                              {offer.nationality && offer.nationality !== "—" && (
+                                <span className="flex items-center gap-1"><Globe size={10} /> {offer.nationality}</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-2xl font-black text-primary mb-2" dir="ltr">
-                          {offer.price?.toFixed(2)} ر.س <span className="text-sm font-normal text-muted-foreground">/ شهر</span>
+                        <p className="text-2xl font-black text-gray-900" dir="ltr">
+                          {offer.price?.toFixed(0)} <span className="text-sm font-normal text-gray-400">ر.س / شهر</span>
                         </p>
-                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                          {offer.carType && (
-                            <span className="flex items-center gap-1"><Car size={11} /> {offer.carType}</span>
-                          )}
-                          {offer.nationality && (
-                            <span className="flex items-center gap-1"><Globe size={11} /> {offer.nationality}</span>
-                          )}
-                        </div>
                       </div>
                       {isOpen && !request.selectedDriverId && (
-                        <Button
-                          size="sm"
-                          className="font-bold shrink-0"
+                        <button
                           onClick={() => handleSelect(offer.id)}
                           disabled={selectOffer.isPending}
+                          className="px-4 py-2.5 rounded-xl text-white font-bold text-sm shadow-md active:scale-95 transition-transform disabled:opacity-50"
+                          style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}
                         >
                           اختيار
-                        </Button>
+                        </button>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
