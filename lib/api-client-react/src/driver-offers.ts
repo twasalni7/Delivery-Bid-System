@@ -42,17 +42,17 @@ export function useListMyOffers(options?: {
   });
 }
 
-export function useUpdateOfferPrice(options?: {
+export function useUpdateOffer(options?: {
   onSuccess?: () => void;
   onError?: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ offerId, price }: { offerId: number; price: number }) => {
+    mutationFn: async ({ offerId, price, carType, nationality }: { offerId: number; price: number; carType?: string; nationality?: string }) => {
       return customFetch<DriverOffer>(`/api/offers/${offerId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ price }),
+        body: JSON.stringify({ price, carType, nationality }),
       });
     },
     onSuccess: () => {
@@ -62,6 +62,8 @@ export function useUpdateOfferPrice(options?: {
     onError: options?.onError,
   });
 }
+
+export const useUpdateOfferPrice = useUpdateOffer;
 
 export function useWithdrawOffer(options?: {
   onSuccess?: () => void;

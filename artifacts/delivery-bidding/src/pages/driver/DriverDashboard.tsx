@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useRef, useState } from "react";
-import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffers, useUpdateOfferPrice, useWithdrawOffer } from "@workspace/api-client-react";
+import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffers, useUpdateOffer, useWithdrawOffer } from "@workspace/api-client-react";
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
@@ -23,10 +23,10 @@ export default function DriverDashboard() {
   const openRequests = allRequests?.filter((r) => r.status === "OPEN" || r.status === "BIDDING");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");
-  const [editingOffer, setEditingOffer] = useState<{ id: number; price: string } | null>(null);
+  const [editingOffer, setEditingOffer] = useState<{ id: number; price: string; carType: string; nationality: string } | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const updatePrice = useUpdateOfferPrice();
+  const updateOffer = useUpdateOffer();
   const withdrawOffer = useWithdrawOffer();
 
   const prevSelectedIdsRef = useRef<Set<number> | null>(null);
@@ -67,7 +67,15 @@ export default function DriverDashboard() {
     return sum;
   }, 0);
 
-  function startEdit(offer: DriverOffer) { setEditingOffer({ id: offer.id, price: String(offer.price) }); setEditError(null); }
+  function startEdit(offer: DriverOffer) {
+    setEditingOffer({
+      id: offer.id,
+      price: String(offer.price),
+      carType: offer.carType === "—" ? "" : (offer.carType ?? ""),
+      nationality: offer.nationality === "—" ? "" : (offer.nationality ?? ""),
+    });
+    setEditError(null);
+  }
   function cancelEdit() { setEditingOffer(null); setEditError(null); }
 
   async function submitEdit() {
@@ -75,7 +83,12 @@ export default function DriverDashboard() {
     const price = parseFloat(editingOffer.price);
     if (isNaN(price) || price <= 0) { setEditError("أدخل سعراً صحيحاً"); return; }
     try {
-      await updatePrice.mutateAsync({ offerId: editingOffer.id, price });
+      await updateOffer.mutateAsync({
+        offerId: editingOffer.id,
+        price,
+        carType: editingOffer.carType.trim() || "—",
+        nationality: editingOffer.nationality.trim() || "—",
+      });
       setEditingOffer(null); setEditError(null);
     } catch (err: unknown) {
       const apiErr = err as { data?: { error?: string } };
@@ -338,23 +351,37 @@ export default function DriverDashboard() {
                         )}
                         <div className="flex items-center justify-between">
                           {editingOffer?.id === offer.id ? (
-                            <div className="flex flex-col gap-1.5 flex-1">
+                            <div className="flex flex-col gap-2 flex-1">
                               <div className="flex items-center gap-2">
                                 <input
                                   type="number" min="1" step="1"
                                   value={editingOffer.price}
                                   onChange={(e) => setEditingOffer({ ...editingOffer, price: e.target.value })}
-                                  className="w-32 border-2 border-green-400 rounded-xl px-3 py-2 text-base font-bold focus:outline-none"
+                                  className="w-28 border-2 border-green-400 rounded-xl px-3 py-2 text-base font-bold focus:outline-none"
                                   dir="ltr" autoFocus
                                 />
                                 <span className="text-sm text-gray-400">ر.س</span>
-                                <button onClick={submitEdit} disabled={updatePrice.isPending} className="text-green-600 hover:text-green-700 disabled:opacity-50">
+                                <button onClick={submitEdit} disabled={updateOffer.isPending} className="text-green-600 hover:text-green-700 disabled:opacity-50 mr-auto">
                                   <Check size={20} />
                                 </button>
                                 <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600">
                                   <X size={20} />
                                 </button>
                               </div>
+                              <input
+                                type="text"
+                                placeholder="نوع السيارة (مثال: تويوتا كامري)"
+                                value={editingOffer.carType}
+                                onChange={(e) => setEditingOffer({ ...editingOffer, carType: e.target.value })}
+                                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+                              />
+                              <input
+                                type="text"
+                                placeholder="الجنسية (مثال: سعودي)"
+                                value={editingOffer.nationality}
+                                onChange={(e) => setEditingOffer({ ...editingOffer, nationality: e.target.value })}
+                                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+                              />
                               {editError && <p className="text-sm text-red-600">{editError}</p>}
                             </div>
                           ) : (

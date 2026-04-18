@@ -93,7 +93,8 @@ router.put("/:id", requireAuth("driver"), async (req, res) => {
     return;
   }
 
-  const { price: rawPrice } = req.body as { price?: unknown };
+  const { price: rawPrice, carType: rawCarType, nationality: rawNationality } =
+    req.body as { price?: unknown; carType?: unknown; nationality?: unknown };
   const price =
     typeof rawPrice === "number"
       ? rawPrice
@@ -102,6 +103,8 @@ router.put("/:id", requireAuth("driver"), async (req, res) => {
     res.status(400).json({ error: "السعر غير صحيح" });
     return;
   }
+  const carType = typeof rawCarType === "string" ? (rawCarType.trim() || "—") : undefined;
+  const nationality = typeof rawNationality === "string" ? (rawNationality.trim() || "—") : undefined;
   const driverId = req.session.user!.id;
 
   const offer = await db.query.offersTable.findFirst({
@@ -132,9 +135,13 @@ router.put("/:id", requireAuth("driver"), async (req, res) => {
     return;
   }
 
+  const updateFields: { price: number; carType?: string; nationality?: string } = { price };
+  if (carType !== undefined) updateFields.carType = carType;
+  if (nationality !== undefined) updateFields.nationality = nationality;
+
   const [updated] = await db
     .update(offersTable)
-    .set({ price })
+    .set(updateFields)
     .where(and(eq(offersTable.id, offerId), eq(offersTable.driverId, driverId)))
     .returning();
 
