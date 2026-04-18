@@ -12,6 +12,13 @@ export interface DriverOfferRequest {
   status: string;
 }
 
+export interface DriverOfferStats {
+  totalCount: number;
+  lowerCount: number;
+  minPrice: number | null;
+  maxPrice: number | null;
+}
+
 export interface DriverOffer {
   id: number;
   driverId: number;
@@ -20,6 +27,7 @@ export interface DriverOffer {
   carType: string;
   nationality: string;
   request: DriverOfferRequest | null;
+  offerStats: DriverOfferStats | null;
   createdAt?: string;
 }
 

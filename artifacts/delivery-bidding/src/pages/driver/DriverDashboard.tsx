@@ -349,6 +349,37 @@ export default function DriverDashboard() {
                             </div>
                           </div>
                         )}
+                        {/* Competitive hint */}
+                        {offer.offerStats && (() => {
+                          const { lowerCount, totalCount, minPrice } = offer.offerStats;
+                          const isOnlyBidder = totalCount === 1;
+                          const isLowest = lowerCount === 0;
+                          const hasTie = isLowest && !isOnlyBidder;
+                          const icon = lowerCount === 0 ? "🏆" : lowerCount <= 2 ? "⚠️" : "📉";
+                          const colorClass = lowerCount === 0
+                            ? "bg-green-50 text-green-700 border border-green-200"
+                            : lowerCount <= 2
+                            ? "bg-amber-50 text-amber-700 border border-amber-200"
+                            : "bg-red-50 text-red-700 border border-red-200";
+                          const label = isOnlyBidder
+                            ? "أنت المتقدم الوحيد حتى الآن!"
+                            : hasTie
+                            ? "أنت ضمن أقل العروض سعراً"
+                            : lowerCount === 1
+                            ? "يوجد عرض واحد أقل من عرضك"
+                            : `يوجد ${lowerCount} عروض أقل من عرضك`;
+                          return (
+                            <div className={`flex items-center gap-2 text-sm font-bold px-3 py-2 rounded-xl mb-3 ${colorClass}`}>
+                              <span className="text-base">{icon}</span>
+                              <span>{label}</span>
+                              {!isOnlyBidder && minPrice !== null && lowerCount > 0 && (
+                                <span className="mr-auto text-xs font-normal opacity-75" dir="ltr">
+                                  أدنى سعر: {minPrice.toFixed(0)} ر.س
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div className="flex items-center justify-between">
                           {editingOffer?.id === offer.id ? (
                             <div className="flex flex-col gap-2 flex-1">

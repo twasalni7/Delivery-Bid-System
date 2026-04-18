@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { offersTable, driversTable, requestsTable } from "@workspace/db";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, lt, min, max } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { notify } from "../lib/notify";
@@ -60,6 +60,35 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
       const request = await db.query.requestsTable.findFirst({
         where: eq(requestsTable.id, o.requestId),
       });
+
+      // Fetch aggregate competitive stats for this request
+      const isPending = request && (request.status === "OPEN" || request.status === "BIDDING");
+      let offerStats: {
+        totalCount: number;
+        lowerCount: number;
+        minPrice: number | null;
+        maxPrice: number | null;
+      } | null = null;
+
+      if (isPending) {
+        const [statsRow] = await db
+          .select({ total: count(), minP: min(offersTable.price), maxP: max(offersTable.price) })
+          .from(offersTable)
+          .where(eq(offersTable.requestId, o.requestId));
+
+        const [lowerRow] = await db
+          .select({ lowerCount: count() })
+          .from(offersTable)
+          .where(and(eq(offersTable.requestId, o.requestId), lt(offersTable.price, o.price)));
+
+        offerStats = {
+          totalCount: statsRow?.total ?? 0,
+          lowerCount: lowerRow?.lowerCount ?? 0,
+          minPrice: statsRow?.minP ?? null,
+          maxPrice: statsRow?.maxP ?? null,
+        };
+      }
+
       return {
         id: o.id,
         driverId: o.driverId,
@@ -79,6 +108,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
               status: request.status,
             }
           : null,
+        offerStats,
         createdAt: o.createdAt?.toISOString(),
       };
     })
