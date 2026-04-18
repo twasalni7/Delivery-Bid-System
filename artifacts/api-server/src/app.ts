@@ -4,12 +4,16 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes";
 
+// ملاحظة: تأكد أنك تستورد 'pool' من ملف قاعدة البيانات الخاص بك
+// إذا كان الملف اسمه db.ts، فعل هذا السطر:
+// import { pool } from "./db"; 
+
 const app = express();
 
 /**
- * Middleware بسيط جدًا لتفادي أخطاء build
+ * Middleware أساسي مع تحديد الأنواع كـ any لتجنب أخطاء TypeScript
  */
-app.use((req, res, next) => {
+app.use((req: any, res: any, next: any) => {
   next();
 });
 
@@ -26,14 +30,13 @@ app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", 1);
 
 const PgSession = connectPgSimple(session);
-
 const SESSION_SECRET = process.env["SESSION_SECRET"] || "dev-secret";
-
 const isProduction = process.env["NODE_ENV"] === "production";
 
 app.use(
   session({
     store: new PgSession({
+      // pool, // فك التعليق عن هذا السطر بعد استيراد pool
       tableName: "user_sessions",
       createTableIfMissing: true,
     }),
@@ -47,33 +50,6 @@ app.use(
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   })
-);
-
-app.use("/api", router);
-
-export default app;app.use(express.urlencoded({ extended: true }));
-
-app.set("trust proxy", 1);
-
-const isProduction = process.env["NODE_ENV"] === "production";
-
-app.use(
-  session({
-    store: new PgSession({
-      pool,
-      tableName: "user_sessions",
-      createTableIfMissing: true,
-    }),
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    },
-  }),
 );
 
 app.use("/api", router);
