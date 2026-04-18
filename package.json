@@ -9,7 +9,7 @@
     "typecheck": "echo 'Skipping typecheck for faster build'"
   },
   "private": true,
-    "devDependencies": {
+  "devDependencies": {
     "typescript": "~5.9.2",
     "prettier": "^3.8.1",
     "@types/node": "^20.0.0"
