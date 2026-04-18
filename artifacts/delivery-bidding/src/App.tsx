@@ -29,9 +29,11 @@ import AdminDrivers from "@/pages/admin/AdminDrivers";
 import AdminOffers from "@/pages/admin/AdminOffers";
 import AdminClients from "@/pages/admin/AdminClients";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminSupport from "@/pages/admin/AdminSupport";
+import ClientSupport from "@/pages/client/ClientSupport";
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
+  defaultOptions: { queries: { retry: 1, staleTime: 20_000, refetchInterval: 30_000 } },
 });
 
 function ClientGuard({ children }: { children: React.ReactNode }) {
@@ -74,6 +76,9 @@ function Router() {
       <Route path="/client/request/:id">
         <ClientGuard><RequestDetails /></ClientGuard>
       </Route>
+      <Route path="/client/support">
+        <ClientGuard><ClientSupport /></ClientGuard>
+      </Route>
 
       <Route path="/driver/login" component={DriverLoginPage} />
       <Route path="/driver" component={DriverLogin} />
@@ -108,6 +113,9 @@ function Router() {
       </Route>
       <Route path="/admin/settings">
         <AdminGuard><AdminSettings /></AdminGuard>
+      </Route>
+      <Route path="/admin/support">
+        <AdminGuard><AdminSupport /></AdminGuard>
       </Route>
 
       <Route component={NotFound} />

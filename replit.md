@@ -2,7 +2,7 @@
 
 ## Overview
 
-نظام دوامات شهرية (Monthly Commute Bidding System) — منصة تتيح للعملاء نشر طلبات توصيل الدوام الشهري، ويتنافس السائقون بتقديم أفضل العروض، وتُشرف الإدارة على كل شيء. الواجهة بالكامل باللغة العربية مع دعم RTL.
+**توصّلني** — منصة اشتراكات التوصيل الشهري. تتيح للعملاء نشر طلبات توصيل الدوام الشهري، ويتنافس السائقون بتقديم أفضل العروض، وتُشرف الإدارة على كل شيء. الواجهة بالكامل باللغة العربية مع دعم RTL.
 
 ## Stack
 
@@ -48,7 +48,9 @@
 
 ## Status Flow
 
-`OPEN (مفتوح)` → `SELECTED (تم الاختيار)` → `ACTIVE (نشط)` → `COMPLETED (مكتمل)`
+`OPEN` → `BIDDING` (auto on first offer) → `SELECTED` → `ACTIVE` → `COMPLETED`
+
+Admin can also set: `CANCELLED`, `EXPIRED`, `FROZEN`
 
 ## DB Schema (Drizzle)
 
@@ -56,9 +58,10 @@
 - `clients` — (id, name, mobile unique, passwordHash, createdAt)
 - `admins` — (id, name, loginCode unique, createdAt)
 - `drivers` — (id, name, mobile NOT NULL UNIQUE, loginCode NOT NULL UNIQUE, balance, carType, nationality, age, nationalId, status[ACTIVE/BLOCKED/DELETED], warningCount, deletedAt, createdAt)
-- `requests` — (id, clientId FK→clients, homeLocation, workLocation, phone, numberOfPeople, workingDaysPerWeek, morningTime, eveningTime, status, selectedDriverId FK→drivers, createdAt)
+- `requests` — (id, clientId FK→clients, homeLocation, workLocation, phone, numberOfPeople, workingDaysPerWeek, morningTime, eveningTime, clientType[EMPLOYEE/STUDENT/OTHER], additionalLocations JSONB, notes TEXT, numberOfShifts INT, status[OPEN/BIDDING/SELECTED/ACTIVE/COMPLETED/CANCELLED/EXPIRED/FROZEN], selectedDriverId FK→drivers, createdAt, updatedAt)
 - `offers` — (id, requestId FK→requests, driverId FK→drivers, price, carType, nationality, createdAt)
 - `transactions` — (id, driverId FK→drivers, amount, type[CREDIT/DEBIT], createdAt)
+- `support_tickets` — (id, clientId FK→clients, driverId FK→drivers, requestId FK→requests, type, message, status[OPEN/IN_PROGRESS/RESOLVED/CLOSED], adminReply TEXT, createdAt, updatedAt)
 - `user_sessions` — Session store (auto-managed by connect-pg-simple)
 
 ## API Routes
@@ -110,19 +113,35 @@ Both naming conventions supported (RESTful path + flat alias):
 - `PATCH /admin/requests/:id` — Update request status or reassign selectedDriverId
 - `DELETE /admin/requests/:id` — Delete request
 
-## Frontend Pages (Task #2 — Pending)
+### Support Tickets (`/api/support-tickets`)
+- `GET /support-tickets` — Client: list own tickets; Admin: list all tickets
+- `POST /support-tickets` — Client: create ticket (type, message, requestId optional)
+- `PATCH /support-tickets/:id/reply` — Admin: reply to ticket
+- `PATCH /support-tickets/:id/status` — Admin: update ticket status
+- `DELETE /support-tickets/:id` — Admin: delete ticket
 
-Current state (pre-redesign): basic Arabic/RTL pages for each role
-- Needs: blue/red theme, mobile-first, role portals with proper auth flows
+## Frontend Pages
 
-## Design Targets (Task #2)
+### Client Role (`/client/*`)
+- `/client` — Dashboard (طلباتي) — list requests with status badges + unread offer notifications
+- `/client/request/new` — Create request wizard (clientType, locations, times, notes, shifts)
+- `/client/request/:id` — Request detail + offer list + select offer
+- `/client/profile` — Client profile
+- `/client/support` — Support tickets (create + view replies)
 
-- **Theme**: Blue (#1D4ED8) + Red (#DC2626) + White + Black
-- **Font**: Cairo (Arabic, RTL)
-- **Mobile-first** responsive design
-- Client portal: step-by-step request wizard
-- Driver portal: login with mobile+code, bid on jobs, see phone after selection
-- Admin portal: full dashboard with driver CRUD, request management, reassign
+### Driver Role (`/driver/*`)
+- `/driver/dashboard` — Available requests (OPEN + BIDDING) + my offers + selected jobs
+- `/driver/request/:id/offer` — Submit/view offer
+- `/driver/profile` — Driver profile
+
+### Admin Role (`/admin/*`)
+- `/admin` — Dashboard with stats/analytics
+- `/admin/requests` — All requests with status filter + edit/delete
+- `/admin/drivers` — Driver CRUD
+- `/admin/offers` — All offers
+- `/admin/clients` — Client list
+- `/admin/settings` — Admin settings
+- `/admin/support` — Support ticket management (reply, change status, delete)
 
 ## Important Notes
 

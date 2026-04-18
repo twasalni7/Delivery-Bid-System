@@ -18,6 +18,17 @@ import { getSessionUser } from "../lib/session";
 
 const router = Router();
 
+const ALL_STATUSES = new Set([
+  "OPEN",
+  "BIDDING",
+  "SELECTED",
+  "ACTIVE",
+  "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+  "FROZEN",
+]);
+
 function canSeePhone(
   req: Request,
   r: typeof requestsTable.$inferSelect
@@ -29,7 +40,9 @@ function canSeePhone(
   if (
     user.role === "driver" &&
     r.selectedDriverId === user.id &&
-    (r.status === "SELECTED" || r.status === "ACTIVE" || r.status === "COMPLETED")
+    (r.status === "SELECTED" ||
+      r.status === "ACTIVE" ||
+      r.status === "COMPLETED")
   )
     return true;
   return false;
@@ -59,26 +72,31 @@ function formatRequest(
 ) {
   const showPhone = canSeePhone(req, r);
   const user = getSessionUser(req);
+  const postSelection =
+    r.status === "SELECTED" || r.status === "ACTIVE" || r.status === "COMPLETED";
   const showDriverContact =
     user?.role === "admin" ||
-    (user?.role === "client" &&
-      r.clientId === user.id &&
-      (r.status === "SELECTED" || r.status === "ACTIVE" || r.status === "COMPLETED"));
+    (user?.role === "client" && r.clientId === user.id && postSelection);
   return {
     id: r.id,
     clientId: r.clientId,
+    clientType: r.clientType,
     homeLocation: r.homeLocation,
     workLocation: r.workLocation,
+    additionalLocations: r.additionalLocations,
     phone: showPhone ? r.phone : null,
     phoneHidden: !showPhone,
     numberOfPeople: r.numberOfPeople,
     workingDaysPerWeek: r.workingDaysPerWeek,
+    numberOfShifts: r.numberOfShifts,
     morningTime: r.morningTime,
     eveningTime: r.eveningTime,
+    notes: r.notes,
     status: r.status,
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
     createdAt: r.createdAt?.toISOString(),
+    updatedAt: r.updatedAt?.toISOString(),
   };
 }
 
@@ -89,12 +107,20 @@ router.get("/", async (req, res) => {
   const isClient = sessionUser?.role === "client";
 
   const conditions = [];
-  if (status) conditions.push(eq(requestsTable.status, status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED"));
+  if (status)
+    conditions.push(
+      eq(requestsTable.status, status as typeof requestsTable.$inferSelect["status"])
+    );
   if (isClient) conditions.push(eq(requestsTable.clientId, sessionUser!.id));
 
-  const rows = conditions.length > 0
-    ? await db.select().from(requestsTable).where(and(...conditions)).orderBy(requestsTable.createdAt)
-    : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
+  const rows =
+    conditions.length > 0
+      ? await db
+          .select()
+          .from(requestsTable)
+          .where(and(...conditions))
+          .orderBy(requestsTable.createdAt)
+      : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
 
   const requestIds = rows.map((r) => r.id);
   const offerCounts: Record<number, number> = {};
@@ -138,6 +164,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
     .insert(requestsTable)
     .values({
       ...parsed.data,
+      clientType: parsed.data.clientType ?? "غيره",
       clientId,
       status: "OPEN",
     })
@@ -163,7 +190,10 @@ router.get("/:id", async (req, res) => {
   }
 
   const sessionUser = getSessionUser(req);
-  if (sessionUser?.role === "client" && request.clientId !== sessionUser.id) {
+  if (
+    sessionUser?.role === "client" &&
+    request.clientId !== sessionUser.id
+  ) {
     res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
     return;
   }
@@ -194,11 +224,8 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
   const [updated] = await db
     .update(requestsTable)
     .set({
-      status: parsed.data.status as
-        | "OPEN"
-        | "SELECTED"
-        | "ACTIVE"
-        | "COMPLETED",
+      status: parsed.data.status as typeof requestsTable.$inferSelect["status"],
+      updatedAt: new Date(),
     })
     .where(eq(requestsTable.id, id))
     .returning();
@@ -248,8 +275,8 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
     return;
   }
 
-  if (request.status !== "OPEN") {
-    res.status(400).json({ error: "الطلب ليس مفتوحاً للعروض" });
+  if (request.status !== "OPEN" && request.status !== "BIDDING") {
+    res.status(400).json({ error: "لا يمكن إضافة عروض بعد اختيار سائق" });
     return;
   }
 
@@ -291,7 +318,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 
   const [updated] = await db
     .update(requestsTable)
-    .set({ status: "COMPLETED", selectedDriverId: driver.id })
+    .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
     .where(eq(requestsTable.id, id))
     .returning();
 
@@ -322,7 +349,7 @@ router.get("/:id/offers", async (req, res) => {
   const isOwner =
     sessionUser?.role === "client" && sessionUser.id === request.clientId;
   const postSelection =
-    request.status === "SELECTED" || request.status === "ACTIVE";
+    request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED";
 
   const offers = await db
     .select()
@@ -365,13 +392,13 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   }
   const { status, selectedDriverId } = req.body ?? {};
   const updates: Record<string, unknown> = {};
-  const validStatuses = new Set(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]);
   if (status !== undefined) {
-    if (!validStatuses.has(status as string)) {
+    if (!ALL_STATUSES.has(status as string)) {
       res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
       return;
     }
-    updates.status = status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED";
+    updates.status = status;
+    updates.updatedAt = new Date();
   }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
 

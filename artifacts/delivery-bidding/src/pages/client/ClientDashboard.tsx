@@ -5,22 +5,8 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle, MapPin, Clock, Users, ChevronLeft, Bell } from "lucide-react";
-
-const STATUS_COLORS: Record<string, string> = {
-  OPEN: "bg-blue-100 text-blue-800 border-blue-200",
-  SELECTED: "bg-amber-100 text-amber-800 border-amber-200",
-  ACTIVE: "bg-green-100 text-green-800 border-green-200",
-  COMPLETED: "bg-gray-100 text-gray-700 border-gray-200",
-  CANCELLED: "bg-red-100 text-red-800 border-red-200",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  OPEN: "مفتوح",
-  SELECTED: "تم الاختيار",
-  ACTIVE: "نشط",
-  COMPLETED: "مكتمل",
-  CANCELLED: "ملغى",
-};
+import { getStatusColor, getStatusLabel } from "@/lib/status-utils";
+import { formatTime12h } from "@/lib/time-utils";
 
 const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 
@@ -38,7 +24,7 @@ export default function ClientDashboard() {
     if (!requests) return;
     const map: Record<number, number> = {};
     for (const req of requests) {
-      if (req.status !== "OPEN") continue;
+      if (req.status !== "OPEN" && req.status !== "BIDDING") continue;
       const currentCount = req.offerCount ?? 0;
       const seenCount = parseInt(localStorage.getItem(SEEN_KEY(req.id)) ?? "0", 10);
       const unread = Math.max(0, currentCount - seenCount);
@@ -102,8 +88,8 @@ export default function ClientDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-2">
                           <span className="text-xs text-muted-foreground font-mono">#{req.id}</span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${STATUS_COLORS[req.status] || ""}`}>
-                            {STATUS_LABELS[req.status] || req.status}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${getStatusColor(req.status)}`}>
+                            {getStatusLabel(req.status)}
                           </span>
                           {req.selectedDriver && (
                             <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-200 font-medium">
@@ -129,7 +115,7 @@ export default function ClientDashboard() {
                           </div>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Clock size={13} className="shrink-0 text-primary" />
-                            <span dir="ltr">{req.morningTime} – {req.eveningTime}</span>
+                            <span dir="ltr">{formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Users size={13} className="shrink-0 text-primary" />

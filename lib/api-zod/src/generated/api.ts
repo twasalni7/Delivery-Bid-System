@@ -199,7 +199,7 @@ export const GetDriverTransactionsResponse = zod.array(
  * @summary List commute requests
  */
 export const ListRequestsQueryParams = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
 });
 
 export const ListRequestsResponseItem = zod.object({
@@ -216,7 +216,7 @@ export const ListRequestsResponseItem = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -246,13 +246,17 @@ export const ListRequestsResponse = zod.array(ListRequestsResponseItem);
  * @summary Create a commute request (requires client auth)
  */
 export const CreateRequestBody = zod.object({
+  clientType: zod.enum([موظفات, طلاب, مدارس, جامعات, معلمات, غيره]).optional(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  additionalLocations: zod.array(zod.object({ type: zod.enum([pickup, dropoff]), address: zod.string() })).optional(),
   phone: zod.string(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().optional(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().optional(),
+  notes: zod.string().optional(),
 });
 
 /**
@@ -276,7 +280,7 @@ export const GetRequestResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -309,7 +313,7 @@ export const AdminUpdateRequestByPathParams = zod.object({
 });
 
 export const AdminUpdateRequestByPathBody = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
   selectedDriverId: zod.number().nullish(),
 });
 
@@ -327,7 +331,7 @@ export const AdminUpdateRequestByPathResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -371,7 +375,7 @@ export const UpdateRequestStatusParams = zod.object({
 });
 
 export const UpdateRequestStatusBody = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
 });
 
 export const UpdateRequestStatusResponse = zod.object({
@@ -388,7 +392,7 @@ export const UpdateRequestStatusResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -438,7 +442,7 @@ export const SelectOfferResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -812,7 +816,7 @@ export const AdminListRequestsResponseItem = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -848,7 +852,7 @@ export const AdminUpdateRequestParams = zod.object({
 });
 
 export const AdminUpdateRequestBody = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
   selectedDriverId: zod.number().nullish(),
 });
 
@@ -866,7 +870,7 @@ export const AdminUpdateRequestResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
+  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({

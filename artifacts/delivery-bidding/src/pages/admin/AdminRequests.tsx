@@ -9,16 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Edit2, MapPin, Clock, Users } from "lucide-react";
 import type { CommuteRequest } from "@workspace/api-client-react";
-
-const STATUS_LABELS: Record<string, string> = {
-  OPEN: "مفتوح", SELECTED: "تم الاختيار", ACTIVE: "نشط", COMPLETED: "مكتمل",
-};
-const STATUS_COLORS: Record<string, string> = {
-  OPEN: "bg-blue-100 text-blue-800 border-blue-200",
-  SELECTED: "bg-amber-100 text-amber-800 border-amber-200",
-  ACTIVE: "bg-green-100 text-green-800 border-green-200",
-  COMPLETED: "bg-gray-100 text-gray-700 border-gray-200",
-};
+import { getStatusColor, getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
+import { formatTime12h } from "@/lib/time-utils";
 
 export default function AdminRequests() {
   const queryClient = useQueryClient();
@@ -78,8 +70,8 @@ export default function AdminRequests() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">كل الحالات</SelectItem>
-              {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                <SelectItem key={val} value={val}>{label}</SelectItem>
+              {ALL_STATUSES.map((val) => (
+                <SelectItem key={val} value={val}>{getStatusLabel(val)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -101,8 +93,8 @@ export default function AdminRequests() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
                       <span className="text-xs text-muted-foreground font-mono">#{req.id}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded border font-bold ${STATUS_COLORS[req.status] ?? ""}`}>
-                        {STATUS_LABELS[req.status] ?? req.status}
+                      <span className={`text-xs px-2 py-0.5 rounded border font-bold ${getStatusColor(req.status)}`}>
+                        {getStatusLabel(req.status)}
                       </span>
                       {req.selectedDriver && (
                         <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-200">
@@ -117,7 +109,7 @@ export default function AdminRequests() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Clock size={12} className="text-primary shrink-0" />
-                        <span dir="ltr">{req.morningTime} – {req.eveningTime}</span>
+                        <span dir="ltr">{formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Users size={12} className="text-primary shrink-0" />
@@ -153,8 +145,8 @@ export default function AdminRequests() {
                   <SelectValue placeholder="اختر الحالة" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                    <SelectItem key={val} value={val}>{label}</SelectItem>
+                  {ALL_STATUSES.map((val) => (
+                    <SelectItem key={val} value={val}>{getStatusLabel(val)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

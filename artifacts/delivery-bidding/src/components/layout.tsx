@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Bus, LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X, LifeBuoy } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "./ui/button";
 import { useState } from "react";
@@ -15,6 +15,7 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
     role === "client"
       ? [
           { href: "/client", label: "طلباتي" },
+          { href: "/client/support", label: "الدعم" },
           { href: "/client/profile", label: "حسابي" },
           { href: "/client/request/new", label: "طلب جديد", primary: true },
         ]
@@ -30,6 +31,7 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
           { href: "/admin/drivers", label: "السائقون" },
           { href: "/admin/clients", label: "العملاء" },
           { href: "/admin/offers", label: "العروض" },
+          { href: "/admin/support", label: "الدعم" },
           { href: "/admin/settings", label: "الإعدادات" },
         ];
 
@@ -38,10 +40,13 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
       <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight hover:opacity-80 transition-opacity shrink-0">
-            <div className="bg-primary text-primary-foreground p-1 rounded-sm">
-              <Bus size={20} />
+            <div className="bg-primary text-primary-foreground p-1.5 rounded-md text-xl leading-none">
+              🚐
             </div>
-            <span>دوامات شهرية</span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-black text-primary text-base">توصّلني</span>
+              <span className="text-muted-foreground font-normal text-[10px] hidden sm:block">اشتراكات التوصيل الشهري</span>
+            </div>
             <span className="text-muted-foreground font-normal text-sm hidden sm:inline">| {roleLabel}</span>
           </Link>
 

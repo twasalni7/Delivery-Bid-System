@@ -6,19 +6,10 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle, Bell } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Car, Globe, MessageCircle, Bell, FileText } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
-
-const STATUS_LABELS: Record<string, string> = {
-  OPEN: "مفتوح", SELECTED: "تم الاختيار", ACTIVE: "نشط", COMPLETED: "مكتمل", CANCELLED: "ملغى",
-};
-const STATUS_COLORS: Record<string, string> = {
-  OPEN: "bg-blue-100 text-blue-800 border-blue-200",
-  SELECTED: "bg-amber-100 text-amber-800 border-amber-200",
-  ACTIVE: "bg-green-100 text-green-800 border-green-200",
-  COMPLETED: "bg-gray-100 text-gray-700 border-gray-200",
-  CANCELLED: "bg-red-100 text-red-800 border-red-200",
-};
+import { getStatusColor, getStatusLabel } from "@/lib/status-utils";
+import { formatTime12h } from "@/lib/time-utils";
 
 const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 
@@ -95,7 +86,7 @@ export default function RequestDetails() {
     );
   }
 
-  const isOpen = request.status === "OPEN";
+  const isOpen = request.status === "OPEN" || request.status === "BIDDING";
 
   return (
     <Layout role="client">
@@ -107,8 +98,8 @@ export default function RequestDetails() {
         <div className="flex items-start justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-black">طلب #{request.id}</h1>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border mt-1 ${STATUS_COLORS[request.status] || ""}`}>
-              {STATUS_LABELS[request.status] || request.status}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border mt-1 ${getStatusColor(request.status)}`}>
+              {getStatusLabel(request.status)}
             </span>
           </div>
           {isOpen && (
@@ -143,7 +134,7 @@ export default function RequestDetails() {
                 <Clock size={15} className="text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-xs text-muted-foreground mb-0.5">الأوقات</p>
-                  <p dir="ltr">{request.morningTime} ← {request.eveningTime}</p>
+                  <p dir="ltr">{formatTime12h(request.morningTime)}{request.eveningTime ? ` ← ${formatTime12h(request.eveningTime)}` : ""}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">

@@ -44,7 +44,7 @@ export default function ClientLogin() {
         <div className="inline-flex items-center justify-center bg-primary text-primary-foreground p-3 rounded-md mb-3 shadow">
           <Bus size={32} />
         </div>
-        <h1 className="text-3xl font-black">دوامات شهرية</h1>
+        <h1 className="text-3xl font-black">توصّلني</h1>
         <p className="text-muted-foreground text-sm mt-1">بوابة العميل</p>
       </div>
 

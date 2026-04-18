@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { offersTable, driversTable, requestsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 
@@ -94,7 +94,10 @@ router.put("/:id", requireAuth("driver"), async (req, res) => {
   }
 
   const { price: rawPrice } = req.body as { price?: unknown };
-  const price = typeof rawPrice === "number" ? rawPrice : parseFloat(String(rawPrice ?? ""));
+  const price =
+    typeof rawPrice === "number"
+      ? rawPrice
+      : parseFloat(String(rawPrice ?? ""));
   if (!isFinite(price) || price <= 0) {
     res.status(400).json({ error: "السعر غير صحيح" });
     return;
@@ -119,8 +122,13 @@ router.put("/:id", requireAuth("driver"), async (req, res) => {
     where: eq(requestsTable.id, offer.requestId),
   });
 
-  if (!request || request.status !== "OPEN") {
-    res.status(400).json({ error: "لا يمكن تعديل العرض — الطلب لم يعد مفتوحاً" });
+  if (
+    !request ||
+    (request.status !== "OPEN" && request.status !== "BIDDING")
+  ) {
+    res.status(400).json({
+      error: "لا يمكن تعديل العرض — الطلب لم يعد مفتوحاً للعروض",
+    });
     return;
   }
 
@@ -168,8 +176,13 @@ router.delete("/:id", requireAuth("driver"), async (req, res) => {
     where: eq(requestsTable.id, offer.requestId),
   });
 
-  if (!request || request.status !== "OPEN") {
-    res.status(400).json({ error: "لا يمكن سحب العرض — الطلب لم يعد مفتوحاً" });
+  if (
+    !request ||
+    (request.status !== "OPEN" && request.status !== "BIDDING")
+  ) {
+    res.status(400).json({
+      error: "لا يمكن سحب العرض — الطلب لم يعد مفتوحاً للعروض",
+    });
     return;
   }
 
@@ -215,7 +228,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     return;
   }
 
-  if (request.status !== "OPEN") {
+  if (request.status !== "OPEN" && request.status !== "BIDDING") {
     res.status(400).json({ error: "الطلب ليس مفتوحاً للعروض" });
     return;
   }
@@ -234,6 +247,20 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     .insert(offersTable)
     .values({ driverId, requestId, price, carType, nationality })
     .returning();
+
+  // Auto-transition OPEN → BIDDING when first offer is placed
+  if (request.status === "OPEN") {
+    const offerCount = await db
+      .select({ total: count() })
+      .from(offersTable)
+      .where(eq(offersTable.requestId, requestId));
+    if ((offerCount[0]?.total ?? 0) >= 1) {
+      await db
+        .update(requestsTable)
+        .set({ status: "BIDDING", updatedAt: new Date() })
+        .where(eq(requestsTable.id, requestId));
+    }
+  }
 
   res.status(201).json({
     id: created.id,

@@ -7,6 +7,8 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Banknote, MapPin, Clock, Users, ChevronLeft, CheckCircle, Phone, FileText, Pencil, Trash2, X, Check } from "lucide-react";
+import { getStatusColor, getStatusLabel } from "@/lib/status-utils";
+import { formatTime12h } from "@/lib/time-utils";
 
 type TabId = "available" | "my-offers";
 
@@ -14,9 +16,10 @@ export default function DriverDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
-  const { data: openRequests, isLoading } = useListRequests({ status: "OPEN" });
+  const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
   const { data: selectedRequests } = useListRequests({ status: "SELECTED" });
-  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user } });
+  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user, refetchInterval: 30_000 } });
+  const openRequests = allRequests?.filter((r) => r.status === "OPEN" || r.status === "BIDDING");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");
   const [editingOffer, setEditingOffer] = useState<{ id: number; price: string } | null>(null);
@@ -33,8 +36,8 @@ export default function DriverDashboard() {
 
   const hasEnoughBalance = driver ? driver.balance >= 50 : false;
   const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === user.id) ?? [];
-  const pendingOffers = myOffers?.filter((o) => o.request?.status === "OPEN") ?? [];
-  const closedOffers = myOffers?.filter((o) => o.request?.status !== "OPEN") ?? [];
+  const pendingOffers = myOffers?.filter((o) => o.request?.status === "OPEN" || o.request?.status === "BIDDING") ?? [];
+  const closedOffers = myOffers?.filter((o) => o.request?.status !== "OPEN" && o.request?.status !== "BIDDING") ?? [];
 
   function startEdit(offer: DriverOffer) {
     setEditingOffer({ id: offer.id, price: String(offer.price) });
@@ -131,7 +134,7 @@ export default function DriverDashboard() {
                     </div>
                     <div className="flex items-center gap-1.5 text-green-700 text-xs" dir="ltr">
                       <Clock size={11} className="shrink-0" />
-                      <span>{req.morningTime} – {req.eveningTime}</span>
+                      <span>{formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
                     </div>
                     {req.phone && (
                       <div className="flex items-center gap-1.5 text-green-800 text-sm font-bold mt-2">
@@ -213,7 +216,7 @@ export default function DriverDashboard() {
                             </div>
                             <div className="flex items-center gap-1.5 text-muted-foreground">
                               <Clock size={13} className="shrink-0 text-primary" />
-                              <span dir="ltr">{req.morningTime} – {req.eveningTime}</span>
+                              <span dir="ltr">{formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-muted-foreground">
                               <Users size={13} className="shrink-0 text-primary" />
@@ -270,7 +273,7 @@ export default function DriverDashboard() {
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground" dir="ltr">
                                   <Clock size={11} className="shrink-0" />
-                                  <span>{offer.request.morningTime} – {offer.request.eveningTime}</span>
+                                  <span>{formatTime12h(offer.request.morningTime)}{offer.request.eveningTime ? ` – ${formatTime12h(offer.request.eveningTime)}` : ""}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                   <Users size={11} className="shrink-0" />

@@ -10,8 +10,8 @@ export default function Home() {
         <div className="inline-flex items-center justify-center bg-primary text-primary-foreground p-3 rounded-md mb-4 shadow">
           <Bus size={48} />
         </div>
-        <h1 className="text-5xl font-black tracking-tight mb-2">دوامات شهرية</h1>
-        <p className="text-xl text-muted-foreground">نظام مزايدة توصيل الدوام الشهري</p>
+        <h1 className="text-5xl font-black tracking-tight mb-2">توصّلني</h1>
+        <p className="text-xl text-muted-foreground">اشتراكات التوصيل الشهري</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-3xl w-full">

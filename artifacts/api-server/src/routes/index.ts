@@ -5,6 +5,7 @@ import requestsRouter from "./requests";
 import offersRouter from "./offers";
 import adminRouter from "./admin";
 import authRouter from "./auth";
+import supportTicketsRouter from "./support-tickets";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use("/drivers", driversRouter);
 router.use("/requests", requestsRouter);
 router.use("/offers", offersRouter);
 router.use("/admin", adminRouter);
+router.use("/support-tickets", supportTicketsRouter);
 
 export default router;
