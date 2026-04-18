@@ -16,7 +16,7 @@ import type { DriverDetail } from "@workspace/api-client-react";
 type DialogMode = "create" | "edit" | "balance" | null;
 
 const STATUS_PILL: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-700",
+  ACTIVE:  "bg-green-100 text-green-700",
   BLOCKED: "bg-red-100 text-red-700",
   DELETED: "bg-gray-100 text-gray-500",
 };
@@ -119,151 +119,231 @@ export default function AdminDrivers() {
   return (
     <Layout role="admin">
       <div dir="rtl">
-        <div className="flex items-center justify-between mb-5">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">السائقون</h1>
-            <p className="text-gray-400 text-sm">إدارة حسابات السائقين</p>
+            <h1 className="text-3xl font-black text-gray-900">السائقون</h1>
+            <p className="text-gray-500 text-base mt-0.5">إدارة حسابات السائقين</p>
           </div>
           <button onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-black shadow-md"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-white font-black text-base shadow-md"
             style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
-            <PlusCircle size={16} /> إضافة سائق
+            <PlusCircle size={18} /> إضافة سائق
           </button>
         </div>
 
-        {isLoading && <div className="text-center py-16 text-gray-400">جاري التحميل...</div>}
+        {isLoading && <div className="text-center py-20 text-gray-400 text-lg">جاري التحميل...</div>}
 
         {!isLoading && (!drivers || drivers.length === 0) && (
-          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
-            <p className="text-4xl mb-3">🚗</p>
-            <p className="font-bold text-gray-500">لا يوجد سائقون</p>
-            <button onClick={openCreate} className="mt-4 px-5 py-2.5 rounded-xl text-white font-black"
-              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
-              إضافة أول سائق
-            </button>
+          <div className="text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+            <p className="text-5xl mb-4">🚗</p>
+            <p className="text-xl font-bold text-gray-600">لا يوجد سائقون</p>
+            <button onClick={openCreate} className="mt-5 px-6 py-3 rounded-xl text-white font-black text-base"
+              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>إضافة أول سائق</button>
           </div>
         )}
 
-        <div className="space-y-3">
-          {drivers?.map((d) => (
-            <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center text-lg shrink-0">🚗</div>
-                    <p className="font-black text-gray-900">{d.name}</p>
-                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${STATUS_PILL[d.status] ?? ""}`}>
-                      {STATUS_LABEL[d.status] ?? d.status}
-                    </span>
-                    {d.warningCount > 0 && (
-                      <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-bold">{d.warningCount} تحذير</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-xs text-gray-400 mr-11">
-                    <span dir="ltr">{d.mobile}</span>
-                    <span>رصيد: <strong className="text-gray-700" dir="ltr">{d.balance.toFixed(2)} ر.س</strong></span>
-                    {d.carType && <span>{d.carType}</span>}
-                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">رمز: {d.loginCode}</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5 shrink-0">
-                  <ActionBtn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={13} />} />
-                  <ActionBtn onClick={() => openBalance(d)} title="الرصيد" icon={<Banknote size={13} />} />
-                  <ActionBtn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={13} />} />
-                  {d.status === "ACTIVE" && <>
-                    <ActionBtn onClick={() => handleWarn(d)} title="تحذير" icon={<AlertTriangle size={13} />} color="amber" />
-                    <ActionBtn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={13} />} color="red" />
-                  </>}
-                  {d.status === "BLOCKED" && <ActionBtn onClick={() => handleUnblock(d)} title="رفع الحظر" icon={<ShieldCheck size={13} />} color="green" />}
-                  <ActionBtn onClick={() => handleDelete(d)} title="حذف" icon={<Trash2 size={13} />} color="red" />
-                </div>
+        {drivers && drivers.length > 0 && (
+          <>
+            {/* Desktop table */}
+            <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <table className="w-full" dir="rtl">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">السائق</th>
+                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">الجوال</th>
+                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">المركبة</th>
+                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">الرصيد</th>
+                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">الحالة</th>
+                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">رمز الدخول</th>
+                    <th className="text-center px-5 py-4 text-sm font-black text-gray-600">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {drivers.map((d, idx) => (
+                    <tr key={d.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg shrink-0">🚗</div>
+                          <div>
+                            <p className="font-black text-gray-900 text-base">{d.name}</p>
+                            <p className="text-xs text-gray-400">#{d.id}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-sm font-medium text-gray-700" dir="ltr">{d.mobile}</td>
+                      <td className="px-5 py-4 text-sm text-gray-600">{d.carType || "—"}</td>
+                      <td className="px-5 py-4">
+                        <span className={`text-sm font-black ${d.balance >= 50 ? "text-green-700" : "text-red-600"}`} dir="ltr">
+                          {d.balance.toFixed(2)} ر.س
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-col gap-1">
+                          <span className={`text-sm px-3 py-0.5 rounded-full font-bold w-fit ${STATUS_PILL[d.status] ?? ""}`}>
+                            {STATUS_LABEL[d.status] ?? d.status}
+                          </span>
+                          {d.warningCount > 0 && (
+                            <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-bold w-fit">{d.warningCount} تحذير</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <code className="text-sm font-mono bg-gray-100 px-2.5 py-1 rounded-lg text-gray-700">{d.loginCode}</code>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <Btn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={13} />} />
+                          <Btn onClick={() => openBalance(d)} title="الرصيد" icon={<Banknote size={13} />} />
+                          <Btn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={13} />} />
+                          {d.status === "ACTIVE" && <>
+                            <Btn onClick={() => handleWarn(d)} title="تحذير" icon={<AlertTriangle size={13} />} color="amber" />
+                            <Btn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={13} />} color="red" />
+                          </>}
+                          {d.status === "BLOCKED" && <Btn onClick={() => handleUnblock(d)} title="رفع الحظر" icon={<ShieldCheck size={13} />} color="green" />}
+                          <Btn onClick={() => handleDelete(d)} title="حذف" icon={<Trash2 size={13} />} color="red" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-400">
+                إجمالي: <strong className="text-gray-700">{drivers.length}</strong> سائق
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className="mt-4">
+            {/* Mobile / tablet cards */}
+            <div className="lg:hidden space-y-3">
+              {drivers.map((d) => (
+                <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-xl shrink-0">🚗</div>
+                        <div>
+                          <p className="font-black text-gray-900 text-base">{d.name}</p>
+                          <p className="text-sm text-gray-400" dir="ltr">{d.mobile}</p>
+                        </div>
+                        <span className={`text-sm px-3 py-0.5 rounded-full font-bold ${STATUS_PILL[d.status] ?? ""}`}>
+                          {STATUS_LABEL[d.status] ?? d.status}
+                        </span>
+                        {d.warningCount > 0 && (
+                          <span className="text-sm text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full font-bold">{d.warningCount} تحذير</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-sm text-gray-500 mr-12">
+                        <span>رصيد: <strong className={d.balance >= 50 ? "text-green-700" : "text-red-600"} dir="ltr">{d.balance.toFixed(2)} ر.س</strong></span>
+                        {d.carType && <span>{d.carType}</span>}
+                        <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">رمز: {d.loginCode}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                      <Btn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={14} />} />
+                      <Btn onClick={() => openBalance(d)} title="الرصيد" icon={<Banknote size={14} />} />
+                      <Btn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={14} />} />
+                      {d.status === "ACTIVE" && <>
+                        <Btn onClick={() => handleWarn(d)} title="تحذير" icon={<AlertTriangle size={14} />} color="amber" />
+                        <Btn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={14} />} color="red" />
+                      </>}
+                      {d.status === "BLOCKED" && <Btn onClick={() => handleUnblock(d)} title="رفع الحظر" icon={<ShieldCheck size={14} />} color="green" />}
+                      <Btn onClick={() => handleDelete(d)} title="حذف" icon={<Trash2 size={14} />} color="red" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Deleted drivers toggle */}
+        <div className="mt-5">
           <button onClick={() => setShowDeleted((p) => !p)}
-            className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-500 text-sm font-bold flex items-center justify-center gap-2">
-            {showDeleted ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            className="w-full py-3 rounded-xl border border-gray-200 bg-white text-gray-500 text-base font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
+            {showDeleted ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             {showDeleted ? "إخفاء السائقين المحذوفين" : "عرض السائقين المحذوفين"}
           </button>
           {showDeleted && (
             <div className="mt-3 space-y-2">
-              {loadingDeleted && <div className="text-center py-6 text-gray-400 text-sm">جاري التحميل...</div>}
+              {loadingDeleted && <div className="text-center py-6 text-gray-400">جاري التحميل...</div>}
               {!loadingDeleted && (!deletedDrivers || deletedDrivers.length === 0) && (
-                <div className="text-center py-8 border border-dashed rounded-xl"><p className="text-sm text-gray-400">لا يوجد سائقون محذوفون</p></div>
+                <div className="text-center py-8 border border-dashed rounded-xl"><p className="text-base text-gray-400">لا يوجد سائقون محذوفون</p></div>
               )}
               {deletedDrivers?.map((d) => (
                 <div key={d.id} className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
-                  <div className="flex-1"><p className="font-bold text-sm text-gray-400">{d.name}</p><span dir="ltr" className="text-xs text-gray-300">{d.mobile}</span></div>
+                  <div className="flex-1">
+                    <p className="font-bold text-base text-gray-400">{d.name}</p>
+                    <span dir="ltr" className="text-sm text-gray-300">{d.mobile}</span>
+                  </div>
                   <button onClick={() => handleRestore(d)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold border border-blue-200">
-                    <RotateCcw size={12} /> استرداد
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 text-sm font-bold border border-blue-200">
+                    <RotateCcw size={13} /> استرداد
                   </button>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        <Dialog open={dialogMode === "create" || dialogMode === "edit"} onOpenChange={(o) => !o && setDialogMode(null)}>
-          <DialogContent dir="rtl">
-            <DialogHeader>
-              <DialogTitle>{dialogMode === "create" ? "إضافة سائق جديد" : "تعديل بيانات السائق"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <Field label="الاسم الكامل"><Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم السائق" /></Field>
-              <Field label="رقم الجوال"><Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" /></Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="الجنسية (اختياري)"><Input value={formNationality} onChange={(e) => setFormNationality(e.target.value)} placeholder="سعودي" /></Field>
-                <Field label="العمر (اختياري)"><Input type="number" min="18" max="70" value={formAge} onChange={(e) => setFormAge(e.target.value)} placeholder="35" dir="ltr" /></Field>
-              </div>
-              <Field label="رقم الهوية (اختياري)"><Input value={formNationalId} onChange={(e) => setFormNationalId(e.target.value)} placeholder="10xxxxxxxxx" dir="ltr" /></Field>
-              <Field label="نوع المركبة (اختياري)"><Input value={formCar} onChange={(e) => setFormCar(e.target.value)} placeholder="تويوتا كامري 2022" /></Field>
-            </div>
-            <DialogFooter className="gap-2 flex-row-reverse">
-              <button onClick={dialogMode === "create" ? handleCreate : handleEdit}
-                disabled={!formName.trim() || !formMobile.trim() || createDriver.isPending || updateDriver.isPending}
-                className="flex-1 py-2.5 rounded-xl text-white font-black disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
-                {dialogMode === "create" ? "إضافة" : "حفظ"}
-              </button>
-              <button onClick={() => setDialogMode(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-600">إلغاء</button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={dialogMode === "balance"} onOpenChange={(o) => !o && setDialogMode(null)}>
-          <DialogContent dir="rtl">
-            <DialogHeader>
-              <DialogTitle>تعديل رصيد {selectedDriver?.name}</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-gray-400">الرصيد الحالي: <strong dir="ltr">{selectedDriver?.balance.toFixed(2)} ر.س</strong></p>
-            <Field label="المبلغ (+ إيداع / - خصم)">
-              <Input value={formBalance} onChange={(e) => setFormBalance(e.target.value)} placeholder="مثال: 100 أو -50" type="number" step="0.01" dir="ltr" />
-            </Field>
-            <DialogFooter className="gap-2 flex-row-reverse">
-              <button onClick={handleBalance} disabled={!formBalance || updateBalance.isPending}
-                className="flex-1 py-2.5 rounded-xl text-white font-black disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>تأكيد</button>
-              <button onClick={() => setDialogMode(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-600">إلغاء</button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* Create/Edit dialog */}
+      <Dialog open={dialogMode === "create" || dialogMode === "edit"} onOpenChange={(o) => !o && setDialogMode(null)}>
+        <DialogContent dir="rtl" className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">{dialogMode === "create" ? "إضافة سائق جديد" : "تعديل بيانات السائق"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Field label="الاسم الكامل"><Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم السائق" className="h-11 text-base" /></Field>
+            <Field label="رقم الجوال"><Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" className="h-11 text-base" /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="الجنسية (اختياري)"><Input value={formNationality} onChange={(e) => setFormNationality(e.target.value)} placeholder="سعودي" className="h-11 text-base" /></Field>
+              <Field label="العمر (اختياري)"><Input type="number" min="18" max="70" value={formAge} onChange={(e) => setFormAge(e.target.value)} placeholder="35" dir="ltr" className="h-11 text-base" /></Field>
+            </div>
+            <Field label="رقم الهوية (اختياري)"><Input value={formNationalId} onChange={(e) => setFormNationalId(e.target.value)} placeholder="10xxxxxxxxx" dir="ltr" className="h-11 text-base" /></Field>
+            <Field label="نوع المركبة (اختياري)"><Input value={formCar} onChange={(e) => setFormCar(e.target.value)} placeholder="تويوتا كامري 2022" className="h-11 text-base" /></Field>
+          </div>
+          <DialogFooter className="gap-2 flex-row-reverse mt-2">
+            <button onClick={dialogMode === "create" ? handleCreate : handleEdit}
+              disabled={!formName.trim() || !formMobile.trim() || createDriver.isPending || updateDriver.isPending}
+              className="flex-1 py-3 rounded-xl text-white font-black text-base disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
+              {dialogMode === "create" ? "إضافة" : "حفظ"}
+            </button>
+            <button onClick={() => setDialogMode(null)} className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 text-base">إلغاء</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Balance dialog */}
+      <Dialog open={dialogMode === "balance"} onOpenChange={(o) => !o && setDialogMode(null)}>
+        <DialogContent dir="rtl" className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">تعديل رصيد {selectedDriver?.name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-base text-gray-500">الرصيد الحالي: <strong dir="ltr" className="text-gray-900">{selectedDriver?.balance.toFixed(2)} ر.س</strong></p>
+          <Field label="المبلغ (+ إيداع / − خصم)">
+            <Input value={formBalance} onChange={(e) => setFormBalance(e.target.value)} placeholder="مثال: 100 أو -50" type="number" step="0.01" dir="ltr" className="h-11 text-base" />
+          </Field>
+          <DialogFooter className="gap-2 flex-row-reverse">
+            <button onClick={handleBalance} disabled={!formBalance || updateBalance.isPending}
+              className="flex-1 py-3 rounded-xl text-white font-black text-base disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>تأكيد</button>
+            <button onClick={() => setDialogMode(null)} className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 text-base">إلغاء</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
 
-function ActionBtn({ onClick, title, icon, color }: { onClick: () => void; title: string; icon: React.ReactNode; color?: "red" | "amber" | "green" }) {
+function Btn({ onClick, title, icon, color }: { onClick: () => void; title: string; icon: React.ReactNode; color?: "red" | "amber" | "green" }) {
   const cls = color === "red" ? "text-red-500 border-red-200 hover:bg-red-50"
     : color === "amber" ? "text-amber-600 border-amber-200 hover:bg-amber-50"
     : color === "green" ? "text-green-600 border-green-200 hover:bg-green-50"
-    : "text-gray-500 border-gray-200 hover:border-violet-400";
+    : "text-gray-500 border-gray-200 hover:border-violet-400 hover:bg-violet-50";
   return (
     <button onClick={onClick} title={title}
-      className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors ${cls}`}>
+      className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors ${cls}`}>
       {icon}
     </button>
   );
@@ -271,8 +351,8 @@ function ActionBtn({ onClick, title, icon, color }: { onClick: () => void; title
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="font-bold text-xs text-gray-500">{label}</Label>
+    <div className="space-y-2">
+      <Label className="font-bold text-sm text-gray-600">{label}</Label>
       {children}
     </div>
   );
