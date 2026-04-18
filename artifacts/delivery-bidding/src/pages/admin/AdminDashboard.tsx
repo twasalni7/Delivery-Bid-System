@@ -60,7 +60,7 @@ export default function AdminDashboard() {
     : { months: selectedMonths };
 
   const { data: stats, isLoading: statsLoading } = useGetAdminStats();
-  const { data: analytics, isLoading: analyticsLoading } = useGetAdminAnalytics(analyticsParams);
+  const { data: analytics, isLoading: analyticsLoading, isFetching: analyticsFetching } = useGetAdminAnalytics(analyticsParams);
   const { data: financial, isLoading: financialLoading } = useGetAdminFinancial();
   const isLoading = statsLoading || analyticsLoading || financialLoading;
 
@@ -212,11 +212,12 @@ export default function AdminDashboard() {
                 <button
                   key={opt.value}
                   onClick={() => handleMonthSelect(opt.value)}
+                  disabled={analyticsFetching}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
                     selectedMonths === opt.value && !appliedRange
                       ? "bg-white text-violet-700 shadow-sm"
                       : "text-gray-500"
-                  }`}
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {opt.label}
                 </button>
@@ -261,7 +262,15 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {analytics && (
+        {(analytics || analyticsFetching) && (
+          <div className="relative">
+            {analyticsFetching && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 rounded-2xl gap-3">
+                <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+                <span className="text-xs font-bold text-gray-400">جاري التحميل...</span>
+              </div>
+            )}
+          <div className={analyticsFetching ? "opacity-40 pointer-events-none select-none" : ""}>
           <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
               <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm lg:col-span-2">
@@ -301,11 +310,11 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {analytics.topDrivers.length > 0 && (
+            {(analytics?.topDrivers.length ?? 0) > 0 && (
               <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5">
                 <p className="text-sm font-black text-gray-800 mb-3">🏆 أفضل السائقين</p>
                 <div className="space-y-2">
-                  {analytics.topDrivers.map((d, i) => (
+                  {analytics?.topDrivers.map((d, i) => (
                     <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50">
                       <span className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-xs font-black flex items-center justify-center shrink-0">{i + 1}</span>
                       <span className="flex-1 font-bold text-sm text-gray-800">{d.name}</span>
@@ -316,6 +325,8 @@ export default function AdminDashboard() {
               </div>
             )}
           </>
+          </div>
+          </div>
         )}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
