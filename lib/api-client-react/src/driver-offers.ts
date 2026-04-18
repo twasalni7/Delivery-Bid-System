@@ -33,7 +33,7 @@ export const listMyOffers = async (options?: RequestInit): Promise<DriverOffer[]
 };
 
 export function useListMyOffers(options?: {
-  query?: { enabled?: boolean };
+  query?: { enabled?: boolean; refetchInterval?: number | false };
 }) {
   return useQuery({
     queryKey: getListMyOffersQueryKey(),

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffers, useUpdateOfferPrice, useWithdrawOffer } from "@workspace/api-client-react";
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout";
 import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Pencil, Trash2, X, Check, MessageCircle, Calendar } from "lucide-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
+import { toast } from "@/hooks/use-toast";
 
 type TabId = "available" | "my-offers" | "earnings";
 
@@ -16,9 +17,9 @@ export default function DriverDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
-  const { data: allRequests, isLoading } = useListRequests(undefined, {});
-  const { data: selectedRequests } = useListRequests({ status: "SELECTED" });
-  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user } });
+  const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
+  const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 30_000 } });
+  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user, refetchInterval: 30_000 } });
   const openRequests = allRequests?.filter((r) => r.status === "OPEN" || r.status === "BIDDING");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");
@@ -28,9 +29,29 @@ export default function DriverDashboard() {
   const updatePrice = useUpdateOfferPrice();
   const withdrawOffer = useWithdrawOffer();
 
+  const prevSelectedIdsRef = useRef<Set<number> | null>(null);
+
   useEffect(() => {
     if (!user) setLocation("/driver/login");
   }, [user, setLocation]);
+
+  useEffect(() => {
+    if (!user || !selectedRequests) return;
+    const myJobs = selectedRequests.filter((r) => r.selectedDriverId === user.id);
+    const currentIds = new Set(myJobs.map((j) => j.id));
+    if (prevSelectedIdsRef.current === null) {
+      prevSelectedIdsRef.current = currentIds;
+      return;
+    }
+    const newlyAccepted = myJobs.filter((j) => !prevSelectedIdsRef.current!.has(j.id));
+    newlyAccepted.forEach((job) => {
+      toast({
+        title: "🎉 تم اختيارك!",
+        description: `تم اختيارك لطلب #${job.id} — ${job.homeLocation} ← ${job.workLocation}`,
+      });
+    });
+    prevSelectedIdsRef.current = currentIds;
+  }, [selectedRequests, user]);
 
   if (!user) return null;
 
@@ -365,28 +386,37 @@ export default function DriverDashboard() {
               <div>
                 <p className="text-sm font-black text-gray-400 mb-3 uppercase tracking-wide">عروض سابقة</p>
                 <div className="space-y-3">
-                  {closedOffers.map((offer) => (
-                    <div key={offer.id} className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 opacity-80">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm text-gray-400">طلب #{offer.requestId}</p>
-                            <span className={`text-sm font-bold px-2.5 py-0.5 rounded-full ${
-                              offer.request?.status === "SELECTED" ? "bg-green-100 text-green-700" :
-                              offer.request?.status === "ACTIVE" ? "bg-blue-100 text-blue-700" :
-                              "bg-gray-100 text-gray-500"
-                            }`}>
-                              {getStatusLabel(offer.request?.status ?? "")}
-                            </span>
+                  {closedOffers.map((offer) => {
+                    const wasAccepted = mySelectedJobs.some((j) => j.id === offer.requestId);
+                    return (
+                      <div key={offer.id} className={`rounded-2xl shadow-sm p-4 ${wasAccepted ? "bg-green-50 border-2 border-green-400" : "bg-white border border-gray-100 opacity-80"}`}>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-sm text-gray-400">طلب #{offer.requestId}</p>
+                              {wasAccepted ? (
+                                <span className="flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full bg-green-500 text-white">
+                                  <CheckCircle size={12} /> تم اختيارك
+                                </span>
+                              ) : (
+                                <span className={`text-sm font-bold px-2.5 py-0.5 rounded-full ${
+                                  offer.request?.status === "SELECTED" ? "bg-gray-100 text-gray-500" :
+                                  offer.request?.status === "ACTIVE" ? "bg-blue-100 text-blue-700" :
+                                  "bg-gray-100 text-gray-500"
+                                }`}>
+                                  {getStatusLabel(offer.request?.status ?? "")}
+                                </span>
+                              )}
+                            </div>
+                            {offer.request && (
+                              <p className={`text-base font-medium ${wasAccepted ? "text-green-800" : "text-gray-600"}`}>{offer.request.homeLocation} ← {offer.request.workLocation}</p>
+                            )}
+                            <p className={`text-base font-black mt-1 ${wasAccepted ? "text-green-700" : "text-gray-800"}`} dir="ltr">{offer.price.toFixed(0)} ر.س/شهر</p>
                           </div>
-                          {offer.request && (
-                            <p className="text-base text-gray-600 font-medium">{offer.request.homeLocation} ← {offer.request.workLocation}</p>
-                          )}
-                          <p className="text-base font-black text-gray-800 mt-1" dir="ltr">{offer.price.toFixed(0)} ر.س/شهر</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
