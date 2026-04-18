@@ -1,26 +1,13 @@
-import express, { type Express } from "express";
+import express from "express";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes";
-import { logger } from "./lib/logger";
-import { pool } from "@workspace/db";
 
-const SESSION_SECRET = process.env["SESSION_SECRET"];
-
-if (!SESSION_SECRET) {
-  throw new Error(
-    "SESSION_SECRET environment variable is required but was not set."
-  );
-}
-
-const PgSession = connectPgSimple(session);
-
-const app: Express = express();
+const app = express();
 
 /**
- * Middleware بسيط بديل لـ pino-http
- * (عشان ما يكسر البناء في Vercel)
+ * Middleware بسيط جدًا لتفادي أخطاء build
  */
 app.use((req, res, next) => {
   next();
@@ -30,11 +17,41 @@ app.use(
   cors({
     origin: true,
     credentials: true,
-  }),
+  })
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.set("trust proxy", 1);
+
+const PgSession = connectPgSimple(session);
+
+const SESSION_SECRET = process.env["SESSION_SECRET"] || "dev-secret";
+
+const isProduction = process.env["NODE_ENV"] === "production";
+
+app.use(
+  session({
+    store: new PgSession({
+      tableName: "user_sessions",
+      createTableIfMissing: true,
+    }),
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "strict" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  })
+);
+
+app.use("/api", router);
+
+export default app;app.use(express.urlencoded({ extended: true }));
 
 app.set("trust proxy", 1);
 
