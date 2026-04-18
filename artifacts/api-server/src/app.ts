@@ -48,6 +48,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.set("trust proxy", 1);
+
 const isProduction = process.env["NODE_ENV"] === "production";
 
 app.use(
