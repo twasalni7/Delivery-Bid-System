@@ -51,10 +51,37 @@ const STAT_CARDS = [
 
 export default function AdminDashboard() {
   const [selectedMonths, setSelectedMonths] = useState<3 | 6 | 12>(12);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [appliedRange, setAppliedRange] = useState<{ from: string; to: string } | null>(null);
+
+  const analyticsParams = appliedRange
+    ? { from: appliedRange.from, to: appliedRange.to }
+    : { months: selectedMonths };
+
   const { data: stats, isLoading: statsLoading } = useGetAdminStats();
-  const { data: analytics, isLoading: analyticsLoading } = useGetAdminAnalytics({ months: selectedMonths });
+  const { data: analytics, isLoading: analyticsLoading } = useGetAdminAnalytics(analyticsParams);
   const { data: financial, isLoading: financialLoading } = useGetAdminFinancial();
   const isLoading = statsLoading || analyticsLoading || financialLoading;
+
+  function handleMonthSelect(value: 3 | 6 | 12) {
+    setSelectedMonths(value);
+    setAppliedRange(null);
+    setFromDate("");
+    setToDate("");
+  }
+
+  function handleApplyCustomRange() {
+    if (fromDate && toDate) {
+      setAppliedRange({ from: fromDate, to: toDate });
+    }
+  }
+
+  function handleClearCustomRange() {
+    setFromDate("");
+    setToDate("");
+    setAppliedRange(null);
+  }
 
   const monthlyChartData = analytics?.monthlyRequests.map((r) => ({
     label: formatMonthLabel(r.year, r.month),
@@ -177,20 +204,60 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-black text-gray-800">الرسوم البيانية</h2>
-          <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-            {MONTH_OPTIONS.map((opt) => (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-base font-black text-gray-800">الرسوم البيانية</h2>
+            <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+              {MONTH_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleMonthSelect(opt.value)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                    selectedMonths === opt.value && !appliedRange
+                      ? "bg-white text-violet-700 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 bg-gray-50 rounded-xl p-2 border border-gray-100">
+            <span className="text-xs font-bold text-gray-500 shrink-0">نطاق مخصص:</span>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className={`text-xs border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-violet-400 transition-colors ${
+                appliedRange ? "border-violet-400 bg-violet-50" : "border-gray-200 bg-white"
+              }`}
+            />
+            <span className="text-xs text-gray-400">—</span>
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(e) => setToDate(e.target.value)}
+              className={`text-xs border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-violet-400 transition-colors ${
+                appliedRange ? "border-violet-400 bg-violet-50" : "border-gray-200 bg-white"
+              }`}
+            />
+            <button
+              onClick={handleApplyCustomRange}
+              disabled={!fromDate || !toDate}
+              className="text-xs font-bold px-3 py-1 rounded-lg bg-violet-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-violet-700 transition-colors"
+            >
+              تطبيق
+            </button>
+            {appliedRange && (
               <button
-                key={opt.value}
-                onClick={() => setSelectedMonths(opt.value)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  selectedMonths === opt.value ? "bg-white text-violet-700 shadow-sm" : "text-gray-500"
-                }`}
+                onClick={handleClearCustomRange}
+                className="text-xs font-bold px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 transition-colors"
               >
-                {opt.label}
+                مسح
               </button>
-            ))}
+            )}
           </div>
         </div>
 

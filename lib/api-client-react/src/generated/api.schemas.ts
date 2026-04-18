@@ -295,6 +295,14 @@ export type GetAdminAnalyticsParams = {
    * Number of months to include in the analytics (3, 6, or 12)
    */
   months?: GetAdminAnalyticsMonths;
+  /**
+   * Start date for custom date range (ISO date string, e.g. 2024-01-01). Overrides months when both from and to are provided.
+   */
+  from?: string;
+  /**
+   * End date for custom date range (ISO date string, e.g. 2024-03-31). Overrides months when both from and to are provided.
+   */
+  to?: string;
 };
 
 export type GetAdminAnalyticsMonths =

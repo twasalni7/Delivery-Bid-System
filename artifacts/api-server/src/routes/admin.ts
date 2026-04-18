@@ -125,10 +125,28 @@ router.get("/financial", async (_req, res) => {
 });
 
 router.get("/analytics", async (req, res) => {
-  const rawMonths = Number(req.query["months"]);
-  const months = [3, 6, 12].includes(rawMonths) ? rawMonths : 12;
+  const rawFrom = req.query["from"] as string | undefined;
+  const rawTo = req.query["to"] as string | undefined;
 
-  const timeFilter = sql`${requestsTable.createdAt} > NOW() - INTERVAL '1 month' * ${months}`;
+  let timeFilter;
+  if (rawFrom && rawTo) {
+    const fromDate = new Date(rawFrom);
+    const toDate = new Date(rawTo);
+    toDate.setHours(23, 59, 59, 999);
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      res.status(400).json({ error: "تاريخ غير صحيح" });
+      return;
+    }
+    if (fromDate > toDate) {
+      res.status(400).json({ error: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية" });
+      return;
+    }
+    timeFilter = sql`${requestsTable.createdAt} >= ${fromDate.toISOString()} AND ${requestsTable.createdAt} <= ${toDate.toISOString()}`;
+  } else {
+    const rawMonths = Number(req.query["months"]);
+    const months = [3, 6, 12].includes(rawMonths) ? rawMonths : 12;
+    timeFilter = sql`${requestsTable.createdAt} > NOW() - INTERVAL '1 month' * ${months}`;
+  }
 
   const monthlyRequests = await db
     .select({

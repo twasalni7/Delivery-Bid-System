@@ -464,6 +464,20 @@ paths:
             default: 12
           required: false
           description: Number of months to include in the analytics (3, 6, or 12)
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          required: false
+          description: Start date for custom date range (ISO date string, e.g. 2024-01-01). Overrides months when both from and to are provided.
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          required: false
+          description: End date for custom date range (ISO date string, e.g. 2024-03-31). Overrides months when both from and to are provided.
       responses:
         "200":
           description: Analytics data
