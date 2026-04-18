@@ -1,0 +1,1 @@
+{"version": 2, "buildCommand": "pnpm install --frozen-lockfile && pnpm run build", "installCommand": "pnpm install --frozen-lockfile", "framework": null, "outputDirectory": "./artifacts/api-server/dist", "env": "nodejs", "nodeVersion": "20.x"}
