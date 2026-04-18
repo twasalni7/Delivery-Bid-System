@@ -6,8 +6,9 @@ import {
   offersTable,
   adminsTable,
   clientsTable,
+  transactionsTable,
 } from "@workspace/db";
-import { eq, count, ne, desc, sql } from "drizzle-orm";
+import { eq, count, ne, desc, sql, sum } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
 
@@ -73,6 +74,53 @@ router.get("/stats", async (_req, res) => {
     totalDrivers: Number(totalDriversResult.count),
     totalOffers: Number(totalOffersResult.count),
     totalClients: Number(totalClientsResult.count),
+  });
+});
+
+router.get("/financial", async (_req, res) => {
+  const acceptedStatuses = ["SELECTED", "ACTIVE", "COMPLETED"] as const;
+  let acceptedContractsCount = 0;
+  for (const status of acceptedStatuses) {
+    const [result] = await db
+      .select({ count: count() })
+      .from(requestsTable)
+      .where(eq(requestsTable.status, status));
+    acceptedContractsCount += Number(result.count);
+  }
+  const totalFeesCollected = acceptedContractsCount * 50;
+
+  let totalTransactionsAmount = 0;
+  try {
+    const [txSum] = await db
+      .select({ total: sum(transactionsTable.amount) })
+      .from(transactionsTable);
+    totalTransactionsAmount = Number(txSum?.total ?? 0);
+  } catch {
+    totalTransactionsAmount = 0;
+  }
+
+  const drivers = await db
+    .select({
+      id: driversTable.id,
+      name: driversTable.name,
+      balance: driversTable.balance,
+    })
+    .from(driversTable)
+    .where(ne(driversTable.status, "DELETED"))
+    .orderBy(desc(driversTable.balance));
+
+  const totalDriversBalance = drivers.reduce((acc, d) => acc + (d.balance ?? 0), 0);
+
+  res.json({
+    totalFeesCollected,
+    totalTransactionsAmount,
+    totalDriversBalance,
+    acceptedContractsCount,
+    driverBalances: drivers.map((d) => ({
+      id: d.id,
+      name: d.name,
+      balance: d.balance ?? 0,
+    })),
   });
 });
 

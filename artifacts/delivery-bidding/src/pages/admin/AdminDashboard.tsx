@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useGetAdminStats, useGetAdminAnalytics } from "@workspace/api-client-react";
+import { useGetAdminStats, useGetAdminAnalytics, useGetAdminFinancial } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Download } from "lucide-react";
+import { Download, Banknote, Wallet } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -53,7 +53,8 @@ export default function AdminDashboard() {
   const [selectedMonths, setSelectedMonths] = useState<3 | 6 | 12>(12);
   const { data: stats, isLoading: statsLoading } = useGetAdminStats();
   const { data: analytics, isLoading: analyticsLoading } = useGetAdminAnalytics({ months: selectedMonths });
-  const isLoading = statsLoading || analyticsLoading;
+  const { data: financial, isLoading: financialLoading } = useGetAdminFinancial();
+  const isLoading = statsLoading || analyticsLoading || financialLoading;
 
   const monthlyChartData = analytics?.monthlyRequests.map((r) => ({
     label: formatMonthLabel(r.year, r.month),
@@ -112,6 +113,68 @@ export default function AdminDashboard() {
               </div>
             </div>
           </>
+        )}
+
+        {financial && (
+          <div className="mb-5">
+            <h2 className="text-base font-black text-gray-800 mb-3 flex items-center gap-2">
+              <Banknote size={16} /> الإحصائيات المالية
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <div className="bg-emerald-500 rounded-2xl p-4 text-white shadow-md">
+                <p className="text-white/70 text-xs font-bold mb-1 flex items-center gap-1">
+                  <Banknote size={12} /> إجمالي الرسوم المحصّلة
+                </p>
+                <p className="text-3xl font-black">{financial.totalFeesCollected.toLocaleString("ar-SA")} ريال</p>
+                <p className="text-white/60 text-xs mt-1">{financial.acceptedContractsCount} عقد × 50 ريال</p>
+              </div>
+              <div className="bg-violet-500 rounded-2xl p-4 text-white shadow-md">
+                <p className="text-white/70 text-xs font-bold mb-1 flex items-center gap-1">
+                  <Wallet size={12} /> إجمالي أرصدة السائقين
+                </p>
+                <p className="text-3xl font-black">{financial.totalDriversBalance.toLocaleString("ar-SA")} ريال</p>
+                <p className="text-white/60 text-xs mt-1">مجموع أرصدة {financial.driverBalances.length} سائق</p>
+              </div>
+              {financial.totalTransactionsAmount > 0 && (
+                <div className="bg-blue-500 rounded-2xl p-4 text-white shadow-md">
+                  <p className="text-white/70 text-xs font-bold mb-1">إجمالي المعاملات المالية</p>
+                  <p className="text-3xl font-black">{financial.totalTransactionsAmount.toLocaleString("ar-SA")} ريال</p>
+                  <p className="text-white/60 text-xs mt-1">من جدول المعاملات</p>
+                </div>
+              )}
+            </div>
+            {financial.driverBalances.length > 0 && (
+              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5">
+                <p className="text-sm font-black text-gray-800 mb-3 flex items-center gap-2">
+                  <Wallet size={14} /> توزيع أرصدة السائقين
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-gray-400 text-xs">
+                        <th className="text-right py-2 px-2 font-semibold">#</th>
+                        <th className="text-right py-2 px-2 font-semibold">السائق</th>
+                        <th className="text-right py-2 px-2 font-semibold">الرصيد (ريال)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {financial.driverBalances.map((driver, index) => (
+                        <tr key={driver.id} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
+                          <td className="py-2 px-2 text-gray-400">{index + 1}</td>
+                          <td className="py-2 px-2 font-bold text-gray-800">{driver.name}</td>
+                          <td className="py-2 px-2">
+                            <span className={`font-black ${driver.balance > 0 ? "text-emerald-600" : driver.balance < 0 ? "text-red-600" : "text-gray-400"}`}>
+                              {driver.balance.toLocaleString("ar-SA")}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         <div className="flex items-center justify-between mb-3">

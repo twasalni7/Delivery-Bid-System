@@ -3,3 +3,4 @@ export type * from "./generated/api.schemas";
 export { setBaseUrl, setAuthTokenGetter } from "./custom-fetch";
 export type { AuthTokenGetter } from "./custom-fetch";
 export * from "./driver-offers";
+export * from "./admin-financial";
