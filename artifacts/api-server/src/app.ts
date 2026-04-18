@@ -2,7 +2,6 @@ import express, { type Express } from "express";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-const logger = console
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
@@ -19,25 +18,13 @@ const PgSession = connectPgSimple(session);
 
 const app: Express = express();
 
-app.use(
-  pinoHttp({
-    logger,
-    serializers: {
-      req(req: any) { 
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
-      },
-      res(res: any) { 
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
-);
+/**
+ * Middleware بسيط بديل لـ pino-http
+ * (عشان ما يكسر البناء في Vercel)
+ */
+app.use((req, res, next) => {
+  next();
+});
 
 app.use(
   cors({
@@ -45,6 +32,7 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
