@@ -11,12 +11,14 @@ The React app is served as a static site and the Express API runs as a Vercel Se
 
 2. **Import Project** — Click **New Project** → import the `twasalni7/Delivery-Bid-System` GitHub repository.
 
-3. **Leave build settings at their defaults** — the `vercel.json` in the repo already configures:
+3. **Deploy from the repository root** — set the Vercel **Root Directory** to the project root (`/home/runner/work/Delivery-Bid-System/Delivery-Bid-System` in this checkout), **not** `artifacts/delivery-bidding`.
+
+4. **Leave build settings at their defaults** — the `vercel.json` in the repo root already configures:
    - Install command: `pnpm install --no-frozen-lockfile`
-   - Build command: `BASE_PATH=/ pnpm run build`
+   - Build command: `pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/delivery-bidding run build`
    - Output directory: `artifacts/delivery-bidding/dist/public`
 
-4. **Set Environment Variables** — go to **Project → Settings → Environment Variables** and add:
+5. **Set Environment Variables** — go to **Project → Settings → Environment Variables** and add:
 
    | Variable | Description | Example |
    |---|---|---|
@@ -28,9 +30,9 @@ The React app is served as a static site and the Express API runs as a Vercel Se
    > Supabase dashboard → your project → **Connect** → **Transaction Pooler** → copy the connection string.  
    > Replace `[YOUR-PASSWORD]` with your database password.
 
-5. **Deploy** — click **Deploy**. Vercel will build and deploy the project.
+6. **Deploy** — click **Deploy**. Vercel will build and deploy the project.
 
-6. **Re-deploy when schema changes** — if you add new Supabase tables, run `node scripts/apply-rls.mjs` locally (with `SUPABASE_DATABASE_URL` set) then re-deploy.
+7. **Re-deploy when schema changes** — if you add new Supabase tables, run `node scripts/apply-rls.mjs` locally (with `SUPABASE_DATABASE_URL` set) then re-deploy.
 
 ---
 
@@ -73,3 +75,6 @@ If you prefer to host the API separately on Render:
 - **500 errors on API routes** — make sure `SUPABASE_DATABASE_URL` and `SESSION_SECRET` are set in Vercel env vars.
 - **Sessions not persisting** — the session store uses the Supabase PostgreSQL database (`user_sessions` table). Make sure the database is reachable and `SUPABASE_DATABASE_URL` is correct.
 - **React routes show 404 on refresh** — the `vercel.json` includes a catch-all rewrite to `index.html`, which fixes this automatically.
+- **Build keeps failing in Vercel** — double-check that the **Root Directory** is the repository root and that you did not override the install/build/output settings from `vercel.json`.
+- **Supabase connection fails in production** — use the **Transaction Pooler** connection string on port **6543** for `SUPABASE_DATABASE_URL`.
+- **Deployment succeeds but the app returns 500** — this usually means `SUPABASE_DATABASE_URL`, `SESSION_SECRET`, or `NODE_ENV=production` is missing or incorrect.
