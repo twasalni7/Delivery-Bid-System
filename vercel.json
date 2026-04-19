@@ -1,6 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "framework": null
+  "buildCommand": "pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/delivery-bidding run build",
+  "outputDirectory": "artifacts/delivery-bidding/dist/public",
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.mjs" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
