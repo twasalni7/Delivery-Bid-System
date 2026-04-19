@@ -3,6 +3,8 @@ import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes";
+// Vercel Speed Insights - uncomment the line below if serving HTML pages
+// import { speedInsightsMiddleware } from "./lib/speed-insights";
 
 const app = express();
 
@@ -20,6 +22,9 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Vercel Speed Insights - uncomment if serving HTML pages
+// app.use(speedInsightsMiddleware);
 
 app.set("trust proxy", 1);
 
