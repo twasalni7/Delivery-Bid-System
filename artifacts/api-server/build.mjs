@@ -93,7 +93,7 @@ async function buildAll() {
   const distDir = path.resolve(artifactDir, "dist");
   await rm(distDir, { recursive: true, force: true });
 
-  // ── 1. Standalone Node.js server (used by Render / self-hosted) ──────────
+  // 1. Standalone Node.js server (used by Render / self-hosted) --
   await esbuild({
     entryPoints: [path.resolve(artifactDir, "src/index.ts")],
     platform: "node",
@@ -127,7 +127,7 @@ async function buildAll() {
     banner: { js: esmCjsBanner },
   });
 
-  // ── 2. Vercel Serverless Function (api/index.mjs at repo root) ────────────
+  // 2. Vercel Serverless Function (api/index.mjs at repo root) --
   // Bundles the Express app (without the listen() call) into a single file.
   // All pure-JS dependencies are inlined so the function is self-contained and
   // does not rely on pnpm's hoisting behaviour inside Vercel's build container.
