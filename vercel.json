@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "buildCommand": "BASE_PATH=/ pnpm run build",
+  "buildCommand": "pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/delivery-bidding run build",
   "outputDirectory": "artifacts/delivery-bidding/dist/public",
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/index.mjs" },
