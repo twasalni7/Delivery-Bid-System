@@ -34,12 +34,90 @@ The React app is served as a static site and the Express API runs as a Vercel Se
    | `NODE_ENV` | Set to `production` | `production` |
 
    > **Where to find `SUPABASE_DATABASE_URL`:**  
-   > Supabase dashboard → your project → **Connect** → **Transaction Pooler** → copy the connection string.  
+   > Supabase dashboard → your project → **Settings** → **Database** → **Connection string** → **Transaction Pooler** → copy the connection string.  
    > Replace `[YOUR-PASSWORD]` with your database password.
 
 6. **Deploy** — click **Deploy**. Vercel will build and deploy the project.
 
 7. **Re-deploy when schema changes** — if you add new Supabase tables, run `node scripts/apply-rls.mjs` locally (with `SUPABASE_DATABASE_URL` set) then re-deploy.
+
+### دليل حرفي جدًا داخل Vercel وSupabase
+
+#### داخل Vercel
+
+1. افتح [vercel.com](https://vercel.com).
+2. سجّل الدخول.
+3. من أعلى الصفحة اضغط **Add New**.
+4. اضغط **Project**.
+5. من GitHub اختر الريبو `twasalni7/Delivery-Bid-System`.
+6. اضغط **Import**.
+
+#### في صفحة إعداد المشروع
+
+7. ابحث عن **Root Directory**.
+8. تأكد أنه على **جذر المشروع**، وليس:
+   - `artifacts/api-server`
+   - `artifacts/delivery-bidding`
+9. ابحث عن:
+   - **Install Command**
+   - **Build Command**
+   - **Output Directory**
+10. إذا كانت Vercel قرأت الإعدادات تلقائيًا، **لا تعدّلها**. هذا الريبو يعتمد على `vercel.json` الموجود في الجذر، والذي يحدد:
+    - Install Command: `pnpm install --no-frozen-lockfile`
+    - Build Command: `pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/delivery-bidding run build`
+    - Output Directory: `artifacts/delivery-bidding/dist/public`
+
+#### أضف Environment Variables
+
+11. انزل إلى قسم **Environment Variables**.
+12. أضف المتغير الأول:
+    - Name: `SUPABASE_DATABASE_URL`
+    - Value: رابط **Supabase Transaction Pooler**
+13. أضف المتغير الثاني:
+    - Name: `SESSION_SECRET`
+    - Value: أي سر طويل وقوي
+14. أضف المتغير الثالث:
+    - Name: `NODE_ENV`
+    - Value: `production`
+
+#### داخل Supabase
+
+15. افتح [supabase.com](https://supabase.com).
+16. ادخل على مشروعك.
+17. من القائمة اضغط **Settings**.
+18. ثم اضغط **Database**.
+19. ابحث عن **Connection string**.
+20. اختر **Transaction Pooler**.
+21. انسخ الرابط الذي يكون عادة على المنفذ **6543**.
+22. ارجع إلى Vercel والصقه في `SUPABASE_DATABASE_URL`.
+
+#### النشر
+
+23. ارجع إلى Vercel.
+24. اضغط **Deploy**.
+25. انتظر حتى ينتهي البناء.
+
+#### إذا فشل
+
+26. افتح **Deployments**.
+27. اضغط على آخر Deployment.
+28. افتح **Build Logs**.
+29. انسخ **أول خطأ** ظهر.
+
+#### إذا كان النشر نجح لكن الموقع يعطي 500
+
+30. ارجع إلى **Project Settings → Environment Variables**.
+31. راجع فقط:
+    - `SUPABASE_DATABASE_URL`
+    - `SESSION_SECRET`
+    - `NODE_ENV=production`
+
+#### أهم شيء تتأكد منه
+
+- Root Directory = **جذر المشروع**
+- لا تغيّر Build Settings يدويًا
+- استخدم **Supabase Transaction Pooler**
+- المنفذ يكون **6543**
 
 ---
 
