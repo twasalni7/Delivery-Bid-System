@@ -1,52 +1,75 @@
 # Deployment Guide for Delivery Bid System
 
-## Deploying to Vercel
+## Deploying to Vercel (Frontend + API)
 
-1. **Create a Vercel Account**: If you don’t have an account, sign up at [Vercel](https://vercel.com).
+This project deploys **both** the React frontend and the Express API to Vercel.  
+The React app is served as a static site and the Express API runs as a Vercel Serverless Function.
 
-2. **Import Project**: After logging in, click on ‘New Project’ and import your GitHub repository (`twasalni7/Delivery-Bid-System`).
+### Step-by-step
 
-3. **Environment Variables**: 
-   - Navigate to the settings of your project. 
-   - Under the ‘Environment Variables’ section, add the following:
-     - `SUPABASE_URL`: Your Supabase project URL.
-     - `SUPABASE_ANON_KEY`: Your Supabase anon key.
+1. **Create a Vercel Account** — Sign up at [vercel.com](https://vercel.com) if you haven't already.
 
-4. **Configure Build Settings**: Ensure that your build command and output directory are set correctly. The default settings typically work.
+2. **Import Project** — Click **New Project** → import the `twasalni7/Delivery-Bid-System` GitHub repository.
 
-5. **Deploy**: Click on ‘Deploy’ to start the deployment process. Vercel will automatically build and deploy your project.
+3. **Leave build settings at their defaults** — the `vercel.json` in the repo already configures:
+   - Install command: `pnpm install --no-frozen-lockfile`
+   - Build command: `BASE_PATH=/ pnpm run build`
+   - Output directory: `artifacts/delivery-bidding/dist/public`
 
-## Deploying to Render
+4. **Set Environment Variables** — go to **Project → Settings → Environment Variables** and add:
 
-1. **Create a Render Account**: Sign up at [Render](https://render.com) if you don’t have an account.
+   | Variable | Description | Example |
+   |---|---|---|
+   | `SUPABASE_DATABASE_URL` | Supabase Transaction Pooler connection string (port **6543**) | `postgresql://postgres:[password]@db.[ref].supabase.co:6543/postgres` |
+   | `SESSION_SECRET` | A long random secret for signing session cookies | `openssl rand -hex 32` output |
+   | `NODE_ENV` | Set to `production` | `production` |
 
-2. **Create a New Web Service**: Click on ‘New’ and select ‘Web Service’. 
+   > **Where to find `SUPABASE_DATABASE_URL`:**  
+   > Supabase dashboard → your project → **Connect** → **Transaction Pooler** → copy the connection string.  
+   > Replace `[YOUR-PASSWORD]` with your database password.
 
-3. **Connect GitHub Repository**: Connect your GitHub account and select the `twasalni7/Delivery-Bid-System` repository.
+5. **Deploy** — click **Deploy**. Vercel will build and deploy the project.
 
-4. **Environment Variables**:
-   - In the settings of your service, set the same environment variables as for Vercel:
-     - `SUPABASE_URL`: Your Supabase project URL.
-     - `SUPABASE_ANON_KEY`: Your Supabase anon key.
-
-5. **Build Command & Start Command**: Set the build command and the start command as needed (commonly `npm run build` and `npm start`).
-
-6. **Deploy**: Click on ‘Create Web Service’ to initiate the deployment. Render will build and deploy your application.
-
-## Connect to Supabase Database
-
-To connect your application to Supabase, make sure that the connection string follows the format:
-
-```
-SUPABASE_URL=<your_supabase_url>
-SUPABASE_ANON_KEY=<your_supabase_anon_key>
-```
-
-Ensure that you replace `<your_supabase_url>` and `<your_supabase_anon_key>` with the actual values from your Supabase project settings.
+6. **Re-deploy when schema changes** — if you add new Supabase tables, run `node scripts/apply-rls.mjs` locally (with `SUPABASE_DATABASE_URL` set) then re-deploy.
 
 ---
 
-## Additional Notes
+## Deploying to Render (API only)
 
-- Ensure that your project works locally before deploying.
-- Monitor the Vercel and Render dashboards for any build errors or logs to troubleshoot deployment issues.
+If you prefer to host the API separately on Render:
+
+1. Sign up at [render.com](https://render.com).
+2. Click **New → Web Service** and connect the GitHub repository.
+3. Render picks up the `render.yaml` configuration automatically.
+4. Add the same environment variables in the Render dashboard:
+   - `SUPABASE_DATABASE_URL`
+   - `SESSION_SECRET`
+   - `NODE_ENV` = `production`
+5. Click **Create Web Service**.
+
+---
+
+## Supabase Database Setup
+
+1. Create a Supabase project at [supabase.com](https://supabase.com).
+2. Run the Drizzle migration to create all tables:
+   ```
+   SUPABASE_DATABASE_URL="postgresql://..." pnpm --filter @workspace/db run push
+   ```
+3. Apply Row Level Security policies:
+   ```
+   SUPABASE_DATABASE_URL="postgresql://..." node scripts/apply-rls.mjs
+   ```
+4. Seed the default admin account (`ADMIN2024` login code):
+   ```
+   SUPABASE_DATABASE_URL="postgresql://..." pnpm --filter @workspace/db run seed
+   ```
+
+---
+
+## Common Issues
+
+- **Build fails with "PORT is required"** — this is fixed; `PORT` and `BASE_PATH` are now optional during the Vercel build.
+- **500 errors on API routes** — make sure `SUPABASE_DATABASE_URL` and `SESSION_SECRET` are set in Vercel env vars.
+- **Sessions not persisting** — the session store uses the Supabase PostgreSQL database (`user_sessions` table). Make sure the database is reachable and `SUPABASE_DATABASE_URL` is correct.
+- **React routes show 404 on refresh** — the `vercel.json` includes a catch-all rewrite to `index.html`, which fixes this automatically.
