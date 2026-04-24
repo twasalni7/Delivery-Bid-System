@@ -6,7 +6,7 @@
   "outputDirectory": "artifacts/delivery-bidding/dist/public",
   "functions": {
     "api/index.mjs": {
-      "runtime": "nodejs20.x"
+      "runtime": "@vercel/node@5.0.0"
     }
   },
   "rewrites": [
