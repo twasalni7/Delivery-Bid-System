@@ -360,7 +360,12 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  // When a cross-origin base URL is configured, cookies must be explicitly
+  // included; otherwise rely on the caller's (or browser's default) setting.
+  const credentials: RequestCredentials | undefined =
+    _baseUrl ? "include" : init.credentials;
+
+  const response = await fetch(input, { ...init, method, headers, credentials });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
