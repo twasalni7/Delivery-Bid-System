@@ -6,7 +6,7 @@ services:
     branch: main
     buildCommand: pnpm install && pnpm run build
     startCommand: pnpm run start --prefix artifacts/api-server
-    healthCheckPath: /api/health
+    healthCheckPath: /api/healthz
     envVars:
       - key: NODE_ENV
         value: production
