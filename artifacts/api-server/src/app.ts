@@ -3,6 +3,7 @@ import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes";
+import { logger } from "./lib/logger";
 
 const app = express();
 
@@ -11,9 +12,25 @@ app.use((req: any, res: any, next: any) => {
   next();
 });
 
+const isProduction = process.env["NODE_ENV"] === "production";
+
+const CORS_ORIGIN = process.env["CORS_ORIGIN"];
+const corsOrigin = CORS_ORIGIN
+  ? CORS_ORIGIN.split(",").map((o) => o.trim())
+  : isProduction
+    ? false
+    : true;
+
+if (isProduction && !CORS_ORIGIN) {
+  logger.warn(
+    "CORS_ORIGIN env var is not set in production. All cross-origin requests will be rejected. " +
+      "Set CORS_ORIGIN to your Vercel frontend URL (e.g. https://your-app.vercel.app).",
+  );
+}
+
 app.use(
   cors({
-    origin: true,
+    origin: corsOrigin,
     credentials: true,
   })
 );
@@ -25,7 +42,6 @@ app.set("trust proxy", 1);
 
 const PgSession = connectPgSimple(session);
 const SESSION_SECRET = process.env["SESSION_SECRET"] || "dev-secret";
-const isProduction = process.env["NODE_ENV"] === "production";
 
 app.use(
   session({
@@ -39,7 +55,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   })
