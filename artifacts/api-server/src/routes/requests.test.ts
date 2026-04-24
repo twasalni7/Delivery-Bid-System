@@ -316,7 +316,7 @@ describe("POST /requests/:id/select-offer (client selects offer)", () => {
     expect(res.status).toBe(403);
   });
 
-  it("returns 400 when request is not in OPEN or BIDDING status", async () => {
+  it("returns 400 when request is not in OPEN status", async () => {
     (SelectOfferBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true, data: { offerId: 5 },
     });
@@ -334,7 +334,7 @@ describe("POST /requests/:id/select-offer (client selects offer)", () => {
       success: true, data: { offerId: 5 },
     });
     (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 1, clientId: 1, status: "BIDDING",
+      id: 1, clientId: 1, status: "OPEN",
     });
     (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
@@ -348,10 +348,10 @@ describe("POST /requests/:id/select-offer (client selects offer)", () => {
       success: true, data: { offerId: 5 },
     });
     (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 1, clientId: 1, status: "BIDDING",
+      id: 1, clientId: 1, status: "OPEN",
     });
     (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 5, driverId: 2, requestId: 1, price: 500,
+      id: 5, driverId: 2, requestId: 1,
     });
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 2, name: "Khaled", balance: 30,

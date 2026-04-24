@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetRequest, useCreateOffer, getGetRequestQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, MapPin, Clock, Users } from "lucide-react";
+import { ArrowRight, MapPin, Clock, Users, CheckCircle } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
@@ -21,31 +20,21 @@ export default function SubmitOffer() {
   const { data: request, isLoading } = useGetRequest(requestId, { query: { queryKey: getGetRequestQueryKey(requestId), enabled: !!requestId } });
   const createOffer = useCreateOffer();
 
-  const [price, setPrice] = useState("");
-  const [carType, setCarType] = useState("");
-  const [nationality, setNationality] = useState("");
-
   useEffect(() => {
     if (!user) setLocation("/driver/login");
   }, [user, setLocation]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const numPrice = parseFloat(price);
-    if (isNaN(numPrice) || numPrice <= 0) {
-      toast({ title: "يرجى إدخال سعر صحيح", variant: "destructive" });
-      return;
-    }
+  const handleAccept = () => {
     createOffer.mutate(
-      { data: { requestId, price: numPrice, carType: carType.trim() || "—", nationality: nationality.trim() || "—" } },
+      { data: { requestId } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(requestId) });
-          toast({ title: "تم تقديم العرض بنجاح!" });
+          toast({ title: "تم القبول بنجاح!", description: "ستظهر في قائمة العميل وينتظر تأكيده." });
           setLocation("/driver/dashboard");
         },
         onError: (err: Error) => {
-          toast({ title: err.message ?? "فشل تقديم العرض", variant: "destructive" });
+          toast({ title: err.message ?? "فشل القبول", variant: "destructive" });
         },
       }
     );
@@ -80,12 +69,11 @@ export default function SubmitOffer() {
           <ArrowRight size={14} /> العودة للوحة السائق
         </Link>
 
+        {/* Request Card */}
         <div className="rounded-2xl overflow-hidden shadow-md mb-5" style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}>
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">
-                {request.status === "BIDDING" ? "قيد المزايدة" : "مفتوح"}
-              </span>
+              <span className="text-xs font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">مفتوح</span>
               <span className="text-white/60 text-xs">REQ-{String(request.id).padStart(3, "0")}</span>
             </div>
 
@@ -95,7 +83,7 @@ export default function SubmitOffer() {
               </span>
               <div>
                 <p className="text-white font-black text-lg">{(request as any).clientType || "طلب توصيل"}</p>
-                <p className="text-white/70 text-xs">{request.offerCount ?? 0} عروض مقدمة</p>
+                <p className="text-white/70 text-xs">{request.offerCount ?? 0} سائق قبل</p>
               </div>
             </div>
 
@@ -136,58 +124,40 @@ export default function SubmitOffer() {
           </div>
         </div>
 
+        {/* Monthly Price */}
+        <div className="bg-white rounded-2xl shadow-sm p-5 mb-5 text-center">
+          <p className="text-gray-400 text-sm mb-1">السعر الشهري المحدد من العميل</p>
+          <p className="text-4xl font-black text-gray-900" dir="ltr">
+            {(request as any).monthlyPrice?.toFixed(0) ?? "—"}{" "}
+            <span className="text-base font-normal text-gray-400">ر.س / شهر</span>
+          </p>
+        </div>
+
+        {/* Accept Button */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
-            <h2 className="font-black text-gray-800">تقديم عرضك الشهري</h2>
-            <p className="text-gray-400 text-xs mt-0.5">حدد سعرك التنافسي لهذا الطلب</p>
+            <h2 className="font-black text-gray-800">هل تقبل هذا الطلب؟</h2>
+            <p className="text-gray-400 text-xs mt-0.5">بالقبول ستظهر في قائمة اختيارات العميل</p>
           </div>
-          <div className="p-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-gray-500 mb-1.5 block">السعر الشهري (ريال) *</label>
-                <div className="relative">
-                  <Input
-                    type="number" min="1" step="1"
-                    placeholder="مثال: 850"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="rounded-xl border-gray-200 focus:border-green-400 text-lg font-black pl-14"
-                    dir="ltr"
-                    autoFocus
-                  />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">ر.س</span>
-                </div>
+          <div className="p-4 space-y-3">
+            <button
+              onClick={handleAccept}
+              disabled={createOffer.isPending}
+              className="w-full py-4 rounded-2xl text-white font-black text-base shadow-md active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}
+            >
+              <CheckCircle size={20} />
+              {createOffer.isPending ? "جاري القبول..." : "قبول الطلب"}
+            </button>
+            <Link href="/driver/dashboard">
+              <div className="w-full py-3 rounded-2xl text-center text-gray-500 font-bold text-sm border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+                تجاهل
               </div>
-              <div>
-                <label className="text-xs font-bold text-gray-500 mb-1.5 block">نوع السيارة</label>
-                <Input
-                  placeholder="مثال: تويوتا كامري 2022"
-                  value={carType}
-                  onChange={(e) => setCarType(e.target.value)}
-                  className="rounded-xl border-gray-200 focus:border-green-400"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-500 mb-1.5 block">الجنسية</label>
-                <Input
-                  placeholder="مثال: سعودي"
-                  value={nationality}
-                  onChange={(e) => setNationality(e.target.value)}
-                  className="rounded-xl border-gray-200 focus:border-green-400"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={createOffer.isPending || !price}
-                className="w-full py-4 rounded-2xl text-white font-black text-base shadow-md active:scale-[0.98] transition-transform disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}
-              >
-                {createOffer.isPending ? "جاري الإرسال..." : "قدّم عرضك الشهري"}
-              </button>
-            </form>
+            </Link>
           </div>
         </div>
       </div>
     </Layout>
   );
 }
+

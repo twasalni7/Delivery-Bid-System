@@ -199,7 +199,7 @@ export const GetDriverTransactionsResponse = zod.array(
  * @summary List commute requests
  */
 export const ListRequestsQueryParams = zod.object({
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
 });
 
 export const ListRequestsResponseItem = zod.object({
@@ -216,7 +216,7 @@ export const ListRequestsResponseItem = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -235,6 +235,7 @@ export const ListRequestsResponseItem = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  monthlyPrice: zod.number(),
   offerCount: zod
     .number()
     .nullish()
@@ -257,6 +258,7 @@ export const CreateRequestBody = zod.object({
   morningTime: zod.string(),
   eveningTime: zod.string().optional(),
   notes: zod.string().optional(),
+  monthlyPrice: zod.number(),
 });
 
 /**
@@ -280,7 +282,7 @@ export const GetRequestResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -299,6 +301,7 @@ export const GetRequestResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  monthlyPrice: zod.number(),
   offerCount: zod
     .number()
     .nullish()
@@ -313,7 +316,7 @@ export const AdminUpdateRequestByPathParams = zod.object({
 });
 
 export const AdminUpdateRequestByPathBody = zod.object({
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
   selectedDriverId: zod.number().nullish(),
 });
 
@@ -331,7 +334,7 @@ export const AdminUpdateRequestByPathResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -350,6 +353,7 @@ export const AdminUpdateRequestByPathResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  monthlyPrice: zod.number(),
   offerCount: zod
     .number()
     .nullish()
@@ -375,7 +379,7 @@ export const UpdateRequestStatusParams = zod.object({
 });
 
 export const UpdateRequestStatusBody = zod.object({
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
 });
 
 export const UpdateRequestStatusResponse = zod.object({
@@ -392,7 +396,7 @@ export const UpdateRequestStatusResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -411,6 +415,7 @@ export const UpdateRequestStatusResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  monthlyPrice: zod.number(),
   offerCount: zod
     .number()
     .nullish()
@@ -442,7 +447,7 @@ export const SelectOfferResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -461,6 +466,7 @@ export const SelectOfferResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  monthlyPrice: zod.number(),
   offerCount: zod
     .number()
     .nullish()
@@ -478,9 +484,7 @@ export const GetRequestOffersResponseItem = zod.object({
   id: zod.number(),
   driverId: zod.number(),
   requestId: zod.number(),
-  price: zod.number(),
-  carType: zod.string().nullish(),
-  nationality: zod.string().nullish(),
+  status: zod.enum(["PENDING", "SELECTED", "CANCELLED"]),
   driver: zod
     .object({
       id: zod.number(),
@@ -508,9 +512,7 @@ export const ListOffersResponseItem = zod.object({
   id: zod.number(),
   driverId: zod.number(),
   requestId: zod.number(),
-  price: zod.number(),
-  carType: zod.string().nullish(),
-  nationality: zod.string().nullish(),
+  status: zod.enum(["PENDING", "SELECTED", "CANCELLED"]),
   driver: zod
     .object({
       id: zod.number(),
@@ -532,13 +534,10 @@ export const ListOffersResponseItem = zod.object({
 export const ListOffersResponse = zod.array(ListOffersResponseItem);
 
 /**
- * @summary Driver submits an offer (requires driver auth)
+ * @summary Driver accepts a request (requires driver auth)
  */
 export const CreateOfferBody = zod.object({
   requestId: zod.number(),
-  price: zod.number(),
-  carType: zod.string(),
-  nationality: zod.string(),
 });
 
 /**
@@ -816,7 +815,7 @@ export const AdminListRequestsResponseItem = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -835,6 +834,7 @@ export const AdminListRequestsResponseItem = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  monthlyPrice: zod.number(),
   offerCount: zod
     .number()
     .nullish()
@@ -852,7 +852,7 @@ export const AdminUpdateRequestParams = zod.object({
 });
 
 export const AdminUpdateRequestBody = zod.object({
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
   selectedDriverId: zod.number().nullish(),
 });
 
@@ -870,7 +870,7 @@ export const AdminUpdateRequestResponse = zod.object({
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
   eveningTime: zod.string(),
-  status: zod.enum(["OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -889,6 +889,7 @@ export const AdminUpdateRequestResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
+  monthlyPrice: zod.number(),
   offerCount: zod
     .number()
     .nullish()

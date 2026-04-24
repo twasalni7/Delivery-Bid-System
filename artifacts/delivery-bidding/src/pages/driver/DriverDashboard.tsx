@@ -1,10 +1,10 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useRef, useState } from "react";
-import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffers, useUpdateOffer, useWithdrawOffer } from "@workspace/api-client-react";
+import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffers, useWithdrawOffer } from "@workspace/api-client-react";
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Pencil, Trash2, X, Check, MessageCircle, Calendar } from "lucide-react";
+import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, MessageCircle, Calendar } from "lucide-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
@@ -20,14 +20,11 @@ export default function DriverDashboard() {
   const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
   const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 30_000 } });
   const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user, refetchInterval: 30_000 } });
-  const openRequests = allRequests?.filter((r) => r.status === "OPEN" || r.status === "BIDDING");
+  const openRequests = allRequests?.filter((r) => r.status === "OPEN");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");
-  const [editingOffer, setEditingOffer] = useState<{ id: number; price: string; carType: string; nationality: string } | null>(null);
-  const [editError, setEditError] = useState<string | null>(null);
   const [withdrawConfirmId, setWithdrawConfirmId] = useState<number | null>(null);
 
-  const updateOffer = useUpdateOffer();
   const withdrawOffer = useWithdrawOffer();
 
   const prevSelectedIdsRef = useRef<Set<number> | null>(null);
@@ -58,62 +55,30 @@ export default function DriverDashboard() {
 
   const hasEnoughBalance = driver ? driver.balance >= 50 : false;
   const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === user.id) ?? [];
-  const pendingOffers = myOffers?.filter((o) => o.request?.status === "OPEN" || o.request?.status === "BIDDING") ?? [];
-  const closedOffers = myOffers?.filter((o) => o.request?.status !== "OPEN" && o.request?.status !== "BIDDING") ?? [];
+  const pendingOffers = myOffers?.filter((o) => o.request?.status === "OPEN") ?? [];
+  const closedOffers = myOffers?.filter((o) => o.request?.status !== "OPEN") ?? [];
 
   const totalEarnings = closedOffers.reduce((sum, o) => {
     if (o.request?.status === "SELECTED" || o.request?.status === "ACTIVE" || o.request?.status === "COMPLETED") {
-      return sum + (o.price ?? 0);
+      return sum + ((o.request as any).monthlyPrice ?? 0);
     }
     return sum;
   }, 0);
-
-  function startEdit(offer: DriverOffer) {
-    setEditingOffer({
-      id: offer.id,
-      price: String(offer.price),
-      carType: offer.carType === "—" ? "" : (offer.carType ?? ""),
-      nationality: offer.nationality === "—" ? "" : (offer.nationality ?? ""),
-    });
-    setEditError(null);
-  }
-  function cancelEdit() { setEditingOffer(null); setEditError(null); }
-
-  async function submitEdit() {
-    if (!editingOffer) return;
-    const price = parseFloat(editingOffer.price);
-    if (isNaN(price) || price <= 0) { setEditError("أدخل سعراً صحيحاً"); return; }
-    try {
-      await updateOffer.mutateAsync({
-        offerId: editingOffer.id,
-        price,
-        carType: editingOffer.carType.trim() || "—",
-        nationality: editingOffer.nationality.trim() || "—",
-      });
-      setEditingOffer(null); setEditError(null);
-      toast({ title: "تم التعديل", description: "تم تحديث عرضك بنجاح" });
-    } catch (err: unknown) {
-      const apiErr = err as { data?: { error?: string } };
-      const message = apiErr?.data?.error ?? "حدث خطأ أثناء التعديل";
-      setEditError(message);
-      toast({ title: "خطأ في التعديل", description: message, variant: "destructive" });
-    }
-  }
 
   async function confirmWithdraw(offerId: number) {
     setWithdrawConfirmId(null);
     try {
       await withdrawOffer.mutateAsync({ offerId });
-      toast({ title: "تم السحب", description: "تم سحب عرضك بنجاح" });
+      toast({ title: "تم الإلغاء", description: "تم إلغاء قبولك بنجاح" });
     } catch (err: unknown) {
       const apiErr = err as { data?: { error?: string } };
-      toast({ title: "خطأ في السحب", description: apiErr?.data?.error ?? "حدث خطأ أثناء سحب العرض", variant: "destructive" });
+      toast({ title: "خطأ في الإلغاء", description: apiErr?.data?.error ?? "حدث خطأ أثناء الإلغاء", variant: "destructive" });
     }
   }
 
   const tabs: { id: TabId; label: string; icon: string; count?: number }[] = [
     { id: "available", label: "طلبات جديدة", icon: "📋", count: openRequests?.length },
-    { id: "my-offers", label: "عروضي", icon: "📄", count: myOffers?.length },
+    { id: "my-offers", label: "قبولاتي", icon: "📄", count: myOffers?.length },
     { id: "earnings", label: "أرباحي", icon: "💰" },
   ];
 
@@ -143,7 +108,7 @@ export default function DriverDashboard() {
               {[
                 { label: "الأرباح المتوقعة", value: `${totalEarnings.toFixed(0)}`, unit: "ر.س" },
                 { label: "نسبة القبول", value: myOffers && myOffers.length > 0 ? `${Math.round((closedOffers.length / myOffers.length) * 100)}%` : "—" },
-                { label: "عروض نشطة", value: String(pendingOffers.length) },
+                { label: "قبولات نشطة", value: String(pendingOffers.length) },
                 { label: "طلبات مفتوحة", value: String(openRequests?.length ?? 0) },
               ].map((stat) => (
                 <div key={stat.label} className="bg-white/15 rounded-xl p-3 text-center">
@@ -243,7 +208,7 @@ export default function DriverDashboard() {
               <div className="space-y-4">
                 {openRequests.map((req) => (
                   <div key={req.id} className="rounded-2xl overflow-hidden shadow-md bg-white">
-                    <div className="p-5" style={{ background: req.status === "BIDDING" ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" : "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}>
+                    <div className="p-5" style={{ background: req.status === "OPEN" ? "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" : "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}>
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-bold bg-white/25 text-white px-3 py-1 rounded-full">
                           {getStatusLabel(req.status)}
@@ -294,14 +259,14 @@ export default function DriverDashboard() {
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                         <div>
-                          <p className="text-sm text-gray-400">عدد المنافسين</p>
-                          <p className="text-2xl font-black text-gray-800">{req.offerCount ?? 0}</p>
+                          <p className="text-sm text-gray-400">السعر الشهري</p>
+                          <p className="text-2xl font-black text-gray-800" dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"} <span className="text-sm font-normal text-gray-400">ر.س</span></p>
                         </div>
                         {hasEnoughBalance ? (
                           <Link href={`/driver/request/${req.id}`}>
                             <div className="px-6 py-3 rounded-xl text-white font-black text-base shadow-md active:scale-95 transition-transform"
                               style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}>
-                              قدّم عرضك الشهري
+                              قبول
                             </div>
                           </Link>
                         ) : (
@@ -323,8 +288,8 @@ export default function DriverDashboard() {
             {!offersLoading && (!myOffers || myOffers.length === 0) && (
               <div className="text-center py-20 border-2 border-dashed border-gray-200 rounded-2xl bg-white">
                 <FileText size={40} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-xl font-bold text-gray-700">لم تقدّم أي عروض بعد</p>
-                <p className="text-gray-400 text-base mt-1">تصفّح الطلبات المتاحة وقدّم عرضك</p>
+                <p className="text-xl font-bold text-gray-700">لم تقبل أي طلب بعد</p>
+                <p className="text-gray-400 text-base mt-1">تصفّح الطلبات المتاحة واقبل ما يناسبك</p>
                 <button onClick={() => setActiveTab("available")}
                   className="mt-5 px-6 py-3 rounded-full text-base font-bold border border-gray-300 text-gray-600 hover:bg-gray-50">
                   عرض الطلبات المتاحة
@@ -334,7 +299,7 @@ export default function DriverDashboard() {
 
             {pendingOffers.length > 0 && (
               <div>
-                <p className="text-sm font-black text-gray-400 mb-3 uppercase tracking-wide">عروض قيد الانتظار</p>
+                <p className="text-sm font-black text-gray-400 mb-3 uppercase tracking-wide">قبولات قيد الانتظار</p>
                 <div className="space-y-3">
                   {pendingOffers.map((offer) => (
                     <div key={offer.id} className="rounded-2xl overflow-hidden shadow-sm bg-white border border-blue-100">
@@ -352,109 +317,34 @@ export default function DriverDashboard() {
                               <span className="flex items-center gap-1"><Clock size={13} />{formatTime12h(offer.request.morningTime)}{offer.request.eveningTime ? ` – ${formatTime12h(offer.request.eveningTime)}` : ""}</span>
                               <span className="flex items-center gap-1"><Users size={13} />{offer.request.numberOfPeople} أشخاص · {offer.request.workingDaysPerWeek} أيام</span>
                             </div>
+                            <p className="text-lg font-black text-green-600" dir="ltr">
+                              {offer.request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-sm font-normal text-gray-400">ر.س/شهر</span>
+                            </p>
                           </div>
                         )}
-                        {/* Competitive hint */}
-                        {offer.offerStats && (() => {
-                          const { lowerCount, totalCount, minPrice } = offer.offerStats;
-                          const isOnlyBidder = totalCount === 1;
-                          const isLowest = lowerCount === 0;
-                          const hasTie = isLowest && !isOnlyBidder;
-                          const icon = lowerCount === 0 ? "🏆" : lowerCount <= 2 ? "⚠️" : "📉";
-                          const colorClass = lowerCount === 0
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : lowerCount <= 2
-                            ? "bg-amber-50 text-amber-700 border border-amber-200"
-                            : "bg-red-50 text-red-700 border border-red-200";
-                          const label = isOnlyBidder
-                            ? "أنت المتقدم الوحيد حتى الآن!"
-                            : hasTie
-                            ? "أنت ضمن أقل العروض سعراً"
-                            : lowerCount === 1
-                            ? "يوجد عرض واحد أقل من عرضك"
-                            : `يوجد ${lowerCount} عروض أقل من عرضك`;
-                          return (
-                            <div className={`flex items-center gap-2 text-sm font-bold px-3 py-2 rounded-xl mb-3 ${colorClass}`}>
-                              <span className="text-base">{icon}</span>
-                              <span>{label}</span>
-                              {!isOnlyBidder && minPrice !== null && lowerCount > 0 && (
-                                <span className="mr-auto text-xs font-normal opacity-75" dir="ltr">
-                                  أدنى سعر: {minPrice.toFixed(0)} ر.س
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })()}
-                        <div className="flex items-center justify-between">
-                          {editingOffer?.id === offer.id ? (
-                            <div className="flex flex-col gap-2 flex-1">
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="number" min="1" step="1"
-                                  value={editingOffer.price}
-                                  onChange={(e) => setEditingOffer({ ...editingOffer, price: e.target.value })}
-                                  className="w-28 border-2 border-green-400 rounded-xl px-3 py-2 text-base font-bold focus:outline-none"
-                                  dir="ltr" autoFocus
-                                />
-                                <span className="text-sm text-gray-400">ر.س</span>
-                                <button onClick={submitEdit} disabled={updateOffer.isPending} className="text-green-600 hover:text-green-700 disabled:opacity-50 mr-auto">
-                                  <Check size={20} />
-                                </button>
-                                <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600">
-                                  <X size={20} />
-                                </button>
-                              </div>
-                              <input
-                                type="text"
-                                placeholder="نوع السيارة (مثال: تويوتا كامري)"
-                                value={editingOffer.carType}
-                                onChange={(e) => setEditingOffer({ ...editingOffer, carType: e.target.value })}
-                                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
-                              />
-                              <input
-                                type="text"
-                                placeholder="الجنسية (مثال: سعودي)"
-                                value={editingOffer.nationality}
-                                onChange={(e) => setEditingOffer({ ...editingOffer, nationality: e.target.value })}
-                                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
-                              />
-                              {editError && <p className="text-sm text-red-600">{editError}</p>}
+                        <div className="flex items-center justify-end">
+                          {withdrawConfirmId === offer.id ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-bold text-gray-700">تأكيد إلغاء القبول؟</span>
+                              <button
+                                onClick={() => confirmWithdraw(offer.id)}
+                                disabled={withdrawOffer.isPending}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 disabled:opacity-50"
+                              >
+                                <Check size={13} /> نعم، إلغاء
+                              </button>
+                              <button
+                                onClick={() => setWithdrawConfirmId(null)}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50"
+                              >
+                                <X size={13} /> لا
+                              </button>
                             </div>
                           ) : (
-                            <p className="text-2xl font-black text-green-600" dir="ltr">
-                              {offer.price.toFixed(0)} ر.س<span className="text-sm font-normal text-gray-400">/شهر</span>
-                            </p>
-                          )}
-                          {editingOffer?.id !== offer.id && (
-                            withdrawConfirmId === offer.id ? (
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-bold text-gray-700">تأكيد سحب العرض؟</span>
-                                <button
-                                  onClick={() => confirmWithdraw(offer.id)}
-                                  disabled={withdrawOffer.isPending}
-                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 disabled:opacity-50"
-                                >
-                                  <Check size={13} /> نعم، سحب
-                                </button>
-                                <button
-                                  onClick={() => setWithdrawConfirmId(null)}
-                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50"
-                                >
-                                  <X size={13} /> إلغاء
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex gap-2">
-                                <button onClick={() => startEdit(offer)}
-                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">
-                                  <Pencil size={13} /> تعديل
-                                </button>
-                                <button onClick={() => setWithdrawConfirmId(offer.id)} disabled={withdrawOffer.isPending}
-                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-sm font-bold text-red-500 hover:bg-red-50">
-                                  <Trash2 size={13} /> سحب
-                                </button>
-                              </div>
-                            )
+                            <button onClick={() => setWithdrawConfirmId(offer.id)} disabled={withdrawOffer.isPending}
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-sm font-bold text-red-500 hover:bg-red-50">
+                              <Trash2 size={13} /> إلغاء القبول
+                            </button>
                           )}
                         </div>
                       </div>
@@ -466,7 +356,7 @@ export default function DriverDashboard() {
 
             {closedOffers.length > 0 && (
               <div>
-                <p className="text-sm font-black text-gray-400 mb-3 uppercase tracking-wide">عروض سابقة</p>
+                <p className="text-sm font-black text-gray-400 mb-3 uppercase tracking-wide">قبولات سابقة</p>
                 <div className="space-y-3">
                   {closedOffers.map((offer) => {
                     const wasAccepted = mySelectedJobs.some((j) => j.id === offer.requestId);
@@ -493,7 +383,7 @@ export default function DriverDashboard() {
                             {offer.request && (
                               <p className={`text-base font-medium ${wasAccepted ? "text-green-800" : "text-gray-600"}`}>{offer.request.homeLocation} ← {offer.request.workLocation}</p>
                             )}
-                            <p className={`text-base font-black mt-1 ${wasAccepted ? "text-green-700" : "text-gray-800"}`} dir="ltr">{offer.price.toFixed(0)} ر.س/شهر</p>
+                            <p className={`text-base font-black mt-1 ${wasAccepted ? "text-green-700" : "text-gray-800"}`} dir="ltr">{offer.request?.monthlyPrice?.toFixed(0) ?? "—"} ر.س/شهر</p>
                           </div>
                         </div>
                       </div>

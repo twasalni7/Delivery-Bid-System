@@ -1,8 +1,14 @@
-import { pgTable, serial, integer, real, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { driversTable } from "./drivers";
 import { requestsTable } from "./requests";
+
+export const offerStatusEnum = pgEnum("offer_status", [
+  "PENDING",
+  "SELECTED",
+  "CANCELLED",
+]);
 
 export const offersTable = pgTable("offers", {
   id: serial("id").primaryKey(),
@@ -12,9 +18,7 @@ export const offersTable = pgTable("offers", {
   requestId: integer("request_id")
     .notNull()
     .references(() => requestsTable.id),
-  price: real("price").notNull(),
-  carType: text("car_type").notNull(),
-  nationality: text("nationality").notNull(),
+  status: offerStatusEnum("status").notNull().default("PENDING"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

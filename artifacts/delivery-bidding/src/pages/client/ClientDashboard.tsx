@@ -14,7 +14,6 @@ const CLIENT_TYPE_EMOJI: Record<string, string> = {
 
 const STATUS_GRADIENT: Record<string, string> = {
   OPEN:      "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
-  BIDDING:   "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
   SELECTED:  "linear-gradient(135deg, #10B981 0%, #059669 100%)",
   ACTIVE:    "linear-gradient(135deg, #10B981 0%, #059669 100%)",
   COMPLETED: "linear-gradient(135deg, #6B7280 0%, #4B5563 100%)",
@@ -36,7 +35,7 @@ export default function ClientDashboard() {
     if (!requests) return;
     const map: Record<number, number> = {};
     for (const req of requests) {
-      if (req.status !== "OPEN" && req.status !== "BIDDING") continue;
+      if (req.status !== "OPEN") continue;
       const currentCount = req.offerCount ?? 0;
       const seenCount = parseInt(localStorage.getItem(SEEN_KEY(req.id)) ?? "0", 10);
       const unread = Math.max(0, currentCount - seenCount);

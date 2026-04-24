@@ -9,25 +9,16 @@ export interface DriverOfferRequest {
   eveningTime: string;
   numberOfPeople: number;
   workingDaysPerWeek: number;
+  monthlyPrice: number;
   status: string;
-}
-
-export interface DriverOfferStats {
-  totalCount: number;
-  lowerCount: number;
-  minPrice: number | null;
-  maxPrice: number | null;
 }
 
 export interface DriverOffer {
   id: number;
   driverId: number;
   requestId: number;
-  price: number;
-  carType: string;
-  nationality: string;
+  status: string;
   request: DriverOfferRequest | null;
-  offerStats: DriverOfferStats | null;
   createdAt?: string;
 }
 
@@ -49,29 +40,6 @@ export function useListMyOffers(options?: {
     ...options?.query,
   });
 }
-
-export function useUpdateOffer(options?: {
-  onSuccess?: () => void;
-  onError?: (error: unknown) => void;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ offerId, price, carType, nationality }: { offerId: number; price: number; carType?: string; nationality?: string }) => {
-      return customFetch<DriverOffer>(`/api/offers/${offerId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ price, carType, nationality }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getListMyOffersQueryKey() });
-      options?.onSuccess?.();
-    },
-    onError: options?.onError,
-  });
-}
-
-export const useUpdateOfferPrice = useUpdateOffer;
 
 export function useWithdrawOffer(options?: {
   onSuccess?: () => void;

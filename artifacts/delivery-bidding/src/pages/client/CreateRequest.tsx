@@ -48,6 +48,7 @@ export default function CreateRequest() {
   const [numberOfPeople, setNumberOfPeople] = useState("1");
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
   const [notes, setNotes] = useState("");
+  const [monthlyPrice, setMonthlyPrice] = useState("");
 
   const toggleDay = (key: string) => {
     setSelectedDays((prev) =>
@@ -61,7 +62,7 @@ export default function CreateRequest() {
     setAdditionalLocations((prev) => prev.map((l, i) => (i === idx ? { ...l, [field]: val } : l)));
   };
 
-  const canSubmit = homeLocation.trim() && workLocation.trim() && phone.trim() && morningTime && selectedDays.length > 0;
+  const canSubmit = homeLocation.trim() && workLocation.trim() && phone.trim() && morningTime && selectedDays.length > 0 && monthlyPrice.trim() && parseFloat(monthlyPrice) > 0;
 
   const handleSubmit = () => {
     if (!canSubmit) {
@@ -83,6 +84,7 @@ export default function CreateRequest() {
           morningTime,
           eveningTime: eveningTime || undefined,
           notes: notes.trim() || undefined,
+          monthlyPrice: parseFloat(monthlyPrice),
         } as any,
       },
       {
@@ -253,6 +255,21 @@ export default function CreateRequest() {
                   className="rounded-xl border-gray-200 focus:border-blue-400 resize-none"
                 />
               </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 mb-1.5 block">💰 السعر الشهري (ريال) *</label>
+                <div className="relative">
+                  <Input
+                    type="number" min="1" step="1"
+                    placeholder="مثال: 800"
+                    value={monthlyPrice}
+                    onChange={(e) => setMonthlyPrice(e.target.value)}
+                    className="rounded-xl border-gray-200 focus:border-blue-400 text-lg font-black pl-14"
+                    dir="ltr"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">ر.س</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">هذا السعر الذي ستدفعه شهرياً للسائق</p>
+              </div>
             </div>
           </Section>
 
@@ -290,7 +307,7 @@ export default function CreateRequest() {
             className="w-full py-4 rounded-2xl text-white font-black text-base shadow-lg active:scale-[0.98] transition-transform disabled:opacity-50 disabled:scale-100"
             style={{ background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}
           >
-            {createRequest.isPending ? "جاري الإرسال..." : "نشر الطلب والحصول على عروض"}
+            {createRequest.isPending ? "جاري الإرسال..." : "نشر الطلب للسائقين"}
           </button>
         </div>
       </div>
