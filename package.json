@@ -8,6 +8,9 @@
     "typecheck:libs": "tsc --build",
     "typecheck": "echo 'Skipping typecheck for faster build'"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "private": true,
   "devDependencies": {
     "typescript": "~5.9.2",
