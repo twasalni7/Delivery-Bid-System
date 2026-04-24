@@ -127,28 +127,8 @@ async function buildAll() {
     banner: { js: esmCjsBanner },
   });
 
-  // 2. Vercel Serverless Function (api/index.mjs at repo root) --
-  // Bundles the Express app (without the listen() call) into a single file.
-  // All pure-JS dependencies are inlined so the function is self-contained and
-  // does not rely on pnpm's hoisting behaviour inside Vercel's build container.
-  const vercelOutDir = path.resolve(artifactDir, "../../api");
-  await rm(vercelOutDir, { recursive: true, force: true });
-
-  await esbuild({
-    entryPoints: { index: path.resolve(artifactDir, "src/vercel-entry.ts") },
-    platform: "node",
-    bundle: true,
-    format: "esm",
-    outdir: vercelOutDir,
-    outExtension: { ".js": ".mjs" },
-    logLevel: "info",
-    // Only exclude packages with native bindings; everything else is bundled
-    // so the serverless function is fully self-contained.
-    external: nativeExternals,
-    sourcemap: false,
-    plugins: [esbuildPluginPino({ transports: ["pino-pretty"] })],
-    banner: { js: esmCjsBanner },
-  });
+  // 2. Vercel Serverless Function is now served via api/index.ts (committed source file).
+  // @vercel/node compiles it at deploy time, so no esbuild step is needed here.
 }
 
 buildAll().catch((err) => {
