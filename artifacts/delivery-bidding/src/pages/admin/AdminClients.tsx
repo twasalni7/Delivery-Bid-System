@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
 
-const API = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_ORIGIN as API } from "@/lib/api-config";
 type Client = { id: number; name: string; mobile: string; createdAt: string };
 
 async function apiFetch(path: string, opts?: RequestInit) {

@@ -14,7 +14,7 @@ import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, Refr
 import type { DriverDetail } from "@workspace/api-client-react";
 import * as XLSX from "xlsx";
 
-const API = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_ORIGIN as API } from "@/lib/api-config";
 
 type DialogMode = "create" | "edit" | "balance" | "import" | null;
 

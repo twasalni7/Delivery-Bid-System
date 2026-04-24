@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck } from "lucide-react";
 
-const API = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_ORIGIN as API } from "@/lib/api-config";
 
 export default function AdminSettings() {
   const { toast } = useToast();

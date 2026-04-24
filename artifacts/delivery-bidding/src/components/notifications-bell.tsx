@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Bell, X, CheckCheck, Package2, Truck, MessageSquare, Info } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_ORIGIN as API } from "@/lib/api-config";
 
 type Notification = {
   id: number;
