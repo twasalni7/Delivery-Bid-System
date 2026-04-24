@@ -6,7 +6,7 @@ import { Layout } from "@/components/layout";
 import { MessageCircle } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 
-const API = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { API_ORIGIN as API } from "@/lib/api-config";
 
 const STATUS_PILL: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-700",

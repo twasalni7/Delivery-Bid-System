@@ -6,7 +6,8 @@ import { ChevronDown, ChevronUp, Trash2, Search, X } from "lucide-react";
 import { getTicketStatusColor, getTicketStatusLabel } from "@/lib/status-utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
+import { API_ORIGIN } from "@/lib/api-config";
+const API_BASE = API_ORIGIN + "/api";
 
 type Ticket = {
   id: number; clientId: number | null; driverId: number | null; requestId: number | null;
