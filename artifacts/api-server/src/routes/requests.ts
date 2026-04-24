@@ -6,7 +6,7 @@ import {
   offersTable,
   transactionsTable,
 } from "@workspace/db";
-import { eq, and, count, inArray, desc, gte, lte } from "drizzle-orm";
+import { eq, and, count, inArray } from "drizzle-orm";
 import { notify } from "../lib/notify";
 import {
   CreateRequestBody,
@@ -21,7 +21,6 @@ const router = Router();
 
 const ALL_STATUSES = new Set([
   "OPEN",
-  "BIDDING",
   "SELECTED",
   "ACTIVE",
   "COMPLETED",
@@ -93,6 +92,7 @@ function formatRequest(
     morningTime: r.morningTime,
     eveningTime: r.eveningTime,
     notes: r.notes,
+    monthlyPrice: r.monthlyPrice,
     status: r.status,
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
@@ -166,6 +166,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
     .values({
       ...parsed.data,
       clientType: parsed.data.clientType ?? "غيره",
+      monthlyPrice: parsed.data.monthlyPrice,
       clientId,
       status: "OPEN",
     })
@@ -298,8 +299,8 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
     return;
   }
 
-  if (request.status !== "OPEN" && request.status !== "BIDDING") {
-    res.status(400).json({ error: "لا يمكن إضافة عروض بعد اختيار سائق" });
+  if (request.status !== "OPEN") {
+    res.status(400).json({ error: "لا يمكن تأكيد سائق بعد اختيار سائق آخر" });
     return;
   }
 
@@ -353,8 +354,8 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   void notify({
     userId: driver.id,
     userRole: "driver",
-    title: "🎉 تم اختيار عرضك!",
-    message: `اختار العميل عرضك على الطلب من ${request.homeLocation} إلى ${request.workLocation} بسعر ${offer.price.toFixed(0)} ر.س/شهر`,
+    title: "🎉 تم اختيارك!",
+    message: `اختار العميل عرضك على الطلب من ${request.homeLocation} إلى ${request.workLocation} بسعر ${request.monthlyPrice.toFixed(0)} ر.س/شهر`,
     type: "request",
     relatedId: request.id,
   });
@@ -384,30 +385,11 @@ router.get("/:id/offers", async (req, res) => {
   const postSelection =
     request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED";
 
-  const sort = (req.query["sort"] as string) ?? "price_asc";
-  const minPrice = req.query["minPrice"] ? Number(req.query["minPrice"]) : undefined;
-  const maxPrice = req.query["maxPrice"] ? Number(req.query["maxPrice"]) : undefined;
-
-  const orderCol =
-    sort === "date_desc"
-      ? desc(offersTable.createdAt)
-      : sort === "price_desc"
-      ? desc(offersTable.price)
-      : offersTable.price;
-
-  const whereConditions = [eq(offersTable.requestId, id)];
-  if (minPrice !== undefined && !isNaN(minPrice)) {
-    whereConditions.push(gte(offersTable.price, minPrice));
-  }
-  if (maxPrice !== undefined && !isNaN(maxPrice)) {
-    whereConditions.push(lte(offersTable.price, maxPrice));
-  }
-
   const offers = await db
     .select()
     .from(offersTable)
-    .where(and(...whereConditions))
-    .orderBy(orderCol);
+    .where(eq(offersTable.requestId, id))
+    .orderBy(offersTable.createdAt);
 
   const results = await Promise.all(
     offers.map(async (o) => {
@@ -424,9 +406,7 @@ router.get("/:id/offers", async (req, res) => {
         id: o.id,
         driverId: o.driverId,
         requestId: o.requestId,
-        price: o.price,
-        carType: o.carType,
-        nationality: o.nationality,
+        status: o.status,
         driver: driver ? formatDriver(driver, revealMobile) : null,
         createdAt: o.createdAt?.toISOString(),
       };

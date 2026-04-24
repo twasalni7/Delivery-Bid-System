@@ -12,7 +12,6 @@ import { formatTime12h } from "@/lib/time-utils";
 
 const STATUS_PILL: Record<string, string> = {
   OPEN:      "bg-blue-100 text-blue-700",
-  BIDDING:   "bg-cyan-100 text-cyan-700",
   SELECTED:  "bg-amber-100 text-amber-700",
   ACTIVE:    "bg-green-100 text-green-700",
   COMPLETED: "bg-gray-100 text-gray-500",
@@ -155,7 +154,6 @@ export default function AdminRequests() {
               {[
                 { label: "الكل", val: "ALL", count: requests?.length ?? 0 },
                 { label: "مفتوح", val: "OPEN", count: requests?.filter((r) => r.status === "OPEN").length ?? 0 },
-                { label: "مزايدة", val: "BIDDING", count: requests?.filter((r) => r.status === "BIDDING").length ?? 0 },
                 { label: "نشط", val: "ACTIVE", count: requests?.filter((r) => r.status === "ACTIVE").length ?? 0 },
               ].map((s) => (
                 <button key={s.val} onClick={() => setStatusFilter(s.val)}

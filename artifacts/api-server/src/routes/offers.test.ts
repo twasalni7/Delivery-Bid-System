@@ -22,9 +22,6 @@ vi.mock("@workspace/db", () => {
     eq: vi.fn(),
     and: vi.fn(),
     count: vi.fn().mockReturnValue("count_expr"),
-    lt: vi.fn(),
-    min: vi.fn(),
-    max: vi.fn(),
   };
 });
 
@@ -83,7 +80,7 @@ describe("GET /offers (admin only)", () => {
 
   it("returns offers list when admin", async () => {
     const chain = makeSelectChain([
-      { id: 1, driverId: 2, requestId: 3, price: 500, carType: "Sedan", nationality: "SA", createdAt: new Date() },
+      { id: 1, driverId: 2, requestId: 3, status: "PENDING", createdAt: new Date() },
     ]);
     (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -95,7 +92,7 @@ describe("GET /offers (admin only)", () => {
     const res = await request(app).get("/offers");
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body[0]).toMatchObject({ id: 1, price: 500 });
+    expect(res.body[0]).toMatchObject({ id: 1, status: "PENDING" });
   });
 });
 
@@ -114,7 +111,7 @@ describe("GET /offers/my (driver only)", () => {
 
   it("returns driver's own offers", async () => {
     const chain = makeSelectChain([
-      { id: 5, driverId: 2, requestId: 10, price: 600, carType: "Van", nationality: "EG", createdAt: new Date() },
+      { id: 5, driverId: 2, requestId: 10, status: "PENDING", createdAt: new Date() },
     ]);
     (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
     (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -126,16 +123,8 @@ describe("GET /offers/my (driver only)", () => {
       eveningTime: "17:00",
       numberOfPeople: 1,
       workingDaysPerWeek: 5,
+      monthlyPrice: 800,
     });
-
-    // Mock the aggregate select chains
-    (db.select as ReturnType<typeof vi.fn>)
-      .mockReturnValueOnce(chain)
-      .mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([{ total: 3, minP: 400, maxP: 700 }]),
-        }),
-      });
 
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
     const res = await request(app).get("/offers/my");
@@ -149,7 +138,7 @@ describe("POST /offers (driver creates offer)", () => {
     const app = createApp();
     const res = await request(app)
       .post("/offers")
-      .send({ requestId: 1, price: 500, carType: "Sedan", nationality: "SA" });
+      .send({ requestId: 1 });
     expect(res.status).toBe(401);
   });
 
@@ -157,7 +146,7 @@ describe("POST /offers (driver creates offer)", () => {
     const app = createApp({ id: 1, role: "client", name: "Ali" });
     const res = await request(app)
       .post("/offers")
-      .send({ requestId: 1, price: 500 });
+      .send({ requestId: 1 });
     expect(res.status).toBe(403);
   });
 
@@ -165,14 +154,14 @@ describe("POST /offers (driver creates offer)", () => {
     (CreateOfferBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({ success: false });
 
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).post("/offers").send({ price: -100 });
+    const res = await request(app).post("/offers").send({});
     expect(res.status).toBe(400);
   });
 
   it("returns 400 when driver has insufficient balance", async () => {
     (CreateOfferBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true,
-      data: { requestId: 1, price: 500, carType: "Sedan", nationality: "SA" },
+      data: { requestId: 1 },
     });
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 2, name: "Khaled", balance: 30, status: "ACTIVE",
@@ -181,7 +170,7 @@ describe("POST /offers (driver creates offer)", () => {
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
     const res = await request(app)
       .post("/offers")
-      .send({ requestId: 1, price: 500, carType: "Sedan", nationality: "SA" });
+      .send({ requestId: 1 });
     expect(res.status).toBe(400);
     expect(res.body.error).toContain("رصيد");
   });
@@ -189,7 +178,7 @@ describe("POST /offers (driver creates offer)", () => {
   it("returns 404 when request not found", async () => {
     (CreateOfferBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true,
-      data: { requestId: 99, price: 500, carType: "Sedan", nationality: "SA" },
+      data: { requestId: 99 },
     });
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 2, name: "Khaled", balance: 200, status: "ACTIVE",
@@ -199,14 +188,14 @@ describe("POST /offers (driver creates offer)", () => {
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
     const res = await request(app)
       .post("/offers")
-      .send({ requestId: 99, price: 500, carType: "Sedan", nationality: "SA" });
+      .send({ requestId: 99 });
     expect(res.status).toBe(404);
   });
 
   it("returns 400 when request is not open for bidding", async () => {
     (CreateOfferBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true,
-      data: { requestId: 1, price: 500, carType: "Sedan", nationality: "SA" },
+      data: { requestId: 1 },
     });
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 2, name: "Khaled", balance: 200, status: "ACTIVE",
@@ -218,14 +207,14 @@ describe("POST /offers (driver creates offer)", () => {
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
     const res = await request(app)
       .post("/offers")
-      .send({ requestId: 1, price: 500, carType: "Sedan", nationality: "SA" });
+      .send({ requestId: 1 });
     expect(res.status).toBe(400);
   });
 
-  it("returns 400 when driver has already submitted an offer on this request", async () => {
+  it("returns 400 when driver has already accepted this request", async () => {
     (CreateOfferBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true,
-      data: { requestId: 1, price: 500, carType: "Sedan", nationality: "SA" },
+      data: { requestId: 1 },
     });
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 2, name: "Khaled", balance: 200, status: "ACTIVE",
@@ -240,15 +229,15 @@ describe("POST /offers (driver creates offer)", () => {
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
     const res = await request(app)
       .post("/offers")
-      .send({ requestId: 1, price: 500, carType: "Sedan", nationality: "SA" });
+      .send({ requestId: 1 });
     expect(res.status).toBe(400);
     expect(res.body.error).toContain("مسبقاً");
   });
 
-  it("creates offer successfully", async () => {
+  it("accepts request successfully", async () => {
     (CreateOfferBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true,
-      data: { requestId: 1, price: 500, carType: "Sedan", nationality: "SA" },
+      data: { requestId: 1 },
     });
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 2, name: "Khaled", balance: 200, status: "ACTIVE",
@@ -260,98 +249,17 @@ describe("POST /offers (driver creates offer)", () => {
     (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const returningMock = vi.fn().mockResolvedValue([
-      { id: 20, driverId: 2, requestId: 1, price: 500, carType: "Sedan", nationality: "SA", createdAt: new Date() },
+      { id: 20, driverId: 2, requestId: 1, status: "PENDING", createdAt: new Date() },
     ]);
     const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
-    // Mock auto-transition select chain
-    const countChain = {
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue([{ total: 1 }]),
-      }),
-    };
-    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(countChain);
-
-    // Mock update chain for auto-transition
-    const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
-
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
     const res = await request(app)
       .post("/offers")
-      .send({ requestId: 1, price: 500, carType: "Sedan", nationality: "SA" });
+      .send({ requestId: 1 });
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ id: 20, price: 500 });
-  });
-});
-
-describe("PUT /offers/:id (driver updates offer)", () => {
-  it("returns 401 when not authenticated", async () => {
-    const app = createApp();
-    const res = await request(app).put("/offers/1").send({ price: 600 });
-    expect(res.status).toBe(401);
-  });
-
-  it("returns 400 for invalid offer id", async () => {
-    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).put("/offers/abc").send({ price: 600 });
-    expect(res.status).toBe(400);
-  });
-
-  it("returns 400 for invalid price", async () => {
-    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).put("/offers/1").send({ price: -100 });
-    expect(res.status).toBe(400);
-  });
-
-  it("returns 404 when offer not found", async () => {
-    (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).put("/offers/999").send({ price: 600 });
-    expect(res.status).toBe(404);
-  });
-
-  it("returns 403 when driver tries to update another driver's offer", async () => {
-    (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 1, driverId: 99, requestId: 5, price: 500,
-    });
-    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).put("/offers/1").send({ price: 600 });
-    expect(res.status).toBe(403);
-  });
-
-  it("returns 400 when request is not open for bidding", async () => {
-    (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 1, driverId: 2, requestId: 5, price: 500,
-    });
-    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 5, status: "SELECTED",
-    });
-    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).put("/offers/1").send({ price: 600 });
-    expect(res.status).toBe(400);
-  });
-
-  it("updates offer successfully", async () => {
-    (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 1, driverId: 2, requestId: 5, price: 500,
-    });
-    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 5, status: "BIDDING",
-    });
-    const returningMock = vi.fn().mockResolvedValue([
-      { id: 1, driverId: 2, requestId: 5, price: 600, carType: "Sedan", nationality: "SA", createdAt: new Date() },
-    ]);
-    const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
-
-    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).put("/offers/1").send({ price: 600 });
-    expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: 1, price: 600 });
+    expect(res.body).toMatchObject({ id: 20, status: "PENDING" });
   });
 });
 
@@ -404,7 +312,6 @@ describe("DELETE /offers/:id (driver withdraws offer)", () => {
       id: 5, status: "OPEN",
     });
     const whereMock = vi.fn().mockResolvedValue([]);
-    const andMock = vi.fn().mockReturnValue({ where: whereMock });
     (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
 
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });

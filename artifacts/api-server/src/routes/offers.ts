@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { offersTable, driversTable, requestsTable } from "@workspace/db";
-import { eq, and, count, lt, min, max } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { notify } from "../lib/notify";
@@ -23,9 +23,7 @@ router.get("/", requireAuth("admin"), async (_req, res) => {
         id: o.id,
         driverId: o.driverId,
         requestId: o.requestId,
-        price: o.price,
-        carType: o.carType,
-        nationality: o.nationality,
+        status: o.status,
         driver: driver
           ? {
               id: driver.id,
@@ -61,41 +59,11 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
         where: eq(requestsTable.id, o.requestId),
       });
 
-      // Fetch aggregate competitive stats for this request
-      const isPending = request && (request.status === "OPEN" || request.status === "BIDDING");
-      let offerStats: {
-        totalCount: number;
-        lowerCount: number;
-        minPrice: number | null;
-        maxPrice: number | null;
-      } | null = null;
-
-      if (isPending) {
-        const [statsRow] = await db
-          .select({ total: count(), minP: min(offersTable.price), maxP: max(offersTable.price) })
-          .from(offersTable)
-          .where(eq(offersTable.requestId, o.requestId));
-
-        const [lowerRow] = await db
-          .select({ lowerCount: count() })
-          .from(offersTable)
-          .where(and(eq(offersTable.requestId, o.requestId), lt(offersTable.price, o.price)));
-
-        offerStats = {
-          totalCount: statsRow?.total ?? 0,
-          lowerCount: lowerRow?.lowerCount ?? 0,
-          minPrice: statsRow?.minP ?? null,
-          maxPrice: statsRow?.maxP ?? null,
-        };
-      }
-
       return {
         id: o.id,
         driverId: o.driverId,
         requestId: o.requestId,
-        price: o.price,
-        carType: o.carType,
-        nationality: o.nationality,
+        status: o.status,
         request: request
           ? {
               id: request.id,
@@ -105,86 +73,16 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
               eveningTime: request.eveningTime,
               numberOfPeople: request.numberOfPeople,
               workingDaysPerWeek: request.workingDaysPerWeek,
+              monthlyPrice: request.monthlyPrice,
               status: request.status,
             }
           : null,
-        offerStats,
         createdAt: o.createdAt?.toISOString(),
       };
     })
   );
 
   res.json(results);
-});
-
-router.put("/:id", requireAuth("driver"), async (req, res) => {
-  const offerId = parseInt(req.params.id, 10);
-  if (isNaN(offerId)) {
-    res.status(400).json({ error: "معرف العرض غير صحيح" });
-    return;
-  }
-
-  const { price: rawPrice, carType: rawCarType, nationality: rawNationality } =
-    req.body as { price?: unknown; carType?: unknown; nationality?: unknown };
-  const price =
-    typeof rawPrice === "number"
-      ? rawPrice
-      : parseFloat(String(rawPrice ?? ""));
-  if (!isFinite(price) || price <= 0) {
-    res.status(400).json({ error: "السعر غير صحيح" });
-    return;
-  }
-  const carType = typeof rawCarType === "string" ? (rawCarType.trim() || "—") : undefined;
-  const nationality = typeof rawNationality === "string" ? (rawNationality.trim() || "—") : undefined;
-  const driverId = req.session.user!.id;
-
-  const offer = await db.query.offersTable.findFirst({
-    where: eq(offersTable.id, offerId),
-  });
-
-  if (!offer) {
-    res.status(404).json({ error: "العرض غير موجود" });
-    return;
-  }
-
-  if (offer.driverId !== driverId) {
-    res.status(403).json({ error: "غير مصرح لك بتعديل هذا العرض" });
-    return;
-  }
-
-  const request = await db.query.requestsTable.findFirst({
-    where: eq(requestsTable.id, offer.requestId),
-  });
-
-  if (
-    !request ||
-    (request.status !== "OPEN" && request.status !== "BIDDING")
-  ) {
-    res.status(400).json({
-      error: "لا يمكن تعديل العرض — الطلب لم يعد مفتوحاً للعروض",
-    });
-    return;
-  }
-
-  const updateFields: { price: number; carType?: string; nationality?: string } = { price };
-  if (carType !== undefined) updateFields.carType = carType;
-  if (nationality !== undefined) updateFields.nationality = nationality;
-
-  const [updated] = await db
-    .update(offersTable)
-    .set(updateFields)
-    .where(and(eq(offersTable.id, offerId), eq(offersTable.driverId, driverId)))
-    .returning();
-
-  res.json({
-    id: updated.id,
-    driverId: updated.driverId,
-    requestId: updated.requestId,
-    price: updated.price,
-    carType: updated.carType,
-    nationality: updated.nationality,
-    createdAt: updated.createdAt?.toISOString(),
-  });
 });
 
 router.delete("/:id", requireAuth("driver"), async (req, res) => {
@@ -214,12 +112,9 @@ router.delete("/:id", requireAuth("driver"), async (req, res) => {
     where: eq(requestsTable.id, offer.requestId),
   });
 
-  if (
-    !request ||
-    (request.status !== "OPEN" && request.status !== "BIDDING")
-  ) {
+  if (!request || request.status !== "OPEN") {
     res.status(400).json({
-      error: "لا يمكن سحب العرض — الطلب لم يعد مفتوحاً للعروض",
+      error: "لا يمكن سحب القبول — الطلب لم يعد مفتوحاً",
     });
     return;
   }
@@ -228,7 +123,7 @@ router.delete("/:id", requireAuth("driver"), async (req, res) => {
     .delete(offersTable)
     .where(and(eq(offersTable.id, offerId), eq(offersTable.driverId, driverId)));
 
-  res.json({ message: "تم سحب العرض بنجاح" });
+  res.json({ message: "تم سحب القبول بنجاح" });
 });
 
 router.post("/", requireAuth("driver"), async (req, res) => {
@@ -239,7 +134,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
   }
 
   const driverId = req.session.user!.id;
-  const { requestId, price, carType, nationality } = parsed.data;
+  const { requestId } = parsed.data;
 
   const driver = await db.query.driversTable.findFirst({
     where: eq(driversTable.id, driverId),
@@ -252,7 +147,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
 
   if (driver.balance < 50) {
     res.status(400).json({
-      error: "رصيد السائق غير كافٍ. الحد الأدنى 50 ريال للتقديم على عرض.",
+      error: "رصيد السائق غير كافٍ. الحد الأدنى 50 ريال للقبول على طلب.",
     });
     return;
   }
@@ -266,8 +161,8 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     return;
   }
 
-  if (request.status !== "OPEN" && request.status !== "BIDDING") {
-    res.status(400).json({ error: "الطلب ليس مفتوحاً للعروض" });
+  if (request.status !== "OPEN") {
+    res.status(400).json({ error: "الطلب ليس مفتوحاً للقبول" });
     return;
   }
 
@@ -277,48 +172,32 @@ router.post("/", requireAuth("driver"), async (req, res) => {
   });
 
   if (existingOffer) {
-    res.status(400).json({ error: "لقد قدّمت عرضاً على هذا الطلب مسبقاً" });
+    res.status(400).json({ error: "لقد قبلت هذا الطلب مسبقاً" });
     return;
   }
 
   const [created] = await db
     .insert(offersTable)
-    .values({ driverId, requestId, price, carType, nationality })
+    .values({ driverId, requestId, status: "PENDING" })
     .returning();
 
-  // Notify the client that a new offer was submitted
+  // Notify the client that a driver accepted their request
   if (request.clientId) {
     void notify({
       userId: request.clientId,
       userRole: "client",
-      title: "عرض جديد على طلبك",
-      message: `قدّم السائق ${driver.name} عرضاً بسعر ${price.toFixed(0)} ر.س/شهر على طلبك من ${request.homeLocation}`,
+      title: "سائق قبل طلبك",
+      message: `قبل السائق ${driver.name} طلبك من ${request.homeLocation} إلى ${request.workLocation}`,
       type: "offer",
       relatedId: request.id,
     });
-  }
-
-  // Auto-transition OPEN → BIDDING when first offer is placed
-  if (request.status === "OPEN") {
-    const offerCount = await db
-      .select({ total: count() })
-      .from(offersTable)
-      .where(eq(offersTable.requestId, requestId));
-    if ((offerCount[0]?.total ?? 0) >= 1) {
-      await db
-        .update(requestsTable)
-        .set({ status: "BIDDING", updatedAt: new Date() })
-        .where(eq(requestsTable.id, requestId));
-    }
   }
 
   res.status(201).json({
     id: created.id,
     driverId: created.driverId,
     requestId: created.requestId,
-    price: created.price,
-    carType: created.carType,
-    nationality: created.nationality,
+    status: created.status,
     driver: {
       id: driver.id,
       name: driver.name,

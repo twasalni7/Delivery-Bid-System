@@ -1,6 +1,5 @@
 export type RequestStatus =
   | "OPEN"
-  | "BIDDING"
   | "SELECTED"
   | "ACTIVE"
   | "COMPLETED"
@@ -9,13 +8,12 @@ export type RequestStatus =
   | "FROZEN";
 
 export const ALL_STATUSES: RequestStatus[] = [
-  "OPEN", "BIDDING", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN",
+  "OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN",
 ];
 
 export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     OPEN: "مفتوح",
-    BIDDING: "قيد المزايدة",
     SELECTED: "تم الاختيار",
     ACTIVE: "نشط",
     COMPLETED: "مكتمل",
@@ -29,7 +27,6 @@ export function getStatusLabel(status: string): string {
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
     OPEN: "bg-blue-100 text-blue-800 border-blue-200",
-    BIDDING: "bg-orange-100 text-orange-800 border-orange-200",
     SELECTED: "bg-green-100 text-green-800 border-green-200",
     ACTIVE: "bg-emerald-100 text-emerald-800 border-emerald-200",
     COMPLETED: "bg-gray-100 text-gray-700 border-gray-200",

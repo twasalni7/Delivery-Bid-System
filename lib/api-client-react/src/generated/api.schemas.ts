@@ -165,6 +165,7 @@ export interface CommuteRequest {
   workingDaysPerWeek: number;
   morningTime: string;
   eveningTime: string;
+  monthlyPrice: number;
   status: CommuteRequestStatus;
   selectedDriverId?: number | null;
   selectedDriver?: Driver | null;
@@ -181,6 +182,7 @@ export interface CreateRequestBody {
   workingDaysPerWeek: number;
   morningTime: string;
   eveningTime: string;
+  monthlyPrice: number;
 }
 
 export type UpdateStatusBodyStatus =
@@ -205,18 +207,13 @@ export interface Offer {
   id: number;
   driverId: number;
   requestId: number;
-  price: number;
-  carType?: string | null;
-  nationality?: string | null;
+  status?: string | null;
   driver?: Driver | null;
   createdAt?: string;
 }
 
 export interface CreateOfferBody {
   requestId: number;
-  price: number;
-  carType: string;
-  nationality: string;
 }
 
 export interface Transaction {

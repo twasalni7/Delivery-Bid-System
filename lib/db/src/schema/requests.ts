@@ -3,6 +3,7 @@ import {
   serial,
   text,
   integer,
+  real,
   timestamp,
   pgEnum,
   jsonb,
@@ -14,7 +15,6 @@ import { clientsTable } from "./clients";
 
 export const requestStatusEnum = pgEnum("request_status", [
   "OPEN",
-  "BIDDING",
   "SELECTED",
   "ACTIVE",
   "COMPLETED",
@@ -48,6 +48,7 @@ export const requestsTable = pgTable("requests", {
   morningTime: text("morning_time").notNull(),
   eveningTime: text("evening_time"),
   notes: text("notes"),
+  monthlyPrice: real("monthly_price").notNull().default(0),
   status: requestStatusEnum("status").notNull().default("OPEN"),
   selectedDriverId: integer("selected_driver_id").references(
     () => driversTable.id
