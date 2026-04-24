@@ -414,7 +414,7 @@ export default function AdminDrivers() {
   const { data: drivers, isLoading } = useAdminListDrivers();
   const { data: deletedDrivers, isLoading: loadingDeleted, refetch: refetchDeleted } = useQuery<DriverDetail[]>({
     queryKey: ["admin-drivers-deleted"],
-    queryFn: () => fetch("/api/admin/drivers?status=DELETED", { credentials: "include" }).then((r) => r.json()),
+    queryFn: () => fetch(`${API}/api/admin/drivers?status=DELETED`, { credentials: "include" }).then((r) => r.json()),
     enabled: showDeleted,
   });
   const createDriver = useAdminCreateDriver();
