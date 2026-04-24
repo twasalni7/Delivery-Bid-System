@@ -157,3 +157,5 @@ overrides:
   # drizzle-kit uses esbuild internally on an older version that's vulnerable, this overrides it
   "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
   esbuild: "0.27.3"
+  # pin vite to patched version to prevent any transitive pull of vulnerable <= 7.3.1
+  vite: "7.3.2"
