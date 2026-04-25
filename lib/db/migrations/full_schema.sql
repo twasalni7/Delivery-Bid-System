@@ -5,12 +5,13 @@
 --
 -- ⚠️  تحذير مهم:
 --     لا تُشغّل ملف twasalni_supabase.sql القديم — إنه متقادم
---     ومبني على Supabase Auth / UUID ولم يعد يتوافق مع النظام الحالي.
+--     ويحتوي على جداول قديمة (profiles, rides, user_sessions)
+--     لا علاقة لها بالنظام الحالي.
 --     شغّل هذا الملف فقط على قاعدة بيانات فارغة جديدة.
 --
 -- ترتيب التنفيذ:
 --   1. Enums
---   2. الجداول الأساسية (بدون foreign keys): المشرفون, clients, drivers
+--   2. الجداول الأساسية (بدون foreign keys): admins, clients, drivers
 --   3. الجداول المرتبطة: requests, offers, support_tickets,
 --                        transactions, wallet_transactions,
 --                        bank_accounts, notifications
@@ -67,8 +68,8 @@ END $$;
 -- 2. الجداول الأساسية
 -- ─────────────────────────────────────────────────────
 
--- 2a. المشرفون
-CREATE TABLE IF NOT EXISTS "المشرفون" (
+-- 2a. admins (المشرفون)
+CREATE TABLE IF NOT EXISTS admins (
   id                SERIAL PRIMARY KEY,
   name              TEXT        NOT NULL,
   login_code        TEXT        NOT NULL UNIQUE,
@@ -111,24 +112,24 @@ CREATE TABLE IF NOT EXISTS drivers (
 
 -- 3a. requests (طلبات النقل)
 CREATE TABLE IF NOT EXISTS requests (
-  id                   SERIAL PRIMARY KEY,
-  client_id            INTEGER        REFERENCES clients(id),
-  client_type          client_type    NOT NULL DEFAULT 'غيره',
-  home_location        TEXT           NOT NULL,
-  work_location        TEXT           NOT NULL,
-  additional_locations JSONB,
-  phone                TEXT           NOT NULL,
-  number_of_people     INTEGER        NOT NULL DEFAULT 1,
-  working_days_per_week INTEGER       NOT NULL DEFAULT 5,
-  number_of_shifts     INTEGER        NOT NULL DEFAULT 1,
-  morning_time         TEXT           NOT NULL,
-  evening_time         TEXT,
-  notes                TEXT,
-  monthly_price        REAL           NOT NULL DEFAULT 0,
-  status               request_status NOT NULL DEFAULT 'OPEN',
-  selected_driver_id   INTEGER        REFERENCES drivers(id),
-  created_at           TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-  updated_at           TIMESTAMPTZ    NOT NULL DEFAULT NOW()
+  id                    SERIAL PRIMARY KEY,
+  client_id             INTEGER        REFERENCES clients(id),
+  client_type           client_type    NOT NULL DEFAULT 'غيره',
+  home_location         TEXT           NOT NULL,
+  work_location         TEXT           NOT NULL,
+  additional_locations  JSONB,
+  phone                 TEXT           NOT NULL,
+  number_of_people      INTEGER        NOT NULL DEFAULT 1,
+  working_days_per_week INTEGER        NOT NULL DEFAULT 5,
+  number_of_shifts      INTEGER        NOT NULL DEFAULT 1,
+  morning_time          TEXT           NOT NULL,
+  evening_time          TEXT,
+  notes                 TEXT,
+  monthly_price         REAL           NOT NULL DEFAULT 0,
+  status                request_status NOT NULL DEFAULT 'OPEN',
+  selected_driver_id    INTEGER        REFERENCES drivers(id),
+  created_at            TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+  updated_at            TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
 
 -- 3b. offers (العروض من السائقين)
@@ -217,6 +218,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS drivers_login_code_unique
 -- غيّر القيم أدناه قبل التشغيل، خاصةً login_code،
 -- واحرص على تخزينه في مكان آمن.
 --
--- INSERT INTO "المشرفون" (name, login_code)
+-- INSERT INTO admins (name, login_code)
 -- VALUES ('مشرف النظام', 'CHANGE_ME_STRONG_CODE')
 -- ON CONFLICT (login_code) DO NOTHING;
+
