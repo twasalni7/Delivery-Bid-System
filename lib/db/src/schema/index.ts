@@ -6,3 +6,5 @@ export * from "./clients";
 export * from "./admins";
 export * from "./support-tickets";
 export * from "./notifications";
+export * from "./bank-accounts";
+export * from "./wallet-transactions";

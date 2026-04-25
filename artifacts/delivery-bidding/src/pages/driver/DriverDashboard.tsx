@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useRef, useState } from "react";
-import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffers, useWithdrawOffer } from "@workspace/api-client-react";
+import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffers, useWithdrawOffer, getListRequestsQueryKey } from "@workspace/api-client-react";
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
@@ -8,6 +8,7 @@ import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Tras
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 type TabId = "available" | "my-offers" | "earnings";
 
@@ -16,6 +17,7 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 export default function DriverDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
   const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
   const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 30_000 } });
@@ -50,6 +52,45 @@ export default function DriverDashboard() {
     });
     prevSelectedIdsRef.current = currentIds;
   }, [selectedRequests, user]);
+
+  // Supabase Realtime — listen for new ride requests and refresh the list instantly
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let realtimeChannel: any = null;
+
+    import("@/lib/supabase").then(({ getSupabase }) => {
+      if (cancelled) return;
+      try {
+        const supabase = getSupabase();
+        realtimeChannel = supabase
+          .channel("requests-realtime")
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "requests" },
+            () => {
+              queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+              toast({ title: "🔔 طلب جديد!", description: "تم إضافة طلب مشوار جديد" });
+            }
+          )
+          .subscribe();
+      } catch {
+        // Supabase not configured — polling via refetchInterval is used as fallback
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (realtimeChannel) {
+        import("@/lib/supabase")
+          .then(({ getSupabase }) => {
+            try { getSupabase().removeChannel(realtimeChannel); } catch { /* ignore */ }
+          })
+          .catch(() => {});
+      }
+    };
+  }, [user, queryClient]);
 
   if (!user) return null;
 
