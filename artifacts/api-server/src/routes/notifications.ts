@@ -7,6 +7,8 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
+const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
 router.get("/", requireAuth(), async (req, res) => {
   const user = req.session.user!;
   try {
@@ -25,7 +27,7 @@ router.get("/", requireAuth(), async (req, res) => {
     res.json(rows);
   } catch (err) {
     logger.error({ err }, "notifications GET / error");
-    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });
 
@@ -46,7 +48,7 @@ router.get("/unread-count", requireAuth(), async (req, res) => {
     res.json({ count: rows.length });
   } catch (err) {
     logger.error({ err }, "notifications GET /unread-count error");
-    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });
 
@@ -67,7 +69,7 @@ router.patch("/mark-all-read", requireAuth(), async (req, res) => {
     res.json({ message: "تم تحديد جميع الإشعارات كمقروءة" });
   } catch (err) {
     logger.error({ err }, "notifications PATCH /mark-all-read error");
-    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });
 
@@ -95,7 +97,7 @@ router.patch("/:id/read", requireAuth(), async (req, res) => {
     res.json({ message: "تم تحديد الإشعار كمقروء" });
   } catch (err) {
     logger.error({ err }, "notifications PATCH /:id/read error");
-    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });
 

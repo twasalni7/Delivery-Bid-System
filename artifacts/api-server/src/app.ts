@@ -76,7 +76,7 @@ app.use((err: Error, _req: any, res: any, _next: any) => {
   const status = (err as any).status ?? (err as any).statusCode ?? 500;
   res.status(status).json({
     error: "حدث خطأ داخلي في الخادم",
-    message: err.message ?? "Internal Server Error",
+    message: err?.message ?? "Internal Server Error",
   });
 });
 
