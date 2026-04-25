@@ -23,6 +23,10 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 
 let _supabase: SupabaseClient | null = null;
 
+/**
+ * Returns the Supabase client singleton.
+ * Throws if VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are not set.
+ */
 export function getSupabase(): SupabaseClient {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
@@ -34,9 +38,3 @@ export function getSupabase(): SupabaseClient {
   }
   return _supabase;
 }
-
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
-
-export default supabase;

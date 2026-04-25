@@ -440,7 +440,7 @@ export default function CreateRequest() {
               {step === 4 ? (
                 createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>
               ) : (
-                <>التالي <Clock size={16} /></>
+                <>التالي <Clock size={16} aria-hidden="true" /></>
               )}
             </button>
           </div>
