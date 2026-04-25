@@ -4,6 +4,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { pool } from "@workspace/db";
 
 const app = express();
 
@@ -46,6 +47,7 @@ const SESSION_SECRET = process.env["SESSION_SECRET"] || "dev-secret";
 app.use(
   session({
     store: new PgSession({
+      pool,
       tableName: "user_sessions",
       createTableIfMissing: true,
     }),
@@ -66,5 +68,16 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api", router);
+
+// Global error handler — returns JSON instead of the default HTML error page
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, _req: any, res: any, _next: any) => {
+  logger.error({ err }, "Unhandled server error");
+  const status = (err as any).status ?? (err as any).statusCode ?? 500;
+  res.status(status).json({
+    error: "حدث خطأ داخلي في الخادم",
+    message: err.message ?? "Internal Server Error",
+  });
+});
 
 export default app;
