@@ -22,17 +22,41 @@ export default function AdminLoginPage() {
     try {
       const supabase = getSupabase();
       // بريد ثابت للمدير + رمز الدخول كـ password
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: "admin@twasalni.com",
         password: loginCode.trim(),
       });
-      if (error) {
+      if (authError) {
+        console.log("Supabase auth error:", authError);
         toast({ title: "رمز الدخول غير صحيح", variant: "destructive" });
         return;
       }
+
+      // التحقق من أن دور المستخدم في قاعدة البيانات هو "admin"
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError) {
+        console.log("Profile query error:", profileError);
+        await supabase.auth.signOut();
+        toast({ title: "تعذّر التحقق من صلاحيات المستخدم، يرجى المحاولة مجدداً", variant: "destructive" });
+        return;
+      }
+
+      if (profile?.role !== "admin") {
+        console.log("Access denied: user role is", profile?.role);
+        await supabase.auth.signOut();
+        toast({ title: "هذا الحساب ليس حساب مدير، لا يمكن الدخول", variant: "destructive" });
+        return;
+      }
+
       await refetch();
       setLocation("/admin");
-    } catch {
+    } catch (err) {
+      console.log("Unexpected login error:", err);
       toast({ title: "حدث خطأ، يرجى المحاولة مجدداً", variant: "destructive" });
     } finally {
       setIsPending(false);
