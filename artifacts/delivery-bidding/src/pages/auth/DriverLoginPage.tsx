@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useDriverLogin } from "@workspace/api-client-react";
+import { getSupabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/auth-context";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -9,23 +9,36 @@ export default function DriverLoginPage() {
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const { toast } = useToast();
-  const loginMutation = useDriverLogin();
   const [mobile, setMobile] = useState("");
   const [loginCode, setLoginCode] = useState("");
+  const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mobile.trim() || !loginCode.trim()) {
       toast({ title: "يرجى إدخال رقم الجوال ورمز الدخول", variant: "destructive" });
       return;
     }
-    loginMutation.mutate(
-      { data: { mobile: mobile.trim(), loginCode: loginCode.trim() } },
-      {
-        onSuccess: async () => { await refetch(); setLocation("/driver/dashboard"); },
-        onError: (err: Error) => { toast({ title: err.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" }); },
+    setIsPending(true);
+    try {
+      const supabase = getSupabase();
+      // بناء البريد الإلكتروني من رقم الجوال (الطريقة المجانية المتفق عليها)
+      const email = `${mobile.trim()}@driver.twasalni.com`;
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: loginCode.trim(),
+      });
+      if (error) {
+        toast({ title: "بيانات الدخول غير صحيحة", variant: "destructive" });
+        return;
       }
-    );
+      await refetch();
+      setLocation("/driver/dashboard");
+    } catch {
+      toast({ title: "حدث خطأ، يرجى المحاولة مجدداً", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -58,11 +71,11 @@ export default function DriverLoginPage() {
             </div>
             <button
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={isPending}
               className="w-full py-3.5 rounded-2xl text-white font-black shadow-md active:scale-[0.98] transition-transform disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}
             >
-              {loginMutation.isPending ? "جاري الدخول..." : "دخول"}
+              {isPending ? "جاري الدخول..." : "دخول"}
             </button>
           </form>
         </div>

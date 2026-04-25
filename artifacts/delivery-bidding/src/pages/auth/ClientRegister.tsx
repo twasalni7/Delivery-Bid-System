@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useClientRegister } from "@workspace/api-client-react";
+import { getSupabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/auth-context";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -9,13 +9,13 @@ export default function ClientRegister() {
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const { toast } = useToast();
-  const registerMutation = useClientRegister();
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !mobile.trim() || !password || !confirm) {
       toast({ title: "يرجى ملء جميع الحقول", variant: "destructive" });
@@ -25,13 +25,46 @@ export default function ClientRegister() {
       toast({ title: "كلمتا المرور غير متطابقتين", variant: "destructive" });
       return;
     }
-    registerMutation.mutate(
-      { data: { name: name.trim(), mobile: mobile.trim(), password } },
-      {
-        onSuccess: async () => { await refetch(); setLocation("/client"); },
-        onError: (err: Error) => { toast({ title: err.message ?? "فشل إنشاء الحساب", variant: "destructive" }); },
+    setIsPending(true);
+    try {
+      const supabase = getSupabase();
+      // بناء البريد الإلكتروني من رقم الجوال (نفس الأسلوب المتفق عليه)
+      const email = `${mobile.trim()}@client.twasalni.com`;
+
+      // إنشاء حساب Supabase Auth — الـ trigger يُنشئ صف profiles تلقائياً
+      // ويضع full_name و role='customer' من الـ metadata
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name.trim(),
+            role: "customer",
+          },
+        },
+      });
+
+      if (signUpError) {
+        toast({ title: signUpError.message ?? "فشل إنشاء الحساب", variant: "destructive" });
+        return;
       }
-    );
+
+      // تحديث حقل phone في profiles لأن الـ trigger لا يحفظه تلقائياً
+      const userId = data.user?.id;
+      if (userId) {
+        await supabase
+          .from("profiles")
+          .update({ phone: mobile.trim() })
+          .eq("id", userId);
+      }
+
+      await refetch();
+      setLocation("/client");
+    } catch {
+      toast({ title: "حدث خطأ، يرجى المحاولة مجدداً", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -74,11 +107,11 @@ export default function ClientRegister() {
             </div>
             <button
               type="submit"
-              disabled={registerMutation.isPending}
+              disabled={isPending}
               className="w-full py-3.5 rounded-2xl text-white font-black shadow-md active:scale-[0.98] transition-transform disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}
             >
-              {registerMutation.isPending ? "جاري التسجيل..." : "إنشاء الحساب"}
+              {isPending ? "جاري التسجيل..." : "إنشاء الحساب"}
             </button>
           </form>
           <p className="text-center text-sm text-gray-400 mt-4">
