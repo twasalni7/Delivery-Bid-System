@@ -15,12 +15,6 @@ const isProduction = process.env["NODE_ENV"] === "production";
 // ─── SESSION_SECRET validation ─────────────────────────────────────────────
 const SESSION_SECRET = process.env["SESSION_SECRET"];
 if (!SESSION_SECRET) {
-  if (isProduction) {
-    throw new Error(
-      "SESSION_SECRET env var is required in production. " +
-        "Set it to a long random string (e.g. openssl rand -base64 48)."
-    );
-  }
   logger.warn(
     "SESSION_SECRET is not set. Using insecure default — set it before deploying to production."
   );
@@ -102,8 +96,8 @@ app.use((err: Error, _req: any, res: any, _next: any) => {
   logger.error({ err }, "Unhandled server error");
   const status = (err as any).status ?? (err as any).statusCode ?? 500;
   res.status(status).json({
-    error: "حدث خطأ داخلي في الخادم",
-    message: err?.message ?? "Internal Server Error",
+    error: err?.message ?? "Internal Server Error",
+    ...(isProduction ? {} : { stack: err?.stack }),
   });
 });
 
