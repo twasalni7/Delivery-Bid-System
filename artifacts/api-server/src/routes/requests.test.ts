@@ -57,7 +57,9 @@ function makeSelectChain(result: unknown[]) {
   const chain: Record<string, unknown> = {};
   chain.from = vi.fn().mockReturnValue(chain);
   chain.where = vi.fn().mockReturnValue(chain);
-  chain.orderBy = vi.fn().mockResolvedValue(result);
+  chain.orderBy = vi.fn().mockReturnValue(chain);
+  chain.limit = vi.fn().mockReturnValue(chain);
+  chain.offset = vi.fn().mockResolvedValue(result);
   chain.groupBy = vi.fn().mockResolvedValue([]);
   return chain;
 }

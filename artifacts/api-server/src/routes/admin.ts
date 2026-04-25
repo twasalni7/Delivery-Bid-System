@@ -17,6 +17,9 @@ const VALID_REQUEST_STATUSES = new Set([
   "SELECTED",
   "ACTIVE",
   "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+  "FROZEN",
 ]);
 
 async function generateUniqueLoginCode(maxAttempts = 5): Promise<string> {
@@ -94,7 +97,7 @@ router.get("/financial", async (_req, res) => {
     const [feeSum] = await db
       .select({ total: sum(transactionsTable.amount) })
       .from(transactionsTable)
-      .where(inArray(transactionsTable.type, ["fee", "DEBIT"]));
+      .where(inArray(transactionsTable.type, ["fee", "debit"]));
     totalFeesCollected = Math.abs(Number(feeSum?.total ?? 0));
 
     const [txSum] = await db
@@ -567,9 +570,14 @@ router.patch("/drivers/:id/balance", async (req, res) => {
   }
   const [updated] = await db
     .update(driversTable)
-    .set({ balance: driver.balance + amount })
+    .set({ balance: sql`${driversTable.balance} + ${amount}` })
     .where(eq(driversTable.id, id))
     .returning();
+  await db.insert(transactionsTable).values({
+    driverId: id,
+    amount,
+    type: amount >= 0 ? "credit" : "debit",
+  });
   res.json({
     id: updated.id,
     name: updated.name,
@@ -635,7 +643,7 @@ router.patch("/requests/:id", async (req, res) => {
       res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
       return;
     }
-    updates.status = status as "OPEN" | "SELECTED" | "ACTIVE" | "COMPLETED";
+    updates.status = status as typeof requestsTable.$inferSelect["status"];
   }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
 

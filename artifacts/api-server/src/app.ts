@@ -2,18 +2,30 @@ import express from "express";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import rateLimit from "express-rate-limit";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
+import { csrfProtection } from "./middleware/csrfProtection";
 
 const app = express();
 
-// إعداد Middleware بسيط مع تحديد الأنواع كـ any لتجنب أخطاء التدقيق
-app.use((req: any, res: any, next: any) => {
-  next();
-});
-
 const isProduction = process.env["NODE_ENV"] === "production";
+
+// ─── SESSION_SECRET validation ─────────────────────────────────────────────
+const SESSION_SECRET = process.env["SESSION_SECRET"];
+if (!SESSION_SECRET) {
+  if (isProduction) {
+    throw new Error(
+      "SESSION_SECRET env var is required in production. " +
+        "Set it to a long random string (e.g. openssl rand -base64 48)."
+    );
+  }
+  logger.warn(
+    "SESSION_SECRET is not set. Using insecure default — set it before deploying to production."
+  );
+}
+const resolvedSessionSecret = SESSION_SECRET || "dev-secret-do-not-use-in-production";
 
 const CORS_ORIGIN = process.env["CORS_ORIGIN"];
 const corsOrigin = CORS_ORIGIN
@@ -41,8 +53,23 @@ app.use(express.urlencoded({ extended: true }));
 
 app.set("trust proxy", 1);
 
+// ─── CSRF protection ───────────────────────────────────────────────────────
+app.use(csrfProtection);
+
+// ─── Rate limiting for auth endpoints ─────────────────────────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },
+});
+app.use("/api/auth/login-client", authLimiter);
+app.use("/api/auth/login-driver", authLimiter);
+app.use("/api/auth/login-admin", authLimiter);
+app.use("/api/auth/register-client", authLimiter);
+
 const PgSession = connectPgSimple(session);
-const SESSION_SECRET = process.env["SESSION_SECRET"] || "dev-secret";
 
 app.use(
   session({
@@ -51,7 +78,7 @@ app.use(
       tableName: "user_sessions",
       createTableIfMissing: true,
     }),
-    secret: SESSION_SECRET,
+    secret: resolvedSessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {

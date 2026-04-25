@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { notificationsTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
 
@@ -34,8 +34,8 @@ router.get("/", requireAuth(), async (req, res) => {
 router.get("/unread-count", requireAuth(), async (req, res) => {
   const user = req.session.user!;
   try {
-    const rows = await db
-      .select()
+    const [result] = await db
+      .select({ count: count() })
       .from(notificationsTable)
       .where(
         and(
@@ -45,7 +45,7 @@ router.get("/unread-count", requireAuth(), async (req, res) => {
         )
       );
 
-    res.json({ count: rows.length });
+    res.json({ count: Number(result?.count ?? 0) });
   } catch (err) {
     logger.error({ err }, "notifications GET /unread-count error");
     res.status(500).json({ error: SERVER_ERROR_MSG });

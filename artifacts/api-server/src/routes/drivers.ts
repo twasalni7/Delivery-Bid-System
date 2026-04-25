@@ -87,7 +87,7 @@ router.get("/:id", async (req, res) => {
     where: eq(driversTable.id, id),
   });
 
-  if (!driver) {
+  if (!driver || driver.status === "DELETED") {
     res.status(404).json({ error: "السائق غير موجود" });
     return;
   }
@@ -137,7 +137,7 @@ router.patch("/:id/balance", requireAuth("admin"), async (req, res) => {
   await db.insert(transactionsTable).values({
     driverId: id,
     amount,
-    type: "CREDIT",
+    type: "credit",
   });
 
   res.json({

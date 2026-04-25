@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import { db } from "@workspace/db";
 import { clientsTable, driversTable, adminsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -7,10 +7,29 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
+// Mobile validation: must contain only digits and optional leading +, length 9-15
+const MOBILE_RE = /^\+?[0-9]{9,15}$/;
+
+function validateMobile(mobile: unknown): boolean {
+  return typeof mobile === "string" && MOBILE_RE.test(mobile.trim());
+}
+
+function regenerateSession(req: Request): Promise<void> {
+  return new Promise((resolve, reject) =>
+    (req as any).session.regenerate((err: Error | null) =>
+      err ? reject(err) : resolve()
+    )
+  );
+}
+
 router.post("/register-client", async (req, res) => {
   const { name, mobile, password } = req.body ?? {};
   if (!name || !mobile || !password) {
     res.status(400).json({ error: "يرجى إدخال الاسم والجوال وكلمة المرور" });
+    return;
+  }
+  if (!validateMobile(mobile)) {
+    res.status(400).json({ error: "رقم الجوال غير صحيح" });
     return;
   }
   try {
@@ -26,6 +45,7 @@ router.post("/register-client", async (req, res) => {
       .insert(clientsTable)
       .values({ name, mobile, passwordHash })
       .returning();
+    await regenerateSession(req);
     req.session.user = { id: client.id, role: "client", name: client.name };
     res.status(201).json({
       id: client.id,
@@ -58,6 +78,7 @@ router.post("/login-client", async (req, res) => {
       res.status(401).json({ error: "رقم الجوال أو كلمة المرور غير صحيحة" });
       return;
     }
+    await regenerateSession(req);
     req.session.user = { id: client.id, role: "client", name: client.name };
     res.json({
       id: client.id,
@@ -95,6 +116,7 @@ router.post("/login-driver", async (req, res) => {
       res.status(403).json({ error: "هذا الحساب غير متاح" });
       return;
     }
+    await regenerateSession(req);
     req.session.user = { id: driver.id, role: "driver", name: driver.name };
     res.json({
       id: driver.id,
@@ -124,6 +146,7 @@ router.post("/login-admin", async (req, res) => {
       res.status(401).json({ error: "رمز الدخول غير صحيح" });
       return;
     }
+    await regenerateSession(req);
     req.session.user = { id: admin.id, role: "admin", name: admin.name };
     res.json({
       id: admin.id,

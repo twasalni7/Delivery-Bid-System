@@ -6,7 +6,7 @@ import {
   offersTable,
   transactionsTable,
 } from "@workspace/db";
-import { eq, and, count, inArray } from "drizzle-orm";
+import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notify";
 import {
   CreateRequestBody,
@@ -106,6 +106,14 @@ router.get("/", async (req, res) => {
   const status = parsed.success ? parsed.data.status : undefined;
   const sessionUser = req.session?.user;
   const isClient = sessionUser?.role === "client";
+  const isDriver = sessionUser?.role === "driver";
+
+  // Pagination
+  const rawPage = parseInt(req.query["page"] as string, 10);
+  const rawLimit = parseInt(req.query["limit"] as string, 10);
+  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+  const limit = Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, 100) : 50;
+  const offset = (page - 1) * limit;
 
   const conditions = [];
   if (status)
@@ -113,15 +121,20 @@ router.get("/", async (req, res) => {
       eq(requestsTable.status, status as typeof requestsTable.$inferSelect["status"])
     );
   if (isClient) conditions.push(eq(requestsTable.clientId, sessionUser!.id));
+  // Drivers see only OPEN requests (plus their own accepted ones handled by /drivers/me/requests)
+  if (isDriver) conditions.push(eq(requestsTable.status, "OPEN"));
 
-  const rows =
-    conditions.length > 0
-      ? await db
-          .select()
-          .from(requestsTable)
-          .where(and(...conditions))
-          .orderBy(requestsTable.createdAt)
-      : await db.select().from(requestsTable).orderBy(requestsTable.createdAt);
+  const baseQuery = db.select().from(requestsTable);
+  const rows = conditions.length > 0
+    ? await (baseQuery as ReturnType<typeof db.select>)
+        .where(and(...conditions))
+        .orderBy(requestsTable.createdAt)
+        .limit(limit)
+        .offset(offset)
+    : await (baseQuery as ReturnType<typeof db.select>)
+        .orderBy(requestsTable.createdAt)
+        .limit(limit)
+        .offset(offset);
 
   const requestIds = rows.map((r) => r.id);
   const offerCounts: Record<number, number> = {};
@@ -136,18 +149,27 @@ router.get("/", async (req, res) => {
     }
   }
 
-  const results = await Promise.all(
-    rows.map(async (r) => {
-      const offerCount = offerCounts[r.id] ?? 0;
-      if (r.selectedDriverId) {
-        const driver = await db.query.driversTable.findFirst({
-          where: eq(driversTable.id, r.selectedDriverId),
-        });
-        return { ...formatRequest(req, r, driver), offerCount };
-      }
-      return { ...formatRequest(req, r, null), offerCount };
-    })
-  );
+  // Batch-load all required drivers in a single query (fixes N+1)
+  const driverIds = [
+    ...new Set(
+      rows
+        .filter((r) => r.selectedDriverId != null)
+        .map((r) => r.selectedDriverId!)
+    ),
+  ];
+  const driversMap = new Map<number, typeof driversTable.$inferSelect>();
+  if (driverIds.length > 0) {
+    const drivers = await db
+      .select()
+      .from(driversTable)
+      .where(inArray(driversTable.id, driverIds));
+    for (const d of drivers) driversMap.set(d.id, d);
+  }
+
+  const results = rows.map((r) => {
+    const driver = r.selectedDriverId ? (driversMap.get(r.selectedDriverId) ?? null) : null;
+    return { ...formatRequest(req, r, driver), offerCount: offerCounts[r.id] ?? 0 };
+  });
 
   res.json(results);
 });
@@ -331,7 +353,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 
   await db
     .update(driversTable)
-    .set({ balance: driver.balance - 50 })
+    .set({ balance: sql`${driversTable.balance} - 50` })
     .where(eq(driversTable.id, driver.id));
 
   await db.insert(transactionsTable).values({
