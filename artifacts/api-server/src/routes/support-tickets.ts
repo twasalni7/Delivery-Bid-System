@@ -24,8 +24,8 @@ function formatTicket(t: typeof supportTicketsTable.$inferSelect, user?: { name:
   };
 }
 
-// Client: submit ticket
-router.post("/", requireAuth("client"), async (req, res) => {
+// Client or Driver: submit ticket
+router.post("/", requireAuth(), async (req, res) => {
   const sessionUser = req.session.user!;
   const { type, message, requestId } = req.body ?? {};
 
@@ -39,15 +39,25 @@ router.post("/", requireAuth("client"), async (req, res) => {
     return;
   }
 
+  const values: Record<string, unknown> = {
+    type: type as "تأخير" | "دفع" | "إلغاء" | "أخرى",
+    message: message.trim(),
+    requestId: requestId ? Number(requestId) : undefined,
+    status: "OPEN",
+  };
+
+  if (sessionUser.role === "client") {
+    values.clientId = sessionUser.id;
+  } else if (sessionUser.role === "driver") {
+    values.driverId = sessionUser.id;
+  } else {
+    res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
+    return;
+  }
+
   const [created] = await db
     .insert(supportTicketsTable)
-    .values({
-      clientId: sessionUser.id,
-      type: type as "تأخير" | "دفع" | "إلغاء" | "أخرى",
-      message: message.trim(),
-      requestId: requestId ? Number(requestId) : undefined,
-      status: "OPEN",
-    })
+    .values(values as typeof supportTicketsTable.$inferInsert)
     .returning();
 
   res.status(201).json(formatTicket(created));
@@ -60,6 +70,17 @@ router.get("/my", requireAuth("client"), async (req, res) => {
     .select()
     .from(supportTicketsTable)
     .where(eq(supportTicketsTable.clientId, sessionUser.id))
+    .orderBy(desc(supportTicketsTable.createdAt));
+  res.json(tickets.map((t) => formatTicket(t)));
+});
+
+// Driver: get own tickets
+router.get("/driver/my", requireAuth("driver"), async (req, res) => {
+  const sessionUser = req.session.user!;
+  const tickets = await db
+    .select()
+    .from(supportTicketsTable)
+    .where(eq(supportTicketsTable.driverId, sessionUser.id))
     .orderBy(desc(supportTicketsTable.createdAt));
   res.json(tickets.map((t) => formatTicket(t)));
 });

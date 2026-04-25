@@ -41,7 +41,11 @@ function createApp() {
   app.use(express.json());
   // Minimal session mock middleware
   app.use((req: any, _res, next) => {
-    req.session = req.session ?? { user: undefined, destroy: (cb: () => void) => cb() };
+    req.session = req.session ?? {
+      user: undefined,
+      destroy: (cb: () => void) => cb(),
+      regenerate: (cb: (err?: Error | null) => void) => cb(),
+    };
     next();
   });
   app.use("/auth", authRouter);
@@ -305,6 +309,7 @@ describe("GET /auth/me", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });
@@ -341,6 +346,7 @@ describe("PATCH /auth/me/client", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });
@@ -361,6 +367,7 @@ describe("PATCH /auth/me/client", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });
@@ -386,6 +393,7 @@ describe("PATCH /auth/me/client", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });
@@ -415,6 +423,7 @@ describe("PATCH /auth/me/password", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });
@@ -433,6 +442,7 @@ describe("PATCH /auth/me/password", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });
@@ -458,6 +468,7 @@ describe("PATCH /auth/me/password", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });
@@ -486,6 +497,7 @@ describe("PATCH /auth/me/password", () => {
       req.session = {
         user: { id: 1, role: "client", name: "Ali" },
         destroy: (cb: () => void) => cb(),
+          regenerate: (cb: (err?: Error | null) => void) => cb(),
       };
       next();
     });

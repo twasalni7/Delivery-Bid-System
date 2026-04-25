@@ -63,10 +63,27 @@ describe("POST /support-tickets (client submits ticket)", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 403 when authenticated as driver", async () => {
-    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
+  it("returns 403 when authenticated as admin", async () => {
+    const app = createApp({ id: 3, role: "admin", name: "Admin" });
     const res = await request(app).post("/support-tickets").send({ type: "تأخير", message: "test" });
     expect(res.status).toBe(403);
+  });
+
+  it("creates ticket successfully as driver", async () => {
+    const returningMock = vi.fn().mockResolvedValue([{
+      id: 2, clientId: null, driverId: 2, requestId: null,
+      type: "تأخير", message: "Client no-show", status: "OPEN",
+      adminReply: null, createdAt: new Date(), updatedAt: new Date(),
+    }]);
+    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp({ id: 2, role: "driver", name: "Khaled" });
+    const res = await request(app)
+      .post("/support-tickets")
+      .send({ type: "تأخير", message: "Client no-show" });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ id: 2, type: "تأخير", status: "OPEN" });
   });
 
   it("returns 400 for invalid ticket type", async () => {
