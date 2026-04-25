@@ -184,7 +184,7 @@ ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
 --
 -- أ) افتح Supabase Dashboard → Authentication → Users → "Add user" أو "Invite user"
 --    البريد الإلكتروني : admin@twasalni.com
---    كلمة المرور      : ADMIN2024  (أو أي كلمة مرور قوية — هي نفسها رمز الدخول)
+--    كلمة المرور      : استخدم كلمة مرور قوية وفريدة (لا تقل عن 12 حرفاً)
 --    تأكيد البريد     : فعّل "Auto Confirm User" حتى لا يحتاج لتأكيد
 --
 -- ب) بعد إنشاء المستخدم في Auth، شغّل الأمر التالي في SQL Editor لإنشاء صف profiles
