@@ -3,56 +3,74 @@ import { db } from "@workspace/db";
 import { notificationsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
+const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
 router.get("/", requireAuth(), async (req, res) => {
   const user = req.session.user!;
-  const rows = await db
-    .select()
-    .from(notificationsTable)
-    .where(
-      and(
-        eq(notificationsTable.userId, user.id),
-        eq(notificationsTable.userRole, user.role)
+  try {
+    const rows = await db
+      .select()
+      .from(notificationsTable)
+      .where(
+        and(
+          eq(notificationsTable.userId, user.id),
+          eq(notificationsTable.userRole, user.role)
+        )
       )
-    )
-    .orderBy(desc(notificationsTable.createdAt))
-    .limit(50);
+      .orderBy(desc(notificationsTable.createdAt))
+      .limit(50);
 
-  res.json(rows);
+    res.json(rows);
+  } catch (err) {
+    logger.error({ err }, "notifications GET / error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 router.get("/unread-count", requireAuth(), async (req, res) => {
   const user = req.session.user!;
-  const rows = await db
-    .select()
-    .from(notificationsTable)
-    .where(
-      and(
-        eq(notificationsTable.userId, user.id),
-        eq(notificationsTable.userRole, user.role),
-        eq(notificationsTable.isRead, false)
-      )
-    );
+  try {
+    const rows = await db
+      .select()
+      .from(notificationsTable)
+      .where(
+        and(
+          eq(notificationsTable.userId, user.id),
+          eq(notificationsTable.userRole, user.role),
+          eq(notificationsTable.isRead, false)
+        )
+      );
 
-  res.json({ count: rows.length });
+    res.json({ count: rows.length });
+  } catch (err) {
+    logger.error({ err }, "notifications GET /unread-count error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 router.patch("/mark-all-read", requireAuth(), async (req, res) => {
   const user = req.session.user!;
-  await db
-    .update(notificationsTable)
-    .set({ isRead: true })
-    .where(
-      and(
-        eq(notificationsTable.userId, user.id),
-        eq(notificationsTable.userRole, user.role),
-        eq(notificationsTable.isRead, false)
-      )
-    );
+  try {
+    await db
+      .update(notificationsTable)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(notificationsTable.userId, user.id),
+          eq(notificationsTable.userRole, user.role),
+          eq(notificationsTable.isRead, false)
+        )
+      );
 
-  res.json({ message: "تم تحديد جميع الإشعارات كمقروءة" });
+    res.json({ message: "تم تحديد جميع الإشعارات كمقروءة" });
+  } catch (err) {
+    logger.error({ err }, "notifications PATCH /mark-all-read error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 router.patch("/:id/read", requireAuth(), async (req, res) => {
@@ -64,18 +82,23 @@ router.patch("/:id/read", requireAuth(), async (req, res) => {
     return;
   }
 
-  await db
-    .update(notificationsTable)
-    .set({ isRead: true })
-    .where(
-      and(
-        eq(notificationsTable.id, id),
-        eq(notificationsTable.userId, user.id),
-        eq(notificationsTable.userRole, user.role)
-      )
-    );
+  try {
+    await db
+      .update(notificationsTable)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(notificationsTable.id, id),
+          eq(notificationsTable.userId, user.id),
+          eq(notificationsTable.userRole, user.role)
+        )
+      );
 
-  res.json({ message: "تم تحديد الإشعار كمقروء" });
+    res.json({ message: "تم تحديد الإشعار كمقروء" });
+  } catch (err) {
+    logger.error({ err }, "notifications PATCH /:id/read error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 export default router;
