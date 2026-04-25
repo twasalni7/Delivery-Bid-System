@@ -1,13 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { LogOut, Menu, X, Home, FileText, User, LifeBuoy, Settings, Users, Car, BarChart2, ClipboardList } from "lucide-react";
+import { LogOut, Menu, X, Home, FileText, User, LifeBuoy, Settings, Users, Car, BarChart2, ClipboardList, Navigation } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { NotificationsBell } from "@/components/notifications-bell";
 
 const ROLE_COLORS = {
-  client: { from: "#3B82F6", to: "#1D4ED8" },
-  driver: { from: "#10B981", to: "#059669" },
-  admin:  { from: "#8B5CF6", to: "#6D28D9" },
+  client: { from: "#312E81", to: "#4338CA" },
+  driver: { from: "#065F46", to: "#059669" },
+  admin:  { from: "#312E81", to: "#4338CA" },
 };
 
 type NavLink = { href: string; label: string; icon: typeof Home; primary?: boolean };
@@ -50,19 +50,19 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
   const isClientOrDriver = role === "client" || role === "driver";
 
   return (
-    <div className="min-h-[100dvh] flex flex-col w-full bg-gray-50" dir="rtl" style={{ fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif" }}>
+    <div className="min-h-[100dvh] flex flex-col w-full bg-[#F8FAFC]" dir="rtl" style={{ fontFamily: "'Cairo', sans-serif" }}>
       {/* ── Header ── */}
       <header className="sticky top-0 z-30 shadow-md" style={{ background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)` }}>
         <div className={`mx-auto px-4 sm:px-6 h-16 flex items-center justify-between ${role === "admin" ? "max-w-6xl" : "max-w-xl"}`}>
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-sm">
-              {roleEmoji}
+            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shadow-sm rotate-[-3deg]">
+              <Navigation size={22} strokeWidth={3} className="text-white" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-black text-white text-lg leading-none">توصّلني</span>
-              <span className="text-white/65 font-medium text-xs hidden sm:block">اشتراكات التوصيل الشهري</span>
+              <span className="font-black text-white text-xl leading-none tracking-tighter italic">توصّلني</span>
+              <span className="text-white/65 font-bold text-xs hidden sm:block">اشتراكات التوصيل الشهري</span>
             </div>
           </Link>
 
@@ -159,14 +159,14 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
       </header>
 
       {/* ── Main content ── */}
-      <main className={`flex-1 mx-auto w-full px-4 sm:px-6 py-6 ${role === "admin" ? "max-w-6xl" : "max-w-xl"} ${isClientOrDriver ? "pb-24 sm:pb-6" : ""}`}>
+      <main className={`flex-1 mx-auto w-full px-4 sm:px-6 py-6 ${role === "admin" ? "max-w-6xl" : "max-w-xl"} ${isClientOrDriver ? "pb-28 sm:pb-6" : ""}`}>
         {children}
       </main>
 
       {/* ── Bottom tab nav (client & driver mobile only) ── */}
       {isClientOrDriver && (
         <nav
-          className="sm:hidden fixed bottom-0 inset-x-0 z-30 flex border-t border-gray-200 bg-white/95 backdrop-blur-md"
+          className="sm:hidden fixed bottom-0 inset-x-0 z-30 flex border-t border-slate-100 bg-white/95 backdrop-blur-md shadow-[0_-8px_32px_rgba(0,0,0,0.08)]"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           {navLinks.map((link) => {
@@ -176,15 +176,15 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[11px] font-bold transition-colors ${
-                  active ? "text-gray-900" : "text-gray-400"
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[11px] font-black transition-colors ${
+                  active ? "text-[#312E81]" : "text-slate-400"
                 }`}
               >
                 <div
-                  className={`p-1.5 rounded-xl transition-all ${active ? "shadow-sm" : ""}`}
-                  style={active ? { background: `linear-gradient(135deg, ${colors.from}, ${colors.to})` } : {}}
+                  className={`p-2 rounded-2xl transition-all ${active ? "shadow-md" : ""}`}
+                  style={active ? { background: "linear-gradient(135deg, #312E81, #4338CA)" } : {}}
                 >
-                  <Icon size={20} className={active ? "text-white" : "text-gray-400"} />
+                  <Icon size={20} className={active ? "text-white" : "text-slate-400"} />
                 </div>
                 <span>{link.label}</span>
               </Link>

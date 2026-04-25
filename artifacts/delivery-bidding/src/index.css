@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -61,71 +62,106 @@
 }
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
+  --background: 248 250 252; /* #F8FAFC */
+  --foreground: 15 23 42; /* #0F172A */
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
+  --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  
-  --primary: 221 83% 53%; /* #1D4ED8 Blue */
+  --popover-foreground: 222 47% 11%;
+
+  /* Primary: Indigo 900 — #312E81 */
+  --primary: 244 63% 34%;
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  
-  --destructive: 0 72% 51%; /* #DC2626 Red */
+
+  --secondary: 214 32% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 214 32% 96%;
+  --muted-foreground: 215 16% 47%;
+
+  --accent: 214 32% 96%;
+  --accent-foreground: 222 47% 11%;
+
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
-  
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 221 83% 53%;
-  
+
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 244 63% 34%;
+
   --app-font-sans: 'Cairo', sans-serif;
   --app-font-mono: 'Cairo', sans-serif;
-  --radius: 0.1rem; /* Sharp corners for industrial look */
+  --radius: 0.75rem; /* Rounded for the template style */
 }
 
 .dark {
-  --background: 240 10% 8%; /* Very dark grey/navy */
+  --background: 222 47% 7%; /* #0F172A */
   --foreground: 0 0% 98%;
-  --card: 240 10% 12%;
+  --card: 222 47% 12%; /* #1E293B */
   --card-foreground: 0 0% 98%;
-  --popover: 240 10% 12%;
+  --popover: 222 47% 12%;
   --popover-foreground: 0 0% 98%;
-  
-  --primary: 221 83% 53%;
+
+  --primary: 244 63% 34%;
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 240 3.7% 15.9%;
+
+  --secondary: 215 28% 17%;
   --secondary-foreground: 0 0% 98%;
-  
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  
-  --accent: 240 3.7% 15.9%;
+
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 215 28% 17%;
   --accent-foreground: 0 0% 98%;
-  
+
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-  
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 45 93% 47%;
+
+  --border: 215 28% 20%;
+  --input: 215 28% 20%;
+  --ring: 244 63% 34%;
 }
 
 @layer base {
   * {
     @apply border-border;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
   }
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* ── Twasalny Design System Utilities ── */
+@layer utilities {
+  .text-huge {
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+  .text-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+  .text-regular {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .brand-gradient {
+    background: linear-gradient(135deg, #312E81 0%, #4338CA 100%);
+  }
+  .brand-gradient-emerald {
+    background: linear-gradient(135deg, #064E3B 0%, #065F46 100%);
+  }
+  .card-rounded {
+    border-radius: 2.5rem;
+  }
+  .btn-primary {
+    @apply bg-[#312E81] text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-3;
+  }
+  input::placeholder {
+    color: #94a3b8;
+    font-weight: 600;
   }
 }
