@@ -31,6 +31,7 @@ export const driversTable = pgTable(
     nationalId: text("national_id"),
     status: driverStatusEnum("status").notNull().default("ACTIVE"),
     warningCount: integer("warning_count").notNull().default(0),
+    pushSubscription: text("push_subscription"),
     deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

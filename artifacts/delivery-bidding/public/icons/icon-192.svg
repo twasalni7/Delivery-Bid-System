@@ -1,0 +1,5 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="42" fill="#312E81"/>
+  <!-- Navigation / compass arrow representing delivery -->
+  <path d="M96 38 L154 154 L96 124 L38 154 Z" fill="white" fill-opacity="0.95" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+</svg>

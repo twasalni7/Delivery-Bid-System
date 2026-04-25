@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { getSupabase } from "@/lib/supabase";
+import { useClientLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -9,33 +9,23 @@ export default function ClientLogin() {
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const { toast } = useToast();
+  const loginMutation = useClientLogin();
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
-  const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!mobile.trim() || !password.trim()) {
       toast({ title: "يرجى ملء جميع الحقول", variant: "destructive" });
       return;
     }
-    setIsPending(true);
-    try {
-      const supabase = getSupabase();
-      // بناء البريد الإلكتروني من رقم الجوال للعميل
-      const email = `${mobile.trim()}@client.twasalni.com`;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        toast({ title: "بيانات الدخول غير صحيحة", variant: "destructive" });
-        return;
+    loginMutation.mutate(
+      { data: { mobile: mobile.trim(), password } },
+      {
+        onSuccess: async () => { await refetch(); setLocation("/client"); },
+        onError: (err: Error) => { toast({ title: err.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" }); },
       }
-      await refetch();
-      setLocation("/client");
-    } catch {
-      toast({ title: "حدث خطأ، يرجى المحاولة مجدداً", variant: "destructive" });
-    } finally {
-      setIsPending(false);
-    }
+    );
   };
 
   return (
@@ -68,11 +58,11 @@ export default function ClientLogin() {
             </div>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={loginMutation.isPending}
               className="w-full py-3.5 rounded-2xl text-white font-black shadow-md active:scale-[0.98] transition-transform disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)" }}
             >
-              {isPending ? "جاري الدخول..." : "دخول"}
+              {loginMutation.isPending ? "جاري الدخول..." : "دخول"}
             </button>
           </form>
           <p className="text-center text-sm text-gray-400 mt-4">

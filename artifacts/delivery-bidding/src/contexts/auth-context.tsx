@@ -1,16 +1,10 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { getSupabase } from "@/lib/supabase";
-
-// نوع المستخدم المحلي بعد الربط بـ Supabase
-export interface AppUser {
-  id: string;
-  name: string;
-  role: "client" | "driver" | "admin";
-  mobile?: string | null;
-}
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { useGetMe, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
+import type { AuthUser } from "@workspace/api-client-react";
+import { subscribeToPush } from "@/lib/push-notifications";
 
 interface AuthContextType {
-  user: AppUser | null;
+  user: AuthUser | null;
   isLoading: boolean;
   refetch: () => Promise<void>;
   logout: () => void;
@@ -19,72 +13,34 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadUser = useCallback(async () => {
-    try {
-      const supabase = getSupabase();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setUser(null);
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, phone")
-        .eq("id", session.user.id)
-        .single();
-
-      if (profile) {
-        // تحويل 'customer' → 'client' ليتوافق مع أسماء الأدوار في التطبيق
-        const role =
-          profile.role === "customer"
-            ? "client"
-            : (profile.role as "driver" | "admin");
-        setUser({ id: profile.id, name: profile.full_name, role, mobile: profile.phone });
-      } else {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadUser();
-    let unsubscribe: (() => void) | undefined;
-    try {
-      const supabase = getSupabase();
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-        loadUser();
-      });
-      unsubscribe = () => subscription.unsubscribe();
-    } catch {
-      // Supabase not configured — skip realtime subscription
-    }
-    return () => unsubscribe?.();
-  }, [loadUser]);
+  const [enabled, setEnabled] = useState(true);
+  const { data: user, isLoading, isFetching, refetch: refetchQuery } = useGetMe({
+    query: { queryKey: getGetMeQueryKey(), retry: false, enabled },
+  });
+  const logoutMutation = useLogout();
 
   const refetch = useCallback(async () => {
-    setIsLoading(true);
-    await loadUser();
-  }, [loadUser]);
+    setEnabled(true);
+    await refetchQuery();
+  }, [refetchQuery]);
 
-  const logout = useCallback(async () => {
-    try {
-      const supabase = getSupabase();
-      await supabase.auth.signOut();
-    } catch {
-      // Supabase not configured — skip remote sign-out
+  const logout = useCallback(() => {
+    logoutMutation.mutate(undefined, {
+      onSettled: () => {
+        refetchQuery();
+      },
+    });
+  }, [logoutMutation, refetchQuery]);
+
+  // Subscribe to push notifications after a successful login
+  useEffect(() => {
+    if (user) {
+      void subscribeToPush();
     }
-    setUser(null);
-  }, []);
+  }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, refetch, logout }}>
+    <AuthContext.Provider value={{ user: user ?? null, isLoading: isLoading || isFetching, refetch, logout }}>
       {children}
     </AuthContext.Provider>
   );

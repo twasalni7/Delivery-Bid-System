@@ -6,6 +6,7 @@ export const adminsTable = pgTable("admins", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   loginCode: text("login_code").notNull().unique(),
+  pushSubscription: text("push_subscription"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

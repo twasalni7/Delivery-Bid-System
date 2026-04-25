@@ -19,9 +19,12 @@ export default function DriverDashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
-  const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
-  const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 30_000 } });
-  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user, refetchInterval: 30_000 } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } as any });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 30_000 } as any });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: myOffers, isLoading: offersLoading } = useListMyOffers({ query: { enabled: !!user, refetchInterval: 30_000 } as any });
   const openRequests = allRequests?.filter((r) => r.status === "OPEN");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");
@@ -37,7 +40,7 @@ export default function DriverDashboard() {
 
   useEffect(() => {
     if (!user || !selectedRequests) return;
-    const myJobs = selectedRequests.filter((r) => r.selectedDriverId === user.id);
+    const myJobs = selectedRequests.filter((r) => r.selectedDriverId === Number(user.id));
     const currentIds = new Set(myJobs.map((j) => j.id));
     if (prevSelectedIdsRef.current === null) {
       prevSelectedIdsRef.current = currentIds;
@@ -94,7 +97,7 @@ export default function DriverDashboard() {
   if (!user) return null;
 
   const hasEnoughBalance = driver ? driver.balance >= 50 : false;
-  const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === user.id) ?? [];
+  const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === Number(user.id)) ?? [];
   const pendingOffers = myOffers?.filter((o) => o.request?.status === "OPEN") ?? [];
   const closedOffers = myOffers?.filter((o) => o.request?.status !== "OPEN") ?? [];
 

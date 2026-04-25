@@ -7,6 +7,7 @@ export const clientsTable = pgTable("clients", {
   name: text("name").notNull(),
   mobile: text("mobile").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  pushSubscription: text("push_subscription"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
