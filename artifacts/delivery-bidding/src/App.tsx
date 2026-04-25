@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import NotFound from "@/pages/not-found";
-import React from "react";
 
 import Home from "@/pages/Home";
 
@@ -36,58 +35,6 @@ import ClientSupport from "@/pages/client/ClientSupport";
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 20_000 } },
 });
-
-// ─── Error Boundary ──────────────────────────────────────────────────────────
-interface ErrorBoundaryState { hasError: boolean; message: string }
-
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  ErrorBoundaryState
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, message: "" };
-  }
-
-  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-    const message =
-      error instanceof Error ? error.message : "خطأ غير متوقع في التطبيق";
-    return { hasError: true, message };
-  }
-
-  override render() {
-    if (this.state.hasError) {
-      return (
-        <div
-          dir="rtl"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
-            fontFamily: "sans-serif",
-            padding: "2rem",
-            background: "#fff9f9",
-            color: "#c0392b",
-            textAlign: "center",
-          }}
-        >
-          <h1 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>
-            ⚠️ تعذّر تشغيل التطبيق
-          </h1>
-          <p style={{ maxWidth: 480, lineHeight: 1.7 }}>{this.state.message}</p>
-          <p style={{ marginTop: "1rem", color: "#555", fontSize: "0.9rem" }}>
-            تحقق من ملف <code>.env</code> وتأكد من تعريف{" "}
-            <code>VITE_SUPABASE_URL</code> و{" "}
-            <code>VITE_SUPABASE_ANON_KEY</code> قبل رفع التطبيق.
-          </p>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 function ClientGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -177,20 +124,17 @@ function Router() {
 }
 
 function App() {
-  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <WouterRouter base={base}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

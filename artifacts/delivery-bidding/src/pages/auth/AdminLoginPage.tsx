@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { getSupabase } from "@/lib/supabase";
+import { useAdminLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -9,58 +9,22 @@ export default function AdminLoginPage() {
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const { toast } = useToast();
+  const loginMutation = useAdminLogin();
   const [loginCode, setLoginCode] = useState("");
-  const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginCode.trim()) {
       toast({ title: "يرجى إدخال رمز الدخول", variant: "destructive" });
       return;
     }
-    setIsPending(true);
-    try {
-      const supabase = getSupabase();
-      // بريد ثابت للمدير + رمز الدخول كـ password
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: "admin@twasalni.com",
-        password: loginCode.trim(),
-      });
-      if (authError) {
-        console.log("Supabase auth error:", authError);
-        toast({ title: "رمز الدخول غير صحيح", variant: "destructive" });
-        return;
+    loginMutation.mutate(
+      { data: { loginCode: loginCode.trim() } },
+      {
+        onSuccess: async () => { await refetch(); setLocation("/admin"); },
+        onError: (err: Error) => { toast({ title: err.message ?? "رمز الدخول غير صحيح", variant: "destructive" }); },
       }
-
-      // التحقق من أن دور المستخدم في قاعدة البيانات هو "admin"
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", authData.user.id)
-        .single();
-
-      if (profileError) {
-        console.log("Profile query error:", profileError);
-        await supabase.auth.signOut();
-        toast({ title: "تعذّر التحقق من صلاحيات المستخدم، يرجى المحاولة مجدداً", variant: "destructive" });
-        return;
-      }
-
-      if (profile?.role !== "admin") {
-        console.log("Access denied: user role is", profile?.role);
-        await supabase.auth.signOut();
-        toast({ title: "هذا الحساب ليس حساب مدير، لا يمكن الدخول", variant: "destructive" });
-        return;
-      }
-
-      await refetch();
-      setLocation("/admin");
-    } catch (err) {
-      console.log("Unexpected login error:", err);
-      toast({ title: "حدث خطأ، يرجى المحاولة مجدداً", variant: "destructive" });
-    } finally {
-      setIsPending(false);
-    }
+    );
   };
 
   return (
@@ -88,11 +52,11 @@ export default function AdminLoginPage() {
             </div>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={loginMutation.isPending}
               className="w-full py-3.5 rounded-2xl text-white font-black shadow-md active:scale-[0.98] transition-transform disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)" }}
             >
-              {isPending ? "جاري الدخول..." : "دخول"}
+              {loginMutation.isPending ? "جاري الدخول..." : "دخول"}
             </button>
           </form>
         </div>
