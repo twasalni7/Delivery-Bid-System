@@ -122,7 +122,10 @@ CREATE POLICY "يقرأ الحسابات النشطة"
 -- ─────────────────────────────────────────────────────
 -- 4. جدول wallet_transactions (عمليات شحن المحفظة)
 -- ─────────────────────────────────────────────────────
-CREATE TYPE IF NOT EXISTS wallet_transaction_status AS ENUM ('pending', 'approved', 'rejected');
+DO $$ BEGIN
+  CREATE TYPE wallet_transaction_status AS ENUM ('pending', 'approved', 'rejected');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS wallet_transactions (
   id          SERIAL PRIMARY KEY,
