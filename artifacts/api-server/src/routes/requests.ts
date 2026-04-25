@@ -124,17 +124,14 @@ router.get("/", async (req, res) => {
   // Drivers see only OPEN requests (plus their own accepted ones handled by /drivers/me/requests)
   if (isDriver) conditions.push(eq(requestsTable.status, "OPEN"));
 
-  const baseQuery = db.select().from(requestsTable);
-  const rows = conditions.length > 0
-    ? await (baseQuery as ReturnType<typeof db.select>)
-        .where(and(...conditions))
-        .orderBy(requestsTable.createdAt)
-        .limit(limit)
-        .offset(offset)
-    : await (baseQuery as ReturnType<typeof db.select>)
-        .orderBy(requestsTable.createdAt)
-        .limit(limit)
-        .offset(offset);
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  const rows = await db
+    .select()
+    .from(requestsTable)
+    .where(whereClause)
+    .orderBy(requestsTable.createdAt)
+    .limit(limit)
+    .offset(offset);
 
   const requestIds = rows.map((r) => r.id);
   const offerCounts: Record<number, number> = {};

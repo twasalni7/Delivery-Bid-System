@@ -16,7 +16,7 @@ function validateMobile(mobile: unknown): boolean {
 
 function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) =>
-    (req as any).session.regenerate((err: Error | null) =>
+    req.session.regenerate((err: unknown) =>
       err ? reject(err) : resolve()
     )
   );
