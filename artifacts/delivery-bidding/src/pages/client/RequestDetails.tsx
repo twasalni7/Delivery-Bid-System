@@ -25,7 +25,7 @@ const STATUS_GRADIENT: Record<string, string> = {
 
 export default function RequestDetails() {
   const [, params] = useRoute("/client/request/:id");
-  const id = parseInt(params?.id ?? "0");
+  const id = parseInt((params as { id: string } | null)?.id ?? "0");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

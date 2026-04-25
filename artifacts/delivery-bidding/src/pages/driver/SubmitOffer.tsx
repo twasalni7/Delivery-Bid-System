@@ -12,7 +12,7 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 
 export default function SubmitOffer() {
   const [, params] = useRoute("/driver/request/:id");
-  const requestId = parseInt(params?.id ?? "0");
+  const requestId = parseInt((params as { id: string } | null)?.id ?? "0");
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();

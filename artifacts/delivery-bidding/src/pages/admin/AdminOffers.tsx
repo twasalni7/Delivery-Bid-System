@@ -4,7 +4,8 @@ import { Layout } from "@/components/layout";
 import { Search, X } from "lucide-react";
 
 export default function AdminOffers() {
-  const { data: offers, isLoading } = useListOffers({ query: { refetchInterval: 30_000 } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: offers, isLoading } = useListOffers({ query: { refetchInterval: 30_000 } as any });
 
   const [search, setSearch] = useState("");
 

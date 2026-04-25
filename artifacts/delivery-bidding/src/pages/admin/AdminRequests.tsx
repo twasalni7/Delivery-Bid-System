@@ -20,15 +20,14 @@ const STATUS_PILL: Record<string, string> = {
   FROZEN:    "bg-slate-100 text-slate-600",
 };
 
-const CLIENT_TYPES = ["موظفات", "طلاب", "مدارس", "جامعات", "معلمات", "غيره"];
 
 export default function AdminRequests() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [clientTypeFilter, setClientTypeFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
-  const { data: requests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: requests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } as any });
   const updateRequest = useAdminUpdateRequest();
   const deleteRequest = useAdminDeleteRequest();
   const [editDialog, setEditDialog] = useState<CommuteRequest | null>(null);
@@ -41,20 +40,18 @@ export default function AdminRequests() {
     const q = search.trim().toLowerCase();
     return requests.filter((r) => {
       if (statusFilter !== "ALL" && r.status !== statusFilter) return false;
-      if (clientTypeFilter !== "ALL" && r.clientType !== clientTypeFilter) return false;
       if (q) {
         const hay = [
           r.homeLocation, r.workLocation, r.phone ?? "",
           r.selectedDriver?.name ?? "", String(r.id),
-          r.notes ?? "",
         ].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [requests, statusFilter, clientTypeFilter, search]);
+  }, [requests, statusFilter, search]);
 
-  const activeFilters = (statusFilter !== "ALL" ? 1 : 0) + (clientTypeFilter !== "ALL" ? 1 : 0) + (search ? 1 : 0);
+  const activeFilters = (statusFilter !== "ALL" ? 1 : 0) + (search ? 1 : 0);
 
   const handleEdit = (req: CommuteRequest) => { setEditStatus(req.status); setEditDialog(req); };
 
@@ -80,7 +77,7 @@ export default function AdminRequests() {
     );
   };
 
-  const resetFilters = () => { setStatusFilter("ALL"); setClientTypeFilter("ALL"); setSearch(""); };
+  const resetFilters = () => { setStatusFilter("ALL"); setSearch(""); };
 
   return (
     <Layout role="admin">
@@ -125,19 +122,6 @@ export default function AdminRequests() {
                 <SelectItem value="ALL">كل الحالات</SelectItem>
                 {ALL_STATUSES.map((val) => (
                   <SelectItem key={val} value={val}>{getStatusLabel(val)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Client type filter */}
-            <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
-              <SelectTrigger className={`h-9 rounded-xl border text-sm font-bold w-36 ${clientTypeFilter !== "ALL" ? "border-violet-400 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-600"}`}>
-                <SelectValue placeholder="نوع العميل" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">كل الأنواع</SelectItem>
-                {CLIENT_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -208,7 +192,7 @@ export default function AdminRequests() {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">{req.clientType ?? "—"}</span>
+                        <span className="text-sm font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">—</span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 text-sm text-gray-700">
@@ -272,7 +256,6 @@ export default function AdminRequests() {
                       <span className={`text-sm px-3 py-0.5 rounded-full font-bold ${STATUS_PILL[req.status] ?? "bg-gray-100 text-gray-600"}`}>
                         {getStatusLabel(req.status)}
                       </span>
-                      {req.clientType && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">{req.clientType}</span>}
                       {req.selectedDriver && <span className="text-sm bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full font-bold">🚗 {req.selectedDriver.name}</span>}
                     </div>
                     <div className="flex gap-2 shrink-0">
