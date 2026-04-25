@@ -32,7 +32,7 @@ export default function ClientRegister() {
       const email = `${mobile.trim()}@client.twasalni.com`;
 
       // إنشاء حساب Supabase Auth — الـ trigger يُنشئ صف profiles تلقائياً
-      // ويضع full_name و role='customer' من الـ metadata
+      // ويضع full_name و role='customer' و phone من الـ metadata
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -40,6 +40,7 @@ export default function ClientRegister() {
           data: {
             full_name: name.trim(),
             role: "customer",
+            phone: mobile.trim(),
           },
         },
       });
@@ -49,13 +50,15 @@ export default function ClientRegister() {
         return;
       }
 
-      // تحديث حقل phone في profiles لأن الـ trigger لا يحفظه تلقائياً
+      // upsert لضمان وجود صف في profiles حتى لو لم يعمل الـ trigger
       const userId = data.user?.id;
       if (userId) {
         await supabase
           .from("profiles")
-          .update({ phone: mobile.trim() })
-          .eq("id", userId);
+          .upsert(
+            { id: userId, full_name: name.trim(), role: "customer", phone: mobile.trim() },
+            { onConflict: "id" }
+          );
       }
 
       await refetch();

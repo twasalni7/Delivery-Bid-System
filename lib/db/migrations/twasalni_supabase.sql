@@ -26,20 +26,27 @@ CREATE POLICY "المستخدم يقرأ ملفه الشخصي فقط"
   ON profiles FOR SELECT
   USING (auth.uid() = id);
 
+CREATE POLICY "المستخدم يُنشئ ملفه الشخصي"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "المستخدم يعدّل ملفه الشخصي فقط"
   ON profiles FOR UPDATE
   USING (auth.uid() = id);
 
 -- دالة تلقائية لإنشاء profile عند التسجيل
+-- تقرأ full_name و role و phone من raw_user_meta_data الذي يُمرَّر عند signUp
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  INSERT INTO profiles (id, full_name, role)
+  INSERT INTO profiles (id, full_name, role, phone)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'customer')
-  );
+    COALESCE(NEW.raw_user_meta_data->>'role', 'customer'),
+    NULLIF(COALESCE(NEW.raw_user_meta_data->>'phone', ''), '')
+  )
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$;
@@ -168,3 +175,26 @@ ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
 -- CREATE POLICY "الإدارة ترى الإيصالات"
 --   ON storage.objects FOR SELECT
 --   USING (bucket_id = 'receipts');
+
+
+-- ─────────────────────────────────────────────────────
+-- 6. إنشاء مستخدم الإدارة (يُنفَّذ مرة واحدة بعد إعداد المشروع)
+-- ─────────────────────────────────────────────────────
+-- خطوات إنشاء حساب الإدارة:
+--
+-- أ) افتح Supabase Dashboard → Authentication → Users → "Add user" أو "Invite user"
+--    البريد الإلكتروني : admin@twasalni.com
+--    كلمة المرور      : ADMIN2024  (أو أي كلمة مرور قوية — هي نفسها رمز الدخول)
+--    تأكيد البريد     : فعّل "Auto Confirm User" حتى لا يحتاج لتأكيد
+--
+-- ب) بعد إنشاء المستخدم في Auth، شغّل الأمر التالي في SQL Editor لإنشاء صف profiles
+--    مع دور 'admin' (الـ trigger ينشئ الصف تلقائياً بدور 'customer' إذا لم تُمرَّر metadata،
+--    لذا نُصحّح الدور هنا):
+--
+-- INSERT INTO profiles (id, full_name, role)
+-- VALUES (
+--   (SELECT id FROM auth.users WHERE email = 'admin@twasalni.com' LIMIT 1),
+--   'مشرف النظام',
+--   'admin'
+-- )
+-- ON CONFLICT (id) DO UPDATE SET role = 'admin', full_name = 'مشرف النظام';
