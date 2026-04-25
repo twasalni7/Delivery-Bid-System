@@ -2,7 +2,7 @@ import {
   pgTable,
   serial,
   integer,
-  real,
+  numeric,
   text,
   timestamp,
   pgEnum,
@@ -21,7 +21,7 @@ export const walletTransactionsTable = pgTable("wallet_transactions", {
   driverId: integer("driver_id")
     .notNull()
     .references(() => driversTable.id),
-  amount: real("amount").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
   receiptUrl: text("receipt_url"),
   status: walletTransactionStatusEnum("status").notNull().default("pending"),
   notes: text("notes"),

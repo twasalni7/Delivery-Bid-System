@@ -18,7 +18,7 @@ type WalletTx = {
   id: number;
   driverId: number;
   driverName: string | null;
-  amount: number;
+  amount: number | string;
   receiptUrl: string | null;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
@@ -248,7 +248,7 @@ export default function AdminSettings() {
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
                       <p className="font-bold text-sm text-gray-800">{tx.driverName ?? `سائق #${tx.driverId}`}</p>
-                      <p className="text-xs text-gray-500">{tx.amount.toFixed(2)} ريال — {new Date(tx.createdAt).toLocaleDateString("ar-SA")}</p>
+                      <p className="text-xs text-gray-500">{parseFloat(String(tx.amount)).toFixed(2)} ريال — {new Date(tx.createdAt).toLocaleDateString("ar-SA")}</p>
                     </div>
                     {tx.status === "pending" ? (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold shrink-0">معلّق</span>

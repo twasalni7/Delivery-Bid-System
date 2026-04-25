@@ -12,7 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 type WalletTx = {
   id: number;
-  amount: number;
+  amount: number | string;
   receiptUrl: string | null;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
@@ -217,7 +217,7 @@ export default function DriverProfile() {
                   {transactions.slice(0, 5).map((tx) => (
                     <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                       <div>
-                        <p className="text-sm font-bold text-gray-800">{tx.amount.toFixed(2)} ريال</p>
+                        <p className="text-sm font-bold text-gray-800">{parseFloat(String(tx.amount)).toFixed(2)} ريال</p>
                         <p className="text-xs text-gray-400">{new Date(tx.createdAt).toLocaleDateString("ar-SA")}</p>
                       </div>
                       {statusBadge(tx.status)}

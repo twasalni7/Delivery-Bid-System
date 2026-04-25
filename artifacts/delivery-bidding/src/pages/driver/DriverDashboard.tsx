@@ -57,8 +57,7 @@ export default function DriverDashboard() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let realtimeChannel: any = null;
+    let realtimeChannel: import("@supabase/supabase-js").RealtimeChannel | null = null;
 
     import("@/lib/supabase").then(({ getSupabase }) => {
       if (cancelled) return;
@@ -85,7 +84,7 @@ export default function DriverDashboard() {
       if (realtimeChannel) {
         import("@/lib/supabase")
           .then(({ getSupabase }) => {
-            try { getSupabase().removeChannel(realtimeChannel); } catch { /* ignore */ }
+            try { getSupabase().removeChannel(realtimeChannel!); } catch { /* ignore */ }
           })
           .catch(() => {});
       }

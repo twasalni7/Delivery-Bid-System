@@ -55,7 +55,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
 
   const [tx] = await db
     .insert(walletTransactionsTable)
-    .values({ driverId, amount, receiptUrl: receiptUrl ?? null })
+    .values({ driverId, amount: String(amount), receiptUrl: receiptUrl ?? null })
     .returning();
 
   res.status(201).json(tx);
@@ -92,7 +92,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
 
   await db
     .update(driversTable)
-    .set({ balance: (driver.balance ?? 0) + tx.amount })
+    .set({ balance: (driver.balance ?? 0) + parseFloat(tx.amount) })
     .where(eq(driversTable.id, tx.driverId));
 
   const [updated] = await db

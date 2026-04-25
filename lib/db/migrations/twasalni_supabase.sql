@@ -138,13 +138,15 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
 -- Row Level Security لجدول wallet_transactions
 ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "السائق يرى معاملاته"
-  ON wallet_transactions FOR SELECT
-  USING (TRUE);  -- يُضبط بحسب نظام المصادقة المستخدم
+-- ملاحظة: يستخدم هذا النظام معرّفات صحيحة للسائقين (integer) مأخوذة من
+-- جلسات Express وليس من Supabase Auth مباشرةً.
+-- تُدار هذه العمليات عبر Express API (requireAuth middleware) الذي يتحقق
+-- من هوية المستخدم قبل الوصول إلى البيانات.
+-- الصلاحيات التالية تتيح الوصول عبر service_role key (API server) فقط،
+-- بينما تمنع الوصول المباشر من العملاء غير الموثوقين.
 
-CREATE POLICY "السائق ينشئ طلب شحن"
-  ON wallet_transactions FOR INSERT
-  WITH CHECK (TRUE);  -- يُضبط بحسب نظام المصادقة المستخدم
+-- السماح للـ API server (service_role) بالقراءة والكتابة الكاملة
+-- (يُنفَّذ عبر SUPABASE_DATABASE_URL الخاصة بالخادم)
 
 
 -- ─────────────────────────────────────────────────────
