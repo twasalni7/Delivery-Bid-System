@@ -8,4 +8,4 @@
 
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS push_subscription TEXT;
 ALTER TABLE drivers ADD COLUMN IF NOT EXISTS push_subscription TEXT;
-ALTER TABLE admins  ADD COLUMN IF NOT EXISTS push_subscription TEXT;
+ALTER TABLE "المشرفون"  ADD COLUMN IF NOT EXISTS push_subscription TEXT;
