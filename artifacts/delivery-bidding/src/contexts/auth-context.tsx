@@ -55,11 +55,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadUser();
-    const supabase = getSupabase();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      loadUser();
-    });
-    return () => subscription.unsubscribe();
+    let unsubscribe: (() => void) | undefined;
+    try {
+      const supabase = getSupabase();
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+        loadUser();
+      });
+      unsubscribe = () => subscription.unsubscribe();
+    } catch {
+      // Supabase not configured — skip realtime subscription
+    }
+    return () => unsubscribe?.();
   }, [loadUser]);
 
   const refetch = useCallback(async () => {
@@ -68,8 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser]);
 
   const logout = useCallback(async () => {
-    const supabase = getSupabase();
-    await supabase.auth.signOut();
+    try {
+      const supabase = getSupabase();
+      await supabase.auth.signOut();
+    } catch {
+      // Supabase not configured — skip remote sign-out
+    }
     setUser(null);
   }, []);
 
