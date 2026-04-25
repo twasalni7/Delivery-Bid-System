@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { useGetMe, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
 import type { AuthUser } from "@workspace/api-client-react";
+import { subscribeToPush } from "@/lib/push-notifications";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -30,6 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
   }, [logoutMutation, refetchQuery]);
+
+  // Subscribe to push notifications after a successful login
+  useEffect(() => {
+    if (user) {
+      void subscribeToPush();
+    }
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user: user ?? null, isLoading: isLoading || isFetching, refetch, logout }}>

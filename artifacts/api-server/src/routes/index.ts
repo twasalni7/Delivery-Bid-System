@@ -9,6 +9,7 @@ import supportTicketsRouter from "./support-tickets";
 import notificationsRouter from "./notifications";
 import bankAccountsRouter from "./bank-accounts";
 import walletTransactionsRouter from "./wallet-transactions";
+import pushRouter from "./push";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/support-tickets", supportTicketsRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/bank-accounts", bankAccountsRouter);
 router.use("/wallet-transactions", walletTransactionsRouter);
+router.use("/push", pushRouter);
 
 export default router;
