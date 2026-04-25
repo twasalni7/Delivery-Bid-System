@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 // نوع المستخدم المحلي بعد الربط بـ Supabase
@@ -21,11 +21,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Track the latest loadUser invocation to discard stale results
+  const loadIdRef = useRef(0);
 
   const loadUser = useCallback(async () => {
+    const currentId = ++loadIdRef.current;
+    setIsLoading(true);
     try {
       const supabase = getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
+      if (currentId !== loadIdRef.current) return; // discard stale result
       if (!session) {
         setUser(null);
         return;
@@ -36,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("id", session.user.id)
         .single();
 
+      if (currentId !== loadIdRef.current) return; // discard stale result
       if (profile) {
         // تحويل 'customer' → 'client' ليتوافق مع أسماء الأدوار في التطبيق
         const role =
@@ -47,9 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
     } catch {
+      if (currentId !== loadIdRef.current) return; // discard stale result
       setUser(null);
     } finally {
-      setIsLoading(false);
+      if (currentId === loadIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
