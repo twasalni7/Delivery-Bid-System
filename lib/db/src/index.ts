@@ -13,11 +13,24 @@ if (!connectionString) {
   );
 }
 
+// Enable SSL when the connection targets Supabase (whether supplied via
+// SUPABASE_DATABASE_URL or via DATABASE_URL that points at Supabase).
+// Use URL parsing to match only the hostname, not substrings in credentials
+// or query parameters.
+let isSupabase = !!process.env.SUPABASE_DATABASE_URL;
+if (!isSupabase) {
+  try {
+    const { hostname } = new URL(connectionString);
+    isSupabase =
+      hostname.endsWith(".supabase.co") || hostname.endsWith(".supabase.com");
+  } catch {
+    // Unparseable connection string — assume not Supabase
+  }
+}
+
 export const pool = new Pool({
   connectionString,
-  ssl: process.env.SUPABASE_DATABASE_URL
-    ? { rejectUnauthorized: false }
-    : undefined,
+  ssl: isSupabase ? { rejectUnauthorized: false } : undefined,
 });
 export const db = drizzle(pool, { schema });
 
