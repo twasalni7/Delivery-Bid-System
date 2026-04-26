@@ -1,32 +1,14 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { bankAccountsTable, adminsTable } from "@workspace/db";
-import { eq, or } from "drizzle-orm";
+import { bankAccountsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
-import { notify } from "../lib/notify";
+import { notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
-
-// Helper: notify all admins about bank account changes
-async function notifyAllAdmins(params: {
-  title: string;
-  message: string;
-  type: "offer" | "request" | "system" | "support";
-  relatedId?: number;
-  url?: string;
-}) {
-  try {
-    const admins = await db.select({ id: adminsTable.id }).from(adminsTable);
-    for (const admin of admins) {
-      void notify({ userId: admin.id, userRole: "admin", url: params.url, ...params });
-    }
-  } catch {
-    // Silent
-  }
-}
 
 // Resolve a bank account by int_id or serial id (prefer int_id when available)
 async function findBankAccountByIntId(intId: number) {

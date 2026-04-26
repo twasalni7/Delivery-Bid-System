@@ -170,15 +170,12 @@
     color: #94a3b8;
     font-weight: 600;
   }
-  /* Ensure minimum touch target size on interactive elements */
-  button, a, [role="button"] {
+  /* Ensure minimum touch target size on primary interactive elements */
+  button:not(.touch-compact),
+  a:not(.touch-compact),
+  [role="button"]:not(.touch-compact) {
     min-height: 44px;
     min-width: 44px;
-  }
-  /* Override for icon-only inline elements (badges, etc.) */
-  .touch-none-override {
-    min-height: unset;
-    min-width: unset;
   }
   /* Prevent horizontal scroll on tables */
   table {

@@ -878,20 +878,25 @@ router.get("/recent-events", async (_req, res) => {
       .where(eq(supportTicketsTable.status, "OPEN"))
       .orderBy(desc(supportTicketsTable.createdAt))
       .limit(20);
+
+    // Batch-fetch driver names for tickets without a client
+    const ticketDriverIds = [...new Set(ticketRows.filter((t) => !t.clientName && t.driverId != null).map((t) => t.driverId!))];
+    const ticketDriversMap = new Map<number, string>();
+    if (ticketDriverIds.length > 0) {
+      const driverRows = await db
+        .select({ id: driversTable.id, name: driversTable.name })
+        .from(driversTable)
+        .where(inArray(driversTable.id, ticketDriverIds));
+      for (const d of driverRows) ticketDriversMap.set(d.id, d.name);
+    }
+
     for (const row of ticketRows) {
-      let userName = row.clientName;
-      if (!userName && row.driverId) {
-        const d = await db.query.driversTable.findFirst({
-          where: eq(driversTable.id, row.driverId),
-          columns: { name: true },
-        });
-        userName = d?.name ?? `سائق #${row.driverId}`;
-      }
+      const userName = row.clientName ?? (row.driverId ? (ticketDriversMap.get(row.driverId) ?? `سائق #${row.driverId}`) : "مستخدم");
       events.push({
         type: "support",
         id: row.id,
         description: `تذكرة دعم جديدة — ${String(row.type)}`,
-        userName: userName ?? "مستخدم",
+        userName,
         url: `/admin/support?ticket=${row.id}`,
         createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
       });

@@ -1,32 +1,14 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { walletTransactionsTable, driversTable, adminsTable } from "@workspace/db";
+import { walletTransactionsTable, driversTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
-import { notify } from "../lib/notify";
+import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
-
-// Helper: notify all admins
-async function notifyAllAdmins(params: {
-  title: string;
-  message: string;
-  type: "offer" | "request" | "system" | "support";
-  relatedId?: number;
-  url?: string;
-}) {
-  try {
-    const admins = await db.select({ id: adminsTable.id }).from(adminsTable);
-    for (const admin of admins) {
-      void notify({ userId: admin.id, userRole: "admin", url: params.url, ...params });
-    }
-  } catch {
-    // Silent
-  }
-}
 
 // GET /api/wallet-transactions — driver sees own transactions, admin sees all
 router.get("/", requireAuth(), async (req, res) => {
