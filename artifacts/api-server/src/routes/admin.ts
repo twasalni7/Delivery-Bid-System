@@ -11,6 +11,7 @@ import {
 import { eq, count, ne, desc, sql, sum, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
+import { logger } from "../lib/logger";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -21,6 +22,8 @@ const VALID_REQUEST_STATUSES = new Set([
   "EXPIRED",
   "FROZEN",
 ]);
+
+const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 
 async function generateUniqueLoginCode(maxAttempts = 5): Promise<string> {
   for (let i = 0; i < maxAttempts; i++) {
@@ -38,100 +41,110 @@ const router = Router();
 router.use(requireAuth("admin"));
 
 router.get("/stats", async (_req, res) => {
-  const [totalRequestsResult] = await db
-    .select({ count: count() })
-    .from(requestsTable);
-  const [openResult] = await db
-    .select({ count: count() })
-    .from(requestsTable)
-    .where(eq(requestsTable.status, "OPEN"));
-  const [selectedResult] = await db
-    .select({ count: count() })
-    .from(requestsTable)
-    .where(eq(requestsTable.status, "SELECTED"));
-  const [activeResult] = await db
-    .select({ count: count() })
-    .from(requestsTable)
-    .where(eq(requestsTable.status, "ACTIVE"));
-  const [completedResult] = await db
-    .select({ count: count() })
-    .from(requestsTable)
-    .where(eq(requestsTable.status, "COMPLETED"));
-  const [totalDriversResult] = await db
-    .select({ count: count() })
-    .from(driversTable)
-    .where(ne(driversTable.status, "DELETED"));
-  const [totalOffersResult] = await db
-    .select({ count: count() })
-    .from(offersTable);
-  const [totalClientsResult] = await db
-    .select({ count: count() })
-    .from(clientsTable);
+  try {
+    const [totalRequestsResult] = await db
+      .select({ count: count() })
+      .from(requestsTable);
+    const [openResult] = await db
+      .select({ count: count() })
+      .from(requestsTable)
+      .where(eq(requestsTable.status, "OPEN"));
+    const [selectedResult] = await db
+      .select({ count: count() })
+      .from(requestsTable)
+      .where(eq(requestsTable.status, "SELECTED"));
+    const [activeResult] = await db
+      .select({ count: count() })
+      .from(requestsTable)
+      .where(eq(requestsTable.status, "ACTIVE"));
+    const [completedResult] = await db
+      .select({ count: count() })
+      .from(requestsTable)
+      .where(eq(requestsTable.status, "COMPLETED"));
+    const [totalDriversResult] = await db
+      .select({ count: count() })
+      .from(driversTable)
+      .where(ne(driversTable.status, "DELETED"));
+    const [totalOffersResult] = await db
+      .select({ count: count() })
+      .from(offersTable);
+    const [totalClientsResult] = await db
+      .select({ count: count() })
+      .from(clientsTable);
 
-  res.json({
-    totalRequests: Number(totalRequestsResult.count),
-    openRequests: Number(openResult.count),
-    selectedRequests: Number(selectedResult.count),
-    activeRequests: Number(activeResult.count),
-    completedRequests: Number(completedResult.count),
-    totalDrivers: Number(totalDriversResult.count),
-    totalOffers: Number(totalOffersResult.count),
-    totalClients: Number(totalClientsResult.count),
-  });
+    res.json({
+      totalRequests: Number(totalRequestsResult.count),
+      openRequests: Number(openResult.count),
+      selectedRequests: Number(selectedResult.count),
+      activeRequests: Number(activeResult.count),
+      completedRequests: Number(completedResult.count),
+      totalDrivers: Number(totalDriversResult.count),
+      totalOffers: Number(totalOffersResult.count),
+      totalClients: Number(totalClientsResult.count),
+    });
+  } catch (err) {
+    logger.error({ err }, "admin GET /stats error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 router.get("/financial", async (_req, res) => {
-  const acceptedStatuses = ["SELECTED", "ACTIVE", "COMPLETED"] as const;
-  let acceptedContractsCount = 0;
-  for (const status of acceptedStatuses) {
-    const [result] = await db
-      .select({ count: count() })
-      .from(requestsTable)
-      .where(eq(requestsTable.status, status));
-    acceptedContractsCount += Number(result.count);
-  }
-
-  let totalFeesCollected = 0;
-  let totalTransactionsAmount = 0;
   try {
-    const [feeSum] = await db
-      .select({ total: sum(transactionsTable.amount) })
-      .from(transactionsTable)
-      .where(inArray(transactionsTable.type, ["fee", "debit"]));
-    totalFeesCollected = Math.abs(Number(feeSum?.total ?? 0));
+    const acceptedStatuses = ["SELECTED", "ACTIVE", "COMPLETED"] as const;
+    let acceptedContractsCount = 0;
+    for (const status of acceptedStatuses) {
+      const [result] = await db
+        .select({ count: count() })
+        .from(requestsTable)
+        .where(eq(requestsTable.status, status));
+      acceptedContractsCount += Number(result.count);
+    }
 
-    const [txSum] = await db
-      .select({ total: sum(transactionsTable.amount) })
-      .from(transactionsTable);
-    totalTransactionsAmount = Number(txSum?.total ?? 0);
-  } catch {
-    totalFeesCollected = acceptedContractsCount * 50;
-    totalTransactionsAmount = 0;
+    let totalFeesCollected = 0;
+    let totalTransactionsAmount = 0;
+    try {
+      const [feeSum] = await db
+        .select({ total: sum(transactionsTable.amount) })
+        .from(transactionsTable)
+        .where(inArray(transactionsTable.type, ["fee", "debit"]));
+      totalFeesCollected = Math.abs(Number(feeSum?.total ?? 0));
+
+      const [txSum] = await db
+        .select({ total: sum(transactionsTable.amount) })
+        .from(transactionsTable);
+      totalTransactionsAmount = Number(txSum?.total ?? 0);
+    } catch {
+      totalFeesCollected = acceptedContractsCount * 50;
+      totalTransactionsAmount = 0;
+    }
+
+    const drivers = await db
+      .select({
+        id: driversTable.id,
+        name: driversTable.name,
+        balance: driversTable.balance,
+      })
+      .from(driversTable)
+      .where(ne(driversTable.status, "DELETED"))
+      .orderBy(desc(driversTable.balance));
+
+    const totalDriversBalance = drivers.reduce((acc, d) => acc + (d.balance ?? 0), 0);
+
+    res.json({
+      totalFeesCollected,
+      totalTransactionsAmount,
+      totalDriversBalance,
+      acceptedContractsCount,
+      driverBalances: drivers.map((d) => ({
+        id: d.id,
+        name: d.name,
+        balance: d.balance ?? 0,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err }, "admin GET /financial error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
-
-  const drivers = await db
-    .select({
-      id: driversTable.id,
-      name: driversTable.name,
-      balance: driversTable.balance,
-    })
-    .from(driversTable)
-    .where(ne(driversTable.status, "DELETED"))
-    .orderBy(desc(driversTable.balance));
-
-  const totalDriversBalance = drivers.reduce((acc, d) => acc + (d.balance ?? 0), 0);
-
-  res.json({
-    totalFeesCollected,
-    totalTransactionsAmount,
-    totalDriversBalance,
-    acceptedContractsCount,
-    driverBalances: drivers.map((d) => ({
-      id: d.id,
-      name: d.name,
-      balance: d.balance ?? 0,
-    })),
-  });
 });
 
 router.get("/analytics", async (req, res) => {
