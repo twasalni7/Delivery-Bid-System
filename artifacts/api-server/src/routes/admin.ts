@@ -14,6 +14,7 @@ import { eq, count, ne, desc, sql, sum, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { CreateRequestBody } from "@workspace/api-zod";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -822,6 +823,31 @@ router.delete("/clients/:id", async (req, res) => {
     return;
   }
   res.json({ message: "تم حذف العميل" });
+});
+
+// POST /api/admin/requests — admin creates a request on behalf of a client
+router.post("/requests", async (req, res) => {
+  const parsed = CreateRequestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "بيانات غير صحيحة" });
+    return;
+  }
+  try {
+    const [created] = await db
+      .insert(requestsTable)
+      .values({
+        ...parsed.data,
+        clientType: parsed.data.clientType ?? "غيره",
+        monthlyPrice: parsed.data.monthlyPrice,
+        clientId: null,
+        status: "OPEN",
+      })
+      .returning();
+    res.status(201).json(created);
+  } catch (err) {
+    logger.error({ err }, "admin POST /requests error");
+    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+  }
 });
 
 // GET /api/admin/recent-events — last 20 notable events for the admin dashboard
