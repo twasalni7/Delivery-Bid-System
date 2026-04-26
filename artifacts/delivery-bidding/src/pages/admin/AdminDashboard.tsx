@@ -1,13 +1,15 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "wouter";
 import { useGetAdminStats, useGetAdminAnalytics, useGetAdminFinancial } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Download, Banknote, Wallet } from "lucide-react";
+import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { API_ORIGIN as API } from "@/lib/api-config";
+import { timeAgo } from "@/lib/time-utils";
 
 const ARABIC_MONTHS = [
   "يناير","فبراير","مارس","أبريل","مايو","يونيو",
@@ -49,11 +51,30 @@ const STAT_CARDS = [
   { key: "activeRequests", label: "نشط", bg: "#10B981" },
 ] as const;
 
+type RecentEvent = {
+  type: "wallet" | "support" | "request" | "offer";
+  id: number;
+  description: string;
+  userName: string | null;
+  url: string;
+  createdAt: string;
+};
+
+const EVENT_TYPE_CONFIG: Record<RecentEvent["type"], { icon: React.ReactNode; label: string; color: string }> = {
+  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "bg-emerald-100 text-emerald-700" },
+  support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "bg-amber-100 text-amber-700" },
+  request: { icon: <FileText size={14} />, label: "طلب جديد", color: "bg-blue-100 text-blue-700" },
+  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "bg-violet-100 text-violet-700" },
+};
+
 export default function AdminDashboard() {
   const [selectedMonths, setSelectedMonths] = useState<3 | 6 | 12>(12);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [appliedRange, setAppliedRange] = useState<{ from: string; to: string } | null>(null);
+  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
+  const [, navigate] = useLocation();
+  const eventsTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const analyticsParams = appliedRange
     ? { from: appliedRange.from, to: appliedRange.to }
@@ -63,6 +84,27 @@ export default function AdminDashboard() {
   const { data: analytics, isLoading: analyticsLoading, isFetching: analyticsFetching } = useGetAdminAnalytics(analyticsParams);
   const { data: financial, isLoading: financialLoading } = useGetAdminFinancial();
   const isLoading = statsLoading || analyticsLoading || financialLoading;
+
+  // Fetch recent events and set up auto-refresh
+  const fetchRecentEvents = async () => {
+    try {
+      const res = await fetch(`${API}/api/admin/recent-events`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json() as RecentEvent[];
+        setRecentEvents(data);
+      }
+    } catch {
+      // Silent
+    }
+  };
+
+  useEffect(() => {
+    void fetchRecentEvents();
+    eventsTimerRef.current = setInterval(() => { void fetchRecentEvents(); }, 30_000);
+    return () => {
+      if (eventsTimerRef.current) clearInterval(eventsTimerRef.current);
+    };
+  }, []);
 
   function handleMonthSelect(value: 3 | 6 | 12) {
     setSelectedMonths(value);
@@ -329,7 +371,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           {[
             { href: "/admin/requests", emoji: "📋", label: "الطلبات" },
             { href: "/admin/drivers", emoji: "🚗", label: "السائقون" },
@@ -347,6 +389,43 @@ export default function AdminDashboard() {
               <span className="text-sm font-black text-gray-700">{item.label}</span>
             </Link>
           ))}
+        </div>
+
+        {/* ── Recent Events ── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
+              <Clock size={16} className="text-violet-500" />
+              الأحداث الأخيرة
+            </h2>
+            <span className="text-xs text-gray-400">يُحدَّث كل 30 ثانية</span>
+          </div>
+          {recentEvents.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">لا توجد أحداث حديثة</p>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {recentEvents.map((event, idx) => {
+                const cfg = EVENT_TYPE_CONFIG[event.type];
+                return (
+                  <button
+                    key={`${event.type}-${event.id}-${idx}`}
+                    onClick={() => navigate(event.url)}
+                    className="w-full flex items-start gap-3 py-2.5 hover:bg-gray-50 transition-colors rounded-xl px-1 text-right"
+                  >
+                    <span className={`mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${cfg.color}`}>
+                      {cfg.icon}
+                      {cfg.label}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-800 truncate">{event.description}</p>
+                      <p className="text-xs text-gray-400 truncate">{event.userName}</p>
+                    </div>
+                    <span className="text-xs text-gray-400 shrink-0 mt-0.5">{timeAgo(event.createdAt)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

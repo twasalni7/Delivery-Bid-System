@@ -18,6 +18,7 @@ export const walletTransactionStatusEnum = pgEnum(
 
 export const walletTransactionsTable = pgTable("wallet_transactions", {
   id: serial("id").primaryKey(),
+  intId: integer("int_id").notNull().unique(),
   driverId: integer("driver_id")
     .notNull()
     .references(() => driversTable.id),

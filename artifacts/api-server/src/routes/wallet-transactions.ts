@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { walletTransactionsTable, driversTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -27,6 +28,7 @@ router.get("/", requireAuth(), async (req, res) => {
       const rows = await db
         .select({
           id: walletTransactionsTable.id,
+          intId: walletTransactionsTable.intId,
           driverId: walletTransactionsTable.driverId,
           driverName: driversTable.name,
           amount: walletTransactionsTable.amount,
@@ -65,12 +67,38 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       .values({ driverId, amount: String(amount), receiptUrl: receiptUrl ?? null })
       .returning();
 
+    // Notify all admins about the new wallet top-up request
+    const driver = await db.query.driversTable.findFirst({
+      where: eq(driversTable.id, driverId),
+      columns: { name: true },
+    });
+    void notifyAllAdmins({
+      title: "طلب شحن محفظة جديد",
+      message: `طلب السائق ${driver?.name ?? `#${driverId}`} شحن محفظته بمبلغ ${parseFloat(String(amount)).toFixed(2)} ريال`,
+      type: "system",
+      relatedId: tx.id,
+      url: "/admin/settings",
+    });
+
     res.status(201).json(tx);
   } catch (err) {
     logger.error({ err }, "wallet-transactions POST / error");
     res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });
+
+// Resolve a wallet transaction by int_id or id (prefer int_id when available)
+async function findWalletTxByIntId(intId: number) {
+  // Try int_id first (for UUID-primary-key environments)
+  const byIntId = await db.query.walletTransactionsTable.findFirst({
+    where: eq(walletTransactionsTable.intId, intId),
+  });
+  if (byIntId) return byIntId;
+  // Fallback to serial id
+  return db.query.walletTransactionsTable.findFirst({
+    where: eq(walletTransactionsTable.id, intId),
+  });
+}
 
 // POST /api/wallet-transactions/:id/approve — admin approves and credits the driver's balance
 router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
@@ -80,9 +108,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
     return;
   }
   try {
-    const tx = await db.query.walletTransactionsTable.findFirst({
-      where: eq(walletTransactionsTable.id, id),
-    });
+    const tx = await findWalletTxByIntId(id);
     if (!tx) {
       res.status(404).json({ error: "المعاملة غير موجودة" });
       return;
@@ -109,8 +135,19 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
     const [updated] = await db
       .update(walletTransactionsTable)
       .set({ status: "approved", updatedAt: new Date() })
-      .where(eq(walletTransactionsTable.id, id))
+      .where(eq(walletTransactionsTable.id, tx.id))
       .returning();
+
+    // Notify driver
+    void notify({
+      userId: tx.driverId,
+      userRole: "driver",
+      title: "تم قبول طلب شحن محفظتك",
+      message: `تمت الموافقة على طلب شحن محفظتك بمبلغ ${parseFloat(tx.amount).toFixed(2)} ريال وإضافته لرصيدك`,
+      type: "system",
+      relatedId: tx.id,
+      url: "/driver/profile",
+    });
 
     res.json({ message: "تم قبول طلب الشحن وإضافة الرصيد", transaction: updated });
   } catch (err) {
@@ -128,9 +165,7 @@ router.post("/:id/reject", requireAuth("admin"), async (req, res) => {
   }
   const { notes } = req.body ?? {};
   try {
-    const tx = await db.query.walletTransactionsTable.findFirst({
-      where: eq(walletTransactionsTable.id, id),
-    });
+    const tx = await findWalletTxByIntId(id);
     if (!tx) {
       res.status(404).json({ error: "المعاملة غير موجودة" });
       return;
@@ -143,8 +178,19 @@ router.post("/:id/reject", requireAuth("admin"), async (req, res) => {
     const [updated] = await db
       .update(walletTransactionsTable)
       .set({ status: "rejected", notes: notes ?? null, updatedAt: new Date() })
-      .where(eq(walletTransactionsTable.id, id))
+      .where(eq(walletTransactionsTable.id, tx.id))
       .returning();
+
+    // Notify driver
+    void notify({
+      userId: tx.driverId,
+      userRole: "driver",
+      title: "تم رفض طلب شحن محفظتك",
+      message: `تم رفض طلب شحن محفظتك بمبلغ ${parseFloat(tx.amount).toFixed(2)} ريال${notes ? ` — السبب: ${notes}` : ""}`,
+      type: "system",
+      relatedId: tx.id,
+      url: "/driver/profile",
+    });
 
     res.json({ message: "تم رفض طلب الشحن", transaction: updated });
   } catch (err) {

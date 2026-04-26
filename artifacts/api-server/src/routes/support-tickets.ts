@@ -4,7 +4,7 @@ import { supportTicketsTable, clientsTable, driversTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
-import { notify } from "../lib/notify";
+import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -62,6 +62,18 @@ router.post("/", requireAuth(), async (req, res) => {
       .insert(supportTicketsTable)
       .values(values as typeof supportTicketsTable.$inferInsert)
       .returning();
+
+    // Notify all admins about the new support ticket
+    const submitterName = sessionUser.role === "client"
+      ? (await db.query.clientsTable.findFirst({ where: eq(clientsTable.id, sessionUser.id), columns: { name: true } }))?.name
+      : (await db.query.driversTable.findFirst({ where: eq(driversTable.id, sessionUser.id), columns: { name: true } }))?.name;
+    void notifyAllAdmins({
+      title: "تذكرة دعم جديدة",
+      message: `فتح ${submitterName ?? "مستخدم"} تذكرة دعم جديدة — النوع: ${String(type)}`,
+      type: "support",
+      relatedId: created.id,
+      url: "/admin/support",
+    });
 
     res.status(201).json(formatTicket(created));
   } catch (err) {
@@ -174,6 +186,7 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
           message: `ردّت الإدارة على تذكرتك: "${String(adminReply).trim().substring(0, 80)}${String(adminReply).trim().length > 80 ? "..." : ""}"`,
           type: "support",
           relatedId: updated.id,
+          url: "/client/support",
         });
       } else if (updated.driverId) {
         void notify({
@@ -183,6 +196,7 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
           message: `ردّت الإدارة على تذكرتك: "${String(adminReply).trim().substring(0, 80)}${String(adminReply).trim().length > 80 ? "..." : ""}"`,
           type: "support",
           relatedId: updated.id,
+          url: "/driver/profile",
         });
       }
     }

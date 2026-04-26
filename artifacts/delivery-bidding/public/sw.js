@@ -69,12 +69,14 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
+  let url = '/';
 
   if (event.data) {
     try {
       const data = event.data.json();
       if (data.title) title = data.title;
       if (data.body) body = data.body;
+      if (data.url) url = data.url;
     } catch {
       body = event.data.text() || body;
     }
@@ -90,7 +92,7 @@ self.addEventListener('push', (event) => {
       lang: 'ar',
       tag: 'twasalni-notification',
       renotify: true,
-      data: { url: '/' },
+      data: { url },
     })
   );
 });

@@ -3,11 +3,23 @@ import { db } from "@workspace/db";
 import { bankAccountsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
+// Resolve a bank account by int_id or serial id (prefer int_id when available)
+async function findBankAccountByIntId(intId: number) {
+  const byIntId = await db.query.bankAccountsTable.findFirst({
+    where: eq(bankAccountsTable.intId, intId),
+  });
+  if (byIntId) return byIntId;
+  return db.query.bankAccountsTable.findFirst({
+    where: eq(bankAccountsTable.id, intId),
+  });
+}
 
 // GET /api/bank-accounts — accessible to all authenticated users (drivers see payment details)
 router.get("/", requireAuth(), async (_req, res) => {
@@ -41,7 +53,7 @@ router.get("/all", async (_req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { bankName, iban, accountHolderName } = req.body ?? {};
+  const { bankName, iban, accountHolderName, accountNumber } = req.body ?? {};
   if (!bankName || !iban || !accountHolderName) {
     res.status(400).json({ error: "يرجى إدخال اسم البنك والـ IBAN واسم صاحب الحساب" });
     return;
@@ -49,8 +61,23 @@ router.post("/", async (req, res) => {
   try {
     const [account] = await db
       .insert(bankAccountsTable)
-      .values({ bankName, iban, accountHolderName })
+      .values({
+        bankName,
+        iban,
+        accountHolderName,
+        accountNumber: accountNumber ?? null,
+      })
       .returning();
+
+    // Log notification for admin audit trail
+    void notifyAllAdmins({
+      title: "تم إضافة حساب بنكي جديد",
+      message: `تمت إضافة حساب ${bankName} باسم ${accountHolderName}`,
+      type: "system",
+      relatedId: account.id,
+      url: "/admin/settings",
+    });
+
     res.status(201).json(account);
   } catch (err) {
     logger.error({ err }, "bank-accounts POST / error");
@@ -64,11 +91,12 @@ router.patch("/:id", async (req, res) => {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
-  const { bankName, iban, accountHolderName, isActive } = req.body ?? {};
+  const { bankName, iban, accountHolderName, accountNumber, isActive } = req.body ?? {};
   const updates: Record<string, unknown> = {};
   if (bankName !== undefined) updates.bankName = bankName;
   if (iban !== undefined) updates.iban = iban;
   if (accountHolderName !== undefined) updates.accountHolderName = accountHolderName;
+  if (accountNumber !== undefined) updates.accountNumber = accountNumber ?? null;
   if (isActive !== undefined) updates.isActive = Boolean(isActive);
 
   if (Object.keys(updates).length === 0) {
@@ -76,10 +104,16 @@ router.patch("/:id", async (req, res) => {
     return;
   }
   try {
+    const existing = await findBankAccountByIntId(id);
+    if (!existing) {
+      res.status(404).json({ error: "الحساب غير موجود" });
+      return;
+    }
+
     const [updated] = await db
       .update(bankAccountsTable)
       .set(updates)
-      .where(eq(bankAccountsTable.id, id))
+      .where(eq(bankAccountsTable.id, existing.id))
       .returning();
     if (!updated) {
       res.status(404).json({ error: "الحساب غير موجود" });
@@ -99,14 +133,29 @@ router.delete("/:id", async (req, res) => {
     return;
   }
   try {
+    const existing = await findBankAccountByIntId(id);
+    if (!existing) {
+      res.status(404).json({ error: "الحساب غير موجود" });
+      return;
+    }
+
     const deleted = await db
       .delete(bankAccountsTable)
-      .where(eq(bankAccountsTable.id, id))
+      .where(eq(bankAccountsTable.id, existing.id))
       .returning();
     if (!deleted.length) {
       res.status(404).json({ error: "الحساب غير موجود" });
       return;
     }
+
+    // Log notification for admin audit trail
+    void notifyAllAdmins({
+      title: "تم حذف حساب بنكي",
+      message: `تم حذف حساب ${existing.bankName} باسم ${existing.accountHolderName}`,
+      type: "system",
+      url: "/admin/settings",
+    });
+
     res.json({ message: "تم حذف الحساب" });
   } catch (err) {
     logger.error({ err }, "bank-accounts DELETE /:id error");

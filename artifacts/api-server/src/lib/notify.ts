@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 // ─── VAPID setup ──────────────────────────────────────────────────────────────
 const VAPID_PUBLIC_KEY = process.env["VAPID_PUBLIC_KEY"];
 const VAPID_PRIVATE_KEY = process.env["VAPID_PRIVATE_KEY"];
-const VAPID_SUBJECT = process.env["VAPID_SUBJECT"] || "mailto:admin@twasalni.app";
+const VAPID_SUBJECT = process.env["VAPID_SUBJECT"] || process.env["VAPID_EMAIL"] || "mailto:admin@twasalni.app";
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -49,14 +49,15 @@ async function getPushSubscription(
 async function sendWebPush(
   subscriptionJson: string,
   title: string,
-  body: string
+  body: string,
+  url?: string
 ): Promise<void> {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
   try {
     const subscription = JSON.parse(subscriptionJson) as webpush.PushSubscription;
     await webpush.sendNotification(
       subscription,
-      JSON.stringify({ title, body })
+      JSON.stringify({ title, body, url: url ?? "/" })
     );
   } catch {
     // Silent — push failures are non-critical (subscription may have expired)
@@ -71,6 +72,7 @@ export async function notify(params: {
   message: string;
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
+  url?: string;
 }) {
   try {
     await db.insert(notificationsTable).values({
@@ -89,9 +91,27 @@ export async function notify(params: {
   // Fire-and-forget web push
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
-      void sendWebPush(sub, params.title, params.message);
+      void sendWebPush(sub, params.title, params.message, params.url);
     }
   });
+}
+
+// ─── Notify all admin users ───────────────────────────────────────────────────
+export async function notifyAllAdmins(params: {
+  title: string;
+  message: string;
+  type: "offer" | "request" | "system" | "support";
+  relatedId?: number;
+  url?: string;
+}) {
+  try {
+    const admins = await db.select({ id: adminsTable.id }).from(adminsTable);
+    for (const admin of admins) {
+      void notify({ userId: admin.id, userRole: "admin", ...params });
+    }
+  } catch {
+    // Silent
+  }
 }
 
 // ─── Convenience export for direct use ───────────────────────────────────────

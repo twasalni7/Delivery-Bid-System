@@ -171,6 +171,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- 3e. wallet_transactions (طلبات شحن المحفظة)
 CREATE TABLE IF NOT EXISTS wallet_transactions (
   id          SERIAL PRIMARY KEY,
+  int_id      INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
   driver_id   INTEGER                   NOT NULL REFERENCES drivers(id),
   amount      NUMERIC(10, 2)            NOT NULL,
   receipt_url TEXT,
@@ -183,9 +184,11 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
 -- 3f. bank_accounts (الحسابات البنكية للإدارة)
 CREATE TABLE IF NOT EXISTS bank_accounts (
   id                   SERIAL PRIMARY KEY,
+  int_id               INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
   bank_name            TEXT        NOT NULL,
   iban                 TEXT        NOT NULL,
   account_holder_name  TEXT        NOT NULL,
+  account_number       TEXT,
   is_active            BOOLEAN     NOT NULL DEFAULT TRUE,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
