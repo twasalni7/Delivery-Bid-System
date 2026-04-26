@@ -398,6 +398,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       message: `اختار العميل عرضك على الطلب من ${request.homeLocation} إلى ${request.workLocation} بسعر ${request.monthlyPrice.toFixed(0)} ر.س/شهر`,
       type: "request",
       relatedId: request.id,
+      url: `/driver/request/${request.id}`,
     });
 
     res.json(formatRequest(req, updated, updatedDriver));

@@ -6,6 +6,7 @@ vi.mock("@workspace/db", () => {
   const mockDb = {
     query: {
       bankAccountsTable: { findFirst: vi.fn() },
+      adminsTable: { findFirst: vi.fn() },
     },
     select: vi.fn(),
     insert: vi.fn(),
@@ -14,7 +15,8 @@ vi.mock("@workspace/db", () => {
   };
   return {
     db: mockDb,
-    bankAccountsTable: { isActive: "isActive", createdAt: "createdAt", id: "id" },
+    bankAccountsTable: { isActive: "isActive", createdAt: "createdAt", id: "id", intId: "int_id" },
+    adminsTable: { id: "id" },
     eq: vi.fn(),
   };
 });
@@ -190,7 +192,10 @@ describe("PATCH /bank-accounts/:id (admin only)", () => {
   });
 
   it("updates bank account successfully", async () => {
-    const updated = { id: 1, bankName: "Al Rajhi", iban: "SA123", accountHolderName: "Company", isActive: false, createdAt: new Date() };
+    const existing = { id: 1, bankName: "Al Rajhi", iban: "SA123", accountHolderName: "Company", isActive: true, createdAt: new Date() };
+    (db.query.bankAccountsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(existing);
+
+    const updated = { ...existing, isActive: false };
     const returningMock = vi.fn().mockResolvedValue([updated]);
     const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
     const setMock = vi.fn().mockReturnValue({ where: whereMock });
@@ -203,7 +208,10 @@ describe("PATCH /bank-accounts/:id (admin only)", () => {
   });
 
   it("coerces isActive to boolean", async () => {
-    const updated = { id: 1, bankName: "Al Rajhi", iban: "SA123", accountHolderName: "Company", isActive: true, createdAt: new Date() };
+    const existing = { id: 1, bankName: "Al Rajhi", iban: "SA123", accountHolderName: "Company", isActive: false, createdAt: new Date() };
+    (db.query.bankAccountsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(existing);
+
+    const updated = { ...existing, isActive: true };
     const returningMock = vi.fn().mockResolvedValue([updated]);
     const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
     const setMock = vi.fn().mockReturnValue({ where: whereMock });
@@ -245,6 +253,9 @@ describe("DELETE /bank-accounts/:id (admin only)", () => {
   });
 
   it("deletes bank account successfully", async () => {
+    const existing = { id: 1, bankName: "Al Rajhi", iban: "SA123", accountHolderName: "Company", isActive: true, createdAt: new Date() };
+    (db.query.bankAccountsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(existing);
+
     const returningMock = vi.fn().mockResolvedValue([{ id: 1 }]);
     const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
     (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });

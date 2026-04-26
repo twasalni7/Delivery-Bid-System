@@ -25,6 +25,7 @@ vi.mock("@workspace/db", () => {
 
 vi.mock("../lib/notify", () => ({
   notify: vi.fn().mockResolvedValue(undefined),
+  notifyAllAdmins: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { db } from "@workspace/db";

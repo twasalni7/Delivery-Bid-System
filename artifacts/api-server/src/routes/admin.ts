@@ -7,6 +7,8 @@ import {
   adminsTable,
   clientsTable,
   transactionsTable,
+  walletTransactionsTable,
+  supportTicketsTable,
 } from "@workspace/db";
 import { eq, count, ne, desc, sql, sum, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
@@ -820,6 +822,142 @@ router.delete("/clients/:id", async (req, res) => {
     return;
   }
   res.json({ message: "تم حذف العميل" });
+});
+
+// GET /api/admin/recent-events — last 20 notable events for the admin dashboard
+router.get("/recent-events", async (_req, res) => {
+  try {
+    type RecentEvent = {
+      type: "wallet" | "support" | "request" | "offer";
+      id: number;
+      description: string;
+      userName: string | null;
+      url: string;
+      createdAt: string;
+    };
+
+    const events: RecentEvent[] = [];
+
+    // 1. Pending wallet top-up requests
+    const walletRows = await db
+      .select({
+        id: walletTransactionsTable.id,
+        driverId: walletTransactionsTable.driverId,
+        amount: walletTransactionsTable.amount,
+        createdAt: walletTransactionsTable.createdAt,
+        driverName: driversTable.name,
+      })
+      .from(walletTransactionsTable)
+      .leftJoin(driversTable, eq(walletTransactionsTable.driverId, driversTable.id))
+      .where(eq(walletTransactionsTable.status, "pending"))
+      .orderBy(desc(walletTransactionsTable.createdAt))
+      .limit(20);
+    for (const row of walletRows) {
+      events.push({
+        type: "wallet",
+        id: row.id,
+        description: `طلب شحن محفظة — ${parseFloat(String(row.amount)).toFixed(0)} ريال`,
+        userName: row.driverName ?? `سائق #${row.driverId}`,
+        url: "/admin/settings",
+        createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+      });
+    }
+
+    // 2. New open support tickets
+    const ticketRows = await db
+      .select({
+        id: supportTicketsTable.id,
+        type: supportTicketsTable.type,
+        clientId: supportTicketsTable.clientId,
+        driverId: supportTicketsTable.driverId,
+        createdAt: supportTicketsTable.createdAt,
+        clientName: clientsTable.name,
+      })
+      .from(supportTicketsTable)
+      .leftJoin(clientsTable, eq(supportTicketsTable.clientId, clientsTable.id))
+      .where(eq(supportTicketsTable.status, "OPEN"))
+      .orderBy(desc(supportTicketsTable.createdAt))
+      .limit(20);
+    for (const row of ticketRows) {
+      let userName = row.clientName;
+      if (!userName && row.driverId) {
+        const d = await db.query.driversTable.findFirst({
+          where: eq(driversTable.id, row.driverId),
+          columns: { name: true },
+        });
+        userName = d?.name ?? `سائق #${row.driverId}`;
+      }
+      events.push({
+        type: "support",
+        id: row.id,
+        description: `تذكرة دعم جديدة — ${String(row.type)}`,
+        userName: userName ?? "مستخدم",
+        url: `/admin/support?ticket=${row.id}`,
+        createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+      });
+    }
+
+    // 3. New open client requests
+    const requestRows = await db
+      .select({
+        id: requestsTable.id,
+        homeLocation: requestsTable.homeLocation,
+        workLocation: requestsTable.workLocation,
+        clientId: requestsTable.clientId,
+        createdAt: requestsTable.createdAt,
+        clientName: clientsTable.name,
+      })
+      .from(requestsTable)
+      .leftJoin(clientsTable, eq(requestsTable.clientId, clientsTable.id))
+      .where(eq(requestsTable.status, "OPEN"))
+      .orderBy(desc(requestsTable.createdAt))
+      .limit(20);
+    for (const row of requestRows) {
+      events.push({
+        type: "request",
+        id: row.id,
+        description: `طلب جديد: ${row.homeLocation} ← ${row.workLocation}`,
+        userName: row.clientName ?? `عميل #${row.clientId}`,
+        url: `/admin/requests?request=${row.id}`,
+        createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+      });
+    }
+
+    // 4. New pending driver offers
+    const offerRows = await db
+      .select({
+        id: offersTable.id,
+        driverId: offersTable.driverId,
+        requestId: offersTable.requestId,
+        createdAt: offersTable.createdAt,
+        driverName: driversTable.name,
+      })
+      .from(offersTable)
+      .leftJoin(driversTable, eq(offersTable.driverId, driversTable.id))
+      .where(eq(offersTable.status, "PENDING"))
+      .orderBy(desc(offersTable.createdAt))
+      .limit(20);
+    for (const row of offerRows) {
+      events.push({
+        type: "offer",
+        id: row.id,
+        description: `عرض جديد على الطلب #${row.requestId}`,
+        userName: row.driverName ?? `سائق #${row.driverId}`,
+        url: `/admin/offers?offer=${row.id}`,
+        createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+      });
+    }
+
+    // Sort all events by createdAt descending and take top 20
+    events.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    res.json(events.slice(0, 20));
+  } catch (err) {
+    logger.error({ err }, "admin GET /recent-events error");
+    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+  }
 });
 
 export default router;

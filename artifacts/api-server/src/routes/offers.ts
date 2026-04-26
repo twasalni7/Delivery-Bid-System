@@ -99,7 +99,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
 });
 
 router.delete("/:id", requireAuth("driver"), async (req, res) => {
-  const offerId = parseInt(req.params.id, 10);
+  const offerId = parseInt(req.params["id"], 10);
   if (isNaN(offerId)) {
     res.status(400).json({ error: "معرف العرض غير صحيح" });
     return;
@@ -207,6 +207,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
         message: `قبل السائق ${driver.name} طلبك من ${request.homeLocation} إلى ${request.workLocation}`,
         type: "offer",
         relatedId: request.id,
+        url: `/client/request/${request.id}`,
       });
     }
 
