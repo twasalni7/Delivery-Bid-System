@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useGetAdminStats, useGetAdminAnalytics, useGetAdminFinancial } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp } from "lucide-react";
+import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp, ChevronLeft } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -392,16 +392,20 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── Recent Events ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
               <Clock size={16} className="text-violet-500" />
               الأحداث الأخيرة
             </h2>
-            <span className="text-xs text-gray-400">يُحدَّث كل 30 ثانية</span>
+            <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">يُحدَّث كل 30 ث</span>
           </div>
           {recentEvents.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">لا توجد أحداث حديثة</p>
+            <div className="py-12 text-center">
+              <div className="text-3xl mb-2">📭</div>
+              <p className="font-bold text-gray-400 text-sm">لا توجد أحداث حديثاً</p>
+              <p className="text-xs text-gray-300 mt-1">ستظهر هنا الأحداث الجديدة تلقائياً</p>
+            </div>
           ) : (
             <div className="divide-y divide-gray-50">
               {recentEvents.map((event, idx) => {
@@ -410,17 +414,22 @@ export default function AdminDashboard() {
                   <button
                     key={`${event.type}-${event.id}-${idx}`}
                     onClick={() => navigate(event.url)}
-                    className="w-full flex items-start gap-3 py-2.5 hover:bg-gray-50 transition-colors rounded-xl px-1 text-right"
+                    className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-right group"
                   >
-                    <span className={`mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${cfg.color}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${cfg.color}`}>
                       {cfg.icon}
                       {cfg.label}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-800 truncate">{event.description}</p>
-                      <p className="text-xs text-gray-400 truncate">{event.userName}</p>
+                      {event.userName && (
+                        <p className="text-xs text-gray-400 truncate mt-0.5">{event.userName}</p>
+                      )}
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0 mt-0.5">{timeAgo(event.createdAt)}</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-xs text-gray-400">{timeAgo(event.createdAt)}</span>
+                      <ChevronLeft size={14} className="text-gray-300 group-hover:text-gray-400 transition-colors" aria-hidden="true" />
+                    </div>
                   </button>
                 );
               })}

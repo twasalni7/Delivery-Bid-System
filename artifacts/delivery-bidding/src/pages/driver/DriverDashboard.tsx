@@ -4,7 +4,7 @@ import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffer
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, MessageCircle, Calendar } from "lucide-react";
+import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, MessageCircle, Calendar, ChevronLeft } from "lucide-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
@@ -270,9 +270,10 @@ export default function DriverDashboard() {
                             <p className="text-white/60 text-xs font-bold">{req.numberOfPeople} ركاب</p>
                           </div>
                         </div>
-                        <div className="bg-white/15 rounded-2xl px-4 py-2 text-center">
-                          <p className="text-white/70 text-[10px] font-black uppercase">شهري</p>
-                          <p className="text-white font-black text-xl" dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"}</p>
+                        <div className="bg-white/20 rounded-2xl px-4 py-2 text-center border border-white/30">
+                          <p className="text-white/70 text-[10px] font-black uppercase tracking-wider">شهري</p>
+                          <p className="text-white font-black text-2xl" dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"}</p>
+                          <p className="text-white/60 text-[10px] font-bold">ر.س</p>
                         </div>
                       </div>
                     </div>
@@ -315,13 +316,24 @@ export default function DriverDashboard() {
                       <div className="pt-2 border-t border-slate-100">
                         {hasEnoughBalance ? (
                           <Link href={`/driver/request/${req.id}`}>
-                            <div className="w-full py-3.5 rounded-[1.5rem] text-white font-black text-sm shadow-xl shadow-indigo-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                            <div className="w-full py-4 rounded-[1.5rem] text-white font-black text-base shadow-xl shadow-indigo-900/25 active:scale-95 transition-transform flex items-center justify-center gap-2"
                               style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}>
                               عرض التفاصيل وتقديم قبول
+                              <ChevronLeft size={16} className="text-white/70" aria-hidden="true" />
                             </div>
                           </Link>
                         ) : (
-                          <p className="text-center text-sm font-black text-red-500">رصيد غير كافٍ للقبول</p>
+                          <div className="p-4 rounded-2xl bg-red-50 border border-red-100">
+                            <p className="text-center text-sm font-black text-red-600 mb-2">⚠️ رصيدك غير كافٍ لتقديم عرض</p>
+                            <p className="text-center text-xs text-red-400 mb-3">تحتاج 50 ريال كحد أدنى</p>
+                            <button
+                              onClick={() => setLocation("/driver/profile")}
+                              className="w-full py-2.5 rounded-xl font-black text-sm text-white min-h-[44px]"
+                              style={{ background: "linear-gradient(135deg, #064E3B, #065F46)" }}
+                            >
+                              💳 اشحن محفظتك الآن
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
