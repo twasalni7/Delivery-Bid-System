@@ -8,6 +8,7 @@ import { API_ORIGIN as API } from "@/lib/api-config";
 
 type BankAccount = {
   id: number;
+  intId: number;
   bankName: string;
   iban: string;
   accountHolderName: string;
@@ -16,6 +17,7 @@ type BankAccount = {
 
 type WalletTx = {
   id: number;
+  intId: number;
   driverId: number;
   driverName: string | null;
   amount: number | string;
@@ -105,10 +107,10 @@ export default function AdminSettings() {
     }
   };
 
-  const handleDeleteBank = async (id: number) => {
+  const handleDeleteBank = async (intId: number, id: number) => {
     if (!confirm("هل تريد حذف هذا الحساب؟")) return;
     try {
-      const res = await fetch(`${API}/api/bank-accounts/${id}`, {
+      const res = await fetch(`${API}/api/bank-accounts/${intId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -120,17 +122,17 @@ export default function AdminSettings() {
     }
   };
 
-  const handleWalletAction = async (id: number, action: "approve" | "reject") => {
-    setProcessingId(id);
+  const handleWalletAction = async (intId: number, txId: number, action: "approve" | "reject") => {
+    setProcessingId(intId);
     try {
-      const res = await fetch(`${API}/api/wallet-transactions/${id}/${action}`, {
+      const res = await fetch(`${API}/api/wallet-transactions/${intId}/${action}`, {
         method: "POST",
         credentials: "include",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "فشلت العملية");
       setWalletTxs((prev) =>
-        prev.map((tx) => (tx.id === id ? { ...tx, status: action === "approve" ? "approved" : "rejected" } : tx))
+        prev.map((tx) => (tx.id === txId ? { ...tx, status: action === "approve" ? "approved" : "rejected" } : tx))
       );
       toast({ title: action === "approve" ? "✅ تم قبول طلب الشحن وإضافة الرصيد" : "تم رفض طلب الشحن" });
     } catch (err: unknown) {
@@ -198,7 +200,7 @@ export default function AdminSettings() {
                     <p className="text-xs text-gray-500 font-mono" dir="ltr">{acc.iban}</p>
                     <p className="text-xs text-gray-500">{acc.accountHolderName}</p>
                   </div>
-                  <button onClick={() => handleDeleteBank(acc.id)} className="text-red-400 hover:text-red-600 mt-1">
+                  <button onClick={() => handleDeleteBank(acc.intId, acc.id)} className="text-red-400 hover:text-red-600 mt-1">
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -267,16 +269,16 @@ export default function AdminSettings() {
                   {tx.status === "pending" && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleWalletAction(tx.id, "approve")}
-                        disabled={processingId === tx.id}
+                        onClick={() => handleWalletAction(tx.intId, tx.id, "approve")}
+                        disabled={processingId === tx.intId}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50"
                         style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}>
                         <CheckCircle2 size={13} />
                         قبول وشحن
                       </button>
                       <button
-                        onClick={() => handleWalletAction(tx.id, "reject")}
-                        disabled={processingId === tx.id}
+                        onClick={() => handleWalletAction(tx.intId, tx.id, "reject")}
+                        disabled={processingId === tx.intId}
                         className="flex-1 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold border border-red-200 disabled:opacity-50">
                         رفض
                       </button>
