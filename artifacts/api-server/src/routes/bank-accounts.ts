@@ -3,28 +3,41 @@ import { db } from "@workspace/db";
 import { bankAccountsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
+const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
 // GET /api/bank-accounts — accessible to all authenticated users (drivers see payment details)
 router.get("/", requireAuth(), async (_req, res) => {
-  const accounts = await db
-    .select()
-    .from(bankAccountsTable)
-    .where(eq(bankAccountsTable.isActive, true))
-    .orderBy(bankAccountsTable.createdAt);
-  res.json(accounts);
+  try {
+    const accounts = await db
+      .select()
+      .from(bankAccountsTable)
+      .where(eq(bankAccountsTable.isActive, true))
+      .orderBy(bankAccountsTable.createdAt);
+    res.json(accounts);
+  } catch (err) {
+    logger.error({ err }, "bank-accounts GET / error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 // Admin-only routes
 router.use(requireAuth("admin"));
 
 router.get("/all", async (_req, res) => {
-  const accounts = await db
-    .select()
-    .from(bankAccountsTable)
-    .orderBy(bankAccountsTable.createdAt);
-  res.json(accounts);
+  try {
+    const accounts = await db
+      .select()
+      .from(bankAccountsTable)
+      .orderBy(bankAccountsTable.createdAt);
+    res.json(accounts);
+  } catch (err) {
+    logger.error({ err }, "bank-accounts GET /all error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 router.post("/", async (req, res) => {
@@ -33,11 +46,16 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: "يرجى إدخال اسم البنك والـ IBAN واسم صاحب الحساب" });
     return;
   }
-  const [account] = await db
-    .insert(bankAccountsTable)
-    .values({ bankName, iban, accountHolderName })
-    .returning();
-  res.status(201).json(account);
+  try {
+    const [account] = await db
+      .insert(bankAccountsTable)
+      .values({ bankName, iban, accountHolderName })
+      .returning();
+    res.status(201).json(account);
+  } catch (err) {
+    logger.error({ err }, "bank-accounts POST / error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
 });
 
 router.patch("/:id", async (req, res) => {
@@ -57,16 +75,21 @@ router.patch("/:id", async (req, res) => {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });
     return;
   }
-  const [updated] = await db
-    .update(bankAccountsTable)
-    .set(updates)
-    .where(eq(bankAccountsTable.id, id))
-    .returning();
-  if (!updated) {
-    res.status(404).json({ error: "الحساب غير موجود" });
-    return;
+  try {
+    const [updated] = await db
+      .update(bankAccountsTable)
+      .set(updates)
+      .where(eq(bankAccountsTable.id, id))
+      .returning();
+    if (!updated) {
+      res.status(404).json({ error: "الحساب غير موجود" });
+      return;
+    }
+    res.json(updated);
+  } catch (err) {
+    logger.error({ err }, "bank-accounts PATCH /:id error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
-  res.json(updated);
 });
 
 router.delete("/:id", async (req, res) => {
@@ -75,15 +98,20 @@ router.delete("/:id", async (req, res) => {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
-  const deleted = await db
-    .delete(bankAccountsTable)
-    .where(eq(bankAccountsTable.id, id))
-    .returning();
-  if (!deleted.length) {
-    res.status(404).json({ error: "الحساب غير موجود" });
-    return;
+  try {
+    const deleted = await db
+      .delete(bankAccountsTable)
+      .where(eq(bankAccountsTable.id, id))
+      .returning();
+    if (!deleted.length) {
+      res.status(404).json({ error: "الحساب غير موجود" });
+      return;
+    }
+    res.json({ message: "تم حذف الحساب" });
+  } catch (err) {
+    logger.error({ err }, "bank-accounts DELETE /:id error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
-  res.json({ message: "تم حذف الحساب" });
 });
 
 export default router;
