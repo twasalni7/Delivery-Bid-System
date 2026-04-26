@@ -4,7 +4,7 @@ import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffer
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, MessageCircle, Calendar } from "lucide-react";
+import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, MessageCircle, Calendar, ChevronLeft } from "lucide-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
@@ -319,7 +319,7 @@ export default function DriverDashboard() {
                             <div className="w-full py-4 rounded-[1.5rem] text-white font-black text-base shadow-xl shadow-indigo-900/25 active:scale-95 transition-transform flex items-center justify-center gap-2"
                               style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}>
                               عرض التفاصيل وتقديم قبول
-                              <span className="text-white/70">←</span>
+                              <ChevronLeft size={16} className="text-white/70" aria-hidden="true" />
                             </div>
                           </Link>
                         ) : (

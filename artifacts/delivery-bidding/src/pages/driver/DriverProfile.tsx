@@ -5,7 +5,7 @@ import { useGetDriverMe, getGetDriverMeQueryKey } from "@workspace/api-client-re
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, Upload, CheckCircle2, Clock, X, Landmark, User, Phone, Car, Globe, CreditCard, AlertTriangle, ChevronLeft } from "lucide-react";
+import { Wallet, Upload, CheckCircle2, Clock, X, Landmark, User, Phone, Car, Globe, CreditCard, AlertTriangle } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getSupabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
@@ -343,7 +343,6 @@ export default function DriverProfile() {
                     <div key={acc.id} className="p-3 rounded-xl bg-blue-50 border border-blue-100">
                       <div className="flex items-center justify-between mb-1">
                         <p className="font-black text-gray-900 text-sm">{acc.bankName}</p>
-                        <ChevronLeft size={14} className="text-blue-400" />
                       </div>
                       <p className="text-sm font-mono font-bold text-blue-800" dir="ltr">{acc.iban}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{acc.accountHolderName}</p>

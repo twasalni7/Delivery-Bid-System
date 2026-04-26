@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useGetAdminStats, useGetAdminAnalytics, useGetAdminFinancial } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp } from "lucide-react";
+import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp, ChevronLeft } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -428,7 +428,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className="text-xs text-gray-400">{timeAgo(event.createdAt)}</span>
-                      <span className="text-gray-300 group-hover:text-gray-400 transition-colors">←</span>
+                      <ChevronLeft size={14} className="text-gray-300 group-hover:text-gray-400 transition-colors" aria-hidden="true" />
                     </div>
                   </button>
                 );
