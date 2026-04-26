@@ -7,7 +7,6 @@ import { ShieldCheck, Landmark, Plus, Trash2, CheckCircle2 } from "lucide-react"
 import { API_ORIGIN as API } from "@/lib/api-config";
 
 type BankAccount = {
-  id: number;
   intId: number;
   bankName: string;
   iban: string;
@@ -16,7 +15,6 @@ type BankAccount = {
 };
 
 type WalletTx = {
-  id: number;
   intId: number;
   driverId: number;
   driverName: string | null;
@@ -107,7 +105,7 @@ export default function AdminSettings() {
     }
   };
 
-  const handleDeleteBank = async (intId: number, id: number) => {
+  const handleDeleteBank = async (intId: number) => {
     if (!confirm("هل تريد حذف هذا الحساب؟")) return;
     try {
       const res = await fetch(`${API}/api/bank-accounts/${intId}`, {
@@ -115,14 +113,14 @@ export default function AdminSettings() {
         credentials: "include",
       });
       if (!res.ok) throw new Error("فشل الحذف");
-      setAccounts((prev) => prev.filter((a) => a.id !== id));
+      setAccounts((prev) => prev.filter((a) => a.intId !== intId));
       toast({ title: "تم حذف الحساب" });
     } catch (err: unknown) {
       toast({ title: (err as Error).message, variant: "destructive" });
     }
   };
 
-  const handleWalletAction = async (intId: number, txId: number, action: "approve" | "reject") => {
+  const handleWalletAction = async (intId: number, action: "approve" | "reject") => {
     setProcessingId(intId);
     try {
       const res = await fetch(`${API}/api/wallet-transactions/${intId}/${action}`, {
@@ -132,7 +130,7 @@ export default function AdminSettings() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "فشلت العملية");
       setWalletTxs((prev) =>
-        prev.map((tx) => (tx.id === txId ? { ...tx, status: action === "approve" ? "approved" : "rejected" } : tx))
+        prev.map((tx) => (tx.intId === intId ? { ...tx, status: action === "approve" ? "approved" : "rejected" } : tx))
       );
       toast({ title: action === "approve" ? "✅ تم قبول طلب الشحن وإضافة الرصيد" : "تم رفض طلب الشحن" });
     } catch (err: unknown) {
@@ -194,13 +192,13 @@ export default function AdminSettings() {
           {accounts.length > 0 ? (
             <div className="space-y-2 mb-4">
               {accounts.map((acc) => (
-                <div key={acc.id} className="flex items-start justify-between gap-2 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <div key={acc.intId} className="flex items-start justify-between gap-2 p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <div>
                     <p className="font-bold text-sm text-gray-800">{acc.bankName}</p>
                     <p className="text-xs text-gray-500 font-mono" dir="ltr">{acc.iban}</p>
                     <p className="text-xs text-gray-500">{acc.accountHolderName}</p>
                   </div>
-                  <button onClick={() => handleDeleteBank(acc.intId, acc.id)} className="text-red-400 hover:text-red-600 mt-1">
+                  <button onClick={() => handleDeleteBank(acc.intId)} className="text-red-400 hover:text-red-600 mt-1">
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -246,7 +244,7 @@ export default function AdminSettings() {
           ) : (
             <div className="space-y-3">
               {walletTxs.map((tx) => (
-                <div key={tx.id} className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <div key={tx.intId} className="p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
                       <p className="font-bold text-sm text-gray-800">{tx.driverName ?? `سائق #${tx.driverId}`}</p>
@@ -269,7 +267,7 @@ export default function AdminSettings() {
                   {tx.status === "pending" && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleWalletAction(tx.intId, tx.id, "approve")}
+                        onClick={() => handleWalletAction(tx.intId, "approve")}
                         disabled={processingId === tx.intId}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50"
                         style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}>
@@ -277,7 +275,7 @@ export default function AdminSettings() {
                         قبول وشحن
                       </button>
                       <button
-                        onClick={() => handleWalletAction(tx.intId, tx.id, "reject")}
+                        onClick={() => handleWalletAction(tx.intId, "reject")}
                         disabled={processingId === tx.intId}
                         className="flex-1 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold border border-red-200 disabled:opacity-50">
                         رفض
