@@ -18,32 +18,40 @@ router.get("/", requireAuth("admin"), async (_req, res) => {
       .from(offersTable)
       .orderBy(offersTable.createdAt);
 
-    const results = await Promise.all(
-      offers.map(async (o) => {
-        const driver = await db.query.driversTable.findFirst({
-          where: eq(driversTable.id, o.driverId),
+    // Batch-fetch unique drivers with Promise.all (avoids N+1 via deduplication)
+    const uniqueDriverIds = [...new Set(offers.map((o) => o.driverId))];
+    const driverMap = new Map<number, typeof driversTable.$inferSelect>();
+    await Promise.all(
+      uniqueDriverIds.map(async (id) => {
+        const d = await db.query.driversTable.findFirst({
+          where: eq(driversTable.id, id),
         });
-        return {
-          id: o.id,
-          driverId: o.driverId,
-          requestId: o.requestId,
-          status: o.status,
-          driver: driver
-            ? {
-                id: driver.id,
-                name: driver.name,
-                mobile: driver.mobile,
-                balance: driver.balance,
-                carType: driver.carType,
-                nationality: driver.nationality,
-                status: driver.status,
-                createdAt: driver.createdAt?.toISOString(),
-              }
-            : null,
-          createdAt: o.createdAt?.toISOString(),
-        };
+        if (d) driverMap.set(id, d);
       })
     );
+
+    const results = offers.map((o) => {
+      const driver = driverMap.get(o.driverId) ?? null;
+      return {
+        id: o.id,
+        driverId: o.driverId,
+        requestId: o.requestId,
+        status: o.status,
+        driver: driver
+          ? {
+              id: driver.id,
+              name: driver.name,
+              mobile: driver.mobile,
+              balance: driver.balance,
+              carType: driver.carType,
+              nationality: driver.nationality,
+              status: driver.status,
+              createdAt: driver.createdAt?.toISOString(),
+            }
+          : null,
+        createdAt: o.createdAt?.toISOString(),
+      };
+    });
 
     res.json(results);
   } catch (err) {
@@ -138,7 +146,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
 });
 
 router.delete("/:id", requireAuth("driver"), async (req, res) => {
-  const offerId = parseInt(req.params["id"], 10);
+  const offerId = parseInt(req.params.id as string, 10);
   if (isNaN(offerId)) {
     res.status(400).json({ error: "معرف العرض غير صحيح" });
     return;

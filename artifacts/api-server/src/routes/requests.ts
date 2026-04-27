@@ -193,7 +193,16 @@ router.post("/", requireAuth("client"), async (req, res) => {
     const [created] = await db
       .insert(requestsTable)
       .values({
-        ...parsed.data,
+        homeLocation: parsed.data.homeLocation,
+        workLocation: parsed.data.workLocation,
+        phone: parsed.data.phone,
+        numberOfPeople: parsed.data.numberOfPeople,
+        workingDaysPerWeek: parsed.data.workingDaysPerWeek,
+        numberOfShifts: parsed.data.numberOfShifts ?? 1,
+        morningTime: parsed.data.morningTime,
+        eveningTime: parsed.data.eveningTime,
+        additionalLocations: parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
+        notes: parsed.data.notes,
         clientType: parsed.data.clientType ?? "غيره",
         monthlyPrice: parsed.data.monthlyPrice,
         clientId,

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { walletTransactionsTable, driversTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
@@ -64,7 +64,15 @@ router.post("/", requireAuth("driver"), async (req, res) => {
   try {
     const [tx] = await db
       .insert(walletTransactionsTable)
-      .values({ driverId, amount: String(amount), receiptUrl: receiptUrl ?? null })
+      .values({
+        // NOTE: intId uses MAX+1 to generate a sequential human-readable ID.
+        // This is safe for low-concurrency driver operations. For high-concurrency
+        // scenarios, consider converting int_id to a SERIAL column via migration.
+        intId: sql`(SELECT COALESCE(MAX("int_id"), 0) + 1 FROM "wallet_transactions")`,
+        driverId,
+        amount: String(amount),
+        receiptUrl: receiptUrl ?? null,
+      })
       .returning();
 
     // Notify all admins about the new wallet top-up request

@@ -29,6 +29,7 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
       ? [
           { href: "/driver/dashboard", label: "الطلبات", icon: Home },
           { href: "/driver/requests", label: "اتفاقياتي", icon: ClipboardList },
+          { href: "/driver/support", label: "الدعم", icon: LifeBuoy },
           { href: "/driver/profile", label: "حسابي", icon: User },
         ]
       : [

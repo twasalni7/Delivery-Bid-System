@@ -29,16 +29,10 @@ export function csrfProtection(
     return;
   }
 
+  const KNOWN_ORIGINS = ["https://sharq.it.com", "https://www.sharq.it.com"];
   const CORS_ORIGIN = process.env["CORS_ORIGIN"] ?? "";
-  const allowedOrigins = CORS_ORIGIN.split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
-
-  if (allowedOrigins.length === 0) {
-    // No allowed origins configured — allow (cors() already blocks all cross-origin)
-    next();
-    return;
-  }
+  const envOrigins = CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
+  const allowedOrigins = [...new Set([...KNOWN_ORIGINS, ...envOrigins])];
 
   const originHeader = req.headers["origin"] as string | undefined;
   const refererHeader = req.headers["referer"] as string | undefined;

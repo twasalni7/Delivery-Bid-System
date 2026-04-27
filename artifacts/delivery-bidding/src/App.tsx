@@ -24,6 +24,7 @@ import DriverDashboard from "@/pages/driver/DriverDashboard";
 import SubmitOffer from "@/pages/driver/SubmitOffer";
 import DriverProfile from "@/pages/driver/DriverProfile";
 import DriverRequests from "@/pages/driver/DriverRequests";
+import DriverSupport from "@/pages/driver/DriverSupport";
 
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
@@ -209,6 +210,9 @@ function Router() {
         </Route>
         <Route path="/driver/requests">
           <DriverGuard><DriverRequests /></DriverGuard>
+        </Route>
+        <Route path="/driver/support">
+          <DriverGuard><DriverSupport /></DriverGuard>
         </Route>
         <Route path="/driver/request/:id">
           <DriverGuard><SubmitOffer /></DriverGuard>
