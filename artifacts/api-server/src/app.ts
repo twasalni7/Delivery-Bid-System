@@ -21,17 +21,24 @@ if (!SESSION_SECRET) {
 }
 const resolvedSessionSecret = SESSION_SECRET || "dev-secret-do-not-use-in-production";
 
-const CORS_ORIGIN = process.env["CORS_ORIGIN"];
-const corsOrigin = CORS_ORIGIN
-  ? CORS_ORIGIN.split(",").map((o) => o.trim())
-  : isProduction
-    ? false
-    : true;
+// Known allowed frontend origins (always permitted regardless of env config)
+const KNOWN_ORIGINS = ["https://sharq.it.com", "https://www.sharq.it.com"];
 
-if (isProduction && !CORS_ORIGIN) {
+const CORS_ORIGIN = process.env["CORS_ORIGIN"];
+const envOrigins = CORS_ORIGIN
+  ? CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean)
+  : [];
+
+const allAllowedOrigins = [...new Set([...KNOWN_ORIGINS, ...envOrigins])];
+
+const corsOrigin = isProduction
+  ? allAllowedOrigins
+  : true;
+
+if (isProduction && envOrigins.length === 0) {
   logger.warn(
-    "CORS_ORIGIN env var is not set in production. All cross-origin requests will be rejected. " +
-      "Set CORS_ORIGIN to your Vercel frontend URL (e.g. https://your-app.vercel.app).",
+    "CORS_ORIGIN env var is not set. Using built-in allowed origins: " +
+      KNOWN_ORIGINS.join(", "),
   );
 }
 

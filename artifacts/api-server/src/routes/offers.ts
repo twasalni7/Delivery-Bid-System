@@ -138,7 +138,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
 });
 
 router.delete("/:id", requireAuth("driver"), async (req, res) => {
-  const offerId = parseInt(req.params["id"], 10);
+  const offerId = parseInt(req.params.id as string, 10);
   if (isNaN(offerId)) {
     res.status(400).json({ error: "معرف العرض غير صحيح" });
     return;
