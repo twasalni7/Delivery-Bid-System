@@ -4,15 +4,27 @@ import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffer
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, MessageCircle, Calendar, ChevronLeft } from "lucide-react";
-import { getStatusLabel } from "@/lib/status-utils";
+import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, ChevronLeft } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
-type TabId = "available" | "my-offers" | "earnings";
+type TabId = "earnings" | "schedule" | "my-offers" | "available";
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
+const DAYS_FULL = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+const CLIENT_TYPE_EMOJI: Record<string, string> = {
+  موظفات: "👩‍💼", طلاب: "🎓", مدارس: "🏫", جامعات: "🎓", معلمات: "📚", غيره: "📦",
+};
+
+const OFFER_STATUS_LABEL: Record<string, { label: string; className: string }> = {
+  PENDING:   { label: "قيد المراجعة", className: "bg-amber-100 text-amber-700 border border-amber-200" },
+  SELECTED:  { label: "تم القبول",    className: "bg-emerald-100 text-emerald-700 border border-emerald-200" },
+  CANCELLED: { label: "ملغى",         className: "bg-red-100 text-red-500 border border-red-200" },
+};
+
+const WEEKS_PER_MONTH = 4;
 
 export default function DriverDashboard() {
   const [, setLocation] = useLocation();
@@ -99,14 +111,17 @@ export default function DriverDashboard() {
   const hasEnoughBalance = driver ? driver.balance >= 50 : false;
   const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === Number(user.id)) ?? [];
   const pendingOffers = myOffers?.filter((o) => o.request?.status === "OPEN") ?? [];
-  const closedOffers = myOffers?.filter((o) => o.request?.status !== "OPEN") ?? [];
 
-  const totalEarnings = closedOffers.reduce((sum, o) => {
-    if (o.request?.status === "SELECTED" || o.request?.status === "ACTIVE" || o.request?.status === "COMPLETED") {
-      return sum + ((o.request as any).monthlyPrice ?? 0);
-    }
-    return sum;
-  }, 0);
+  const totalEarnings = mySelectedJobs.reduce((sum, r) => sum + ((r as any).monthlyPrice ?? 0), 0);
+
+  const estimatedMonthlyTrips = mySelectedJobs.reduce((sum, r) => sum + ((r as any).workingDaysPerWeek ?? 5) * WEEKS_PER_MONTH, 0);
+  const avgPerTrip = estimatedMonthlyTrips > 0 ? Math.round(totalEarnings / estimatedMonthlyTrips) : 0;
+
+  const earningsStats = [
+    { label: "اشتراكات نشطة", value: String(mySelectedJobs.length) },
+    { label: "رحلات مكتملة (هذا الشهر)", value: String(estimatedMonthlyTrips) },
+    { label: "متوسط الدخل لكل رحلة", value: avgPerTrip > 0 ? `${avgPerTrip} ريال` : "—" },
+  ];
 
   async function confirmWithdraw(offerId: number) {
     setWithdrawConfirmId(null);
@@ -120,9 +135,10 @@ export default function DriverDashboard() {
   }
 
   const tabs: { id: TabId; label: string; icon: string; count?: number }[] = [
+    { id: "earnings", label: "الأرباح", icon: "💰" },
+    { id: "schedule", label: "جدولي", icon: "🗓️", count: mySelectedJobs.length },
+    { id: "my-offers", label: "عروضي", icon: "📄", count: myOffers?.length },
     { id: "available", label: "طلبات جديدة", icon: "📋", count: openRequests?.length },
-    { id: "my-offers", label: "قبولاتي", icon: "📄", count: myOffers?.length },
-    { id: "earnings", label: "أرباحي", icon: "💰" },
   ];
 
   return (
@@ -149,13 +165,13 @@ export default function DriverDashboard() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "الأرباح المتوقعة", value: `${totalEarnings.toFixed(0)}`, unit: "ر.س" },
-                { label: "نسبة القبول", value: myOffers && myOffers.length > 0 ? `${Math.round((closedOffers.length / myOffers.length) * 100)}%` : "—" },
-                { label: "قبولات نشطة", value: String(pendingOffers.length) },
-                { label: "طلبات مفتوحة", value: String(openRequests?.length ?? 0) },
+                { label: "ريال/شهر", value: totalEarnings > 0 ? (totalEarnings >= 1000 ? `${(totalEarnings / 1000).toFixed(1)}K` : totalEarnings.toFixed(0)) : "—" },
+                { label: "نسبة القبول", value: myOffers && myOffers.length > 0 ? `${Math.round((mySelectedJobs.length / myOffers.length) * 100)}%` : "—" },
+                { label: "عروض نشطة", value: String(pendingOffers.length) },
+                { label: "اشتراكات", value: String(mySelectedJobs.length) },
               ].map((stat) => (
                 <div key={stat.label} className="bg-white/15 rounded-2xl p-3 text-center">
-                  <p className="text-white font-black text-xl leading-tight">{stat.value}{stat.unit ? <span className="text-sm"> {stat.unit}</span> : ""}</p>
+                  <p className="text-white font-black text-xl leading-tight">{stat.value}</p>
                   <p className="text-white/70 text-xs mt-0.5 leading-tight font-bold">{stat.label}</p>
                 </div>
               ))}
@@ -172,44 +188,6 @@ export default function DriverDashboard() {
               <p className="text-amber-700 text-sm mt-0.5 font-bold">
                 تحتاج 50 ريال كحد أدنى لتقديم عروض. رصيدك الحالي: <strong dir="ltr">{driver.balance.toFixed(2)} ر.س</strong>
               </p>
-            </div>
-          </div>
-        )}
-
-        {/* Selected jobs */}
-        {mySelectedJobs.length > 0 && (
-          <div className="mb-5">
-            <p className="text-sm font-black text-[#312E81] mb-3">🎉 تم اختيارك!</p>
-            <div className="space-y-3">
-              {mySelectedJobs.map((req) => (
-                <div key={req.id} className="rounded-[2rem] overflow-hidden shadow-xl shadow-emerald-900/10">
-                  <div className="p-5 text-white" style={{ background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)" }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle size={18} className="text-white" />
-                      <span className="text-white font-black text-sm">تم اختيارك لطلب #{req.id}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-white/80 text-sm font-bold">
-                      <MapPin size={13} /> {req.homeLocation} ← {req.workLocation}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-white/80 text-sm font-bold mt-1" dir="ltr">
-                      <Clock size={13} /> {formatTime12h(req.morningTime)}
-                    </div>
-                  </div>
-                  {req.phone && (
-                    <div className="bg-white px-4 py-3 flex items-center gap-3">
-                      <Phone size={15} className="text-emerald-600" />
-                      <a href={`tel:${req.phone}`} className="text-sm font-black text-[#0F172A]" dir="ltr">{req.phone}</a>
-                      <a
-                        href={`https://wa.me/${req.phone.replace(/\D/g, "").replace(/^0/, "966")}`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="mr-auto bg-emerald-500 text-white text-xs font-black px-4 py-1.5 rounded-full flex items-center gap-1.5"
-                      >
-                        <MessageCircle size={13} /> واتساب
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -249,96 +227,107 @@ export default function DriverDashboard() {
             )}
             {openRequests && openRequests.length > 0 && (
               <div className="space-y-4">
-                {openRequests.map((req) => (
-                  <div key={req.id} className="rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/60 bg-white">
-                    <div className="p-5" style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-black bg-white/25 text-white px-3 py-1 rounded-full uppercase tracking-widest">
-                          {getStatusLabel(req.status)}
-                        </span>
-                        <span className="text-white/60 text-xs font-bold">طلب #{req.id}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-3xl">
-                            {(req as any).clientType === "موظفات" ? "👩‍💼" :
-                             (req as any).clientType === "طلاب" ? "🎓" :
-                             (req as any).clientType === "مدارس" ? "🏫" : "📦"}
-                          </span>
-                          <div>
-                            <p className="text-white font-black text-lg tracking-tight">{(req as any).clientType || "طلب توصيل"}</p>
-                            <p className="text-white/60 text-xs font-bold">{req.numberOfPeople} ركاب</p>
+                {openRequests.map((req) => {
+                  const clientTypeLabel = (req as any).clientType || "طلب توصيل";
+                  const emoji = CLIENT_TYPE_EMOJI[clientTypeLabel] ?? "📦";
+                  const offerCount = (req as any).offerCount ?? 0;
+                  return (
+                    <div key={req.id} className="rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/60 bg-white">
+                      <div className="p-5" style={{ background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)" }}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-3xl">{emoji}</span>
+                            <div>
+                              <p className="text-white font-black text-lg tracking-tight">{clientTypeLabel}</p>
+                              <p className="text-white/60 text-xs font-bold">REQ-{String(req.id).padStart(3, "0")}</p>
+                            </div>
+                          </div>
+                          <div className="bg-white/20 rounded-2xl px-4 py-2 text-center border border-white/30">
+                            <p className="text-white font-black text-2xl" dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"}</p>
+                            <p className="text-white/70 text-xs font-bold">ريال/شهر</p>
                           </div>
                         </div>
-                        <div className="bg-white/20 rounded-2xl px-4 py-2 text-center border border-white/30">
-                          <p className="text-white/70 text-[10px] font-black uppercase tracking-wider">شهري</p>
-                          <p className="text-white font-black text-2xl" dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"}</p>
-                          <p className="text-white/60 text-[10px] font-bold">ر.س</p>
-                        </div>
                       </div>
-                    </div>
-                    <div className="p-5 space-y-3">
-                      <div className="space-y-3 relative pr-4">
-                        <div className="absolute right-[7px] top-3 bottom-3 w-[3px] bg-slate-100 rounded-full" />
-                        <div className="flex items-start gap-4 relative z-10">
-                          <div className="w-5 h-5 rounded-full bg-[#312E81] border-4 border-white shadow-sm mt-0.5 shrink-0" />
-                          <p className="text-sm text-slate-700 font-black">{req.homeLocation}</p>
+                      <div className="p-5 space-y-3">
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-3">
+                            <MapPin size={15} className="text-[#312E81] shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold">من (المنطلق)</p>
+                              <p className="text-sm text-slate-700 font-black">{req.homeLocation}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <MapPin size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold">إلى (الوصول)</p>
+                              <p className="text-sm text-slate-700 font-black">{req.workLocation}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-start gap-4 relative z-10">
-                          <div className="w-5 h-5 rounded-full bg-rose-500 border-4 border-white shadow-sm mt-0.5 shrink-0" />
-                          <p className="text-sm text-slate-700 font-black">{req.workLocation}</p>
-                        </div>
-                      </div>
 
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                        <div className="flex items-center gap-1.5">
-                          <Clock size={14} className="text-slate-400" />
-                          <span dir="ltr" className="font-black">{formatTime12h(req.morningTime)}</span>
-                          {req.eveningTime && <span dir="ltr" className="font-black"> – {formatTime12h(req.eveningTime)}</span>}
+                        <div className="grid grid-cols-3 gap-2 pt-1">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-1 text-slate-400 mb-0.5"><Clock size={12} /></div>
+                            <p className="text-xs font-black text-slate-700" dir="ltr">{formatTime12h(req.morningTime)}</p>
+                            <p className="text-[10px] text-slate-400 font-bold">الذهاب</p>
+                          </div>
+                          {req.eveningTime && (
+                            <div className="text-center">
+                              <div className="flex items-center justify-center gap-1 text-slate-400 mb-0.5"><Clock size={12} /></div>
+                              <p className="text-xs font-black text-slate-700" dir="ltr">{formatTime12h(req.eveningTime)}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">العودة</p>
+                            </div>
+                          )}
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-1 text-slate-400 mb-0.5"><Users size={12} /></div>
+                            <p className="text-xs font-black text-slate-700">{req.numberOfPeople}</p>
+                            <p className="text-[10px] text-slate-400 font-bold">أشخاص</p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Calendar size={14} className="text-slate-400" />
-                          <span className="font-black">{req.workingDaysPerWeek} أيام/أسبوع</span>
-                        </div>
-                      </div>
 
-                      <div className="flex gap-1.5 flex-wrap">
-                        {DAYS_AR.map((d, i) => {
-                          const active = i < (req.workingDaysPerWeek ?? 5);
-                          return (
-                            <span key={i} className={`text-xs px-2.5 py-1 rounded-full font-black ${active ? "bg-indigo-100 text-[#312E81]" : "bg-slate-100 text-slate-400"}`}>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {DAYS_FULL.slice(0, req.workingDaysPerWeek ?? 5).map((d) => (
+                            <span key={d} className="text-xs px-2.5 py-1 rounded-full font-black bg-indigo-100 text-[#312E81]">
                               {d}
                             </span>
-                          );
-                        })}
-                      </div>
+                          ))}
+                        </div>
 
-                      <div className="pt-2 border-t border-slate-100">
-                        {hasEnoughBalance ? (
-                          <Link href={`/driver/request/${req.id}`}>
-                            <div className="w-full py-4 rounded-[1.5rem] text-white font-black text-base shadow-xl shadow-indigo-900/25 active:scale-95 transition-transform flex items-center justify-center gap-2"
-                              style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}>
-                              عرض التفاصيل وتقديم قبول
-                              <ChevronLeft size={16} className="text-white/70" aria-hidden="true" />
-                            </div>
-                          </Link>
-                        ) : (
-                          <div className="p-4 rounded-2xl bg-red-50 border border-red-100">
-                            <p className="text-center text-sm font-black text-red-600 mb-2">⚠️ رصيدك غير كافٍ لتقديم عرض</p>
-                            <p className="text-center text-xs text-red-400 mb-3">تحتاج 50 ريال كحد أدنى</p>
-                            <button
-                              onClick={() => setLocation("/driver/profile")}
-                              className="w-full py-2.5 rounded-xl font-black text-sm text-white min-h-[44px]"
-                              style={{ background: "linear-gradient(135deg, #064E3B, #065F46)" }}
-                            >
-                              💳 اشحن محفظتك الآن
-                            </button>
+                        {offerCount > 0 && (
+                          <div className="flex items-center justify-between text-xs font-black text-slate-500 pt-1 border-t border-slate-100">
+                            <span>عدد العروض المقدمة</span>
+                            <span className="text-[#312E81]">{offerCount} عروض</span>
                           </div>
                         )}
+
+                        <div className="pt-2 border-t border-slate-100">
+                          {hasEnoughBalance ? (
+                            <Link href={`/driver/request/${req.id}`}>
+                              <div className="w-full py-4 rounded-[1.5rem] text-white font-black text-base shadow-xl shadow-emerald-900/25 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                style={{ background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)" }}>
+                                قدم عرضك الشهري
+                                <ChevronLeft size={16} className="text-white/70" aria-hidden="true" />
+                              </div>
+                            </Link>
+                          ) : (
+                            <div className="p-4 rounded-2xl bg-red-50 border border-red-100">
+                              <p className="text-center text-sm font-black text-red-600 mb-2">⚠️ رصيدك غير كافٍ لتقديم عرض</p>
+                              <p className="text-center text-xs text-red-400 mb-3">تحتاج 50 ريال كحد أدنى</p>
+                              <button
+                                onClick={() => setLocation("/driver/profile")}
+                                className="w-full py-2.5 rounded-xl font-black text-sm text-white min-h-[44px]"
+                                style={{ background: "linear-gradient(135deg, #064E3B, #065F46)" }}
+                              >
+                                💳 اشحن محفظتك الآن
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
@@ -351,8 +340,8 @@ export default function DriverDashboard() {
             {!offersLoading && (!myOffers || myOffers.length === 0) && (
               <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-[2rem] bg-white">
                 <FileText size={40} className="mx-auto text-slate-300 mb-4" />
-                <p className="text-xl font-black text-[#0F172A]">لم تقبل أي طلب بعد</p>
-                <p className="text-slate-400 font-bold text-sm mt-1">تصفّح الطلبات المتاحة واقبل ما يناسبك</p>
+                <p className="text-xl font-black text-[#0F172A]">لم تقدم أي عرض بعد</p>
+                <p className="text-slate-400 font-bold text-sm mt-1">تصفّح الطلبات المتاحة وقدم عرضك</p>
                 <button onClick={() => setActiveTab("available")}
                   className="mt-5 px-6 py-3 rounded-full text-sm font-black border-2 border-slate-200 text-slate-600 hover:bg-slate-50">
                   عرض الطلبات المتاحة
@@ -360,101 +349,168 @@ export default function DriverDashboard() {
               </div>
             )}
 
-            {pendingOffers.length > 0 && (
-              <div>
-                <p className="text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">قبولات قيد الانتظار</p>
-                <div className="space-y-3">
-                  {pendingOffers.map((offer) => (
-                    <div key={offer.id} className="rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/60 bg-white border-2 border-indigo-50">
-                      <div className="px-5 py-3 border-b border-indigo-50" style={{ background: "linear-gradient(135deg, #EEF2FF, #E0E7FF)" }}>
-                        <p className="text-sm text-[#312E81] font-black">طلب #{offer.requestId}</p>
-                      </div>
-                      <div className="p-5">
-                        {offer.request && (
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2 text-sm text-slate-700">
-                              <MapPin size={14} className="shrink-0 text-[#312E81]" />
-                              <span className="font-black">{offer.request.homeLocation} ← {offer.request.workLocation}</span>
+            {myOffers && myOffers.length > 0 && (
+              <div className="space-y-3">
+                {myOffers.map((offer) => {
+                  const clientType = offer.request?.clientType ?? "";
+                  const emoji = CLIENT_TYPE_EMOJI[clientType] ?? "📦";
+                  const statusInfo = OFFER_STATUS_LABEL[offer.status] ?? { label: offer.status, className: "bg-slate-100 text-slate-500" };
+                  const wasAccepted = offer.status === "SELECTED" || mySelectedJobs.some((j) => j.id === offer.requestId);
+
+                  return (
+                    <div key={offer.id} className={`rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/60 bg-white border-2 ${wasAccepted ? "border-emerald-200" : "border-indigo-50"}`}>
+                      <div className="px-5 py-4" style={{ background: wasAccepted ? "linear-gradient(135deg, #064E3B 0%, #065F46 100%)" : "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{emoji}</span>
+                            <div>
+                              <p className="text-white font-black text-base">{clientType || "طلب توصيل"}</p>
+                              <p className="text-white/60 text-xs font-bold">
+                                REQ-{String(offer.requestId).padStart(3, "0")}
+                                {offer.clientName ? ` • ${offer.clientName}` : ""}
+                              </p>
                             </div>
-                            <div className="flex flex-wrap gap-3 text-xs text-slate-500 font-bold" dir="ltr">
-                              <span className="flex items-center gap-1"><Clock size={12} />{formatTime12h(offer.request.morningTime)}{offer.request.eveningTime ? ` – ${formatTime12h(offer.request.eveningTime)}` : ""}</span>
-                              <span className="flex items-center gap-1"><Users size={12} />{offer.request.numberOfPeople} أشخاص · {offer.request.workingDaysPerWeek} أيام</span>
-                            </div>
-                            <p className="text-lg font-black text-emerald-600" dir="ltr">
-                              {offer.request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-sm font-bold text-slate-400">ر.س/شهر</span>
-                            </p>
                           </div>
-                        )}
-                        <div className="flex items-center justify-end">
-                          {withdrawConfirmId === offer.id ? (
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-black text-slate-700">تأكيد إلغاء القبول؟</span>
-                              <button
-                                onClick={() => confirmWithdraw(offer.id)}
-                                disabled={withdrawOffer.isPending}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500 text-white text-xs font-black hover:bg-red-600 disabled:opacity-50"
-                              >
-                                <Check size={13} /> نعم، إلغاء
-                              </button>
-                              <button
-                                onClick={() => setWithdrawConfirmId(null)}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-slate-200 text-xs font-black text-slate-600 hover:bg-slate-50"
-                              >
-                                <X size={13} /> لا
-                              </button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setWithdrawConfirmId(offer.id)} disabled={withdrawOffer.isPending}
-                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-red-100 text-xs font-black text-red-500 hover:bg-red-50">
-                              <Trash2 size={13} /> إلغاء القبول
-                            </button>
-                          )}
+                          <span className={`text-xs font-black px-3 py-1 rounded-full ${statusInfo.className}`}>
+                            {statusInfo.label}
+                          </span>
                         </div>
                       </div>
+
+                      <div className="px-5 py-4 space-y-3">
+                        {offer.request && (
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <MapPin size={13} className="text-slate-400 shrink-0" />
+                            <span className="font-bold">{offer.request.homeLocation} ← {offer.request.workLocation}</span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+                            <p className="text-[#312E81] font-black text-xl">{offer.competitorCount ?? 0}</p>
+                            <p className="text-xs text-slate-500 font-bold mt-0.5">عدد المنافسين</p>
+                          </div>
+                          <div className="bg-emerald-50 rounded-2xl p-3 text-center">
+                            <p className="text-emerald-700 font-black text-xl" dir="ltr">
+                              {offer.request?.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-sm">ريال</span>
+                            </p>
+                            <p className="text-xs text-slate-500 font-bold mt-0.5">عرضك الشهري</p>
+                          </div>
+                        </div>
+
+                        {offer.status === "PENDING" && (
+                          <div className="flex items-center justify-end pt-1">
+                            {withdrawConfirmId === offer.id ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-black text-slate-700">تأكيد إلغاء العرض؟</span>
+                                <button
+                                  onClick={() => confirmWithdraw(offer.id)}
+                                  disabled={withdrawOffer.isPending}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500 text-white text-xs font-black hover:bg-red-600 disabled:opacity-50"
+                                >
+                                  <Check size={13} /> نعم
+                                </button>
+                                <button
+                                  onClick={() => setWithdrawConfirmId(null)}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-slate-200 text-xs font-black text-slate-600"
+                                >
+                                  <X size={13} /> لا
+                                </button>
+                              </div>
+                            ) : (
+                              <button onClick={() => setWithdrawConfirmId(offer.id)} disabled={withdrawOffer.isPending}
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-red-100 text-xs font-black text-red-500 hover:bg-red-50">
+                                <Trash2 size={13} /> إلغاء العرض
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             )}
 
-            {closedOffers.length > 0 && (
-              <div>
-                <p className="text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">قبولات سابقة</p>
-                <div className="space-y-3">
-                  {closedOffers.map((offer) => {
-                    const wasAccepted = mySelectedJobs.some((j) => j.id === offer.requestId);
-                    return (
-                      <div key={offer.id} className={`rounded-[2rem] shadow-sm p-4 ${wasAccepted ? "bg-emerald-50 border-2 border-emerald-300" : "bg-white border-2 border-slate-100 opacity-80"}`}>
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="text-xs text-slate-400 font-bold">طلب #{offer.requestId}</p>
-                              {wasAccepted ? (
-                                <span className="flex items-center gap-1 text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-white">
-                                  <CheckCircle size={11} /> تم اختيارك
-                                </span>
-                              ) : (
-                                <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                                  offer.request?.status === "SELECTED" ? "bg-slate-100 text-slate-500" :
-                                  offer.request?.status === "ACTIVE" ? "bg-indigo-100 text-[#312E81]" :
-                                  "bg-slate-100 text-slate-500"
-                                }`}>
-                                  {getStatusLabel(offer.request?.status ?? "")}
-                                </span>
-                              )}
-                            </div>
-                            {offer.request && (
-                              <p className={`text-sm font-black ${wasAccepted ? "text-emerald-800" : "text-slate-600"}`}>{offer.request.homeLocation} ← {offer.request.workLocation}</p>
-                            )}
-                            <p className={`text-base font-black mt-1 ${wasAccepted ? "text-emerald-700" : "text-slate-800"}`} dir="ltr">{offer.request?.monthlyPrice?.toFixed(0) ?? "—"} ر.س/شهر</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+            {mySelectedJobs.length > 0 && (
+              <Link href="/driver/requests">
+                <div className="w-full py-4 rounded-[1.5rem] text-white font-black text-base shadow-xl shadow-emerald-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2 mt-2"
+                  style={{ background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)" }}>
+                  عرض الجدول اليومي
+                  <ChevronLeft size={16} className="text-white/70" />
                 </div>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab: Schedule ── */}
+        {activeTab === "schedule" && (
+          <div className="space-y-4">
+            {mySelectedJobs.length === 0 && (
+              <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-[2rem] bg-white">
+                <p className="text-4xl mb-3">🗓️</p>
+                <p className="text-xl font-black text-[#0F172A]">لا توجد اشتراكات نشطة</p>
+                <p className="text-slate-400 font-bold text-sm mt-1">ستظهر هنا اشتراكاتك بعد اختيارك من العملاء</p>
               </div>
             )}
+            {mySelectedJobs.map((req) => (
+              <div key={req.id} className="rounded-[2rem] overflow-hidden shadow-xl shadow-emerald-900/10">
+                <div className="p-5 text-white" style={{ background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)" }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={16} className="text-emerald-300" />
+                      <span className="text-white font-black text-sm">اشتراك نشط</span>
+                    </div>
+                    <span className="text-white/60 text-xs font-bold">REQ-{String(req.id).padStart(3, "0")}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-white/90 text-sm font-bold">
+                      <MapPin size={13} className="text-emerald-300 shrink-0" /> {req.homeLocation}
+                    </div>
+                    <div className="flex items-center gap-2 text-white/90 text-sm font-bold">
+                      <MapPin size={13} className="text-rose-300 shrink-0" /> {req.workLocation}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
+                      <p className="text-white/70 text-[10px] font-bold">الذهاب</p>
+                      <p className="text-white font-black text-sm" dir="ltr">{formatTime12h(req.morningTime)}</p>
+                    </div>
+                    {req.eveningTime && (
+                      <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
+                        <p className="text-white/70 text-[10px] font-bold">العودة</p>
+                        <p className="text-white font-black text-sm" dir="ltr">{formatTime12h(req.eveningTime)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-white px-5 py-4 space-y-3">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {DAYS_FULL.slice(0, req.workingDaysPerWeek ?? 5).map((d) => (
+                      <span key={d} className="text-xs px-2.5 py-1 rounded-full font-black bg-emerald-100 text-emerald-700">
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                  {req.phone && (
+                    <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-black text-sm">
+                        {req.selectedDriver?.name?.charAt(0) ?? "ع"}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] text-slate-400 font-bold">العميل</p>
+                        <a href={`tel:${req.phone}`} className="text-sm font-black text-[#0F172A]" dir="ltr">{req.phone}</a>
+                      </div>
+                      <a href={`tel:${req.phone}`}
+                        className="flex items-center gap-1 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border-2 border-emerald-200">
+                        <Phone size={13} /> اتصال
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -462,21 +518,16 @@ export default function DriverDashboard() {
         {activeTab === "earnings" && (
           <div className="space-y-4">
             <div className="rounded-[2rem] p-6 shadow-2xl shadow-emerald-900/15" style={{ background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)" }}>
-              <p className="text-white/70 font-bold text-sm mb-1">إجمالي الدخل المتوقع</p>
+              <p className="text-white/70 font-bold text-sm mb-1">إجمالي الدخل الشهري</p>
               <p className="text-white text-5xl font-black tracking-tight" dir="ltr">
                 {totalEarnings.toFixed(0)} <span className="text-2xl opacity-70">ريال</span>
               </p>
             </div>
             <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 overflow-hidden border-2 border-slate-100">
-              {[
-                { label: "اشتراكات نشطة", value: mySelectedJobs.length },
-                { label: "عروض قيد الانتظار", value: pendingOffers.length },
-                { label: "عروض سابقة", value: closedOffers.length },
-                { label: "إجمالي العروض المقدّمة", value: myOffers?.length ?? 0 },
-              ].map((item, i) => (
+              {earningsStats.map((item, i) => (
                 <div key={item.label} className={`flex items-center justify-between px-5 py-4 ${i > 0 ? "border-t border-slate-100" : ""}`}>
                   <p className="text-sm text-slate-700 font-black">{item.label}</p>
-                  <p className="text-2xl font-black text-[#312E81]">{item.value}</p>
+                  <p className="font-black text-[#312E81] text-xl">{item.value}</p>
                 </div>
               ))}
             </div>

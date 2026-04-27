@@ -10,6 +10,7 @@ export interface DriverOfferRequest {
   numberOfPeople: number;
   workingDaysPerWeek: number;
   monthlyPrice: number;
+  clientType: string | null;
   status: string;
 }
 
@@ -18,6 +19,8 @@ export interface DriverOffer {
   driverId: number;
   requestId: number;
   status: string;
+  competitorCount: number;
+  clientName: string | null;
   request: DriverOfferRequest | null;
   createdAt?: string;
 }
