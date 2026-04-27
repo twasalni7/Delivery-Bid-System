@@ -41,6 +41,9 @@ export const requestsTable = pgTable("requests", {
   additionalLocations: jsonb("additional_locations").$type<
     { type: "pickup" | "dropoff"; address: string }[]
   >(),
+  shifts: jsonb("shifts").$type<
+    { label?: string; goTime: string; returnTime?: string }[]
+  >(),
   phone: text("phone").notNull(),
   numberOfPeople: integer("number_of_people").notNull().default(1),
   workingDaysPerWeek: integer("working_days_per_week").notNull().default(5),

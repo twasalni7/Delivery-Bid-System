@@ -24,6 +24,7 @@ export const ticketStatusEnum = pgEnum("ticket_status", [
   "IN_PROGRESS",
   "RESOLVED",
   "CLOSED",
+  "LIVE_SUPPORT",
 ]);
 
 export const supportTicketsTable = pgTable("support_tickets", {

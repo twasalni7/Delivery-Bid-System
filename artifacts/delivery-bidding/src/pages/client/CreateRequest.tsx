@@ -397,12 +397,23 @@ export default function CreateRequest() {
                   <div className="flex justify-between text-sm font-bold text-slate-600">
                     <span>إلى</span><span className="font-black text-left text-xs max-w-[55%] text-right">{workLocation || "—"}</span>
                   </div>
+                  {additionalLocations.filter((l) => l.address.trim()).map((loc, idx) => (
+                    <div key={idx} className="flex justify-between text-sm font-bold text-slate-600">
+                      <span>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}</span>
+                      <span className="font-black text-xs max-w-[55%] text-right">{loc.address}</span>
+                    </div>
+                  ))}
                   <div className="flex justify-between text-sm font-bold text-slate-600">
                     <span>أيام العمل</span><span className="font-black">{selectedDays.length} أيام</span>
                   </div>
                   <div className="flex justify-between text-sm font-bold text-slate-600">
                     <span>الركاب</span><span className="font-black">{numberOfPeople} أشخاص</span>
                   </div>
+                  {notes.trim() && (
+                    <div className="flex justify-between text-sm font-bold text-slate-600">
+                      <span>ملاحظات</span><span className="font-black text-xs max-w-[55%] text-right">{notes.trim()}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

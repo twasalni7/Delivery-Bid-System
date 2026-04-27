@@ -631,17 +631,24 @@ router.get("/requests", async (_req, res) => {
     rows.map((r) => ({
       id: r.id,
       clientId: r.clientId,
+      clientType: r.clientType,
       homeLocation: r.homeLocation,
       workLocation: r.workLocation,
+      additionalLocations: r.additionalLocations,
+      shifts: r.shifts,
       phone: r.phone,
       phoneHidden: false,
       numberOfPeople: r.numberOfPeople,
       workingDaysPerWeek: r.workingDaysPerWeek,
+      numberOfShifts: r.numberOfShifts,
       morningTime: r.morningTime,
       eveningTime: r.eveningTime,
+      notes: r.notes,
+      monthlyPrice: r.monthlyPrice,
       status: r.status,
       selectedDriverId: r.selectedDriverId,
       createdAt: r.createdAt?.toISOString(),
+      updatedAt: r.updatedAt?.toISOString(),
     }))
   );
 });
@@ -680,17 +687,24 @@ router.patch("/requests/:id", async (req, res) => {
   res.json({
     id: updated.id,
     clientId: updated.clientId,
+    clientType: updated.clientType,
     homeLocation: updated.homeLocation,
     workLocation: updated.workLocation,
+    additionalLocations: updated.additionalLocations,
+    shifts: updated.shifts,
     phone: updated.phone,
     phoneHidden: false,
     numberOfPeople: updated.numberOfPeople,
     workingDaysPerWeek: updated.workingDaysPerWeek,
+    numberOfShifts: updated.numberOfShifts,
     morningTime: updated.morningTime,
     eveningTime: updated.eveningTime,
+    notes: updated.notes,
+    monthlyPrice: updated.monthlyPrice,
     status: updated.status,
     selectedDriverId: updated.selectedDriverId,
     createdAt: updated.createdAt?.toISOString(),
+    updatedAt: updated.updatedAt?.toISOString(),
   });
 });
 
@@ -832,6 +846,11 @@ router.post("/requests", async (req, res) => {
     res.status(400).json({ error: "بيانات غير صحيحة" });
     return;
   }
+  // Admins may optionally assign a client and/or pre-select a driver
+  const clientId = req.body?.clientId != null ? Number(req.body.clientId) : null;
+  const selectedDriverId =
+    req.body?.selectedDriverId != null ? Number(req.body.selectedDriverId) : null;
+
   try {
     const [created] = await db
       .insert(requestsTable)
@@ -839,8 +858,9 @@ router.post("/requests", async (req, res) => {
         ...parsed.data,
         clientType: parsed.data.clientType ?? "غيره",
         monthlyPrice: parsed.data.monthlyPrice,
-        clientId: null,
-        status: "OPEN",
+        clientId: Number.isFinite(clientId) ? clientId : null,
+        selectedDriverId: Number.isFinite(selectedDriverId) ? selectedDriverId : null,
+        status: selectedDriverId ? "SELECTED" : "OPEN",
       })
       .returning();
     res.status(201).json(created);
