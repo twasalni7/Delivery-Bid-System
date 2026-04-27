@@ -1024,10 +1024,36 @@ components:
         clientId:
           type: integer
           nullable: true
+        clientType:
+          type: string
+          nullable: true
         homeLocation:
           type: string
         workLocation:
           type: string
+        additionalLocations:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [pickup, dropoff]
+              address:
+                type: string
+        shifts:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              goTime:
+                type: string
+              returnTime:
+                type: string
         phone:
           type: string
           nullable: true
@@ -1038,13 +1064,20 @@ components:
           type: integer
         workingDaysPerWeek:
           type: integer
+        numberOfShifts:
+          type: integer
+          nullable: true
         morningTime:
           type: string
         eveningTime:
           type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
         status:
           type: string
-          enum: [OPEN, SELECTED, ACTIVE, COMPLETED]
+          enum: [OPEN, SELECTED, ACTIVE, COMPLETED, CANCELLED, EXPIRED, FROZEN]
         selectedDriverId:
           type: integer
           nullable: true
@@ -1066,7 +1099,6 @@ components:
         - numberOfPeople
         - workingDaysPerWeek
         - morningTime
-        - eveningTime
         - status
 
     CreateRequestBody:

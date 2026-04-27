@@ -18,6 +18,7 @@ type Ticket = {
 const TICKET_STATUSES = [
   { value: "OPEN", label: "مفتوحة" },
   { value: "IN_PROGRESS", label: "قيد المعالجة" },
+  { value: "LIVE_SUPPORT", label: "دعم مباشر" },
   { value: "RESOLVED", label: "تم الحل" },
   { value: "CLOSED", label: "مغلقة" },
 ];

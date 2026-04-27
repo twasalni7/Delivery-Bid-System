@@ -207,6 +207,13 @@ export const ListRequestsResponseItem = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  clientType: zod.string().nullish(),
+  additionalLocations: zod
+    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .nullish(),
+  shifts: zod
+    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .nullish(),
   phone: zod
     .string()
     .nullable()
@@ -215,7 +222,9 @@ export const ListRequestsResponseItem = zod.object({
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().nullish(),
+  numberOfShifts: zod.number().nullish(),
+  notes: zod.string().nullish(),
   status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
@@ -273,6 +282,13 @@ export const GetRequestResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  clientType: zod.string().nullish(),
+  additionalLocations: zod
+    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .nullish(),
+  shifts: zod
+    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .nullish(),
   phone: zod
     .string()
     .nullable()
@@ -281,7 +297,9 @@ export const GetRequestResponse = zod.object({
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().nullish(),
+  numberOfShifts: zod.number().nullish(),
+  notes: zod.string().nullish(),
   status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
@@ -325,6 +343,13 @@ export const AdminUpdateRequestByPathResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  clientType: zod.string().nullish(),
+  additionalLocations: zod
+    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .nullish(),
+  shifts: zod
+    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .nullish(),
   phone: zod
     .string()
     .nullable()
@@ -333,7 +358,9 @@ export const AdminUpdateRequestByPathResponse = zod.object({
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().nullish(),
+  numberOfShifts: zod.number().nullish(),
+  notes: zod.string().nullish(),
   status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
@@ -387,6 +414,13 @@ export const UpdateRequestStatusResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  clientType: zod.string().nullish(),
+  additionalLocations: zod
+    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .nullish(),
+  shifts: zod
+    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .nullish(),
   phone: zod
     .string()
     .nullable()
@@ -395,7 +429,9 @@ export const UpdateRequestStatusResponse = zod.object({
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().nullish(),
+  numberOfShifts: zod.number().nullish(),
+  notes: zod.string().nullish(),
   status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
@@ -438,6 +474,13 @@ export const SelectOfferResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  clientType: zod.string().nullish(),
+  additionalLocations: zod
+    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .nullish(),
+  shifts: zod
+    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .nullish(),
   phone: zod
     .string()
     .nullable()
@@ -446,7 +489,9 @@ export const SelectOfferResponse = zod.object({
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().nullish(),
+  numberOfShifts: zod.number().nullish(),
+  notes: zod.string().nullish(),
   status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
@@ -806,6 +851,13 @@ export const AdminListRequestsResponseItem = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  clientType: zod.string().nullish(),
+  additionalLocations: zod
+    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .nullish(),
+  shifts: zod
+    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .nullish(),
   phone: zod
     .string()
     .nullable()
@@ -814,7 +866,9 @@ export const AdminListRequestsResponseItem = zod.object({
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().nullish(),
+  numberOfShifts: zod.number().nullish(),
+  notes: zod.string().nullish(),
   status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
@@ -861,6 +915,13 @@ export const AdminUpdateRequestResponse = zod.object({
   clientId: zod.number().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
+  clientType: zod.string().nullish(),
+  additionalLocations: zod
+    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .nullish(),
+  shifts: zod
+    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .nullish(),
   phone: zod
     .string()
     .nullable()
@@ -869,7 +930,9 @@ export const AdminUpdateRequestResponse = zod.object({
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   morningTime: zod.string(),
-  eveningTime: zod.string(),
+  eveningTime: zod.string().nullish(),
+  numberOfShifts: zod.number().nullish(),
+  notes: zod.string().nullish(),
   status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod

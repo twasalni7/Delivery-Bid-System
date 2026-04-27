@@ -151,20 +151,39 @@ export const CommuteRequestStatus = {
   SELECTED: "SELECTED",
   ACTIVE: "ACTIVE",
   COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+  EXPIRED: "EXPIRED",
+  FROZEN: "FROZEN",
 } as const;
+
+export interface CommuteRequestShift {
+  label?: string;
+  goTime: string;
+  returnTime?: string;
+}
+
+export interface CommuteRequestAdditionalLocation {
+  type: "pickup" | "dropoff";
+  address: string;
+}
 
 export interface CommuteRequest {
   id: number;
   clientId?: number | null;
+  clientType?: string | null;
   homeLocation: string;
   workLocation: string;
+  additionalLocations?: CommuteRequestAdditionalLocation[] | null;
+  shifts?: CommuteRequestShift[] | null;
   /** null when caller is not authorized to see it */
   phone: string | null;
   phoneHidden: boolean;
   numberOfPeople: number;
   workingDaysPerWeek: number;
+  numberOfShifts?: number | null;
   morningTime: string;
-  eveningTime: string;
+  eveningTime?: string | null;
+  notes?: string | null;
   monthlyPrice: number;
   status: CommuteRequestStatus;
   selectedDriverId?: number | null;
@@ -175,13 +194,17 @@ export interface CommuteRequest {
 }
 
 export interface CreateRequestBody {
+  clientType?: string;
   homeLocation: string;
   workLocation: string;
+  additionalLocations?: CommuteRequestAdditionalLocation[];
   phone: string;
   numberOfPeople: number;
   workingDaysPerWeek: number;
+  numberOfShifts?: number;
   morningTime: string;
-  eveningTime: string;
+  eveningTime?: string;
+  notes?: string;
   monthlyPrice: number;
 }
 

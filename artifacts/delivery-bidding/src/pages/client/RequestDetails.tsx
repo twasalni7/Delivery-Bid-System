@@ -1,17 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRoute, Link } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
+import { API_ORIGIN as API } from "@/lib/api-config";
 
 const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
+
+type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
 
 const STATUS_GRADIENT: Record<string, string> = {
   OPEN:      "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
@@ -28,12 +31,45 @@ export default function RequestDetails() {
   const id = parseInt((params as { id: string } | null)?.id ?? "0");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const { data: request, isLoading: loadingReq } = useGetRequest(id, {
     query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
   });
   const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, {
     query: { queryKey: getGetRequestOffersQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
+  });
+
+  const canChat = request && (request.status === "SELECTED" || request.status === "ACTIVE");
+
+  const { data: chatMessages } = useQuery<Message[]>({
+    queryKey: ["messages", id],
+    queryFn: async () => {
+      const res = await fetch(`${API}/api/messages/${id}`, { credentials: "include" });
+      if (!res.ok) throw new Error("فشل جلب الرسائل");
+      return res.json();
+    },
+    enabled: !!id && showChat,
+    refetchInterval: 5_000,
+  });
+
+  const sendMessage = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API}/api/messages/${id}`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: chatMessage.trim() }),
+      });
+      if (!res.ok) throw new Error("فشل إرسال الرسالة");
+      return res.json();
+    },
+    onSuccess: () => {
+      setChatMessage("");
+      queryClient.invalidateQueries({ queryKey: ["messages", id] });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
 
   const prevCountRef = useRef<number | null>(null);
@@ -47,6 +83,10 @@ export default function RequestDetails() {
     }
     prevCountRef.current = currentCount;
   }, [offers, id, toast]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   const selectOffer = useSelectOffer();
 
@@ -86,6 +126,9 @@ export default function RequestDetails() {
 
   const isOpen = request.status === "OPEN";
   const gradient = STATUS_GRADIENT[request.status] ?? STATUS_GRADIENT.OPEN;
+  const shifts = (request as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }> | null | undefined;
+  const additionalLocations = (request as any).additionalLocations as Array<{ type: string; address: string }> | null | undefined;
+  const notes = (request as any).notes as string | null | undefined;
 
   return (
     <Layout role="client">
@@ -120,14 +163,33 @@ export default function RequestDetails() {
               <div className="flex items-center gap-4 mt-2">
                 <div className="flex items-center gap-1.5 text-white/80 text-sm">
                   <Clock size={13} />
-                  <span dir="ltr">{formatTime12h(request.morningTime)}</span>
-                  {request.eveningTime && <span dir="ltr"> – {formatTime12h(request.eveningTime)}</span>}
+                  {shifts && shifts.length > 0 ? (
+                    <span dir="ltr">{shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
+                  ) : (
+                    <>
+                      <span dir="ltr">{formatTime12h(request.morningTime)}</span>
+                      {request.eveningTime && <span dir="ltr"> – {formatTime12h(request.eveningTime)}</span>}
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 text-white/80 text-sm">
                   <Users size={13} />
                   <span>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</span>
                 </div>
               </div>
+              {additionalLocations && additionalLocations.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {additionalLocations.map((loc, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <MapPin size={11} className="text-white/60 mt-0.5 shrink-0" />
+                      <p className="text-white/70 text-xs">{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {notes && (
+                <p className="text-white/60 text-xs mt-2">📝 {notes}</p>
+              )}
             </div>
           </div>
 
@@ -140,7 +202,7 @@ export default function RequestDetails() {
               <div className="text-center">
                 <p className="text-xs text-gray-400">السعر الشهري</p>
                 <p className="text-lg font-black text-blue-700" dir="ltr">
-                  {(request as any).monthlyPrice?.toFixed(0) ?? "—"} <span className="text-xs font-normal text-gray-400">ر.س</span>
+                  {request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-xs font-normal text-gray-400">ر.س</span>
                 </p>
               </div>
             </div>
@@ -194,7 +256,59 @@ export default function RequestDetails() {
             <h2 className="text-lg font-black text-gray-900">
               السائقون المقبِلون {offers ? `(${offers.length})` : ""}
             </h2>
+            {canChat && (
+              <button onClick={() => setShowChat(!showChat)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors">
+                <MessageCircle size={14} /> {showChat ? "إخفاء" : "المحادثة"}
+              </button>
+            )}
           </div>
+
+          {showChat && canChat && (
+            <div className="mb-5 rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageCircle size={15} className="text-white" />
+                  <span className="text-white font-black text-sm">محادثة مع السائق</span>
+                </div>
+                <button onClick={() => setShowChat(false)} className="text-white/70 hover:text-white"><X size={14} /></button>
+              </div>
+              <div className="max-h-72 overflow-y-auto p-3 space-y-2 bg-gray-50" dir="rtl">
+                {(!chatMessages || chatMessages.length === 0) && (
+                  <p className="text-center text-xs text-gray-400 py-6">لا توجد رسائل بعد. ابدأ المحادثة!</p>
+                )}
+                {chatMessages?.map((msg) => {
+                  const isMe = msg.senderRole === "client";
+                  return (
+                    <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${isMe ? "text-white" : "bg-white border border-gray-200 text-gray-700"}`}
+                        style={isMe ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}>
+                        {!isMe && <p className="text-[10px] font-bold text-gray-400 mb-0.5">{msg.senderRole === "admin" ? "الإدارة" : "السائق"}</p>}
+                        <p>{msg.body}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="border-t border-gray-200 p-2 flex gap-2 bg-white">
+                <input
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
+                  placeholder="اكتب رسالة..."
+                  className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  dir="rtl"
+                />
+                <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
+                  disabled={!chatMessage.trim() || sendMessage.isPending}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" }}>
+                  <Send size={15} />
+                </button>
+              </div>
+            </div>
+          )}
 
           {loadingOffers && <div className="text-center py-8 text-gray-400 text-sm">جاري التحميل...</div>}
 

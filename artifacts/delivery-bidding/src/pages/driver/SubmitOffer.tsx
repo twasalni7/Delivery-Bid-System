@@ -99,13 +99,30 @@ export default function SubmitOffer() {
               <div className="flex items-center gap-4 mt-1">
                 <div className="flex items-center gap-1.5 text-white/70 text-xs">
                   <Clock size={11} />
-                  <span dir="ltr">{formatTime12h(request.morningTime)}{request.eveningTime ? ` – ${formatTime12h(request.eveningTime)}` : ""}</span>
+                  {request.shifts && request.shifts.length > 0 ? (
+                    <span dir="ltr">{request.shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
+                  ) : (
+                    <span dir="ltr">{formatTime12h(request.morningTime)}{request.eveningTime ? ` – ${formatTime12h(request.eveningTime)}` : ""}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 text-white/70 text-xs">
                   <Users size={11} />
                   <span>{request.numberOfPeople} أشخاص</span>
                 </div>
               </div>
+              {request.additionalLocations && request.additionalLocations.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {request.additionalLocations.map((loc, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <MapPin size={11} className="text-white/50 mt-0.5 shrink-0" />
+                      <p className="text-white/70 text-xs">{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {request.notes && (
+                <p className="text-white/60 text-xs mt-1">📝 {request.notes}</p>
+              )}
             </div>
           </div>
 
