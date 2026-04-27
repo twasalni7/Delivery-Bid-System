@@ -122,21 +122,35 @@ router.get("/", requireAuth("admin"), async (_req, res) => {
       .from(supportTicketsTable)
       .orderBy(desc(supportTicketsTable.createdAt));
 
-    const results = await Promise.all(
-      tickets.map(async (t) => {
-        let user = null;
-        if (t.clientId) {
-          user = await db.query.clientsTable.findFirst({
-            where: eq(clientsTable.id, t.clientId),
-          });
-        } else if (t.driverId) {
-          user = await db.query.driversTable.findFirst({
-            where: eq(driversTable.id, t.driverId),
-          });
-        }
-        return formatTicket(t, user);
+    // Batch-fetch unique clients and drivers with Promise.all (avoids N+1 via deduplication)
+    const uniqueClientIds = [...new Set(tickets.map((t) => t.clientId).filter((id): id is number => id != null))];
+    const uniqueDriverIds = [...new Set(tickets.map((t) => t.driverId).filter((id): id is number => id != null))];
+
+    const clientMap = new Map<number, string>();
+    await Promise.all(
+      uniqueClientIds.map(async (id) => {
+        const c = await db.query.clientsTable.findFirst({ where: eq(clientsTable.id, id) });
+        if (c) clientMap.set(id, c.name);
       })
     );
+
+    const driverMap = new Map<number, string>();
+    await Promise.all(
+      uniqueDriverIds.map(async (id) => {
+        const d = await db.query.driversTable.findFirst({ where: eq(driversTable.id, id) });
+        if (d) driverMap.set(id, d.name);
+      })
+    );
+
+    const results = tickets.map((t) => {
+      const name = t.clientId != null
+        ? (clientMap.get(t.clientId) ?? null)
+        : t.driverId != null
+          ? (driverMap.get(t.driverId) ?? null)
+          : null;
+      return formatTicket(t, name != null ? { name } : null);
+    });
+
     res.json(results);
   } catch (err) {
     logger.error({ err }, "support-tickets GET / error");
