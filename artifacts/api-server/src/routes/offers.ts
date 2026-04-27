@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { offersTable, driversTable, requestsTable, clientsTable } from "@workspace/db";
-import { eq, and, ne, count } from "drizzle-orm";
+import { eq, and, ne, count, inArray } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { notify } from "../lib/notify";
@@ -62,54 +62,68 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
       .where(eq(offersTable.driverId, driverId))
       .orderBy(offersTable.createdAt);
 
-    const results = await Promise.all(
-      offers.map(async (o) => {
-        const request = await db.query.requestsTable.findFirst({
-          where: eq(requestsTable.id, o.requestId),
-        });
+    if (offers.length === 0) {
+      res.json([]);
+      return;
+    }
 
-        // Count competing offers from other drivers on the same request
-        const [competitorRow] = await db
-          .select({ value: count() })
-          .from(offersTable)
-          .where(and(eq(offersTable.requestId, o.requestId), ne(offersTable.driverId, driverId)));
-        const competitorCount = Number(competitorRow?.value ?? 0);
+    const requestIds = offers.map((o) => o.requestId);
 
-        // Fetch client name if available
-        let clientName: string | null = null;
-        if (request?.clientId) {
-          const client = await db.query.clientsTable.findFirst({
-            where: eq(clientsTable.id, request.clientId),
-            columns: { name: true },
-          });
-          clientName = client?.name ?? null;
-        }
+    // Batch-fetch all associated requests
+    const requests = await db
+      .select()
+      .from(requestsTable)
+      .where(inArray(requestsTable.id, requestIds));
+    const requestMap = new Map(requests.map((r) => [r.id, r]));
 
-        return {
-          id: o.id,
-          driverId: o.driverId,
-          requestId: o.requestId,
-          status: o.status,
-          competitorCount,
-          clientName,
-          request: request
-            ? {
-                id: request.id,
-                homeLocation: request.homeLocation,
-                workLocation: request.workLocation,
-                morningTime: request.morningTime,
-                eveningTime: request.eveningTime,
-                numberOfPeople: request.numberOfPeople,
-                workingDaysPerWeek: request.workingDaysPerWeek,
-                monthlyPrice: request.monthlyPrice,
-                clientType: request.clientType,
-                status: request.status,
-              }
-            : null,
-          createdAt: o.createdAt?.toISOString(),
-        };
-      })
-    );
+    // Batch-fetch competitor counts for all request IDs in a single GROUP BY query
+    const competitorRows = await db
+      .select({ requestId: offersTable.requestId, value: count() })
+      .from(offersTable)
+      .where(and(inArray(offersTable.requestId, requestIds), ne(offersTable.driverId, driverId)))
+      .groupBy(offersTable.requestId);
+    const competitorMap = new Map(competitorRows.map((r) => [r.requestId, Number(r.value)]));
+
+    // Batch-fetch client names for all unique client IDs
+    const clientIds = [...new Set(requests.map((r) => r.clientId).filter((id): id is number => id != null))];
+    const clientMap = new Map<number, string>();
+    if (clientIds.length > 0) {
+      const clients = await db
+        .select({ id: clientsTable.id, name: clientsTable.name })
+        .from(clientsTable)
+        .where(inArray(clientsTable.id, clientIds));
+      for (const c of clients) clientMap.set(c.id, c.name);
+    }
+
+    const results = offers.map((o) => {
+      const request = requestMap.get(o.requestId) ?? null;
+      const competitorCount = competitorMap.get(o.requestId) ?? 0;
+      const clientName = request?.clientId != null ? (clientMap.get(request.clientId) ?? null) : null;
+
+      return {
+        id: o.id,
+        driverId: o.driverId,
+        requestId: o.requestId,
+        status: o.status,
+        competitorCount,
+        clientName,
+        request: request
+          ? {
+              id: request.id,
+              homeLocation: request.homeLocation,
+              workLocation: request.workLocation,
+              morningTime: request.morningTime,
+              eveningTime: request.eveningTime,
+              numberOfPeople: request.numberOfPeople,
+              workingDaysPerWeek: request.workingDaysPerWeek,
+              monthlyPrice: request.monthlyPrice,
+              clientType: request.clientType,
+              status: request.status,
+            }
+          : null,
+        createdAt: o.createdAt?.toISOString(),
+      };
+    });
 
     res.json(results);
   } catch (err) {

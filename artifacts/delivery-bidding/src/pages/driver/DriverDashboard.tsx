@@ -24,6 +24,8 @@ const OFFER_STATUS_LABEL: Record<string, { label: string; className: string }> =
   CANCELLED: { label: "ملغى",         className: "bg-red-100 text-red-500 border border-red-200" },
 };
 
+const WEEKS_PER_MONTH = 4;
+
 export default function DriverDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
@@ -112,7 +114,7 @@ export default function DriverDashboard() {
 
   const totalEarnings = mySelectedJobs.reduce((sum, r) => sum + ((r as any).monthlyPrice ?? 0), 0);
 
-  const estimatedMonthlyTrips = mySelectedJobs.reduce((sum, r) => sum + ((r as any).workingDaysPerWeek ?? 5) * 4, 0);
+  const estimatedMonthlyTrips = mySelectedJobs.reduce((sum, r) => sum + ((r as any).workingDaysPerWeek ?? 5) * WEEKS_PER_MONTH, 0);
   const avgPerTrip = estimatedMonthlyTrips > 0 ? Math.round(totalEarnings / estimatedMonthlyTrips) : 0;
 
   const earningsStats = [
@@ -163,10 +165,10 @@ export default function DriverDashboard() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "ريال/شهر", value: totalEarnings > 0 ? (totalEarnings >= 1000 ? `${(totalEarnings / 1000).toFixed(1)}K` : totalEarnings.toFixed(0)) : "—", icon: "$" },
-                { label: "نسبة القبول", value: myOffers && myOffers.length > 0 ? `${Math.round((mySelectedJobs.length / myOffers.length) * 100)}%` : "—", icon: "📈" },
-                { label: "عروض نشطة", value: String(pendingOffers.length), icon: "📅" },
-                { label: "اشتراكات", value: String(mySelectedJobs.length), icon: "👥" },
+                { label: "ريال/شهر", value: totalEarnings > 0 ? (totalEarnings >= 1000 ? `${(totalEarnings / 1000).toFixed(1)}K` : totalEarnings.toFixed(0)) : "—" },
+                { label: "نسبة القبول", value: myOffers && myOffers.length > 0 ? `${Math.round((mySelectedJobs.length / myOffers.length) * 100)}%` : "—" },
+                { label: "عروض نشطة", value: String(pendingOffers.length) },
+                { label: "اشتراكات", value: String(mySelectedJobs.length) },
               ].map((stat) => (
                 <div key={stat.label} className="bg-white/15 rounded-2xl p-3 text-center">
                   <p className="text-white font-black text-xl leading-tight">{stat.value}</p>
