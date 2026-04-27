@@ -192,7 +192,7 @@ export default function AdminRequests() {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">—</span>
+                        <span className="text-sm font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">{(req as any).clientType ?? "—"}</span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 text-sm text-gray-700">
@@ -201,14 +201,30 @@ export default function AdminRequests() {
                           <span className="text-gray-400">←</span>
                           <span className="font-medium">{req.workLocation}</span>
                         </div>
+                        {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
+                          <p key={i} className="text-xs text-gray-400 mt-0.5">📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
+                        ))}
                         {req.phone && <p className="text-xs text-gray-400 mt-0.5" dir="ltr">📞 {req.phone}</p>}
+                        {(req as any).notes && <p className="text-xs text-gray-400 mt-0.5">📝 {(req as any).notes}</p>}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1 text-sm text-gray-700" dir="ltr">
-                          <Clock size={13} className="text-gray-400" />
-                          <span className="font-medium">{formatTime12h(req.morningTime)}</span>
-                          {req.eveningTime && <><span className="text-gray-400">–</span><span className="font-medium">{formatTime12h(req.eveningTime)}</span></>}
-                        </div>
+                        {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
+                              <div key={i} className="flex items-center gap-1 text-xs text-gray-700" dir="ltr">
+                                <Clock size={11} className="text-gray-400" />
+                                <span className="font-medium">{formatTime12h(s.goTime)}{s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}</span>
+                                {s.label && <span className="text-gray-400">({s.label})</span>}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-sm text-gray-700" dir="ltr">
+                            <Clock size={13} className="text-gray-400" />
+                            <span className="font-medium">{formatTime12h(req.morningTime)}</span>
+                            {req.eveningTime && <><span className="text-gray-400">–</span><span className="font-medium">{formatTime12h(req.eveningTime)}</span></>}
+                          </div>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 text-sm text-gray-600">
@@ -268,11 +284,24 @@ export default function AdminRequests() {
                       <MapPin size={13} className="text-blue-500 shrink-0" />
                       <span className="font-medium">{req.homeLocation} ← {req.workLocation}</span>
                     </div>
+                    {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
+                      <p key={i} className="text-xs text-gray-400">📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
+                    ))}
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                      <span className="flex items-center gap-1" dir="ltr"><Clock size={13} /> {formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
+                      {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                        <span className="flex items-center gap-1 flex-wrap" dir="ltr">
+                          <Clock size={13} />
+                          {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
+                            <span key={i}>{formatTime12h(s.goTime)}{s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}{i < (req as any).shifts.length - 1 ? " |" : ""}</span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1" dir="ltr"><Clock size={13} /> {formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
+                      )}
                       <span className="flex items-center gap-1"><Users size={13} /> {req.numberOfPeople} · {req.workingDaysPerWeek} أيام</span>
                     </div>
                     {req.phone && <p className="text-sm text-gray-500" dir="ltr">📞 {req.phone}</p>}
+                    {(req as any).notes && <p className="text-xs text-gray-400">📝 {(req as any).notes}</p>}
                   </div>
                 </div>
               ))}

@@ -53,6 +53,7 @@ export function getTicketStatusLabel(status: string): string {
     IN_PROGRESS: "قيد المعالجة",
     RESOLVED: "تم الحل",
     CLOSED: "مغلقة",
+    LIVE_SUPPORT: "دعم مباشر",
   };
   return labels[status] ?? status;
 }
@@ -63,6 +64,7 @@ export function getTicketStatusColor(status: string): string {
     IN_PROGRESS: "bg-orange-100 text-orange-800 border-orange-200",
     RESOLVED: "bg-green-100 text-green-800 border-green-200",
     CLOSED: "bg-gray-100 text-gray-700 border-gray-200",
+    LIVE_SUPPORT: "bg-violet-100 text-violet-800 border-violet-200",
   };
   return colors[status] ?? "bg-gray-100 text-gray-700 border-gray-200";
 }

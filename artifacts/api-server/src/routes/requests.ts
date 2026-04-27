@@ -87,6 +87,7 @@ function formatRequest(
     homeLocation: r.homeLocation,
     workLocation: r.workLocation,
     additionalLocations: r.additionalLocations,
+    shifts: r.shifts,
     phone: showPhone ? r.phone : null,
     phoneHidden: !showPhone,
     numberOfPeople: r.numberOfPeople,
