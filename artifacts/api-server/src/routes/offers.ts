@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { offersTable, driversTable, requestsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { offersTable, driversTable, requestsTable, clientsTable } from "@workspace/db";
+import { eq, and, ne, count } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { notify } from "../lib/notify";
@@ -68,11 +68,30 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
           where: eq(requestsTable.id, o.requestId),
         });
 
+        // Count competing offers from other drivers on the same request
+        const [competitorRow] = await db
+          .select({ value: count() })
+          .from(offersTable)
+          .where(and(eq(offersTable.requestId, o.requestId), ne(offersTable.driverId, driverId)));
+        const competitorCount = Number(competitorRow?.value ?? 0);
+
+        // Fetch client name if available
+        let clientName: string | null = null;
+        if (request?.clientId) {
+          const client = await db.query.clientsTable.findFirst({
+            where: eq(clientsTable.id, request.clientId),
+            columns: { name: true },
+          });
+          clientName = client?.name ?? null;
+        }
+
         return {
           id: o.id,
           driverId: o.driverId,
           requestId: o.requestId,
           status: o.status,
+          competitorCount,
+          clientName,
           request: request
             ? {
                 id: request.id,
@@ -83,6 +102,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
                 numberOfPeople: request.numberOfPeople,
                 workingDaysPerWeek: request.workingDaysPerWeek,
                 monthlyPrice: request.monthlyPrice,
+                clientType: request.clientType,
                 status: request.status,
               }
             : null,

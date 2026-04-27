@@ -177,15 +177,25 @@ export default function ClientDashboard() {
                           <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-black text-emerald-700">
                             {req.selectedDriver.name?.charAt(0) ?? "س"}
                           </div>
-                          <div>
-                            <p className="text-xs text-slate-400 font-bold">السائق المختار</p>
+                          <div className="flex-1">
+                            <p className="text-xs text-slate-400 font-bold">السائق</p>
                             <p className="text-sm font-black text-[#0F172A]">{req.selectedDriver.name}</p>
                           </div>
+                          {req.selectedDriver.mobile && (
+                            <a href={`tel:${req.selectedDriver.mobile}`}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border-2 border-emerald-200">
+                              اتصال
+                            </a>
+                          )}
                         </div>
                       )}
 
                       <div className="flex items-center justify-center pt-2 border-t border-slate-100">
-                        <span className="text-[#312E81] text-sm font-black">عرض تفاصيل العروض ‹</span>
+                        <span className="text-[#312E81] text-sm font-black">
+                          {req.status === "SELECTED" || req.status === "ACTIVE"
+                            ? "عرض تفاصيل الرحلات اليومية ‹"
+                            : "عرض تفاصيل العروض ‹"}
+                        </span>
                       </div>
                     </div>
                   </div>
