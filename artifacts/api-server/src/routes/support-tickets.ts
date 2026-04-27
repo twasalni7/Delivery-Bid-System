@@ -153,7 +153,7 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   }
 
   const { adminReply, status } = req.body ?? {};
-  const VALID_STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
+  const VALID_STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED", "LIVE_SUPPORT"];
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if (adminReply !== undefined) updates.adminReply = String(adminReply).trim();

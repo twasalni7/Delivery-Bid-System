@@ -10,6 +10,7 @@ import notificationsRouter from "./notifications";
 import bankAccountsRouter from "./bank-accounts";
 import walletTransactionsRouter from "./wallet-transactions";
 import pushRouter from "./push";
+import messagesRouter from "./messages";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/notifications", notificationsRouter);
 router.use("/bank-accounts", bankAccountsRouter);
 router.use("/wallet-transactions", walletTransactionsRouter);
 router.use("/push", pushRouter);
+router.use("/messages", messagesRouter);
 
 export default router;
