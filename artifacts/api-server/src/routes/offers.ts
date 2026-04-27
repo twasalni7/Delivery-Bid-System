@@ -76,11 +76,16 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
       .where(inArray(requestsTable.id, requestIds));
     const requestMap = new Map(requests.map((r) => [r.id, r]));
 
-    // Batch-fetch competitor counts for all request IDs in a single GROUP BY query
+    // Batch-fetch PENDING competitor counts for all request IDs in a single GROUP BY query
+    // (excludes CANCELLED/SELECTED offers from competitors, showing only active competition)
     const competitorRows = await db
       .select({ requestId: offersTable.requestId, value: count() })
       .from(offersTable)
-      .where(and(inArray(offersTable.requestId, requestIds), ne(offersTable.driverId, driverId)))
+      .where(and(
+        inArray(offersTable.requestId, requestIds),
+        ne(offersTable.driverId, driverId),
+        eq(offersTable.status, "PENDING"),
+      ))
       .groupBy(offersTable.requestId);
     const competitorMap = new Map(competitorRows.map((r) => [r.requestId, Number(r.value)]));
 

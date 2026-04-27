@@ -325,74 +325,84 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   const { offerId } = parsed.data;
   const clientId = req.session.user!.id;
   try {
-    const request = await db.query.requestsTable.findFirst({
-      where: eq(requestsTable.id, id),
+    const { updated, updatedDriver, request } = await db.transaction(async (tx) => {
+      // Lock the request row first to prevent concurrent accepts
+      const [lockedRequest] = await tx
+        .select()
+        .from(requestsTable)
+        .where(eq(requestsTable.id, id))
+        .for("update");
+
+      if (!lockedRequest) {
+        const e = Object.assign(new Error("الطلب غير موجود"), { status: 404 });
+        throw e;
+      }
+
+      if (lockedRequest.clientId == null || lockedRequest.clientId !== clientId) {
+        const e = Object.assign(new Error("غير مصرح بهذا الإجراء"), { status: 403 });
+        throw e;
+      }
+
+      if (lockedRequest.status !== "OPEN") {
+        const e = Object.assign(new Error("لا يمكن تأكيد سائق بعد اختيار سائق آخر"), { status: 400 });
+        throw e;
+      }
+
+      const [offer] = await tx
+        .select()
+        .from(offersTable)
+        .where(and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)));
+
+      if (!offer) {
+        const e = Object.assign(new Error("العرض غير موجود لهذا الطلب"), { status: 404 });
+        throw e;
+      }
+
+      // Lock the driver row to guard the balance check and deduction
+      const [driver] = await tx
+        .select()
+        .from(driversTable)
+        .where(eq(driversTable.id, offer.driverId))
+        .for("update");
+
+      if (!driver) {
+        const e = Object.assign(new Error("السائق غير موجود"), { status: 404 });
+        throw e;
+      }
+
+      if (driver.balance < 50) {
+        const e = Object.assign(new Error("رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)"), { status: 400 });
+        throw e;
+      }
+
+      await tx
+        .update(driversTable)
+        .set({ balance: sql`${driversTable.balance} - 50` })
+        .where(eq(driversTable.id, driver.id));
+
+      await tx.insert(transactionsTable).values({
+        driverId: driver.id,
+        amount: -50,
+        type: "fee",
+      });
+
+      const [updatedReq] = await tx
+        .update(requestsTable)
+        .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
+        .where(eq(requestsTable.id, id))
+        .returning();
+
+      const [freshDriver] = await tx
+        .select()
+        .from(driversTable)
+        .where(eq(driversTable.id, driver.id));
+
+      return { updated: updatedReq, updatedDriver: freshDriver, request: lockedRequest };
     });
 
-    if (!request) {
-      res.status(404).json({ error: "الطلب غير موجود" });
-      return;
-    }
-
-    if (request.clientId == null || request.clientId !== clientId) {
-      res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
-      return;
-    }
-
-    if (request.status !== "OPEN") {
-      res.status(400).json({ error: "لا يمكن تأكيد سائق بعد اختيار سائق آخر" });
-      return;
-    }
-
-    const offer = await db.query.offersTable.findFirst({
-      where: eq(offersTable.id, offerId),
-    });
-
-    if (!offer || offer.requestId !== id) {
-      res.status(404).json({ error: "العرض غير موجود لهذا الطلب" });
-      return;
-    }
-
-    const driver = await db.query.driversTable.findFirst({
-      where: eq(driversTable.id, offer.driverId),
-    });
-
-    if (!driver) {
-      res.status(404).json({ error: "السائق غير موجود" });
-      return;
-    }
-
-    if (driver.balance < 50) {
-      res
-        .status(400)
-        .json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
-      return;
-    }
-
-    await db
-      .update(driversTable)
-      .set({ balance: sql`${driversTable.balance} - 50` })
-      .where(eq(driversTable.id, driver.id));
-
-    await db.insert(transactionsTable).values({
-      driverId: driver.id,
-      amount: -50,
-      type: "fee",
-    });
-
-    const [updated] = await db
-      .update(requestsTable)
-      .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
-      .where(eq(requestsTable.id, id))
-      .returning();
-
-    const updatedDriver = await db.query.driversTable.findFirst({
-      where: eq(driversTable.id, driver.id),
-    });
-
-    // Notify the selected driver
+    // Notify the selected driver (outside transaction — non-critical side-effect)
     void notify({
-      userId: driver.id,
+      userId: updatedDriver.id,
       userRole: "driver",
       title: "🎉 تم اختيارك!",
       message: `اختار العميل عرضك على الطلب من ${request.homeLocation} إلى ${request.workLocation} بسعر ${request.monthlyPrice.toFixed(0)} ر.س/شهر`,
@@ -402,7 +412,12 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
     });
 
     res.json(formatRequest(req, updated, updatedDriver));
-  } catch (err) {
+  } catch (err: unknown) {
+    const status = (err as { status?: number }).status;
+    if (status === 400 || status === 403 || status === 404) {
+      res.status(status).json({ error: (err as Error).message });
+      return;
+    }
     logger.error({ err }, "requests POST /:id/select-offer error");
     res.status(500).json({ error: SERVER_ERROR_MSG });
   }
