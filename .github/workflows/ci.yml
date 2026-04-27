@@ -42,11 +42,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm run typecheck:libs --if-present
+        run: pnpm run --if-present typecheck:libs
 
       - name: Test (api-server)
         working-directory: artifacts/api-server
-        run: pnpm run test --if-present
+        run: pnpm run --if-present test
         env:
           DATABASE_URL: ""
           SESSION_SECRET: "ci-test-secret"
