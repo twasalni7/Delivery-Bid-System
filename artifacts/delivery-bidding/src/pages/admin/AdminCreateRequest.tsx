@@ -102,7 +102,7 @@ export default function AdminCreateRequest() {
     if (step === 1) return !!clientType;
     if (step === 2) return homeLocation.trim() && workLocation.trim();
     if (step === 3) return morningTime && selectedDays.length > 0;
-    return phone.trim() && monthlyPrice.trim() && parseFloat(monthlyPrice) > 0;
+    return phone.trim().length > 0;
   };
 
   const handleSubmit = async () => {
@@ -125,7 +125,7 @@ export default function AdminCreateRequest() {
           morningTime,
           eveningTime: eveningTime || undefined,
           notes: notes.trim() || undefined,
-          monthlyPrice: parseFloat(monthlyPrice),
+          monthlyPrice: monthlyPrice.trim() ? parseFloat(monthlyPrice) : 0,
         }),
       });
       const data = await res.json();

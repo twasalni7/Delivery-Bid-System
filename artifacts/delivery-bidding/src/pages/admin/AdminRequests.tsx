@@ -185,7 +185,12 @@ export default function AdminRequests() {
                 <tbody>
                   {filteredRequests.map((req, idx) => (
                     <tr key={req.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}>
-                      <td className="px-5 py-4 text-sm font-mono text-gray-400 font-bold">#{req.id}</td>
+                      <td className="px-5 py-4 text-sm font-mono text-gray-400 font-bold">
+                         #{req.id}
+                         {req.createdBy === "admin" && (
+                           <span className="mr-1.5 text-xs px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 font-black align-middle">إداري</span>
+                         )}
+                       </td>
                       <td className="px-5 py-4">
                         <span className={`text-sm px-3 py-1 rounded-full font-bold ${STATUS_PILL[req.status] ?? "bg-gray-100 text-gray-600"}`}>
                           {getStatusLabel(req.status)}
@@ -269,6 +274,9 @@ export default function AdminRequests() {
                   <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm text-gray-400 font-mono font-bold">#{req.id}</span>
+                       {req.createdBy === "admin" && (
+                         <span className="text-xs px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 font-black">إداري</span>
+                       )}
                       <span className={`text-sm px-3 py-0.5 rounded-full font-bold ${STATUS_PILL[req.status] ?? "bg-gray-100 text-gray-600"}`}>
                         {getStatusLabel(req.status)}
                       </span>

@@ -8,6 +8,7 @@ export const bankAccountsTable = pgTable("bank_accounts", {
   bankName: text("bank_name").notNull(),
   iban: text("iban").notNull(),
   accountHolderName: text("account_holder_name").notNull(),
+  ownerName: text("owner_name"),
   accountNumber: text("account_number"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),

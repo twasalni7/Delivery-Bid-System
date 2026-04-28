@@ -15,6 +15,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { CreateRequestBody } from "@workspace/api-zod";
+import { notify } from "../lib/notify";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -866,12 +867,31 @@ router.post("/requests", async (req, res) => {
         additionalLocations: parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
         notes: parsed.data.notes,
         clientType: parsed.data.clientType ?? "غيره",
-        monthlyPrice: parsed.data.monthlyPrice,
+        monthlyPrice: parsed.data.monthlyPrice ?? 0,
         clientId: Number.isFinite(clientId) ? clientId : null,
         selectedDriverId: Number.isFinite(selectedDriverId) ? selectedDriverId : null,
         status: selectedDriverId ? "SELECTED" : "OPEN",
+        createdBy: "admin",
       })
       .returning();
+
+    // Notify all active drivers about the new request
+    const activeDrivers = await db
+      .select({ id: driversTable.id })
+      .from(driversTable)
+      .where(eq(driversTable.status, "ACTIVE"));
+    for (const driver of activeDrivers) {
+      void notify({
+        userId: driver.id,
+        userRole: "driver",
+        title: "طلب توصيل جديد",
+        message: `طلب جديد من ${created.homeLocation} إلى ${created.workLocation}`,
+        type: "request",
+        relatedId: created.id,
+        url: `/driver/request/${created.id}`,
+      });
+    }
+
     res.status(201).json(created);
   } catch (err) {
     logger.error({ err }, "admin POST /requests error");

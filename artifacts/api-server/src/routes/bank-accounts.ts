@@ -69,6 +69,7 @@ router.post("/", async (req, res) => {
         bankName,
         iban,
         accountHolderName,
+        ownerName: accountHolderName,
         accountNumber: accountNumber ?? null,
       })
       .returning();
@@ -99,7 +100,10 @@ router.patch("/:id", async (req, res) => {
   const updates: Record<string, unknown> = {};
   if (bankName !== undefined) updates.bankName = bankName;
   if (iban !== undefined) updates.iban = iban;
-  if (accountHolderName !== undefined) updates.accountHolderName = accountHolderName;
+  if (accountHolderName !== undefined) {
+    updates.accountHolderName = accountHolderName;
+    updates.ownerName = accountHolderName;
+  }
   if (accountNumber !== undefined) updates.accountNumber = accountNumber ?? null;
   if (isActive !== undefined) updates.isActive = Boolean(isActive);
 

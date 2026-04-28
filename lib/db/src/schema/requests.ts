@@ -56,6 +56,7 @@ export const requestsTable = pgTable("requests", {
   selectedDriverId: integer("selected_driver_id").references(
     () => driversTable.id
   ),
+  createdBy: text("created_by").notNull().default("client"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
