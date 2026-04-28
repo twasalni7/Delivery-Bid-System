@@ -243,6 +243,9 @@ function Router() {
         <Route path="/admin/request/new">
           <AdminGuard><AdminCreateRequest /></AdminGuard>
         </Route>
+        <Route path="/admin/requests/new">
+          <AdminGuard><AdminCreateRequest /></AdminGuard>
+        </Route>
 
         <Route component={NotFound} />
       </Switch>

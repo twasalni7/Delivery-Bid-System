@@ -100,6 +100,7 @@ function formatRequest(
     status: r.status,
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
+    createdBy: r.createdBy ?? "client",
     createdAt: r.createdAt?.toISOString(),
     updatedAt: r.updatedAt?.toISOString(),
   };
@@ -204,7 +205,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
         additionalLocations: parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
         notes: parsed.data.notes,
         clientType: parsed.data.clientType ?? "غيره",
-        monthlyPrice: parsed.data.monthlyPrice,
+        monthlyPrice: parsed.data.monthlyPrice ?? 0,
         clientId,
         status: "OPEN",
       })

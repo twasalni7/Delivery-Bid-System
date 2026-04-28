@@ -60,7 +60,7 @@ app.use(csrfProtection);
 // ─── Rate limiting for auth endpoints ─────────────────────────────────────
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },

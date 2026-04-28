@@ -189,6 +189,7 @@ export interface CommuteRequest {
   selectedDriverId?: number | null;
   selectedDriver?: Driver | null;
   createdAt?: string;
+  createdBy?: string;
   /** number of offers submitted for this request */
   offerCount?: number | null;
 }

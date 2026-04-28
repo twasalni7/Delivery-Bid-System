@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS requests (
   monthly_price         REAL           NOT NULL DEFAULT 0,
   status                request_status NOT NULL DEFAULT 'OPEN',
   selected_driver_id    INTEGER        REFERENCES drivers(id),
+  created_by            TEXT           NOT NULL DEFAULT 'client',
   created_at            TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
   updated_at            TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
@@ -188,6 +189,7 @@ CREATE TABLE IF NOT EXISTS bank_accounts (
   bank_name            TEXT        NOT NULL,
   iban                 TEXT        NOT NULL,
   account_holder_name  TEXT        NOT NULL,
+  owner_name           TEXT,
   account_number       TEXT,
   is_active            BOOLEAN     NOT NULL DEFAULT TRUE,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()

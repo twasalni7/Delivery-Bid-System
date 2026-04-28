@@ -245,6 +245,7 @@ export const ListRequestsResponseItem = zod.object({
     .nullish(),
   createdAt: zod.string().optional(),
   monthlyPrice: zod.number(),
+  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -267,7 +268,7 @@ export const CreateRequestBody = zod.object({
   morningTime: zod.string(),
   eveningTime: zod.string().optional(),
   notes: zod.string().optional(),
-  monthlyPrice: zod.number(),
+  monthlyPrice: zod.number().optional(),
 });
 
 /**
@@ -320,6 +321,7 @@ export const GetRequestResponse = zod.object({
     .nullish(),
   createdAt: zod.string().optional(),
   monthlyPrice: zod.number(),
+  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -381,6 +383,7 @@ export const AdminUpdateRequestByPathResponse = zod.object({
     .nullish(),
   createdAt: zod.string().optional(),
   monthlyPrice: zod.number(),
+  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -452,6 +455,7 @@ export const UpdateRequestStatusResponse = zod.object({
     .nullish(),
   createdAt: zod.string().optional(),
   monthlyPrice: zod.number(),
+  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -512,6 +516,7 @@ export const SelectOfferResponse = zod.object({
     .nullish(),
   createdAt: zod.string().optional(),
   monthlyPrice: zod.number(),
+  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -889,6 +894,7 @@ export const AdminListRequestsResponseItem = zod.object({
     .nullish(),
   createdAt: zod.string().optional(),
   monthlyPrice: zod.number(),
+  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -953,6 +959,7 @@ export const AdminUpdateRequestResponse = zod.object({
     .nullish(),
   createdAt: zod.string().optional(),
   monthlyPrice: zod.number(),
+  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
