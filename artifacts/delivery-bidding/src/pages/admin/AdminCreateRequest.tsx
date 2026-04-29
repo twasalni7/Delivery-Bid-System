@@ -173,12 +173,8 @@ export default function AdminCreateRequest() {
                   <button
                     key={t.value}
                     onClick={() => setClientType(t.value)}
-                    className={`flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98] ${
-                      clientType === t.value
-                        ? ""
-                        : ""
-                      }`}
-                      style={clientType === t.value ? { borderColor: "rgba(222,255,154,0.3)", backgroundColor: "rgba(222,255,154,0.06)" } : { borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#161616" }}
+                    className="flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98]"
+                    style={clientType === t.value ? { borderColor: "rgba(222,255,154,0.3)", backgroundColor: "rgba(222,255,154,0.06)" } : { borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#161616" }}
                     >
                       <div className="flex items-center gap-4">
                         <div
