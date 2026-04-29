@@ -29,14 +29,19 @@ async function fetchVapidPublicKey(): Promise<string | null> {
 }
 
 /**
- * Send the push subscription object to the backend.
+ * Send the push subscription object (and the caller's role) to the backend.
+ * The role is already known server-side via the session; we also send it
+ * explicitly so the server can double-check and route correctly.
  */
-async function saveSubscription(subscription: PushSubscription): Promise<void> {
+async function saveSubscription(
+  subscription: PushSubscription,
+  role?: string
+): Promise<void> {
   await fetch(`${API_ORIGIN}/api/push/subscribe`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: subscription.toJSON() }),
+    body: JSON.stringify({ subscription: subscription.toJSON(), role }),
   });
 }
 
@@ -44,10 +49,14 @@ async function saveSubscription(subscription: PushSubscription): Promise<void> {
  * Request notification permission, subscribe via pushManager, and
  * save the subscription to the backend.
  *
+ * @param role - Optional user role ("driver" | "client" | "admin").
+ *               Forwarded to the backend alongside the subscription so the
+ *               correct table row is updated.
+ *
  * Safe to call multiple times — it short-circuits if already subscribed
  * or if permission is denied.
  */
-export async function subscribeToPush(): Promise<void> {
+export async function subscribeToPush(role?: string): Promise<void> {
   // Only run in browsers with Service Worker + PushManager support
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
@@ -74,9 +83,10 @@ export async function subscribeToPush(): Promise<void> {
     applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
   });
 
-  // Send to backend
-  await saveSubscription(subscription);
+  // Send to backend (role forwarded for explicit routing)
+  await saveSubscription(subscription, role);
 
   // Mark as done so we don't re-subscribe on every login
   localStorage.setItem(PUSH_SUBSCRIBED_KEY, "1");
 }
+

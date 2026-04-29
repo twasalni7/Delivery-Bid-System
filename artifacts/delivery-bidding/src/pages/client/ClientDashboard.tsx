@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useListRequests, getListRequestsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { EnablePushButton } from "@/components/enable-push-button";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { Bell, MapPin, Clock, Users, Calendar } from "lucide-react";
@@ -72,6 +73,11 @@ export default function ClientDashboard() {
             اشتراك شهري جديد
           </div>
         </Link>
+
+        {/* Push notifications opt-in */}
+        <div className="mb-4">
+          <EnablePushButton />
+        </div>
 
         {isLoading && (
           <div className="text-center py-20 text-slate-400 font-bold text-base">جاري التحميل...</div>

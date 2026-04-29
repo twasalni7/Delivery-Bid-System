@@ -87,7 +87,7 @@ self.addEventListener('push', (event) => {
       body,
       icon: '/icons/icon-192.svg',
       badge: '/icons/icon-192.svg',
-      vibrate: [200, 100, 200],
+      vibrate: [200, 100, 200, 100, 200],
       dir: 'rtl',
       lang: 'ar',
       tag: 'twasalni-notification',

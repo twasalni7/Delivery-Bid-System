@@ -4,6 +4,7 @@ import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, useListMyOffer
 import type { DriverOffer } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
+import { EnablePushButton } from "@/components/enable-push-button";
 import { AlertTriangle, MapPin, Clock, Users, CheckCircle, Phone, FileText, Trash2, X, Check, ChevronLeft } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
@@ -191,6 +192,11 @@ export default function DriverDashboard() {
             </div>
           </div>
         )}
+
+        {/* Push notifications opt-in */}
+        <div className="mb-5">
+          <EnablePushButton />
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-5 overflow-x-auto pb-1">

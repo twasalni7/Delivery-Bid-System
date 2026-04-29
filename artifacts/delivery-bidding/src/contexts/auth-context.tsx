@@ -32,10 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [logoutMutation, refetchQuery]);
 
-  // Subscribe to push notifications after a successful login
+  // Subscribe to push notifications after a successful login (pass role for correct table routing)
   useEffect(() => {
     if (user) {
-      void subscribeToPush();
+      void subscribeToPush(user.role);
     }
   }, [user]);
 

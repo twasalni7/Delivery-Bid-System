@@ -11,6 +11,8 @@ This directory contains incremental SQL migration files for the Twasalni (توص
 | `001_enable_rls_and_policies.sql` | Enable Row Level Security on all tables and add deny-all policies for direct (non-API) access |
 | `002_indexes_and_constraints.sql` | Add performance indexes and partial unique indexes to prevent data anomalies |
 | `003_accept_offer_function.sql` | Atomic `accept_offer()` DB function that locks rows and performs the accept in a single transaction |
+| `004_shifts_messages_live_support.sql` | Add `shifts` JSONB column to requests, `LIVE_SUPPORT` ticket status, and `messages` table for live chat |
+| `005_push_subscription_webhook.sql` | Add `push_subscription JSONB` to `profiles`, enable `pg_net`, and create a DB trigger that calls the `send-push-notification` Supabase Edge Function on every `notifications` INSERT |
 
 ## Running migrations
 
@@ -26,6 +28,8 @@ This directory contains incremental SQL migration files for the Twasalni (توص
 psql "$DATABASE_URL" -f migrations/sql/001_enable_rls_and_policies.sql
 psql "$DATABASE_URL" -f migrations/sql/002_indexes_and_constraints.sql
 psql "$DATABASE_URL" -f migrations/sql/003_accept_offer_function.sql
+psql "$DATABASE_URL" -f migrations/sql/004_shifts_messages_live_support.sql
+psql "$DATABASE_URL" -f migrations/sql/005_push_subscription_webhook.sql
 ```
 
 Or via Supabase SQL Editor: paste each file's content and run.
@@ -93,4 +97,13 @@ psql "$DATABASE_URL" -c "
 
 # Drop function (reverses 003)
 psql "$DATABASE_URL" -c "DROP FUNCTION IF EXISTS public.accept_offer(INTEGER, INTEGER, INTEGER, REAL);"
+
+# Reverse migration 005
+psql "$DATABASE_URL" -c "
+  DROP TRIGGER IF EXISTS on_notification_insert_send_push ON notifications;
+  DROP FUNCTION IF EXISTS public.trigger_send_push_notification();
+  ALTER TABLE profiles DROP COLUMN IF EXISTS push_subscription;
+"
+# Optionally drop pg_net if it was not in use before migration 005:
+# psql "$DATABASE_URL" -c "DROP EXTENSION IF EXISTS pg_net CASCADE;"
 ```
