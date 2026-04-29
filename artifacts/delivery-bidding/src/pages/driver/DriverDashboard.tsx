@@ -54,7 +54,7 @@ export default function DriverDashboard() {
   useEffect(() => {
     if (!user || !selectedRequests) return;
     const myJobs = selectedRequests.filter((r) => r.selectedDriverId === Number(user.id));
-    const currentIds = new Set(myJobs.map((j) => j.id));
+    const currentIds = new Set<number>(myJobs.map((j) => Number(j.id)));
     if (prevSelectedIdsRef.current === null) {
       prevSelectedIdsRef.current = currentIds;
       return;
