@@ -83,7 +83,10 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
       .where(inArray(requestsTable.id, requestIds));
 
     if (!Array.isArray(requests)) {
-      logger.warn({ driverId, requestIds }, "offers GET /my falling back to per-request lookup");
+      logger.warn(
+        { driverId, requestIds, receivedType: typeof requests },
+        "offers GET /my falling back to per-request lookup",
+      );
       const fallbackRequests = await Promise.all(
         requestIds.map((requestId) =>
           db.query.requestsTable.findFirst({
@@ -125,7 +128,10 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
         .from(clientsTable)
         .where(inArray(clientsTable.id, clientIds));
       if (!Array.isArray(clients)) {
-        logger.warn({ driverId, clientIds }, "offers GET /my falling back to per-client lookup");
+        logger.warn(
+          { driverId, clientIds, receivedType: typeof clients },
+          "offers GET /my falling back to per-client lookup",
+        );
         const fallbackClients = await Promise.all(
           clientIds.map((clientId) =>
             db.query.clientsTable.findFirst({

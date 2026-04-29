@@ -389,7 +389,10 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         .returning();
 
       if (!updatedDriver) {
-        logger.warn({ requestId: id, offerId, driverId: driver.id }, "requests POST /:id/select-offer balance deduction skipped");
+        logger.warn(
+          { requestId: id, offerId, driverId: driver.id },
+          "requests POST /:id/select-offer balance deduction failed due to insufficient balance or concurrent modification",
+        );
         throw Object.assign(new Error("تعذر خصم الرسوم من رصيد السائق؛ قد يكون الرصيد غير كافٍ أو تغيّر أثناء التنفيذ"), { status: 400 });
       }
 
@@ -409,7 +412,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         if (!meta.hasRealTransaction) {
           await tx
             .update(driversTable)
-            .set({ balance: sql`${driversTable.balance} + 50` })
+            .set({ balance: driver.balance })
             .where(eq(driversTable.id, driver.id));
         }
         throw Object.assign(new Error("تم تحديث الطلب من جلسة أخرى، يرجى إعادة المحاولة"), { status: 409 });
@@ -425,7 +428,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         if (!meta.hasRealTransaction) {
           await tx
             .update(driversTable)
-            .set({ balance: sql`${driversTable.balance} + 50` })
+            .set({ balance: driver.balance })
             .where(eq(driversTable.id, driver.id));
           await tx
             .update(requestsTable)
