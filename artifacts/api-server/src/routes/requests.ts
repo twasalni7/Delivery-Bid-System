@@ -382,6 +382,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       .returning();
 
     if (!updatedDriver) {
+      logger.warn({ requestId: id, offerId, driverId: driver.id }, "requests POST /:id/select-offer balance deduction skipped");
       res.status(400).json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
       return;
     }

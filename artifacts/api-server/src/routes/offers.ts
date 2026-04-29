@@ -83,6 +83,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
       .where(inArray(requestsTable.id, requestIds));
 
     if (!Array.isArray(requests)) {
+      logger.warn({ driverId, requestIds }, "offers GET /my falling back to per-request lookup");
       const fallbackRequests = await Promise.all(
         requestIds.map((requestId) =>
           db.query.requestsTable.findFirst({
@@ -110,6 +111,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
         competitorRows = maybeCompetitorRows;
       }
     } catch {
+      logger.warn({ driverId, requestIds }, "offers GET /my competitor aggregation fallback triggered");
       competitorRows = [];
     }
     const competitorMap = new Map(competitorRows.map((r) => [r.requestId, Number(r.value)]));
@@ -123,7 +125,17 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
         .from(clientsTable)
         .where(inArray(clientsTable.id, clientIds));
       if (!Array.isArray(clients)) {
-        clients = [];
+        logger.warn({ driverId, clientIds }, "offers GET /my falling back to per-client lookup");
+        const fallbackClients = await Promise.all(
+          clientIds.map((clientId) =>
+            db.query.clientsTable.findFirst({
+              where: eq(clientsTable.id, clientId),
+            }),
+          ),
+        );
+        clients = fallbackClients
+          .filter((client): client is NonNullable<typeof client> => Boolean(client))
+          .map((client) => ({ id: client.id, name: client.name }));
       }
       for (const c of clients) clientMap.set(c.id, c.name);
     }
