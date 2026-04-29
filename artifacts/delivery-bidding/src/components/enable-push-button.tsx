@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Bell, BellOff, BellRing, Loader2 } from "lucide-react";
-import { subscribeToPush } from "@/lib/push-notifications";
 import { useAuth } from "@/contexts/auth-context";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 
@@ -19,9 +19,9 @@ type PermissionState = "default" | "granted" | "denied" | "unsupported";
  */
 export function EnablePushButton() {
   const { user } = useAuth();
+  const { showNotificationButton, subscribeUserToPush } = usePushNotifications(user?.role);
   const [permission, setPermission] = useState<PermissionState>("default");
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (
@@ -33,12 +33,6 @@ export function EnablePushButton() {
       return;
     }
     setPermission(Notification.permission as PermissionState);
-    if (
-      Notification.permission === "granted" &&
-      localStorage.getItem("push_subscribed") === "1"
-    ) {
-      setDone(true);
-    }
   }, []);
 
   if (permission === "unsupported") return null;
@@ -46,16 +40,15 @@ export function EnablePushButton() {
   async function handleEnable() {
     setLoading(true);
     try {
-      await subscribeToPush(user?.role);
+      await subscribeUserToPush();
       setPermission(Notification.permission as PermissionState);
-      if (Notification.permission === "granted") setDone(true);
     } finally {
       setLoading(false);
     }
   }
 
   // Already subscribed
-  if (done || (permission === "granted" && localStorage.getItem("push_subscribed") === "1")) {
+  if (!showNotificationButton) {
     return (
       <div className="flex items-center gap-2.5 rounded-2xl px-4 py-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", color: "#34d399" }}>
         <BellRing size={16} className="shrink-0" />
