@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { getTicketStatusColor, getTicketStatusLabel } from "@/lib/status-utils";
@@ -80,10 +79,10 @@ export default function DriverSupport() {
     <Layout role="driver">
       <div className="max-w-2xl mx-auto" dir="rtl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-7">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">الدعم والمساعدة</h1>
-            <p className="text-gray-400 text-sm mt-0.5">
+            <h1 className="text-2xl font-black text-white">الدعم والمساعدة</h1>
+            <p className="text-sm font-bold mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
               {tickets.length > 0
                 ? `${tickets.length} تذكرة${unrepliedCount > 0 ? ` — ${unrepliedCount} بانتظار الرد` : ""}`
                 : "تواصل معنا عند أي مشكلة"}
@@ -91,8 +90,8 @@ export default function DriverSupport() {
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-black shadow-md active:scale-95 transition-transform"
-            style={{ background: "linear-gradient(135deg, #064E3B, #065F46)" }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm"
+            style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
           >
             <Plus size={16} />
             تذكرة جديدة
@@ -101,23 +100,20 @@ export default function DriverSupport() {
 
         {/* New ticket form */}
         {showForm && (
-          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5 mb-5">
-            <p className="font-black text-gray-800 mb-4">إرسال تذكرة دعم جديدة</p>
-            <div className="space-y-4">
-              {/* Ticket type */}
+          <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <p className="font-black text-white mb-5">إرسال تذكرة دعم جديدة</p>
+            <div className="space-y-5">
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-2 block">نوع المشكلة</label>
+                <label className="text-sm font-bold block mb-2.5" style={{ color: "rgba(255,255,255,0.6)" }}>نوع المشكلة</label>
                 <div className="flex gap-2 flex-wrap">
                   {TICKET_TYPES.map((t) => (
                     <button
                       key={t}
                       onClick={() => setType(t)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${
-                        type === t
-                          ? "text-white border-emerald-600"
-                          : "bg-gray-50 border-gray-200 text-gray-600 hover:border-emerald-300"
-                      }`}
-                      style={type === t ? { background: "linear-gradient(135deg, #064E3B, #065F46)" } : {}}
+                      className="px-3 py-1.5 rounded-full text-sm font-bold transition-colors"
+                      style={type === t
+                        ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
+                        : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}
                     >
                       {t}
                     </button>
@@ -125,9 +121,8 @@ export default function DriverSupport() {
                 </div>
               </div>
 
-              {/* Request ID (optional) */}
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1.5 block">
+                <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
                   رقم الطلب (اختياري)
                 </label>
                 <input
@@ -135,37 +130,34 @@ export default function DriverSupport() {
                   placeholder="مثال: 12"
                   value={requestId}
                   onChange={(e) => setRequestId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-emerald-400 transition-colors"
+                  className="input-dark w-full"
                 />
               </div>
 
-              {/* Message */}
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1.5 block">
+                <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
                   تفاصيل المشكلة
                 </label>
-                <Textarea
+                <textarea
                   placeholder="اشرح مشكلتك بالتفصيل..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={4}
-                  className="rounded-xl border-gray-200 focus:border-emerald-400"
+                  className="input-dark w-full resize-none"
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={() => submit.mutate()}
                   disabled={submit.isPending || !message.trim()}
-                  className="flex-1 py-3 rounded-xl text-white font-black disabled:opacity-50 active:scale-95 transition-transform"
-                  style={{ background: "linear-gradient(135deg, #064E3B, #065F46)" }}
+                  className="flex-1 btn-primary disabled:opacity-50"
                 >
                   {submit.isPending ? "جاري الإرسال..." : "إرسال التذكرة"}
                 </button>
                 <button
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-600 hover:bg-gray-50"
+                  className="px-4 btn-ghost rounded-2xl"
                 >
                   إلغاء
                 </button>
@@ -176,74 +168,74 @@ export default function DriverSupport() {
 
         {/* Tickets list */}
         {isLoading ? (
-          <div className="text-center py-16 text-gray-400 font-bold">جاري التحميل...</div>
+          <div className="text-center py-16 font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div>
         ) : tickets.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-            <MessageSquare size={40} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-xl font-black text-gray-600">لا توجد تذاكر</p>
-            <p className="text-gray-400 text-sm mt-1">أرسل تذكرة إذا واجهت أي مشكلة</p>
+          <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "#111111", border: "2px dashed rgba(255,255,255,0.08)" }}>
+            <MessageSquare size={40} className="mx-auto mb-4" style={{ color: "rgba(255,255,255,0.2)" }} />
+            <p className="text-xl font-black text-white">لا توجد تذاكر</p>
+            <p className="text-sm font-bold mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>أرسل تذكرة إذا واجهت أي مشكلة</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {tickets.map((t) => {
               const isOpen = expanded === t.id;
               return (
                 <div
                   key={t.id}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                  className="rounded-3xl overflow-hidden"
+                  style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
                 >
                   <div
-                    className="px-4 py-3 flex items-start justify-between gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="px-5 py-4 flex items-start justify-between gap-3 cursor-pointer transition-colors"
+                    style={{ backgroundColor: isOpen ? "#1a1a1a" : undefined }}
                     onClick={() => setExpanded(isOpen ? null : t.id)}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-black text-gray-800 text-sm">{t.type}</span>
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className="font-black text-white text-sm">{t.type}</span>
                         {t.requestId && (
-                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
                             طلب #{t.requestId}
                           </span>
                         )}
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-bold border ${getTicketStatusColor(t.status)}`}
-                        >
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${getTicketStatusColor(t.status)}`}>
                           {getTicketStatusLabel(t.status)}
                         </span>
                         {t.adminReply && (
-                          <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                            style={{ backgroundColor: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }}>
                             رُدّ عليها
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 line-clamp-2">{t.message}</p>
+                      <p className="text-xs line-clamp-2 font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>{t.message}</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 text-gray-300">
+                    <div className="flex items-center gap-2 shrink-0" style={{ color: "rgba(255,255,255,0.3)" }}>
                       <span className="text-xs font-mono">#{t.id}</span>
                       {isOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                     </div>
                   </div>
 
                   {isOpen && (
-                    <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <p className="text-xs font-bold text-gray-400 mb-1">رسالتك:</p>
-                        <p className="text-sm text-gray-700">{t.message}</p>
+                    <div className="px-5 pb-5 pt-4 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                        <p className="text-xs font-bold mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>رسالتك:</p>
+                        <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>{t.message}</p>
                       </div>
                       {t.adminReply && (
-                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                          <p className="text-xs font-bold text-emerald-600 mb-1">رد الإدارة:</p>
-                          <p className="text-sm text-emerald-800">{t.adminReply}</p>
+                        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                          <p className="text-xs font-black mb-1.5" style={{ color: "#34d399" }}>رد الإدارة:</p>
+                          <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>{t.adminReply}</p>
                         </div>
                       )}
                       {!t.adminReply && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                          <p className="text-xs font-bold text-amber-600">⏳ في انتظار رد الإدارة...</p>
+                        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)" }}>
+                          <p className="text-xs font-black" style={{ color: "#fbbf24" }}>⏳ في انتظار رد الإدارة...</p>
                         </div>
                       )}
-                      <p className="text-xs text-gray-400">
-                        أُرسلت في {new Date(t.createdAt).toLocaleDateString("ar-SA", {
-                          year: "numeric", month: "long", day: "numeric",
-                        })}
+                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>
+                        أُرسلت في {new Date(t.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
                     </div>
                   )}

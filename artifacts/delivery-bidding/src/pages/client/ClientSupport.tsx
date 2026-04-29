@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { getTicketStatusColor, getTicketStatusLabel } from "@/lib/status-utils";
@@ -53,50 +52,59 @@ export default function ClientSupport() {
   return (
     <Layout role="client">
       <div className="max-w-2xl mx-auto" dir="rtl">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-7">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">الدعم والمساعدة</h1>
-            <p className="text-gray-400 text-sm">تواصل معنا عند أي مشكلة</p>
+            <h1 className="text-2xl font-black text-white">الدعم والمساعدة</h1>
+            <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>تواصل معنا عند أي مشكلة</p>
           </div>
           <button onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-black shadow-md"
-            style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" }}>
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm"
+            style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
             <Plus size={16} /> تذكرة جديدة
           </button>
         </div>
 
         {showForm && (
-          <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-4 mb-5">
-            <p className="font-black text-gray-800 mb-4">إرسال تذكرة دعم</p>
-            <div className="space-y-4">
+          <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <p className="font-black text-white mb-5">إرسال تذكرة دعم</p>
+            <div className="space-y-5">
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-2 block">نوع المشكلة</label>
+                <label className="text-sm font-bold block mb-2.5" style={{ color: "rgba(255,255,255,0.6)" }}>نوع المشكلة</label>
                 <div className="flex gap-2 flex-wrap">
                   {TICKET_TYPES.map((t) => (
                     <button key={t} onClick={() => setType(t)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${
-                        type === t ? "text-white border-blue-500" : "bg-gray-50 border-gray-200 text-gray-600"
-                      }`}
-                      style={type === t ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : {}}>
+                      className="px-3 py-1.5 rounded-full text-sm font-bold transition-colors"
+                      style={type === t
+                        ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
+                        : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
                       {t}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1.5 block">رقم الطلب (اختياري)</label>
+                <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>رقم الطلب (اختياري)</label>
                 <input type="number" placeholder="مثال: 42" value={requestId} onChange={(e) => setRequestId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" dir="ltr" />
+                  className="input-dark w-full" dir="ltr" />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1.5 block">اشرح مشكلتك</label>
-                <Textarea placeholder="اكتب تفاصيل مشكلتك هنا..." value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="rounded-xl border-gray-200" />
+                <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>اشرح مشكلتك</label>
+                <textarea
+                  placeholder="اكتب تفاصيل مشكلتك هنا..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="input-dark w-full resize-none"
+                  style={{ height: "auto" }}
+                />
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-600">إلغاء</button>
+              <div className="flex gap-3">
+                <button onClick={() => setShowForm(false)}
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm btn-ghost">
+                  إلغاء
+                </button>
                 <button onClick={() => submit.mutate()} disabled={!message.trim() || submit.isPending}
-                  className="flex-1 py-2.5 rounded-xl text-white font-black disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" }}>
+                  className="flex-1 btn-primary disabled:opacity-50">
                   {submit.isPending ? "جاري الإرسال..." : "إرسال التذكرة"}
                 </button>
               </div>
@@ -105,37 +113,40 @@ export default function ClientSupport() {
         )}
 
         {isLoading ? (
-          <div className="text-center py-16 text-gray-400">جاري التحميل...</div>
+          <div className="text-center py-16 font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div>
         ) : tickets.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+          <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "#111111", border: "2px dashed rgba(255,255,255,0.08)" }}>
             <p className="text-4xl mb-3">🎫</p>
-            <p className="font-bold text-gray-500">لا توجد تذاكر دعم بعد</p>
-            <p className="text-sm text-gray-400 mt-1">اضغط "تذكرة جديدة" لإرسال استفسارك</p>
+            <p className="font-black text-white">لا توجد تذاكر دعم بعد</p>
+            <p className="text-sm font-bold mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>اضغط "تذكرة جديدة" لإرسال استفسارك</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {tickets.map((t) => (
-              <div key={t.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div key={t.id} className="rounded-3xl p-5" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span className="font-black text-sm text-gray-800">{t.type}</span>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="font-black text-sm text-white">{t.type}</span>
                       {t.requestId && (
-                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">طلب #{t.requestId}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                          style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                          طلب #{t.requestId}
+                        </span>
                       )}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${getTicketStatusColor(t.status)}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${getTicketStatusColor(t.status)}`}>
                         {getTicketStatusLabel(t.status)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mb-2">{t.message}</p>
+                    <p className="text-sm font-bold mb-3" style={{ color: "rgba(255,255,255,0.55)" }}>{t.message}</p>
                     {t.adminReply && (
-                      <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-                        <p className="text-xs font-bold text-green-600 mb-1">رد الإدارة:</p>
-                        <p className="text-sm text-green-800">{t.adminReply}</p>
+                      <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                        <p className="text-xs font-black mb-1.5" style={{ color: "#34d399" }}>رد الإدارة:</p>
+                        <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>{t.adminReply}</p>
                       </div>
                     )}
                   </div>
-                  <span className="text-xs text-gray-300 font-mono shrink-0">#{t.id}</span>
+                  <span className="text-xs font-mono shrink-0" style={{ color: "rgba(255,255,255,0.2)" }}>#{t.id}</span>
                 </div>
               </div>
             ))}
