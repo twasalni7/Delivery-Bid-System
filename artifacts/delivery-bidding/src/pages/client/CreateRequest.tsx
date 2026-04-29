@@ -296,12 +296,8 @@ export default function CreateRequest() {
                       <button
                         key={d.key}
                         onClick={() => toggleDay(d.key)}
-                        className={`w-10 h-10 rounded-full text-sm font-black transition-all active:scale-90 ${
-                          selectedDays.includes(d.key)
-                            ? "text-black"
-                            : ""
-                        }`}
-                        style={selectedDays.includes(d.key) ? { backgroundColor: "#deff9a" } : { backgroundColor: "#1a1a1a", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}
+                        className="w-10 h-10 rounded-full text-sm font-black transition-all active:scale-90"
+                        style={selectedDays.includes(d.key) ? { backgroundColor: "#deff9a", color: "#0a0a0a" } : { backgroundColor: "#1a1a1a", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}
                       >
                         {d.label}
                       </button>
