@@ -95,7 +95,7 @@ export default function DriverRequests() {
     <Layout role="driver">
       <div dir="rtl">
         <div className="mb-7">
-          <h1 className="text-[1.9rem] font-black text-white tracking-tight">اتفاقياتي</h1>
+          <h1 className="text-[1.9rem] font-black text-white tracking-tight">قائمة الاتفاقات</h1>
           <p className="font-bold text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>الطلبات التي تم اختيارك فيها</p>
         </div>
 
