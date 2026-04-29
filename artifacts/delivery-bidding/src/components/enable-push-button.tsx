@@ -1,30 +1,42 @@
 import { useState, useEffect } from "react";
 import { Bell, BellOff, BellRing, Loader2 } from "lucide-react";
 import { subscribeToPush } from "@/lib/push-notifications";
+import { useAuth } from "@/contexts/auth-context";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 
 /**
  * EnablePushButton
  *
- * زر يتيح للسائق تفعيل إشعارات الدفع (Web Push Notifications).
- * - إذا كانت الإشعارات مفعّلة بالفعل → يعرض "الإشعارات مفعّلة"
- * - إذا كانت مرفوضة → يعرض تعليمات لإعادة التفعيل من إعدادات المتصفح
- * - إذا لم يُختر بعد → يعرض زر "تفعيل الإشعارات"
+ * زر يتيح لجميع فئات المستخدمين (سائق / عميل / إداري) تفعيل إشعارات الدفع.
+ * يستخرج دور المستخدم تلقائياً من سياق المصادقة ويرسله إلى الخادم ليُحدَّث
+ * الجدول الصحيح (drivers / clients / admins).
+ *
+ * الحالات المعروضة:
+ * - مفعّل بالفعل  → شارة خضراء "الإشعارات الفورية مفعّلة ✓"
+ * - مرفوض         → تنبيه أصفر بتعليمات إعادة التفعيل من إعدادات المتصفح
+ * - لم يُختر بعد  → زر أزرق "تفعيل الإشعارات الفورية"
  */
 export function EnablePushButton() {
+  const { user } = useAuth();
   const [permission, setPermission] = useState<PermissionState>("default");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (
+      !("Notification" in window) ||
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window)
+    ) {
       setPermission("unsupported");
       return;
     }
     setPermission(Notification.permission as PermissionState);
-    // If already granted and localStorage flag set, mark as done
-    if (Notification.permission === "granted" && localStorage.getItem("push_subscribed") === "1") {
+    if (
+      Notification.permission === "granted" &&
+      localStorage.getItem("push_subscribed") === "1"
+    ) {
       setDone(true);
     }
   }, []);
@@ -34,7 +46,7 @@ export function EnablePushButton() {
   async function handleEnable() {
     setLoading(true);
     try {
-      await subscribeToPush();
+      await subscribeToPush(user?.role);
       setPermission(Notification.permission as PermissionState);
       if (Notification.permission === "granted") setDone(true);
     } finally {
@@ -58,7 +70,7 @@ export function EnablePushButton() {
       <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-amber-800">
         <BellOff size={16} className="shrink-0 text-amber-600 mt-0.5" />
         <p className="text-sm font-bold leading-relaxed">
-          الإشعارات محجوبة. افتح إعدادات المتصفح → الإشعارات وأعِد السماح لهذا الموقع.
+          الإشعارات محجوبة. افتح إعدادات المتصفح ← الإشعارات وأعِد السماح لهذا الموقع.
         </p>
       </div>
     );
@@ -80,3 +92,4 @@ export function EnablePushButton() {
     </button>
   );
 }
+

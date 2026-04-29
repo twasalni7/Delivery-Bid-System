@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useGetAdminStats, useGetAdminAnalytics, useGetAdminFinancial } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { EnablePushButton } from "@/components/enable-push-button";
 import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp, ChevronLeft } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -156,6 +157,11 @@ export default function AdminDashboard() {
         </div>
 
         {isLoading && <div className="text-center py-16 text-gray-400">جاري التحميل...</div>}
+
+        {/* Push notifications opt-in */}
+        <div className="mb-5">
+          <EnablePushButton />
+        </div>
 
         {stats && (
           <>
