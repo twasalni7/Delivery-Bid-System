@@ -11,12 +11,16 @@
 --      أو:
 --        CREATE EXTENSION IF NOT EXISTS pg_net SCHEMA extensions;
 --
---   2. تعيين إعدادات المشروع في SQL Editor (مرة واحدة):
---        ALTER DATABASE postgres
---          SET "app.settings.supabase_url" = 'https://<ref>.supabase.co';
---        ALTER DATABASE postgres
---          SET "app.settings.service_role_key" = '<service_role_key>';
---      ثم أعد تشغيل الاتصال (أو انتظر إعادة تشغيل pooler).
+--   2. إنشاء جدول app_config وتعبئته (مرة واحدة):
+--        CREATE TABLE IF NOT EXISTS public.app_config (
+--          key   TEXT PRIMARY KEY,
+--          value TEXT NOT NULL
+--        );
+--        INSERT INTO public.app_config (key, value)
+--          VALUES
+--            ('supabase_url',       'https://<ref>.supabase.co'),
+--            ('service_role_key',   '<service_role_key>')
+--          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 --
 --   3. نشر Edge Function:
 --        supabase functions deploy send-push-notification
@@ -56,9 +60,16 @@ DECLARE
   _supabase_url     TEXT;
   _service_role_key TEXT;
 BEGIN
-  -- Read project settings configured via ALTER DATABASE … SET …
-  _supabase_url     := current_setting('app.settings.supabase_url',     true);
-  _service_role_key := current_setting('app.settings.service_role_key', true);
+  -- Read project settings from public.app_config table
+  SELECT value INTO _supabase_url
+    FROM public.app_config
+   WHERE key = 'supabase_url'
+   LIMIT 1;
+
+  SELECT value INTO _service_role_key
+    FROM public.app_config
+   WHERE key = 'service_role_key'
+   LIMIT 1;
 
   -- Skip if settings are not configured
   IF _supabase_url IS NULL OR _supabase_url = ''
