@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { useListRequests, useAdminUpdateRequest, useAdminDeleteRequest, getListRequestsQueryKey, UpdateStatusBodyStatus } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Edit2, MapPin, Clock, Users, Search, X } from "lucide-react";
+import { Trash2, Edit2, MapPin, Clock, Users, Search, X, Plus, Eye } from "lucide-react";
 import type { CommuteRequest } from "@workspace/api-client-react";
 import { getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
@@ -90,6 +91,14 @@ export default function AdminRequests() {
               {requests ? `${filteredRequests.length} من ${requests.length} طلب` : "إدارة طلبات الدوام الشهري"}
             </p>
           </div>
+          <Link href="/admin/requests/new">
+            <button
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-black text-sm shadow-lg active:scale-95 transition-transform"
+              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}
+            >
+              <Plus size={16} /> إضافة طلب جديد
+            </button>
+          </Link>
         </div>
 
         {/* Search + Filters */}
@@ -248,6 +257,11 @@ export default function AdminRequests() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
+                          <Link href={`/admin/request/${req.id}`}>
+                            <button className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center hover:border-blue-400 hover:bg-blue-100 transition-colors">
+                              <Eye size={14} className="text-blue-500" />
+                            </button>
+                          </Link>
                           <button onClick={() => handleEdit(req)}
                             className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center hover:border-violet-400 hover:bg-violet-50 transition-colors">
                             <Edit2 size={14} className="text-gray-500" />
@@ -283,6 +297,9 @@ export default function AdminRequests() {
                       {req.selectedDriver && <span className="text-sm bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full font-bold">🚗 {req.selectedDriver.name}</span>}
                     </div>
                     <div className="flex gap-2 shrink-0">
+                      <Link href={`/admin/request/${req.id}`}>
+                        <button className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center hover:border-blue-400 transition-colors"><Eye size={14} className="text-blue-500" /></button>
+                      </Link>
                       <button onClick={() => handleEdit(req)} className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center hover:border-violet-400 transition-colors"><Edit2 size={14} className="text-gray-500" /></button>
                       <button onClick={() => handleDelete(req)} className="w-9 h-9 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center hover:border-red-400 transition-colors"><Trash2 size={14} className="text-red-500" /></button>
                     </div>

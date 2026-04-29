@@ -10,7 +10,7 @@ import {
   walletTransactionsTable,
   supportTicketsTable,
 } from "@workspace/db";
-import { eq, count, ne, desc, sql, sum, inArray } from "drizzle-orm";
+import { eq, count, ne, desc, sql, sum, inArray, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { generateLoginCode } from "../lib/auth";
 import { logger } from "../lib/logger";
@@ -896,6 +896,111 @@ router.post("/requests", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "admin POST /requests error");
     res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+  }
+});
+
+// POST /api/admin/requests/:id/select-offer — admin selects a driver's offer (same flow as client, but without ownership restriction)
+router.post("/requests/:id/select-offer", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+
+  const { offerId } = req.body ?? {};
+  if (!offerId || typeof offerId !== "number") {
+    res.status(400).json({ error: "بيانات غير صحيحة: offerId مطلوب" });
+    return;
+  }
+
+  try {
+    const existingRequest = await db.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, id),
+    });
+    if (!existingRequest) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+    if (existingRequest.status !== "OPEN") {
+      res.status(400).json({ error: "لا يمكن تأكيد سائق بعد اختيار سائق آخر" });
+      return;
+    }
+
+    const [offer] = await db
+      .select()
+      .from(offersTable)
+      .where(and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)));
+    if (!offer) {
+      res.status(404).json({ error: "العرض غير موجود لهذا الطلب" });
+      return;
+    }
+
+    const driver = await db.query.driversTable.findFirst({
+      where: eq(driversTable.id, offer.driverId),
+    });
+    if (!driver) {
+      res.status(404).json({ error: "السائق غير موجود" });
+      return;
+    }
+
+    // Atomically deduct the 50 SAR fee only if the balance is sufficient.
+    // Using a WHERE balance >= 50 condition makes the check-and-deduct atomic,
+    // preventing a race condition if two operations run concurrently on the same driver.
+    const [deductedDriver] = await db
+      .update(driversTable)
+      .set({ balance: sql`${driversTable.balance} - 50` })
+      .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= 50`))
+      .returning();
+    if (!deductedDriver) {
+      res.status(400).json({ error: "رصيد السائق غير كافٍ (يتطلب 50 ريال على الأقل)" });
+      return;
+    }
+
+    await db.insert(transactionsTable).values({
+      driverId: driver.id,
+      amount: -50,
+      type: "fee",
+    });
+
+    const [updated] = await db
+      .update(requestsTable)
+      .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
+      .where(eq(requestsTable.id, id))
+      .returning();
+
+    // Notify the selected driver
+    void notify({
+      userId: driver.id,
+      userRole: "driver",
+      title: "🎉 تم اختيارك من قِبل الإدارة!",
+      message: `اختارت الإدارة عرضك على الطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation}`,
+      type: "request",
+      relatedId: existingRequest.id,
+      url: `/driver/request/${existingRequest.id}`,
+    });
+
+    res.json({
+      id: updated.id,
+      clientId: updated.clientId,
+      clientType: updated.clientType,
+      homeLocation: updated.homeLocation,
+      workLocation: updated.workLocation,
+      phone: updated.phone,
+      numberOfPeople: updated.numberOfPeople,
+      workingDaysPerWeek: updated.workingDaysPerWeek,
+      numberOfShifts: updated.numberOfShifts,
+      morningTime: updated.morningTime,
+      eveningTime: updated.eveningTime,
+      notes: updated.notes,
+      monthlyPrice: updated.monthlyPrice,
+      status: updated.status,
+      selectedDriverId: updated.selectedDriverId,
+      createdAt: updated.createdAt?.toISOString(),
+      updatedAt: updated.updatedAt?.toISOString(),
+    });
+  } catch (err) {
+    logger.error({ err }, "admin POST /requests/:id/select-offer error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });
 

@@ -8,6 +8,7 @@ vi.mock("@workspace/db", () => {
       driversTable: { findFirst: vi.fn() },
       clientsTable: { findFirst: vi.fn() },
       adminsTable: { findFirst: vi.fn() },
+      requestsTable: { findFirst: vi.fn() },
     },
     select: vi.fn(),
     insert: vi.fn(),
@@ -16,14 +17,17 @@ vi.mock("@workspace/db", () => {
   };
   return {
     db: mockDb,
-    requestsTable: { id: "id", status: "status", createdAt: "createdAt", selectedDriverId: "selectedDriverId" },
+    requestsTable: { id: "id", status: "status", createdAt: "createdAt", selectedDriverId: "selectedDriverId", clientId: "clientId", homeLocation: "homeLocation", workLocation: "workLocation" },
     driversTable: { id: "id", name: "name", status: "status", balance: "balance", loginCode: "loginCode", mobile: "mobile" },
-    offersTable: {},
+    offersTable: { id: "id", driverId: "driverId", requestId: "requestId", status: "status", createdAt: "createdAt" },
     adminsTable: { id: "id", loginCode: "loginCode" },
-    clientsTable: { id: "id", mobile: "mobile", createdAt: "createdAt" },
+    clientsTable: { id: "id", mobile: "mobile", createdAt: "createdAt", name: "name" },
     transactionsTable: { amount: "amount", type: "type" },
+    walletTransactionsTable: { id: "id", driverId: "driverId", amount: "amount", status: "status", createdAt: "createdAt" },
+    supportTicketsTable: { id: "id", type: "type", clientId: "clientId", driverId: "driverId", status: "status", createdAt: "createdAt" },
     eq: vi.fn(),
     ne: vi.fn(),
+    and: vi.fn(),
     count: vi.fn().mockReturnValue("count_expr"),
     desc: vi.fn(),
     sql: vi.fn(),
@@ -37,7 +41,18 @@ vi.mock("../lib/auth", () => ({
   generateLoginCode: vi.fn().mockReturnValue("NEWCODE1"),
 }));
 
+vi.mock("../lib/notify", () => ({
+  notify: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@workspace/api-zod", () => ({
+  CreateRequestBody: {
+    safeParse: vi.fn(),
+  },
+}));
+
 import { db } from "@workspace/db";
+import { CreateRequestBody } from "@workspace/api-zod";
 import adminRouter from "../routes/admin";
 
 /** Creates a query chain that is thenable and resolves to `data` regardless of which
@@ -956,5 +971,394 @@ describe("POST /admin/change-code", () => {
     const res = await request(app).post("/admin/change-code").send({ newCode: "NEWCODE99" });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ loginCode: "NEWCODE99" });
+  });
+});
+
+// ===================== POST /admin/requests =====================
+
+describe("POST /admin/requests", () => {
+  it("returns 400 when body validation fails", async () => {
+    (CreateRequestBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({ success: false });
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests").send({});
+    expect(res.status).toBe(400);
+  });
+
+  it("creates open request without clientId or selectedDriverId", async () => {
+    (CreateRequestBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
+      success: true,
+      data: {
+        homeLocation: "الرياض", workLocation: "جامعة الملك", phone: "0501234567",
+        numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
+        morningTime: "07:00", eveningTime: null, clientType: "غيره", monthlyPrice: 800,
+      },
+    });
+
+    const created = {
+      id: 10, clientId: null, clientType: "غيره", homeLocation: "الرياض",
+      workLocation: "جامعة الملك", phone: "0501234567", numberOfPeople: 1,
+      workingDaysPerWeek: 5, numberOfShifts: 1, morningTime: "07:00",
+      eveningTime: null, notes: null, monthlyPrice: 800, status: "OPEN",
+      selectedDriverId: null, createdBy: "admin", createdAt: new Date(), updatedAt: new Date(),
+    };
+    const returningMock = vi.fn().mockResolvedValue([created]);
+    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    // Active drivers to notify (empty list to keep test simple)
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeChain([]));
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests").send({
+      homeLocation: "الرياض", workLocation: "جامعة الملك", phone: "0501234567",
+      numberOfPeople: 1, workingDaysPerWeek: 5, morningTime: "07:00",
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ id: 10, status: "OPEN" });
+  });
+
+  it("creates SELECTED request when selectedDriverId is provided", async () => {
+    (CreateRequestBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
+      success: true,
+      data: {
+        homeLocation: "الرياض", workLocation: "جامعة الملك", phone: "0501234567",
+        numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
+        morningTime: "07:00", eveningTime: null, clientType: "غيره", monthlyPrice: 0,
+      },
+    });
+
+    const created = {
+      id: 11, clientId: 3, clientType: "غيره", homeLocation: "الرياض",
+      workLocation: "جامعة الملك", phone: "0501234567", numberOfPeople: 1,
+      workingDaysPerWeek: 5, numberOfShifts: 1, morningTime: "07:00",
+      eveningTime: null, notes: null, monthlyPrice: 0, status: "SELECTED",
+      selectedDriverId: 7, createdBy: "admin", createdAt: new Date(), updatedAt: new Date(),
+    };
+    const returningMock = vi.fn().mockResolvedValue([created]);
+    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeChain([]));
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests").send({
+      homeLocation: "الرياض", workLocation: "جامعة الملك", phone: "0501234567",
+      numberOfPeople: 1, workingDaysPerWeek: 5, morningTime: "07:00",
+      clientId: 3, selectedDriverId: 7,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ id: 11, status: "SELECTED", selectedDriverId: 7 });
+  });
+
+  it("notifies active drivers when creating a new request", async () => {
+    (CreateRequestBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
+      success: true,
+      data: {
+        homeLocation: "الرياض", workLocation: "جامعة", phone: "0501234567",
+        numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
+        morningTime: "07:00", eveningTime: null, clientType: "غيره", monthlyPrice: 0,
+      },
+    });
+
+    const created = {
+      id: 12, clientId: null, homeLocation: "الرياض", workLocation: "جامعة",
+      phone: "0501234567", numberOfPeople: 1, workingDaysPerWeek: 5,
+      numberOfShifts: 1, morningTime: "07:00", eveningTime: null, notes: null,
+      monthlyPrice: 0, status: "OPEN", selectedDriverId: null,
+      clientType: "غيره", createdBy: "admin", createdAt: new Date(), updatedAt: new Date(),
+    };
+    const returningMock = vi.fn().mockResolvedValue([created]);
+    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+    // Two active drivers to notify
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeChain([{ id: 1 }, { id: 2 }]));
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests").send({
+      homeLocation: "الرياض", workLocation: "جامعة", phone: "0501234567",
+      numberOfPeople: 1, workingDaysPerWeek: 5, morningTime: "07:00",
+    });
+    expect(res.status).toBe(201);
+  });
+
+  it("returns 500 on DB error", async () => {
+    (CreateRequestBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
+      success: true,
+      data: {
+        homeLocation: "الرياض", workLocation: "جامعة", phone: "0501234567",
+        numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
+        morningTime: "07:00", eveningTime: null, clientType: "غيره", monthlyPrice: 0,
+      },
+    });
+    const valuesMock = vi.fn().mockRejectedValue(new Error("DB error"));
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests").send({
+      homeLocation: "الرياض", workLocation: "جامعة", phone: "0501234567",
+      numberOfPeople: 1, workingDaysPerWeek: 5, morningTime: "07:00",
+    });
+    expect(res.status).toBe(500);
+  });
+});
+
+// ===================== POST /admin/requests/:id/select-offer =====================
+
+describe("POST /admin/requests/:id/select-offer", () => {
+  it("returns 400 for non-numeric id", async () => {
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/abc/select-offer").send({ offerId: 5 });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when offerId is missing", async () => {
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/1/select-offer").send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("offerId");
+  });
+
+  it("returns 400 when offerId is not a number", async () => {
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/1/select-offer").send({ offerId: "abc" });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 when request not found", async () => {
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/999/select-offer").send({ offerId: 5 });
+    expect(res.status).toBe(404);
+    expect(res.body.error).toContain("الطلب");
+  });
+
+  it("returns 400 when request is not OPEN", async () => {
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1, status: "SELECTED", homeLocation: "الرياض", workLocation: "جامعة",
+    });
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/1/select-offer").send({ offerId: 5 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("سائق");
+  });
+
+  it("returns 404 when offer not found for this request", async () => {
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1, status: "OPEN", homeLocation: "الرياض", workLocation: "جامعة",
+    });
+    // Empty offer result
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeChain([]));
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/1/select-offer").send({ offerId: 5 });
+    expect(res.status).toBe(404);
+    expect(res.body.error).toContain("العرض");
+  });
+
+  it("returns 404 when driver not found", async () => {
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1, status: "OPEN", homeLocation: "الرياض", workLocation: "جامعة",
+    });
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(
+      makeChain([{ id: 5, driverId: 7, requestId: 1 }])
+    );
+    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/1/select-offer").send({ offerId: 5 });
+    expect(res.status).toBe(404);
+    expect(res.body.error).toContain("السائق");
+  });
+
+  it("returns 400 when driver has insufficient balance", async () => {
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1, status: "OPEN", homeLocation: "الرياض", workLocation: "جامعة",
+    });
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(
+      makeChain([{ id: 5, driverId: 7, requestId: 1 }])
+    );
+    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 7, name: "خالد", balance: 30,
+    });
+    // Atomic update returns empty array (balance condition not met)
+    const returningMock = vi.fn().mockResolvedValue([]);
+    const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const setMock = vi.fn().mockReturnValue({ where: whereMock });
+    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/1/select-offer").send({ offerId: 5 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("رصيد");
+  });
+
+  it("selects offer successfully: deducts fee, sets SELECTED, returns updated request", async () => {
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1, status: "OPEN", homeLocation: "الرياض", workLocation: "جامعة",
+    });
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(
+      makeChain([{ id: 5, driverId: 7, requestId: 1 }])
+    );
+    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 7, name: "خالد", balance: 200,
+    });
+
+    // First db.update: atomic balance deduction — returns the updated driver row
+    const deductReturningMock = vi.fn().mockResolvedValue([{ id: 7, balance: 150 }]);
+    const deductWhereMock = vi.fn().mockReturnValue({ returning: deductReturningMock });
+    const deductSetMock = vi.fn().mockReturnValue({ where: deductWhereMock });
+
+    // Second db.update: request status → SELECTED
+    const requestReturningMock = vi.fn().mockResolvedValue([{
+      id: 1, clientId: null, clientType: "غيره",
+      homeLocation: "الرياض", workLocation: "جامعة",
+      additionalLocations: null, shifts: null,
+      phone: "0501234567", numberOfPeople: 1, workingDaysPerWeek: 5,
+      numberOfShifts: 1, morningTime: "07:00", eveningTime: null, notes: null,
+      monthlyPrice: 800, status: "SELECTED", selectedDriverId: 7,
+      createdAt: new Date(), updatedAt: new Date(),
+    }]);
+    const requestWhereMock = vi.fn().mockReturnValue({ returning: requestReturningMock });
+    const requestSetMock = vi.fn().mockReturnValue({ where: requestWhereMock });
+
+    (db.update as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce({ set: deductSetMock })
+      .mockReturnValueOnce({ set: requestSetMock });
+
+    const valuesMock = vi.fn().mockResolvedValue([]);
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp(adminUser);
+    const res = await request(app).post("/admin/requests/1/select-offer").send({ offerId: 5 });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 1, status: "SELECTED", selectedDriverId: 7 });
+  });
+});
+
+// ===================== GET /admin/recent-events =====================
+
+describe("GET /admin/recent-events", () => {
+  it("returns 200 with an array of events", async () => {
+    // All four sub-queries return empty lists → no events
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeChain([]));
+
+    const app = createApp(adminUser);
+    const res = await request(app).get("/admin/recent-events");
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it("includes pending wallet transactions in events", async () => {
+    const selectMock = vi.fn();
+    selectMock
+      .mockReturnValueOnce(makeChain([{
+        id: 1, driverId: 3, amount: "200", createdAt: new Date(), driverName: "خالد",
+      }]))       // wallet transactions
+      .mockReturnValue(makeChain([])); // support tickets, requests, offers
+
+    (db.select as ReturnType<typeof vi.fn>).mockImplementation(selectMock);
+
+    const app = createApp(adminUser);
+    const res = await request(app).get("/admin/recent-events");
+    expect(res.status).toBe(200);
+    const walletEvents = res.body.filter((e: { type: string }) => e.type === "wallet");
+    expect(walletEvents.length).toBeGreaterThan(0);
+    expect(walletEvents[0]).toMatchObject({
+      type: "wallet",
+      userName: "خالد",
+    });
+  });
+
+  it("includes open support tickets in events", async () => {
+    const selectMock = vi.fn();
+    selectMock
+      .mockReturnValueOnce(makeChain([])) // wallet
+      .mockReturnValueOnce(makeChain([{
+        id: 2, type: "complaint", clientId: 1, driverId: null,
+        createdAt: new Date(), clientName: "علي",
+      }]))
+      .mockReturnValue(makeChain([])); // requests, offers, driver-name batch
+
+    (db.select as ReturnType<typeof vi.fn>).mockImplementation(selectMock);
+
+    const app = createApp(adminUser);
+    const res = await request(app).get("/admin/recent-events");
+    expect(res.status).toBe(200);
+    const supportEvents = res.body.filter((e: { type: string }) => e.type === "support");
+    expect(supportEvents.length).toBeGreaterThan(0);
+    expect(supportEvents[0]).toMatchObject({ type: "support", userName: "علي" });
+  });
+
+  it("includes open client requests in events", async () => {
+    const selectMock = vi.fn();
+    selectMock
+      .mockReturnValueOnce(makeChain([]))  // wallet
+      .mockReturnValueOnce(makeChain([]))  // support tickets
+      .mockReturnValueOnce(makeChain([{
+        id: 3, homeLocation: "الرياض", workLocation: "الجامعة",
+        clientId: 2, createdAt: new Date(), clientName: "محمد",
+      }]))
+      .mockReturnValue(makeChain([])); // offers
+
+    (db.select as ReturnType<typeof vi.fn>).mockImplementation(selectMock);
+
+    const app = createApp(adminUser);
+    const res = await request(app).get("/admin/recent-events");
+    expect(res.status).toBe(200);
+    const requestEvents = res.body.filter((e: { type: string }) => e.type === "request");
+    expect(requestEvents.length).toBeGreaterThan(0);
+    expect(requestEvents[0]).toMatchObject({ type: "request", userName: "محمد" });
+  });
+
+  it("includes pending driver offers in events", async () => {
+    const selectMock = vi.fn();
+    selectMock
+      .mockReturnValueOnce(makeChain([]))  // wallet
+      .mockReturnValueOnce(makeChain([]))  // support tickets
+      .mockReturnValueOnce(makeChain([]))  // requests
+      .mockReturnValueOnce(makeChain([{   // offers
+        id: 4, driverId: 5, requestId: 7, createdAt: new Date(), driverName: "فهد",
+      }]));
+
+    (db.select as ReturnType<typeof vi.fn>).mockImplementation(selectMock);
+
+    const app = createApp(adminUser);
+    const res = await request(app).get("/admin/recent-events");
+    expect(res.status).toBe(200);
+    const offerEvents = res.body.filter((e: { type: string }) => e.type === "offer");
+    expect(offerEvents.length).toBeGreaterThan(0);
+    expect(offerEvents[0]).toMatchObject({ type: "offer", userName: "فهد" });
+  });
+
+  it("returns at most 20 events sorted by date descending", async () => {
+    // Create 25 wallet events to verify truncation to 20
+    const walletRows = Array.from({ length: 25 }, (_, i) => ({
+      id: i + 1, driverId: i + 1, amount: "100",
+      createdAt: new Date(Date.now() - i * 1000), driverName: `سائق${i + 1}`,
+    }));
+
+    const selectMock = vi.fn();
+    selectMock
+      .mockReturnValueOnce(makeChain(walletRows))
+      .mockReturnValue(makeChain([]));
+
+    (db.select as ReturnType<typeof vi.fn>).mockImplementation(selectMock);
+
+    const app = createApp(adminUser);
+    const res = await request(app).get("/admin/recent-events");
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeLessThanOrEqual(20);
+  });
+
+  it("returns 500 on DB error", async () => {
+    (db.select as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error("DB failure");
+    });
+
+    const app = createApp(adminUser);
+    const res = await request(app).get("/admin/recent-events");
+    expect(res.status).toBe(500);
   });
 });
