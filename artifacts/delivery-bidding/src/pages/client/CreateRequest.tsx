@@ -42,11 +42,7 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
       {[1, 2, 3, 4].map((s) => (
         <div
           key={s}
-          className={`w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10 ${
-            s <= currentStep
-              ? ""
-              : ""
-          }`}
+          className="w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10"
           style={s <= currentStep ? { backgroundColor: "#deff9a", borderColor: "#deff9a" } : { backgroundColor: "#111111", borderColor: "rgba(255,255,255,0.12)" }}
         />
       ))}
