@@ -1182,6 +1182,11 @@ describe("POST /admin/requests/:id/select-offer", () => {
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 7, name: "خالد", balance: 30,
     });
+    // Atomic update returns empty array (balance condition not met)
+    const returningMock = vi.fn().mockResolvedValue([]);
+    const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const setMock = vi.fn().mockReturnValue({ where: whereMock });
+    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
 
     const app = createApp(adminUser);
     const res = await request(app).post("/admin/requests/1/select-offer").send({ offerId: 5 });
@@ -1200,7 +1205,12 @@ describe("POST /admin/requests/:id/select-offer", () => {
       id: 7, name: "خالد", balance: 200,
     });
 
-    // db.update (for balance deduction) and db.update (for request status)
+    // First db.update: atomic balance deduction — returns the updated driver row
+    const deductReturningMock = vi.fn().mockResolvedValue([{ id: 7, balance: 150 }]);
+    const deductWhereMock = vi.fn().mockReturnValue({ returning: deductReturningMock });
+    const deductSetMock = vi.fn().mockReturnValue({ where: deductWhereMock });
+
+    // Second db.update: request status → SELECTED
     const requestReturningMock = vi.fn().mockResolvedValue([{
       id: 1, clientId: null, clientType: "غيره",
       homeLocation: "الرياض", workLocation: "جامعة",
@@ -1210,14 +1220,12 @@ describe("POST /admin/requests/:id/select-offer", () => {
       monthlyPrice: 800, status: "SELECTED", selectedDriverId: 7,
       createdAt: new Date(), updatedAt: new Date(),
     }]);
-    const balanceWhereMock = vi.fn().mockResolvedValue([]);
-    const balanceSetMock = vi.fn().mockReturnValue({ where: balanceWhereMock });
     const requestWhereMock = vi.fn().mockReturnValue({ returning: requestReturningMock });
     const requestSetMock = vi.fn().mockReturnValue({ where: requestWhereMock });
 
     (db.update as ReturnType<typeof vi.fn>)
-      .mockReturnValueOnce({ set: balanceSetMock })   // balance deduction
-      .mockReturnValueOnce({ set: requestSetMock });  // request status
+      .mockReturnValueOnce({ set: deductSetMock })
+      .mockReturnValueOnce({ set: requestSetMock });
 
     const valuesMock = vi.fn().mockResolvedValue([]);
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });

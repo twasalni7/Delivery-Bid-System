@@ -942,15 +942,19 @@ router.post("/requests/:id/select-offer", async (req, res) => {
       res.status(404).json({ error: "السائق غير موجود" });
       return;
     }
-    if ((driver.balance ?? 0) < 50) {
-      res.status(400).json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
-      return;
-    }
 
-    await db
+    // Atomically deduct the 50 SAR fee only if the balance is sufficient.
+    // Using a WHERE balance >= 50 condition makes the check-and-deduct atomic,
+    // preventing a race condition if two operations run concurrently on the same driver.
+    const [deductedDriver] = await db
       .update(driversTable)
       .set({ balance: sql`${driversTable.balance} - 50` })
-      .where(eq(driversTable.id, driver.id));
+      .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= 50`))
+      .returning();
+    if (!deductedDriver) {
+      res.status(400).json({ error: "رصيد السائق غير كافٍ (يتطلب 50 ريال على الأقل)" });
+      return;
+    }
 
     await db.insert(transactionsTable).values({
       driverId: driver.id,
