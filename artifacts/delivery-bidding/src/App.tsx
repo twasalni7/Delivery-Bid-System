@@ -89,6 +89,34 @@ function RoleDetector() {
 }
 
 /**
+ * Dynamically switches the <link rel="manifest"> tag based on the current
+ * portal (driver / client / admin) so that when a user installs the PWA
+ * from a role-specific URL the correct start_url and app name are used.
+ * Must be rendered inside WouterRouter.
+ */
+function ManifestUpdater() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    let manifestPath = "/manifest.json";
+    if (location.startsWith("/driver")) {
+      manifestPath = "/manifest-driver.json";
+    } else if (location.startsWith("/client") || location.startsWith("/customer")) {
+      manifestPath = "/manifest-client.json";
+    } else if (location.startsWith("/admin")) {
+      manifestPath = "/manifest-admin.json";
+    }
+
+    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (link) {
+      link.href = manifestPath;
+    }
+  }, [location]);
+
+  return null;
+}
+
+/**
  * Shows a bottom install-prompt banner when the browser fires
  * the `beforeinstallprompt` event (Android/Chrome/Edge).
  */
@@ -106,6 +134,13 @@ function InstallBanner() {
 
   if (!deferredPrompt) return null;
 
+  const role = getStoredRole();
+  const appLabel =
+    role === "driver" ? "تطبيق السائقين" :
+    role === "client" ? "تطبيق العملاء" :
+    role === "admin"  ? "تطبيق الإدارة" :
+    "توصّلني";
+
   const install = async () => {
     await deferredPrompt.prompt();
     setDeferredPrompt(null);
@@ -119,7 +154,7 @@ function InstallBanner() {
     >
       <span className="text-2xl shrink-0">📦</span>
       <div className="flex-1 min-w-0">
-        <p className="text-white font-black text-sm leading-tight">ثبّت تطبيق توصّلني</p>
+        <p className="text-white font-black text-sm leading-tight">ثبّت {appLabel}</p>
         <p className="text-white/60 text-xs">وصول سريع بدون المتصفح</p>
       </div>
       <button
@@ -171,6 +206,8 @@ function Router() {
     <>
       {/* Silently track role on every navigation */}
       <RoleDetector />
+      {/* Dynamically switch manifest per portal */}
+      <ManifestUpdater />
       <Switch>
         {/* Smart home: redirect to role-specific login if the user has visited before */}
         <Route path="/">
