@@ -51,14 +51,16 @@ function canSeePhone(
   return false;
 }
 
-async function withDbTransaction<T>(callback: (tx: typeof db) => Promise<T>): Promise<T> {
+async function withDbTransaction<T>(
+  callback: (tx: typeof db, meta: { hasRealTransaction: boolean }) => Promise<T>,
+): Promise<T> {
   const dbWithTransaction = db as typeof db & {
     transaction?: <R>(cb: (tx: typeof db) => Promise<R>) => Promise<R>;
   };
   if (typeof dbWithTransaction.transaction === "function") {
-    return dbWithTransaction.transaction((tx) => callback(tx));
+    return dbWithTransaction.transaction((tx) => callback(tx, { hasRealTransaction: true }));
   }
-  return callback(db);
+  return callback(db, { hasRealTransaction: false });
 }
 
 function formatDriver(
@@ -346,7 +348,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   const { offerId } = parsed.data;
   const clientId = req.session.user!.id;
   try {
-    const { existingRequest, updated, updatedDriver } = await withDbTransaction(async (tx) => {
+    const { existingRequest, updated, updatedDriver } = await withDbTransaction(async (tx, meta) => {
       const existingRequest = await tx.query.requestsTable.findFirst({
         where: eq(requestsTable.id, id),
       });
@@ -388,7 +390,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 
       if (!updatedDriver) {
         logger.warn({ requestId: id, offerId, driverId: driver.id }, "requests POST /:id/select-offer balance deduction skipped");
-        throw Object.assign(new Error("رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)"), { status: 400 });
+        throw Object.assign(new Error("تعذر خصم الرسوم من رصيد السائق؛ قد يكون الرصيد غير كافٍ أو تغيّر أثناء التنفيذ"), { status: 400 });
       }
 
       const [updated] = await tx
@@ -404,14 +406,38 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         .returning();
 
       if (!updated) {
+        if (!meta.hasRealTransaction) {
+          await tx
+            .update(driversTable)
+            .set({ balance: sql`${driversTable.balance} + 50` })
+            .where(eq(driversTable.id, driver.id));
+        }
         throw Object.assign(new Error("تم تحديث الطلب من جلسة أخرى، يرجى إعادة المحاولة"), { status: 409 });
       }
 
-      await tx.insert(transactionsTable).values({
-        driverId: driver.id,
-        amount: -50,
-        type: "fee",
-      });
+      try {
+        await tx.insert(transactionsTable).values({
+          driverId: driver.id,
+          amount: -50,
+          type: "fee",
+        });
+      } catch (err) {
+        if (!meta.hasRealTransaction) {
+          await tx
+            .update(driversTable)
+            .set({ balance: sql`${driversTable.balance} + 50` })
+            .where(eq(driversTable.id, driver.id));
+          await tx
+            .update(requestsTable)
+            .set({
+              status: existingRequest.status,
+              selectedDriverId: existingRequest.selectedDriverId ?? null,
+              updatedAt: existingRequest.updatedAt ?? new Date(),
+            })
+            .where(eq(requestsTable.id, id));
+        }
+        throw err;
+      }
 
       return { existingRequest, updated, updatedDriver };
     });
