@@ -51,6 +51,16 @@ function canSeePhone(
   return false;
 }
 
+async function withDbTransaction<T>(callback: (tx: typeof db) => Promise<T>): Promise<T> {
+  const dbWithTransaction = db as typeof db & {
+    transaction?: <R>(cb: (tx: typeof db) => Promise<R>) => Promise<R>;
+  };
+  if (typeof dbWithTransaction.transaction === "function") {
+    return dbWithTransaction.transaction((tx) => callback(tx));
+  }
+  return callback(db);
+}
+
 function formatDriver(
   d: typeof driversTable.$inferSelect,
   showContact: boolean
@@ -336,82 +346,74 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   const { offerId } = parsed.data;
   const clientId = req.session.user!.id;
   try {
-    const existingRequest = await db.query.requestsTable.findFirst({
-      where: eq(requestsTable.id, id),
-    });
-    if (!existingRequest) {
-      res.status(404).json({ error: "الطلب غير موجود" });
-      return;
-    }
+    const { existingRequest, updated, updatedDriver } = await withDbTransaction(async (tx) => {
+      const existingRequest = await tx.query.requestsTable.findFirst({
+        where: eq(requestsTable.id, id),
+      });
+      if (!existingRequest) {
+        throw Object.assign(new Error("الطلب غير موجود"), { status: 404 });
+      }
 
-    if (existingRequest.clientId == null || existingRequest.clientId !== clientId) {
-      res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
-      return;
-    }
+      if (existingRequest.clientId == null || existingRequest.clientId !== clientId) {
+        throw Object.assign(new Error("غير مصرح بهذا الإجراء"), { status: 403 });
+      }
 
-    if (existingRequest.status !== "OPEN") {
-      res.status(400).json({ error: "لا يمكن تأكيد سائق بعد اختيار سائق آخر" });
-      return;
-    }
+      if (existingRequest.status !== "OPEN") {
+        throw Object.assign(new Error("لا يمكن تأكيد سائق بعد اختيار سائق آخر"), { status: 400 });
+      }
 
-    const offer = await db.query.offersTable.findFirst({
-      where: and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)),
-    });
-    if (!offer) {
-      res.status(404).json({ error: "العرض غير موجود لهذا الطلب" });
-      return;
-    }
+      const offer = await tx.query.offersTable.findFirst({
+        where: and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)),
+      });
+      if (!offer) {
+        throw Object.assign(new Error("العرض غير موجود لهذا الطلب"), { status: 404 });
+      }
 
-    const driver = await db.query.driversTable.findFirst({
-      where: eq(driversTable.id, offer.driverId),
-    });
-    if (!driver) {
-      res.status(404).json({ error: "السائق غير موجود" });
-      return;
-    }
+      const driver = await tx.query.driversTable.findFirst({
+        where: eq(driversTable.id, offer.driverId),
+      });
+      if (!driver) {
+        throw Object.assign(new Error("السائق غير موجود"), { status: 404 });
+      }
 
-    if (driver.balance < 50) {
-      res.status(400).json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
-      return;
-    }
+      if (driver.balance < 50) {
+        throw Object.assign(new Error("رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)"), { status: 400 });
+      }
 
-    const [updatedDriver] = await db
-      .update(driversTable)
-      .set({ balance: sql`${driversTable.balance} - 50` })
-      .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= 50`))
-      .returning();
-
-    if (!updatedDriver) {
-      logger.warn({ requestId: id, offerId, driverId: driver.id }, "requests POST /:id/select-offer balance deduction skipped");
-      res.status(400).json({ error: "رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)" });
-      return;
-    }
-
-    const [updated] = await db
-      .update(requestsTable)
-      .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
-      .where(
-        and(
-          eq(requestsTable.id, id),
-          eq(requestsTable.clientId, clientId),
-          eq(requestsTable.status, "OPEN"),
-        ),
-      )
-      .returning();
-
-    if (!updated) {
-      await db
+      const [updatedDriver] = await tx
         .update(driversTable)
-        .set({ balance: sql`${driversTable.balance} + 50` })
-        .where(eq(driversTable.id, driver.id));
-      res.status(409).json({ error: "تم تحديث الطلب من جلسة أخرى، يرجى إعادة المحاولة" });
-      return;
-    }
+        .set({ balance: sql`${driversTable.balance} - 50` })
+        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= 50`))
+        .returning();
 
-    await db.insert(transactionsTable).values({
-      driverId: driver.id,
-      amount: -50,
-      type: "fee",
+      if (!updatedDriver) {
+        logger.warn({ requestId: id, offerId, driverId: driver.id }, "requests POST /:id/select-offer balance deduction skipped");
+        throw Object.assign(new Error("رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)"), { status: 400 });
+      }
+
+      const [updated] = await tx
+        .update(requestsTable)
+        .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
+        .where(
+          and(
+            eq(requestsTable.id, id),
+            eq(requestsTable.clientId, clientId),
+            eq(requestsTable.status, "OPEN"),
+          ),
+        )
+        .returning();
+
+      if (!updated) {
+        throw Object.assign(new Error("تم تحديث الطلب من جلسة أخرى، يرجى إعادة المحاولة"), { status: 409 });
+      }
+
+      await tx.insert(transactionsTable).values({
+        driverId: driver.id,
+        amount: -50,
+        type: "fee",
+      });
+
+      return { existingRequest, updated, updatedDriver };
     });
 
     // Notify the selected driver (outside transaction — non-critical side-effect)
@@ -427,6 +429,11 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 
     res.json(formatRequest(req, updated, updatedDriver));
   } catch (err: unknown) {
+    const status = (err as { status?: number }).status;
+    if (status === 400 || status === 403 || status === 404 || status === 409) {
+      res.status(status).json({ error: (err as Error).message });
+      return;
+    }
     logger.error({ err }, "requests POST /:id/select-offer error");
     res.status(500).json({ error: SERVER_ERROR_MSG });
   }
