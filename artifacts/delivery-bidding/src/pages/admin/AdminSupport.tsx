@@ -91,26 +91,26 @@ export default function AdminSupport() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-3xl font-black text-gray-900">تذاكر الدعم</h1>
-            <p className="text-gray-500 text-base mt-0.5">
+            <h1 className="text-3xl font-black text-white">تذاكر الدعم</h1>
+            <p className="text-base mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
               {filtered.length} من {tickets.length} تذكرة
               {openCount > 0 && <span className="mr-2 text-red-500 font-black">· {openCount} مفتوحة</span>}
             </p>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center text-2xl">🎫</div>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: "rgba(222,255,154,0.1)" }}>🎫</div>
         </div>
 
         {/* Search bar */}
-        <div className="flex items-center gap-2 bg-white rounded-2xl border border-gray-200 px-4 py-2.5 shadow-sm focus-within:border-violet-400 transition-colors mb-3">
-          <Search size={17} className="text-gray-400 shrink-0" />
+        <div className="flex items-center gap-2 rounded-2xl px-4 py-2.5 transition-colors mb-3" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Search size={17} className="text-gray-500 shrink-0" />
           <input
             type="text"
             placeholder="ابحث برسالة التذكرة، اسم العميل، النوع..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 text-base bg-transparent outline-none text-gray-800 placeholder-gray-400"
+            className="flex-1 text-base bg-transparent outline-none text-white placeholder-gray-600"
           />
-          {search && <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600"><X size={15} /></button>}
+          {search && <button onClick={() => setSearch("")} style={{ color: "rgba(255,255,255,0.3)" }}><X size={15} /></button>}
         </div>
 
         {/* Filter chips */}
@@ -119,8 +119,8 @@ export default function AdminSupport() {
           <div className="flex gap-1 flex-wrap">
             {[{ value: "ALL", label: "الكل" }, ...TICKET_STATUSES].map((s) => (
               <button key={s.value} onClick={() => setFilterStatus(s.value)}
-                className={`h-9 px-3.5 rounded-xl text-sm font-bold border transition-colors ${filterStatus === s.value ? "text-white border-violet-500" : "bg-white border-gray-200 text-gray-500 hover:border-violet-300"}`}
-                style={filterStatus === s.value ? { background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" } : {}}>
+                className="h-9 px-3.5 rounded-xl text-sm font-bold transition-colors"
+                style={filterStatus === s.value ? { backgroundColor: "#deff9a", color: "#000" } : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)" }}>
                 {s.label}
               </button>
             ))}
@@ -130,27 +130,29 @@ export default function AdminSupport() {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className={`h-9 px-3 rounded-xl text-sm font-bold border transition-colors bg-white focus:outline-none ${filterType !== "ALL" ? "border-violet-400 text-violet-700 bg-violet-50" : "border-gray-200 text-gray-600"}`}>
+            className="h-9 px-3 rounded-xl text-sm font-bold focus:outline-none"
+            style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}>
             <option value="ALL">كل الأنواع</option>
             {TICKET_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
 
           {activeFilters > 0 && (
             <button onClick={resetFilters}
-              className="h-9 px-3.5 rounded-xl text-sm font-bold text-red-500 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors flex items-center gap-1.5">
+              className="h-9 px-3.5 rounded-xl text-sm font-bold flex items-center gap-1.5 transition-colors"
+              style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}>
               <X size={13} /> مسح ({activeFilters})
             </button>
           )}
         </div>
 
         {isLoading ? (
-          <div className="text-center py-16 text-gray-400">جاري التحميل...</div>
+          <div className="text-center py-16" style={{ color: "rgba(255,255,255,0.45)" }}>جاري التحميل...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+          <div className="text-center py-20 rounded-2xl" style={{ border: "2px dashed rgba(255,255,255,0.08)" }}>
             <p className="text-4xl mb-3">{activeFilters > 0 ? "🔍" : "🎫"}</p>
-            <p className="font-bold text-gray-500">{activeFilters > 0 ? "لا توجد تذاكر مطابقة" : "لا توجد تذاكر"}</p>
+            <p className="font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>{activeFilters > 0 ? "لا توجد تذاكر مطابقة" : "لا توجد تذاكر"}</p>
             {activeFilters > 0 && (
-              <button onClick={resetFilters} className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-violet-600 border border-violet-200 hover:bg-violet-50">مسح الفلاتر</button>
+              <button onClick={resetFilters} className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold" style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>مسح الفلاتر</button>
             )}
           </div>
         ) : (
@@ -158,56 +160,57 @@ export default function AdminSupport() {
             {filtered.map((t) => {
               const isOpen = expanded === t.id;
               return (
-                <div key={t.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 flex items-start justify-between gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                <div key={t.id} className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="px-4 py-3 flex items-start justify-between gap-3 cursor-pointer transition-colors"
+                    style={{ backgroundColor: isOpen ? "#1a1a1a" : undefined }}
                     onClick={() => setExpanded(isOpen ? null : t.id)}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-black text-gray-800 text-sm">{t.type}</span>
-                        {t.submitterName && <span className="text-xs text-gray-400">— {t.submitterName}</span>}
-                        {t.requestId && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">طلب #{t.requestId}</span>}
+                        <span className="font-black text-white text-sm">{t.type}</span>
+                        {t.submitterName && <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>— {t.submitterName}</span>}
+                        {t.requestId && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)" }}>طلب #{t.requestId}</span>}
                         <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${getTicketStatusColor(t.status)}`}>
                           {getTicketStatusLabel(t.status)}
                         </span>
-                        {t.adminReply && <span className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-bold border border-green-200">رُدّ عليها</span>}
+                        {t.adminReply && <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a", border: "1px solid rgba(222,255,154,0.2)" }}>رُدّ عليها</span>}
                       </div>
-                      <p className="text-xs text-gray-400 line-clamp-2">{t.message}</p>
+                      <p className="text-xs line-clamp-2" style={{ color: "rgba(255,255,255,0.3)" }}>{t.message}</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 text-gray-300">
+                    <div className="flex items-center gap-2 shrink-0" style={{ color: "rgba(255,255,255,0.3)" }}>
                       <span className="text-xs font-mono">#{t.id}</span>
                       {isOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                     </div>
                   </div>
 
                   {isOpen && (
-                    <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <p className="text-xs font-bold text-gray-400 mb-1">رسالة المستخدم:</p>
-                        <p className="text-sm text-gray-700">{t.message}</p>
+                    <div className="px-4 pb-4 pt-3 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="rounded-xl p-3" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                        <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>رسالة المستخدم:</p>
+                        <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>{t.message}</p>
                       </div>
                       {t.adminReply && (
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                          <p className="text-xs font-bold text-green-600 mb-1">ردك السابق:</p>
-                          <p className="text-sm text-green-800">{t.adminReply}</p>
+                        <div className="rounded-xl p-3" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.15)" }}>
+                          <p className="text-xs font-bold mb-1" style={{ color: "#deff9a" }}>ردك السابق:</p>
+                          <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>{t.adminReply}</p>
                         </div>
                       )}
                       <div>
-                        <label className="text-xs font-bold text-gray-500 mb-1.5 block">الرد على التذكرة</label>
+                        <label className="text-xs font-bold mb-1.5 block" style={{ color: "rgba(255,255,255,0.45)" }}>الرد على التذكرة</label>
                         <Textarea
                           placeholder="اكتب ردك هنا..."
                           value={replies[t.id] ?? t.adminReply ?? ""}
                           onChange={(e) => setReplies((prev) => ({ ...prev, [t.id]: e.target.value }))}
-                          rows={3} className="rounded-xl border-gray-200"
+                          rows={3} className="rounded-xl outline-none" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-gray-500 mb-1.5 block">تغيير الحالة</label>
+                        <label className="text-xs font-bold mb-1.5 block" style={{ color: "rgba(255,255,255,0.45)" }}>تغيير الحالة</label>
                         <div className="flex gap-2 flex-wrap">
                           {TICKET_STATUSES.map((s) => (
                             <button key={s.value} onClick={() => update.mutate({ id: t.id, status: s.value })}
                               disabled={t.status === s.value || update.isPending}
-                              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors disabled:opacity-50 ${t.status === s.value ? "text-white border-violet-500" : "bg-white border-gray-200 text-gray-500 hover:border-violet-400"}`}
-                              style={t.status === s.value ? { background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" } : {}}>
+                              className="px-3 py-1.5 rounded-full text-xs font-bold transition-colors disabled:opacity-50"
+                              style={t.status === s.value ? { backgroundColor: "#deff9a", color: "#000" } : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)" }}>
                               {s.label}
                             </button>
                           ))}
@@ -215,14 +218,15 @@ export default function AdminSupport() {
                       </div>
                       <div className="flex gap-2">
                         <button
-                          className="flex-1 py-2.5 rounded-xl text-white font-black disabled:opacity-50"
-                          style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}
+                          className="flex-1 py-2.5 rounded-xl font-black disabled:opacity-50"
+                          style={{ backgroundColor: "#deff9a", color: "#000" }}
                           disabled={update.isPending}
                           onClick={() => update.mutate({ id: t.id, adminReply: replies[t.id] ?? t.adminReply ?? undefined })}>
                           حفظ الرد
                         </button>
                         <button onClick={() => { if (confirm("هل تريد حذف هذه التذكرة؟")) { remove.mutate(t.id); setExpanded(null); } }}
-                          className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-500 hover:border-red-400">
+                          className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                          style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}>
                           <Trash2 size={15} />
                         </button>
                       </div>

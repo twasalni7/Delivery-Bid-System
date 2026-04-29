@@ -110,7 +110,7 @@ export default function AdminRequestDetails() {
   }, [chatMessages]);
 
   if (loadingReq) {
-    return <Layout role="admin"><div className="text-center py-20 text-gray-400">جاري التحميل...</div></Layout>;
+    return <Layout role="admin"><div className="text-center py-20" style={{ color: "rgba(255,255,255,0.4)" }}>جاري التحميل...</div></Layout>;
   }
 
   if (!request) {
@@ -118,9 +118,9 @@ export default function AdminRequestDetails() {
       <Layout role="admin">
         <div className="text-center py-20">
           <p className="text-5xl mb-3">😕</p>
-          <p className="font-bold text-lg text-gray-700">الطلب غير موجود</p>
+          <p className="font-bold text-lg text-white">الطلب غير موجود</p>
           <Link href="/admin/requests">
-            <div className="mt-4 inline-block px-5 py-2 rounded-full bg-violet-600 text-white font-bold text-sm">العودة</div>
+            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>العودة</div>
           </Link>
         </div>
       </Layout>
@@ -136,13 +136,13 @@ export default function AdminRequestDetails() {
   return (
     <Layout role="admin">
       <div dir="rtl" className="pb-6">
-        <Link href="/admin/requests" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-4">
+        <Link href="/admin/requests" className="inline-flex items-center gap-1 text-sm transition-colors mb-4" style={{ color: "rgba(255,255,255,0.45)" }}>
           <ArrowRight size={14} /> العودة للطلبات
         </Link>
 
         {/* Badge for admin-created requests */}
         {(request as any).createdBy === "admin" && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-100 text-violet-700 text-xs font-black mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black mb-3" style={{ backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" }}>
             🛡️ طلب منشأ من الإدارة
           </div>
         )}
@@ -203,31 +203,35 @@ export default function AdminRequestDetails() {
             </div>
           </div>
 
-          <div className="bg-white px-4 py-3">
+          <div className="px-4 py-3" style={{ backgroundColor: "#111111", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Calendar size={13} className="text-gray-400" />
-                <span className="text-xs text-gray-500">{request.workingDaysPerWeek} أيام/أسبوع</span>
+                <Calendar size={13} style={{ color: "rgba(255,255,255,0.35)" }} />
+                <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
               </div>
               <div className="text-center">
-                <p className="text-xs text-gray-400">السعر الشهري</p>
-                <p className="text-lg font-black text-blue-700" dir="ltr">
-                  {request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-xs font-normal text-gray-400">ر.س</span>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>السعر الشهري</p>
+                <p className="text-lg font-black" dir="ltr" style={{ color: "#deff9a" }}>
+                  {request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-xs font-normal" style={{ color: "rgba(255,255,255,0.35)" }}>ر.س</span>
                 </p>
               </div>
             </div>
             {/* Full phone always shown for admin */}
             {request.phone && (
               <div className="flex items-center gap-2 mb-2">
-                <Phone size={13} className="text-gray-400" />
-                <a href={`tel:${request.phone}`} className="text-sm font-bold text-gray-700" dir="ltr">{request.phone}</a>
+                <Phone size={13} style={{ color: "rgba(255,255,255,0.35)" }} />
+                <a href={`tel:${request.phone}`} className="text-sm font-bold text-white" dir="ltr">{request.phone}</a>
               </div>
             )}
             <div className="flex gap-1.5 flex-wrap">
               {DAYS_AR.map((d, i) => {
                 const active = i < (request.workingDaysPerWeek ?? 5);
                 return (
-                  <span key={i} className={`text-xs px-2 py-0.5 rounded-full font-medium ${active ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-400"}`}>
+                  <span
+                    key={i}
+                    className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={active ? { backgroundColor: "rgba(222,255,154,0.12)", color: "#deff9a" } : { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)" }}
+                  >
                     {d}
                   </span>
                 );
@@ -251,9 +255,9 @@ export default function AdminRequestDetails() {
               )}
             </div>
             {request.selectedDriver.mobile && (
-              <div className="bg-white px-4 py-3 flex items-center gap-3">
+              <div className="px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "#111111", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                 <Phone size={14} className="text-green-600" />
-                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-gray-800" dir="ltr">
+                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-white" dir="ltr">
                   {request.selectedDriver.mobile}
                 </a>
                 <a
@@ -270,39 +274,40 @@ export default function AdminRequestDetails() {
 
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-black text-gray-900">
+            <h2 className="text-lg font-black text-white">
               السائقون المقبِلون {offers ? `(${offers.length})` : ""}
             </h2>
             {canChat && (
               <button onClick={() => setShowChat(!showChat)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors">
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-colors"
+                style={{ color: "#deff9a", backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.16)" }}>
                 <MessageCircle size={14} /> {showChat ? "إخفاء" : "المحادثة"}
               </button>
             )}
           </div>
 
           {showChat && canChat && (
-            <div className="mb-5 rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="bg-gradient-to-r from-violet-600 to-violet-700 px-4 py-3 flex items-center justify-between">
+            <div className="mb-5 rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#161616", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center gap-2">
-                  <MessageCircle size={15} className="text-white" />
+                  <MessageCircle size={15} style={{ color: "#deff9a" }} />
                   <span className="text-white font-black text-sm">محادثة مع السائق</span>
                 </div>
                 <button onClick={() => setShowChat(false)} className="text-white/70 hover:text-white"><X size={14} /></button>
               </div>
-              <div className="max-h-72 overflow-y-auto p-3 space-y-2 bg-gray-50" dir="rtl">
+              <div className="max-h-72 overflow-y-auto p-3 space-y-2" dir="rtl" style={{ backgroundColor: "#0d0d0d" }}>
                 {(!chatMessages || chatMessages.length === 0) && (
-                  <p className="text-center text-xs text-gray-400 py-6">لا توجد رسائل بعد. ابدأ المحادثة!</p>
+                  <p className="text-center text-xs py-6" style={{ color: "rgba(255,255,255,0.4)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
                 )}
                 {chatMessages?.map((msg) => {
                   const isMe = msg.senderRole === "admin";
                   return (
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                       <div
-                        className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${isMe ? "text-white" : "bg-white border border-gray-200 text-gray-700"}`}
-                        style={isMe ? { background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" } : {}}
+                        className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
+                        style={isMe ? { color: "#0a0a0a", backgroundColor: "#deff9a" } : { backgroundColor: "#161616", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff" }}
                       >
-                        {!isMe && <p className="text-[10px] font-bold text-gray-400 mb-0.5">{msg.senderRole === "client" ? "العميل" : "السائق"}</p>}
+                        {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{msg.senderRole === "client" ? "العميل" : "السائق"}</p>}
                         <p>{msg.body}</p>
                       </div>
                     </div>
@@ -310,20 +315,21 @@ export default function AdminRequestDetails() {
                 })}
                 <div ref={chatEndRef} />
               </div>
-              <div className="border-t border-gray-200 p-2 flex gap-2 bg-white">
+              <div className="p-2 flex gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", backgroundColor: "#111111" }}>
                 <input
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                   placeholder="اكتب رسالة..."
-                  className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                  className="flex-1 text-sm px-3 py-2 rounded-xl focus:outline-none"
+                  style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616", color: "#ffffff" }}
                   dir="rtl"
                 />
                 <button
                   onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
                   disabled={!chatMessage.trim() || sendMessage.isPending}
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}
+                  style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
                 >
                   <Send size={15} />
                 </button>
@@ -331,13 +337,13 @@ export default function AdminRequestDetails() {
             </div>
           )}
 
-          {loadingOffers && <div className="text-center py-8 text-gray-400 text-sm">جاري التحميل...</div>}
+          {loadingOffers && <div className="text-center py-8 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>جاري التحميل...</div>}
 
           {!loadingOffers && (!offers || offers.length === 0) && (
-            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-white">
+            <div className="text-center py-12 border-2 border-dashed rounded-2xl" style={{ borderColor: "rgba(255,255,255,0.12)", backgroundColor: "#111111" }}>
               <p className="text-3xl mb-2">⏳</p>
-              <p className="font-bold text-gray-700">لا يوجد سائقون قبلوا بعد</p>
-              <p className="text-gray-400 text-sm mt-1">ستظهر أسماء السائقين هنا عند قبولهم الطلب</p>
+              <p className="font-bold text-white">لا يوجد سائقون قبلوا بعد</p>
+              <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>ستظهر أسماء السائقين هنا عند قبولهم الطلب</p>
             </div>
           )}
 
@@ -352,18 +358,18 @@ export default function AdminRequestDetails() {
                       <span className="text-white text-xs font-bold">السائق المؤكَّد</span>
                     </div>
                   )}
-                  <div className="bg-white p-4">
+                  <div className="p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.06)" }}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-sm font-black text-violet-600">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black" style={{ backgroundColor: "rgba(222,255,154,0.12)", color: "#deff9a" }}>
                           {offer.driver?.name?.charAt(0) ?? "س"}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-800">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                          {offer.driver?.carType && <p className="text-xs text-gray-400">{offer.driver.carType}</p>}
+                          <p className="font-bold text-white">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                          {offer.driver?.carType && <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{offer.driver.carType}</p>}
                           {/* Admin always sees driver mobile */}
                           {(offer.driver as any)?.mobile && (
-                            <a href={`tel:${(offer.driver as any).mobile}`} className="text-xs text-blue-500 font-medium" dir="ltr">
+                            <a href={`tel:${(offer.driver as any).mobile}`} className="text-xs font-medium" dir="ltr" style={{ color: "#deff9a" }}>
                               {(offer.driver as any).mobile}
                             </a>
                           )}

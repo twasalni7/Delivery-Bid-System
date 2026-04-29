@@ -13,14 +13,14 @@ const CLIENT_TYPE_EMOJI: Record<string, string> = {
   موظفات: "👩‍💼", طلاب: "🎓", مدارس: "🏫", جامعات: "🎓", معلمات: "📚", غيره: "📦",
 };
 
-const STATUS_GRADIENT: Record<string, string> = {
-  OPEN:      "linear-gradient(135deg, #312E81 0%, #4338CA 100%)",
-  SELECTED:  "linear-gradient(135deg, #065F46 0%, #059669 100%)",
-  ACTIVE:    "linear-gradient(135deg, #065F46 0%, #059669 100%)",
-  COMPLETED: "linear-gradient(135deg, #6B7280 0%, #4B5563 100%)",
-  CANCELLED: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
-  EXPIRED:   "linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)",
-  FROZEN:    "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string }> = {
+  OPEN:      { bg: "rgba(59,130,246,0.1)",  border: "rgba(59,130,246,0.25)",  text: "#60a5fa" },
+  SELECTED:  { bg: "rgba(222,255,154,0.1)", border: "rgba(222,255,154,0.25)", text: "#deff9a" },
+  ACTIVE:    { bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.25)",  text: "#34d399" },
+  COMPLETED: { bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", text: "rgba(255,255,255,0.4)" },
+  CANCELLED: { bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.2)",   text: "#f87171" },
+  EXPIRED:   { bg: "rgba(156,163,175,0.08)", border: "rgba(156,163,175,0.15)", text: "rgba(255,255,255,0.35)" },
+  FROZEN:    { bg: "rgba(59,130,246,0.08)",  border: "rgba(59,130,246,0.2)",  text: "#60a5fa" },
 };
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
@@ -51,119 +51,122 @@ export default function ClientDashboard() {
     <Layout role="client">
       <div dir="rtl">
         {/* Page title */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-7">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-[1.8rem] font-black text-[#0F172A] tracking-tight">اشتراكاتي</h1>
+              <h1 className="text-[1.9rem] font-black text-white tracking-tight">اشتراكاتي</h1>
               {totalUnread > 0 && (
-                <span className="inline-flex items-center gap-1 bg-[#312E81] text-white text-sm font-bold px-2.5 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
                   <Bell size={12} /> {totalUnread}
                 </span>
               )}
             </div>
-            <p className="text-slate-400 font-bold text-sm mt-0.5">اشتراكات التوصيل الشهري</p>
+            <p className="font-bold text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>اشتراكات التوصيل الشهري</p>
           </div>
         </div>
 
         {/* CTA button */}
         <Link href="/client/request/new">
-          <div className="w-full mb-6 rounded-[1.5rem] py-4 px-5 flex items-center justify-center gap-2.5 font-black text-white text-base shadow-xl shadow-indigo-900/20 active:scale-[0.98] transition-transform"
-            style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}>
+          <div className="w-full mb-7 btn-primary">
             <span className="text-2xl leading-none">+</span>
             اشتراك شهري جديد
           </div>
         </Link>
 
         {/* Push notifications opt-in */}
-        <div className="mb-4">
+        <div className="mb-5">
           <EnablePushButton />
         </div>
 
         {isLoading && (
-          <div className="text-center py-20 text-slate-400 font-bold text-base">جاري التحميل...</div>
+          <div className="text-center py-20 font-bold text-base" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div>
         )}
 
         {!isLoading && (!requests || requests.length === 0) && (
-          <div className="text-center py-24 border-2 border-dashed border-slate-200 rounded-[2rem] bg-white">
+          <div className="text-center py-24 rounded-3xl" style={{ backgroundColor: "#111111", border: "2px dashed rgba(255,255,255,0.08)" }}>
             <p className="text-5xl mb-4">📦</p>
-            <p className="text-xl font-black text-[#0F172A]">لا توجد اشتراكات بعد</p>
-            <p className="text-slate-400 font-bold text-sm mt-1">أضف أول طلب دوام شهري للحصول على عروض السائقين</p>
+            <p className="text-xl font-black text-white">لا توجد اشتراكات بعد</p>
+            <p className="font-bold text-sm mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>أضف أول طلب دوام شهري للحصول على عروض السائقين</p>
           </div>
         )}
 
         {requests && requests.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {requests.map((req) => {
               const offerCount = req.offerCount ?? 0;
               const unread = unreadMap[req.id] ?? 0;
-              const gradient = STATUS_GRADIENT[req.status] ?? STATUS_GRADIENT.OPEN;
+              const statusStyle = STATUS_GRADIENT[req.status] ?? STATUS_GRADIENT.OPEN;
               const emoji = CLIENT_TYPE_EMOJI[(req as any).clientType ?? ""] ?? "📦";
               const clientTypeLabel = (req as any).clientType ?? "";
 
               return (
                 <Link key={req.id} href={`/client/request/${req.id}`}>
-                  <div className={`rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/60 active:scale-[0.99] transition-transform ${unread > 0 ? "ring-2 ring-[#312E81]" : ""}`}>
-                    {/* Gradient header */}
-                    <div className="p-5 text-white" style={{ background: gradient }}>
+                  <div className="rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
+                    style={{ backgroundColor: "#111111", border: `1px solid ${unread > 0 ? "rgba(222,255,154,0.3)" : "rgba(255,255,255,0.08)"}` }}>
+                    {/* Status header */}
+                    <div className="p-5" style={{ backgroundColor: statusStyle.bg, borderBottom: `1px solid ${statusStyle.border}` }}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className="text-xs font-black bg-white/25 px-3 py-1 rounded-full uppercase tracking-widest">
+                          <span className="text-xs font-black px-3 py-1 rounded-full"
+                            style={{ backgroundColor: statusStyle.border, color: statusStyle.text }}>
                             {getStatusLabel(req.status)}
                           </span>
                           {unread > 0 && (
-                            <span className="text-xs font-black bg-white text-[#312E81] px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <span className="text-xs font-black px-2.5 py-0.5 rounded-full flex items-center gap-1"
+                              style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
                               <Bell size={11} /> {unread} جديد
                             </span>
                           )}
                         </div>
                         {offerCount > 0 && (
-                          <p className="text-white/80 text-sm font-black">{offerCount} {offerCount === 1 ? "عرض" : "عروض"}</p>
+                          <p className="text-sm font-black" style={{ color: statusStyle.text }}>{offerCount} {offerCount === 1 ? "عرض" : "عروض"}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-4">
                         <span className="text-4xl">{emoji}</span>
                         <div>
                           {clientTypeLabel && <p className="text-white font-black text-xl tracking-tight">{clientTypeLabel}</p>}
-                          <p className="text-white/60 text-xs font-bold">طلب #{req.id}</p>
+                          <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>طلب #{req.id}</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* White body */}
-                    <div className="bg-white px-5 py-4 space-y-3">
-                      <div className="flex items-start gap-2.5">
-                        <MapPin size={16} className="text-[#312E81] shrink-0 mt-0.5" />
+                    {/* Card body */}
+                    <div className="px-5 py-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#deff9a" }} />
                         <div className="flex-1">
-                          <p className="text-xs text-slate-400 font-bold mb-0.5">من (الانطلاق)</p>
-                          <p className="text-sm text-[#0F172A] font-black">{req.homeLocation}</p>
+                          <p className="text-xs font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>من (الانطلاق)</p>
+                          <p className="text-sm text-white font-black">{req.homeLocation}</p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-2.5">
-                        <MapPin size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-3">
+                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#f87171" }} />
                         <div className="flex-1">
-                          <p className="text-xs text-slate-400 font-bold mb-0.5">إلى (الوصول)</p>
-                          <p className="text-sm text-[#0F172A] font-black">{req.workLocation}</p>
+                          <p className="text-xs font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>إلى (الوصول)</p>
+                          <p className="text-sm text-white font-black">{req.workLocation}</p>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         <div className="flex items-center gap-1.5">
-                          <Clock size={14} className="text-slate-400" />
-                          <span className="text-sm text-slate-700 font-black" dir="ltr">{formatTime12h(req.morningTime)}</span>
+                          <Clock size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
+                          <span className="text-sm text-white font-black" dir="ltr">{formatTime12h(req.morningTime)}</span>
                         </div>
                         {req.eveningTime && (
                           <div className="flex items-center gap-1.5">
-                            <Clock size={14} className="text-slate-400" />
-                            <span className="text-sm text-slate-700 font-black" dir="ltr">{formatTime12h(req.eveningTime)}</span>
+                            <Clock size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
+                            <span className="text-sm text-white font-black" dir="ltr">{formatTime12h(req.eveningTime)}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-1.5">
-                          <Users size={14} className="text-slate-400" />
-                          <span className="text-sm text-slate-700 font-black">{req.numberOfPeople} ركاب</span>
+                          <Users size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
+                          <span className="text-sm text-white font-black">{req.numberOfPeople} ركاب</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Calendar size={14} className="text-slate-400" />
-                          <span className="text-sm text-slate-700 font-black">{req.workingDaysPerWeek} أيام/أسبوع</span>
+                          <Calendar size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
+                          <span className="text-sm text-white font-black">{req.workingDaysPerWeek} أيام/أسبوع</span>
                         </div>
                       </div>
 
@@ -171,7 +174,10 @@ export default function ClientDashboard() {
                         {DAYS_AR.map((d, i) => {
                           const active = i < (req.workingDaysPerWeek ?? 5);
                           return (
-                            <span key={i} className={`text-xs px-2.5 py-1 rounded-full font-black ${active ? "bg-indigo-100 text-[#312E81]" : "bg-slate-100 text-slate-400"}`}>
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full font-black"
+                              style={active
+                                ? { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a", border: "1px solid rgba(222,255,154,0.2)" }
+                                : { backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
                               {d}
                             </span>
                           );
@@ -179,25 +185,27 @@ export default function ClientDashboard() {
                       </div>
 
                       {req.selectedDriver && (
-                        <div className="flex items-center gap-2.5 pt-2 border-t border-slate-100">
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-black text-emerald-700">
+                        <div className="flex items-center gap-2.5 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black"
+                            style={{ backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" }}>
                             {req.selectedDriver.name?.charAt(0) ?? "س"}
                           </div>
                           <div className="flex-1">
-                            <p className="text-xs text-slate-400 font-bold">السائق</p>
-                            <p className="text-sm font-black text-[#0F172A]">{req.selectedDriver.name}</p>
+                            <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>السائق</p>
+                            <p className="text-sm font-black text-white">{req.selectedDriver.name}</p>
                           </div>
                           {req.selectedDriver.mobile && (
                             <a href={`tel:${req.selectedDriver.mobile}`}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border-2 border-emerald-200">
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black"
+                              style={{ backgroundColor: "#25D366", color: "#fff" }}>
                               اتصال
                             </a>
                           )}
                         </div>
                       )}
 
-                      <div className="flex items-center justify-center pt-2 border-t border-slate-100">
-                        <span className="text-[#312E81] text-sm font-black">
+                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                        <span className="text-sm font-black" style={{ color: "#deff9a" }}>
                           {req.status === "SELECTED" || req.status === "ACTIVE"
                             ? "عرض تفاصيل الرحلات اليومية ‹"
                             : "عرض تفاصيل العروض ‹"}

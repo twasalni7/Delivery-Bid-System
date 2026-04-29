@@ -16,7 +16,7 @@ const ARABIC_MONTHS = [
   "يناير","فبراير","مارس","أبريل","مايو","يونيو",
   "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر",
 ];
-const PIE_COLORS = ["#8B5CF6", "#e5e7eb"];
+const PIE_COLORS = ["#deff9a", "rgba(222,255,154,0.5)", "rgba(222,255,154,0.3)", "rgba(255,255,255,0.1)"];
 const MONTH_OPTIONS = [
   { label: "3 أشهر", value: 3 as const },
   { label: "6 أشهر", value: 6 as const },
@@ -61,11 +61,11 @@ type RecentEvent = {
   createdAt: string;
 };
 
-const EVENT_TYPE_CONFIG: Record<RecentEvent["type"], { icon: React.ReactNode; label: string; color: string }> = {
-  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "bg-emerald-100 text-emerald-700" },
-  support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "bg-amber-100 text-amber-700" },
-  request: { icon: <FileText size={14} />, label: "طلب جديد", color: "bg-blue-100 text-blue-700" },
-  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "bg-violet-100 text-violet-700" },
+const EVENT_TYPE_CONFIG: Record<RecentEvent["type"], { icon: React.ReactNode; label: string; color: string; style?: React.CSSProperties }> = {
+  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "rgba(222,255,154,0.15)", color: "#deff9a" } },
+  support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "", style: { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" } },
+  request: { icon: <FileText size={14} />, label: "طلب جديد", color: "", style: { backgroundColor: "rgba(99,102,241,0.15)", color: "#a5b4fc" } },
+  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "", style: { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" } },
 };
 
 export default function AdminDashboard() {
@@ -143,20 +143,20 @@ export default function AdminDashboard() {
       <div dir="rtl">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">لوحة الإدارة</h1>
-            <p className="text-gray-400 text-sm">نظرة عامة على المنصة والإحصائيات</p>
+            <h1 className="text-2xl font-black text-white">لوحة الإدارة</h1>
+            <p className="font-bold text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>نظرة عامة على المنصة والإحصائيات</p>
           </div>
           {analytics && (
             <button
               onClick={() => exportAnalyticsCSV(analytics)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-bold text-gray-700 shadow-sm hover:border-violet-400 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors btn-ghost"
             >
               <Download size={15} /> تصدير CSV
             </button>
           )}
         </div>
 
-        {isLoading && <div className="text-center py-16 text-gray-400">جاري التحميل...</div>}
+        {isLoading && <div className="text-center py-16 font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>جاري التحميل...</div>}
 
         {/* Push notifications opt-in */}
         <div className="mb-5">
@@ -167,24 +167,24 @@ export default function AdminDashboard() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               {STAT_CARDS.map((s) => (
-                <div key={s.key} className="rounded-2xl p-4 text-white shadow-md" style={{ background: s.bg }}>
-                  <p className="text-white/70 text-xs font-bold mb-1">{s.label}</p>
-                  <p className="text-3xl font-black">{stats[s.key]}</p>
+                <div key={s.key} className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>{s.label}</p>
+                  <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{stats[s.key]}</p>
                 </div>
               ))}
             </div>
             <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                <p className="text-gray-400 text-xs font-bold mb-1">مكتمل</p>
-                <p className="text-2xl font-black text-gray-500">{stats.completedRequests}</p>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>مكتمل</p>
+                <p className="text-2xl font-black" style={{ color: "#deff9a" }}>{stats.completedRequests}</p>
               </div>
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                <p className="text-gray-400 text-xs font-bold mb-1">السائقون</p>
-                <p className="text-2xl font-black text-gray-800">{stats.totalDrivers}</p>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>السائقون</p>
+                <p className="text-2xl font-black text-white">{stats.totalDrivers}</p>
               </div>
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                <p className="text-gray-400 text-xs font-bold mb-1">العروض</p>
-                <p className="text-2xl font-black text-gray-800">{stats.totalOffers}</p>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>العروض</p>
+                <p className="text-2xl font-black text-white">{stats.totalOffers}</p>
               </div>
             </div>
           </>
@@ -192,53 +192,54 @@ export default function AdminDashboard() {
 
         {financial && (
           <div className="mb-5">
-            <h2 className="text-base font-black text-gray-800 mb-3 flex items-center gap-2">
+            <h2 className="text-base font-black text-white mb-3 flex items-center gap-2">
               <Banknote size={16} /> الإحصائيات المالية
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <div className="bg-emerald-500 rounded-2xl p-4 text-white shadow-md">
-                <p className="text-white/70 text-xs font-bold mb-1 flex items-center gap-1">
+              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "rgba(255,255,255,0.45)" }}>
                   <Banknote size={12} /> إجمالي الرسوم المحصّلة
                 </p>
-                <p className="text-3xl font-black">{financial.totalFeesCollected.toLocaleString("ar-SA")} ريال</p>
-                <p className="text-white/60 text-xs mt-1">{financial.acceptedContractsCount} عقد × 50 ريال</p>
+                <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{financial.totalFeesCollected.toLocaleString("ar-SA")} ريال</p>
+                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>{financial.acceptedContractsCount} عقد × 50 ريال</p>
               </div>
-              <div className="bg-violet-500 rounded-2xl p-4 text-white shadow-md">
-                <p className="text-white/70 text-xs font-bold mb-1 flex items-center gap-1">
+              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "rgba(255,255,255,0.45)" }}>
                   <Wallet size={12} /> إجمالي أرصدة السائقين
                 </p>
-                <p className="text-3xl font-black">{financial.totalDriversBalance.toLocaleString("ar-SA")} ريال</p>
-                <p className="text-white/60 text-xs mt-1">مجموع أرصدة {financial.driverBalances.length} سائق</p>
+                <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{financial.totalDriversBalance.toLocaleString("ar-SA")} ريال</p>
+                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>مجموع أرصدة {financial.driverBalances.length} سائق</p>
               </div>
               {financial.totalTransactionsAmount > 0 && (
-                <div className="bg-blue-500 rounded-2xl p-4 text-white shadow-md">
-                  <p className="text-white/70 text-xs font-bold mb-1">إجمالي المعاملات المالية</p>
-                  <p className="text-3xl font-black">{financial.totalTransactionsAmount.toLocaleString("ar-SA")} ريال</p>
-                  <p className="text-white/60 text-xs mt-1">من جدول المعاملات</p>
+                <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>إجمالي المعاملات المالية</p>
+                  <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{financial.totalTransactionsAmount.toLocaleString("ar-SA")} ريال</p>
+                  <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>من جدول المعاملات</p>
                 </div>
               )}
             </div>
             {financial.driverBalances.length > 0 && (
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5">
-                <p className="text-sm font-black text-gray-800 mb-3 flex items-center gap-2">
+              <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-sm font-black text-white mb-3 flex items-center gap-2">
                   <Wallet size={14} /> توزيع أرصدة السائقين
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b text-gray-400 text-xs">
-                        <th className="text-right py-2 px-2 font-semibold">#</th>
-                        <th className="text-right py-2 px-2 font-semibold">السائق</th>
-                        <th className="text-right py-2 px-2 font-semibold">الرصيد (ريال)</th>
+                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>#</th>
+                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>السائق</th>
+                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>الرصيد (ريال)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {financial.driverBalances.map((driver, index) => (
-                        <tr key={driver.id} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
-                          <td className="py-2 px-2 text-gray-400">{index + 1}</td>
-                          <td className="py-2 px-2 font-bold text-gray-800">{driver.name}</td>
+                        <tr key={driver.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                          <td className="py-2 px-2 font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>{index + 1}</td>
+                          <td className="py-2 px-2 font-bold text-white">{driver.name}</td>
                           <td className="py-2 px-2">
-                            <span className={`font-black ${driver.balance > 0 ? "text-emerald-600" : driver.balance < 0 ? "text-red-600" : "text-gray-400"}`}>
+                            <span className={`font-black ${driver.balance > 0 ? "text-emerald-400" : driver.balance < 0 ? "text-red-400" : ""}`}
+                              style={driver.balance === 0 ? { color: "rgba(255,255,255,0.3)" } : {}}>
                               {driver.balance.toLocaleString("ar-SA")}
                             </span>
                           </td>
@@ -254,8 +255,8 @@ export default function AdminDashboard() {
 
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-black text-gray-800">الرسوم البيانية</h2>
-            <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+            <h2 className="text-base font-black text-white">الرسوم البيانية</h2>
+            <div className="flex gap-1 rounded-xl p-1" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
               {MONTH_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -263,46 +264,46 @@ export default function AdminDashboard() {
                   disabled={analyticsFetching}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
                     selectedMonths === opt.value && !appliedRange
-                      ? "bg-white text-violet-700 shadow-sm"
-                      : "text-gray-500"
+                      ? "text-black"
+                      : "text-white"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  style={selectedMonths === opt.value && !appliedRange ? { backgroundColor: "#deff9a" } : { color: "rgba(255,255,255,0.45)" }}
                 >
                   {opt.label}
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 bg-gray-50 rounded-xl p-2 border border-gray-100">
-            <span className="text-xs font-bold text-gray-500 shrink-0">نطاق مخصص:</span>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl p-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <span className="text-xs font-bold shrink-0" style={{ color: "rgba(255,255,255,0.45)" }}>نطاق مخصص:</span>
             <input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className={`text-xs border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-violet-400 transition-colors ${
-                appliedRange ? "border-violet-400 bg-violet-50" : "border-gray-200 bg-white"
-              }`}
+              className={`input-dark text-xs rounded-lg px-2 py-1 focus:outline-none transition-colors`}
+              style={appliedRange ? { borderColor: "#deff9a" } : {}}
             />
-            <span className="text-xs text-gray-400">—</span>
+            <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>—</span>
             <input
               type="date"
               value={toDate}
               min={fromDate || undefined}
               onChange={(e) => setToDate(e.target.value)}
-              className={`text-xs border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-violet-400 transition-colors ${
-                appliedRange ? "border-violet-400 bg-violet-50" : "border-gray-200 bg-white"
-              }`}
+              className={`input-dark text-xs rounded-lg px-2 py-1 focus:outline-none transition-colors`}
+              style={appliedRange ? { borderColor: "#deff9a" } : {}}
             />
             <button
               onClick={handleApplyCustomRange}
               disabled={!fromDate || !toDate}
-              className="text-xs font-bold px-3 py-1 rounded-lg bg-violet-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-violet-700 transition-colors"
+              className="text-xs font-bold px-3 py-1 rounded-lg text-black disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: "#deff9a" }}
             >
               تطبيق
             </button>
             {appliedRange && (
               <button
                 onClick={handleClearCustomRange}
-                className="text-xs font-bold px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 transition-colors"
+                className="text-xs font-bold px-2 py-1 rounded-lg border transition-colors btn-ghost"
               >
                 مسح
               </button>
@@ -313,45 +314,45 @@ export default function AdminDashboard() {
         {(analytics || analyticsFetching) && (
           <div className="relative">
             {analyticsFetching && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 rounded-2xl gap-3">
-                <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
-                <span className="text-xs font-bold text-gray-400">جاري التحميل...</span>
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl gap-3" style={{ backgroundColor: "rgba(0,0,0,0.7)" }}>
+                <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: "rgba(222,255,154,0.3)", borderTopColor: "#deff9a" }} />
+                <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>جاري التحميل...</span>
               </div>
             )}
           <div className={analyticsFetching ? "opacity-40 pointer-events-none select-none" : ""}>
           <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm lg:col-span-2">
-                <p className="text-sm font-black text-gray-800 mb-3">حجم الطلبات الشهري</p>
+              <div className="rounded-2xl p-4 lg:col-span-2" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-sm font-black text-white mb-3">حجم الطلبات الشهري</p>
                 {monthlyChartData.length === 0
-                  ? <div className="h-48 flex items-center justify-center text-gray-300 text-sm">لا توجد بيانات</div>
+                  ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>لا توجد بيانات</div>
                   : <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={monthlyChartData} margin={{ top: 4, right: 8, left: -16, bottom: 40 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 10 }} angle={-40} textAnchor="end" interval={0} />
-                        <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                        <Tooltip formatter={(value: number) => [value, "طلب"]} contentStyle={{ fontSize: 12 }} />
-                        <Bar dataKey="count" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.4)" }} angle={-40} textAnchor="end" interval={0} />
+                        <YAxis tick={{ fontSize: 11, fill: "rgba(255,255,255,0.4)" }} allowDecimals={false} />
+                        <Tooltip formatter={(value: number) => [value, "طلب"]} contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                        <Bar dataKey="count" fill="#deff9a" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                 }
               </div>
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                <p className="text-sm font-black text-gray-800 mb-2">توزيع الحالات</p>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-sm font-black text-white mb-2">توزيع الحالات</p>
                 {totalRequests === 0
-                  ? <div className="h-48 flex items-center justify-center text-gray-300 text-sm">لا توجد بيانات</div>
+                  ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>لا توجد بيانات</div>
                   : <>
                       <ResponsiveContainer width="100%" height={160}>
                         <PieChart>
                           <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={2}>
                             {pieData.map((_e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                           </Pie>
-                          <Legend formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
-                          <Tooltip formatter={(v: number) => [v, "طلب"]} contentStyle={{ fontSize: 12 }} />
+                          <Legend formatter={(v) => <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>{v}</span>} />
+                          <Tooltip formatter={(v: number) => [v, "طلب"]} contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
                         </PieChart>
                       </ResponsiveContainer>
-                      <p className="text-center text-xs text-gray-400 mt-1">
-                        نسبة الاختيار: <span className="font-black text-violet-600">{selectionRate}%</span>
+                      <p className="text-center text-xs mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
+                        نسبة الاختيار: <span className="font-black" style={{ color: "#deff9a" }}>{selectionRate}%</span>
                       </p>
                     </>
                 }
@@ -359,14 +360,14 @@ export default function AdminDashboard() {
             </div>
 
             {(analytics?.topDrivers.length ?? 0) > 0 && (
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5">
-                <p className="text-sm font-black text-gray-800 mb-3">🏆 أفضل السائقين</p>
+              <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-sm font-black text-white mb-3">🏆 أفضل السائقين</p>
                 <div className="space-y-2">
                   {analytics?.topDrivers.map((d, i) => (
-                    <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50">
-                      <span className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-xs font-black flex items-center justify-center shrink-0">{i + 1}</span>
-                      <span className="flex-1 font-bold text-sm text-gray-800">{d.name}</span>
-                      <span className="text-sm font-black text-green-600">{d.acceptedBids} عقد</span>
+                    <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                      <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 text-black" style={{ backgroundColor: "#deff9a" }}>{i + 1}</span>
+                      <span className="flex-1 font-bold text-sm text-white">{d.name}</span>
+                      <span className="text-sm font-black" style={{ color: "#deff9a" }}>{d.acceptedBids} عقد</span>
                     </div>
                   ))}
                 </div>
@@ -389,52 +390,54 @@ export default function AdminDashboard() {
             <Link
               key={item.href}
               href={item.href}
-              className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col items-center gap-2 hover:border-violet-300 hover:shadow-md transition-all active:scale-[0.97]"
+              className="rounded-2xl p-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
+              style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
             >
               <span className="text-2xl">{item.emoji}</span>
-              <span className="text-sm font-black text-gray-700">{item.label}</span>
+              <span className="text-sm font-black text-white">{item.label}</span>
             </Link>
           ))}
         </div>
 
         {/* ── Recent Events ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
-              <Clock size={16} className="text-violet-500" />
+        <div className="rounded-2xl overflow-hidden mb-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <h2 className="text-base font-black text-white flex items-center gap-2">
+              <Clock size={16} style={{ color: "#deff9a" }} />
               الأحداث الأخيرة
             </h2>
-            <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">يُحدَّث كل 30 ث</span>
+            <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ color: "rgba(255,255,255,0.3)", backgroundColor: "rgba(255,255,255,0.04)" }}>يُحدَّث كل 30 ث</span>
           </div>
           {recentEvents.length === 0 ? (
             <div className="py-12 text-center">
               <div className="text-3xl mb-2">📭</div>
-              <p className="font-bold text-gray-400 text-sm">لا توجد أحداث حديثاً</p>
-              <p className="text-xs text-gray-300 mt-1">ستظهر هنا الأحداث الجديدة تلقائياً</p>
+              <p className="font-bold text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>لا توجد أحداث حديثاً</p>
+              <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>ستظهر هنا الأحداث الجديدة تلقائياً</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div>
               {recentEvents.map((event, idx) => {
                 const cfg = EVENT_TYPE_CONFIG[event.type];
                 return (
                   <button
                     key={`${event.type}-${event.id}-${idx}`}
                     onClick={() => navigate(event.url)}
-                    className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-right group"
+                    className="w-full flex items-center gap-3 px-5 py-3.5 transition-colors text-right group"
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
                   >
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${cfg.color}`}>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black shrink-0" style={cfg.style}>
                       {cfg.icon}
                       {cfg.label}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-800 truncate">{event.description}</p>
+                      <p className="text-sm font-bold text-white truncate">{event.description}</p>
                       {event.userName && (
-                        <p className="text-xs text-gray-400 truncate mt-0.5">{event.userName}</p>
+                        <p className="text-xs truncate mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>{event.userName}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs text-gray-400">{timeAgo(event.createdAt)}</span>
-                      <ChevronLeft size={14} className="text-gray-300 group-hover:text-gray-400 transition-colors" aria-hidden="true" />
+                      <span className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{timeAgo(event.createdAt)}</span>
+                      <ChevronLeft size={14} style={{ color: "rgba(255,255,255,0.3)" }} aria-hidden="true" />
                     </div>
                   </button>
                 );

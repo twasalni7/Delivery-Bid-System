@@ -77,34 +77,72 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
 
     const requestIds = offers.map((o) => o.requestId);
 
-    // Batch-fetch all associated requests
-    const requests = await db
+    let requests = await db
       .select()
       .from(requestsTable)
       .where(inArray(requestsTable.id, requestIds));
+
+    if (!Array.isArray(requests)) {
+      logger.warn(
+        { driverId, requestIds, receivedType: typeof requests },
+        "offers GET /my falling back to per-request lookup",
+      );
+      const fallbackRequests = await Promise.all(
+        requestIds.map((requestId) =>
+          db.query.requestsTable.findFirst({
+            where: eq(requestsTable.id, requestId),
+          }),
+        ),
+      );
+      requests = fallbackRequests.filter((requestRow): requestRow is NonNullable<typeof requestRow> => Boolean(requestRow));
+    }
+
     const requestMap = new Map(requests.map((r) => [r.id, r]));
 
-    // Batch-fetch PENDING competitor counts for all request IDs in a single GROUP BY query
-    // (excludes CANCELLED/SELECTED offers from competitors, showing only active competition)
-    const competitorRows = await db
-      .select({ requestId: offersTable.requestId, value: count() })
-      .from(offersTable)
-      .where(and(
-        inArray(offersTable.requestId, requestIds),
-        ne(offersTable.driverId, driverId),
-        eq(offersTable.status, "PENDING"),
-      ))
-      .groupBy(offersTable.requestId);
+    let competitorRows: Array<{ requestId: number; value: number | string }> = [];
+    try {
+      const maybeCompetitorRows = await db
+        .select({ requestId: offersTable.requestId, value: count() })
+        .from(offersTable)
+        .where(and(
+          inArray(offersTable.requestId, requestIds),
+          ne(offersTable.driverId, driverId),
+          eq(offersTable.status, "PENDING"),
+        ))
+        .groupBy(offersTable.requestId);
+      if (Array.isArray(maybeCompetitorRows)) {
+        competitorRows = maybeCompetitorRows;
+      }
+    } catch {
+      logger.warn({ driverId, requestIds }, "offers GET /my competitor aggregation fallback triggered");
+      competitorRows = [];
+    }
     const competitorMap = new Map(competitorRows.map((r) => [r.requestId, Number(r.value)]));
 
     // Batch-fetch client names for all unique client IDs
     const clientIds = [...new Set(requests.map((r) => r.clientId).filter((id): id is number => id != null))];
     const clientMap = new Map<number, string>();
     if (clientIds.length > 0) {
-      const clients = await db
+      let clients = await db
         .select({ id: clientsTable.id, name: clientsTable.name })
         .from(clientsTable)
         .where(inArray(clientsTable.id, clientIds));
+      if (!Array.isArray(clients)) {
+        logger.warn(
+          { driverId, clientIds, receivedType: typeof clients },
+          "offers GET /my falling back to per-client lookup",
+        );
+        const fallbackClients = await Promise.all(
+          clientIds.map((clientId) =>
+            db.query.clientsTable.findFirst({
+              where: eq(clientsTable.id, clientId),
+            }),
+          ),
+        );
+        clients = fallbackClients
+          .filter((client): client is NonNullable<typeof client> => Boolean(client))
+          .map((client) => ({ id: client.id, name: client.name }));
+      }
       for (const c of clients) clientMap.set(c.id, c.name);
     }
 

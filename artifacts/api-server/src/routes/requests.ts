@@ -51,6 +51,18 @@ function canSeePhone(
   return false;
 }
 
+async function withDbTransaction<T>(
+  callback: (tx: typeof db, meta: { hasRealTransaction: boolean }) => Promise<T>,
+): Promise<T> {
+  const dbWithTransaction = db as typeof db & {
+    transaction?: <R>(cb: (tx: typeof db) => Promise<R>) => Promise<R>;
+  };
+  if (typeof dbWithTransaction.transaction === "function") {
+    return dbWithTransaction.transaction((tx) => callback(tx, { hasRealTransaction: true }));
+  }
+  return callback(db, { hasRealTransaction: false });
+}
+
 function formatDriver(
   d: typeof driversTable.$inferSelect,
   showContact: boolean
@@ -336,79 +348,101 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   const { offerId } = parsed.data;
   const clientId = req.session.user!.id;
   try {
-    const { updated, updatedDriver, request } = await db.transaction(async (tx) => {
-      // Lock the request row first to prevent concurrent accepts
-      const [lockedRequest] = await tx
-        .select()
-        .from(requestsTable)
-        .where(eq(requestsTable.id, id))
-        .for("update");
-
-      if (!lockedRequest) {
-        const e = Object.assign(new Error("الطلب غير موجود"), { status: 404 });
-        throw e;
+    const { existingRequest, updated, updatedDriver } = await withDbTransaction(async (tx, meta) => {
+      const existingRequest = await tx.query.requestsTable.findFirst({
+        where: eq(requestsTable.id, id),
+      });
+      if (!existingRequest) {
+        throw Object.assign(new Error("الطلب غير موجود"), { status: 404 });
       }
 
-      if (lockedRequest.clientId == null || lockedRequest.clientId !== clientId) {
-        const e = Object.assign(new Error("غير مصرح بهذا الإجراء"), { status: 403 });
-        throw e;
+      if (existingRequest.clientId == null || existingRequest.clientId !== clientId) {
+        throw Object.assign(new Error("غير مصرح بهذا الإجراء"), { status: 403 });
       }
 
-      if (lockedRequest.status !== "OPEN") {
-        const e = Object.assign(new Error("لا يمكن تأكيد سائق بعد اختيار سائق آخر"), { status: 400 });
-        throw e;
+      if (existingRequest.status !== "OPEN") {
+        throw Object.assign(new Error("لا يمكن تأكيد سائق بعد اختيار سائق آخر"), { status: 400 });
       }
 
-      const [offer] = await tx
-        .select()
-        .from(offersTable)
-        .where(and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)));
-
+      const offer = await tx.query.offersTable.findFirst({
+        where: and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)),
+      });
       if (!offer) {
-        const e = Object.assign(new Error("العرض غير موجود لهذا الطلب"), { status: 404 });
-        throw e;
+        throw Object.assign(new Error("العرض غير موجود لهذا الطلب"), { status: 404 });
       }
 
-      // Lock the driver row to guard the balance check and deduction
-      const [driver] = await tx
-        .select()
-        .from(driversTable)
-        .where(eq(driversTable.id, offer.driverId))
-        .for("update");
-
+      const driver = await tx.query.driversTable.findFirst({
+        where: eq(driversTable.id, offer.driverId),
+      });
       if (!driver) {
-        const e = Object.assign(new Error("السائق غير موجود"), { status: 404 });
-        throw e;
+        throw Object.assign(new Error("السائق غير موجود"), { status: 404 });
       }
 
       if (driver.balance < 50) {
-        const e = Object.assign(new Error("رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)"), { status: 400 });
-        throw e;
+        throw Object.assign(new Error("رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)"), { status: 400 });
       }
 
-      await tx
+      const [updatedDriver] = await tx
         .update(driversTable)
         .set({ balance: sql`${driversTable.balance} - 50` })
-        .where(eq(driversTable.id, driver.id));
-
-      await tx.insert(transactionsTable).values({
-        driverId: driver.id,
-        amount: -50,
-        type: "fee",
-      });
-
-      const [updatedReq] = await tx
-        .update(requestsTable)
-        .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
-        .where(eq(requestsTable.id, id))
+        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= 50`))
         .returning();
 
-      const [freshDriver] = await tx
-        .select()
-        .from(driversTable)
-        .where(eq(driversTable.id, driver.id));
+      if (!updatedDriver) {
+        logger.warn(
+          { requestId: id, offerId, driverId: driver.id },
+          "requests POST /:id/select-offer balance deduction failed due to insufficient balance or concurrent modification",
+        );
+        throw Object.assign(new Error("تعذر خصم الرسوم من رصيد السائق؛ قد يكون الرصيد غير كافٍ أو تغيّر أثناء التنفيذ"), { status: 400 });
+      }
 
-      return { updated: updatedReq, updatedDriver: freshDriver, request: lockedRequest };
+      const [updated] = await tx
+        .update(requestsTable)
+        .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
+        .where(
+          and(
+            eq(requestsTable.id, id),
+            eq(requestsTable.clientId, clientId),
+            eq(requestsTable.status, "OPEN"),
+          ),
+        )
+        .returning();
+
+      if (!updated) {
+        if (!meta.hasRealTransaction) {
+          await tx
+            .update(driversTable)
+            .set({ balance: driver.balance })
+            .where(eq(driversTable.id, driver.id));
+        }
+        throw Object.assign(new Error("تم تحديث الطلب من جلسة أخرى، يرجى إعادة المحاولة"), { status: 409 });
+      }
+
+      try {
+        await tx.insert(transactionsTable).values({
+          driverId: driver.id,
+          amount: -50,
+          type: "fee",
+        });
+      } catch (err) {
+        if (!meta.hasRealTransaction) {
+          await tx
+            .update(driversTable)
+            .set({ balance: driver.balance })
+            .where(eq(driversTable.id, driver.id));
+          await tx
+            .update(requestsTable)
+            .set({
+              status: existingRequest.status,
+              selectedDriverId: existingRequest.selectedDriverId ?? null,
+              updatedAt: existingRequest.updatedAt ?? new Date(),
+            })
+            .where(eq(requestsTable.id, id));
+        }
+        throw err;
+      }
+
+      return { existingRequest, updated, updatedDriver };
     });
 
     // Notify the selected driver (outside transaction — non-critical side-effect)
@@ -416,16 +450,16 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       userId: updatedDriver.id,
       userRole: "driver",
       title: "🎉 تم اختيارك!",
-      message: `اختار العميل عرضك على الطلب من ${request.homeLocation} إلى ${request.workLocation} بسعر ${request.monthlyPrice.toFixed(0)} ر.س/شهر`,
+      message: `اختار العميل عرضك على الطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation} بسعر ${existingRequest.monthlyPrice.toFixed(0)} ر.س/شهر`,
       type: "request",
-      relatedId: request.id,
-      url: `/driver/request/${request.id}`,
+      relatedId: existingRequest.id,
+      url: `/driver/request/${existingRequest.id}`,
     });
 
     res.json(formatRequest(req, updated, updatedDriver));
   } catch (err: unknown) {
     const status = (err as { status?: number }).status;
-    if (status === 400 || status === 403 || status === 404) {
+    if (status === 400 || status === 403 || status === 404 || status === 409) {
       res.status(status).json({ error: (err as Error).message });
       return;
     }

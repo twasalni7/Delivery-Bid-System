@@ -17,10 +17,10 @@ type Notification = {
 };
 
 function typeIcon(type: string) {
-  if (type === "offer") return <Package2 size={14} className="text-violet-500 shrink-0" />;
-  if (type === "request") return <Truck size={14} className="text-blue-500 shrink-0" />;
-  if (type === "support") return <MessageSquare size={14} className="text-green-500 shrink-0" />;
-  return <Info size={14} className="text-gray-400 shrink-0" />;
+  if (type === "offer") return <Package2 size={14} className="shrink-0" style={{ color: "#deff9a" }} />;
+  if (type === "request") return <Truck size={14} className="shrink-0" style={{ color: "#60a5fa" }} />;
+  if (type === "support") return <MessageSquare size={14} className="shrink-0" style={{ color: "#34d399" }} />;
+  return <Info size={14} className="shrink-0" style={{ color: "rgba(255,255,255,0.45)" }} />;
 }
 
 function timeAgo(dateStr: string) {
@@ -98,31 +98,32 @@ export function NotificationsBell() {
 
       {open && (
         <div
-          className="absolute top-12 left-0 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+          className="absolute top-12 left-0 z-50 w-80 rounded-2xl shadow-2xl overflow-hidden"
           dir="rtl"
-          style={{ maxHeight: "420px" }}
+          style={{ maxHeight: "420px", backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
             <div className="flex items-center gap-2">
-              <Bell size={15} className="text-violet-600" />
-              <span className="font-black text-gray-800 text-sm">الإشعارات</span>
+              <Bell size={15} style={{ color: "#deff9a" }} />
+              <span className="font-black text-white text-sm">الإشعارات</span>
               {unread > 0 && (
-                <span className="bg-red-100 text-red-600 text-xs font-black px-2 py-0.5 rounded-full">{unread} جديد</span>
+                <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.15)", color: "#f87171" }}>{unread} جديد</span>
               )}
             </div>
             <div className="flex items-center gap-1">
               {unread > 0 && (
                 <button
                   onClick={() => markAllRead.mutate()}
-                  className="flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-800 px-2 py-1 rounded-lg hover:bg-violet-50 transition-colors"
+                  className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg transition-colors"
+                  style={{ color: "#deff9a", backgroundColor: "rgba(222,255,154,0.08)" }}
                   title="تحديد الكل كمقروء"
                 >
                   <CheckCheck size={13} /> كل
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-gray-200 transition-colors">
-                <X size={14} className="text-gray-400" />
+              <button onClick={() => setOpen(false)} className="p-1 rounded-lg transition-colors" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                <X size={14} style={{ color: "rgba(255,255,255,0.45)" }} />
               </button>
             </div>
           </div>
@@ -130,7 +131,7 @@ export function NotificationsBell() {
           {/* List */}
           <div className="overflow-y-auto" style={{ maxHeight: "350px" }}>
             {notifications.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12" style={{ color: "rgba(255,255,255,0.4)" }}>
                 <Bell size={32} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm font-bold">لا توجد إشعارات</p>
               </div>
@@ -139,20 +140,27 @@ export function NotificationsBell() {
                 <div
                   key={n.id}
                   onClick={() => { if (!n.isRead) markRead.mutate(n.id); }}
-                  className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${!n.isRead ? "bg-violet-50/50" : ""}`}
+                  className="flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer"
+                  style={{
+                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    backgroundColor: !n.isRead ? "rgba(222,255,154,0.05)" : "transparent",
+                  }}
                 >
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${!n.isRead ? "bg-violet-100" : "bg-gray-100"}`}>
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                    style={{ backgroundColor: !n.isRead ? "rgba(222,255,154,0.08)" : "rgba(255,255,255,0.05)" }}
+                  >
                     {typeIcon(n.type)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm font-bold leading-tight ${!n.isRead ? "text-gray-900" : "text-gray-600"}`}>
+                      <p className="text-sm font-bold leading-tight" style={{ color: !n.isRead ? "#ffffff" : "rgba(255,255,255,0.72)" }}>
                         {n.title}
                       </p>
-                      {!n.isRead && <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0 mt-1" />}
+                      {!n.isRead && <span className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ backgroundColor: "#deff9a" }} />}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{n.message}</p>
-                    <p className="text-[11px] text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
+                    <p className="text-xs mt-0.5 leading-relaxed line-clamp-2" style={{ color: "rgba(255,255,255,0.55)" }}>{n.message}</p>
+                    <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>{timeAgo(n.createdAt)}</p>
                   </div>
                 </div>
               ))

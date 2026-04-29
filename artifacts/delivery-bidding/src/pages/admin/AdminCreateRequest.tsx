@@ -35,19 +35,16 @@ type AdditionalLocation = { type: "pickup" | "dropoff"; address: string };
 function ProgressSteps({ currentStep }: { currentStep: number }) {
   return (
     <div className="flex justify-between items-center px-8 mb-8 relative">
-      <div className="absolute left-8 right-8 h-1 top-1/2 -translate-y-1/2 -z-10 bg-slate-100 rounded-full" />
+      <div className="absolute left-8 right-8 h-1 top-1/2 -translate-y-1/2 -z-10 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
       <div
-        className="absolute right-8 h-1 bg-[#312E81] top-1/2 -translate-y-1/2 -z-10 transition-all duration-700 rounded-full"
-        style={{ left: "2rem", width: `${((currentStep - 1) / 3) * 100}%` }}
+        className="absolute right-8 h-1 top-1/2 -translate-y-1/2 -z-10 transition-all duration-700 rounded-full"
+        style={{ backgroundColor: "#deff9a", left: "2rem", width: `${((currentStep - 1) / 3) * 100}%` }}
       />
       {[1, 2, 3, 4].map((s) => (
         <div
           key={s}
-          className={`w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10 ${
-            s <= currentStep
-              ? "bg-[#312E81] border-[#312E81]"
-              : "bg-white border-slate-200"
-          }`}
+          className="w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10"
+          style={s <= currentStep ? { backgroundColor: "#deff9a", borderColor: "#deff9a" } : { backgroundColor: "#111111", borderColor: "rgba(255,255,255,0.12)" }}
         />
       ))}
     </div>
@@ -145,27 +142,27 @@ export default function AdminCreateRequest() {
       <div dir="rtl" className="max-w-xl mx-auto pb-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/admin/requests" className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-400 hover:text-[#312E81] transition-colors">
+          <Link href="/admin/requests" className="inline-flex items-center gap-1.5 text-sm font-bold transition-colors" style={{ color: "rgba(255,255,255,0.4)" }}>
             <ArrowRight size={15} /> العودة للطلبات
           </Link>
         </div>
 
         {/* Page title */}
         <div className="mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100 text-[#312E81] text-xs font-black mb-3">
-            🛡️ إنشاء من الإدارة
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black mb-3" style={{ backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" }}>
+              🛡️ إنشاء من الإدارة
+            </div>
+            <h1 className="text-[1.8rem] font-black tracking-tight leading-none text-white">طلب توصيل جديد</h1>
+            <p className="font-bold text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>تُنشئه الإدارة نيابةً عن العميل — نفس الخطوات تماماً</p>
           </div>
-          <h1 className="text-[1.8rem] font-black text-[#0F172A] tracking-tight leading-none">طلب توصيل جديد</h1>
-          <p className="text-slate-400 font-bold text-sm mt-1">تُنشئه الإدارة نيابةً عن العميل — نفس الخطوات تماماً</p>
-        </div>
 
         <ProgressSteps currentStep={step} />
 
-        <div className="bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-2xl shadow-slate-200/60 overflow-hidden">
+        <div className="rounded-[2.5rem] overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 24px 56px rgba(0,0,0,0.4)" }}>
           {/* Step header */}
-          <div className="text-center px-8 pt-8 pb-6 border-b border-slate-50">
-            <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">المرحلة {step} من 4</p>
-            <h2 className="text-[1.8rem] font-black text-[#0F172A] tracking-tight leading-none">{STEP_TITLES[step - 1]}</h2>
+          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>المرحلة {step} من 4</p>
+            <h2 className="text-[1.8rem] font-black tracking-tight leading-none text-white">{STEP_TITLES[step - 1]}</h2>
           </div>
 
           <div className="p-6 space-y-5">
@@ -176,34 +173,29 @@ export default function AdminCreateRequest() {
                   <button
                     key={t.value}
                     onClick={() => setClientType(t.value)}
-                    className={`flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98] ${
-                      clientType === t.value
-                        ? "border-[#312E81] bg-indigo-50/50"
-                        : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm ${
-                          clientType === t.value ? "bg-[#312E81]" : "bg-white"
-                        }`}
-                      >
-                        {clientType === t.value ? (
-                          <Users size={22} className="text-white" />
-                        ) : (
-                          <span>{t.emoji}</span>
-                        )}
-                      </div>
-                      <span className="text-[1.1rem] font-black text-[#0F172A]">{t.label}</span>
-                    </div>
-                    <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        clientType === t.value ? "border-[#312E81] bg-[#312E81]" : "border-slate-200"
-                      }`}
+                    className="flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98]"
+                    style={clientType === t.value ? { borderColor: "rgba(222,255,154,0.3)", backgroundColor: "rgba(222,255,154,0.06)" } : { borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#161616" }}
                     >
-                      {clientType === t.value && <Check size={12} strokeWidth={4} className="text-white" />}
-                    </div>
-                  </button>
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
+                          style={clientType === t.value ? { backgroundColor: "#deff9a", color: "#0a0a0a" } : { backgroundColor: "rgba(255,255,255,0.06)" }}
+                        >
+                          {clientType === t.value ? (
+                            <Users size={22} />
+                          ) : (
+                            <span>{t.emoji}</span>
+                          )}
+                        </div>
+                        <span className="text-[1.1rem] font-black text-white">{t.label}</span>
+                      </div>
+                      <div
+                        className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                        style={clientType === t.value ? { borderColor: "#deff9a", backgroundColor: "#deff9a", color: "#0a0a0a" } : { borderColor: "rgba(255,255,255,0.12)" }}
+                      >
+                        {clientType === t.value && <Check size={12} strokeWidth={4} />}
+                      </div>
+                    </button>
                 ))}
               </div>
             )}
@@ -212,9 +204,9 @@ export default function AdminCreateRequest() {
             {step === 2 && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500 pr-1">📍 موقع الانطلاق (المنزل)</label>
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] border-2 border-slate-100 bg-slate-50 focus-within:border-[#312E81] transition-colors">
-                    <Home className="text-[#312E81] shrink-0" size={22} />
+                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>📍 موقع الانطلاق (المنزل)</label>
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
+                    <Home className="shrink-0" size={22} style={{ color: "#deff9a" }} />
                     <Input
                       type="text"
                       placeholder="مثال: حي الروضة، شارع التحلية..."
@@ -227,8 +219,8 @@ export default function AdminCreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500 pr-1">📍 موقع الوصول (الدوام)</label>
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] border-2 border-slate-100 bg-slate-50 focus-within:border-[#312E81] transition-colors">
+                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>📍 موقع الوصول (الدوام)</label>
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
                     <Briefcase className="text-rose-500 shrink-0" size={22} />
                     <Input
                       type="text"
@@ -247,7 +239,8 @@ export default function AdminCreateRequest() {
                         <select
                           value={loc.type}
                           onChange={(e) => updateLocation(idx, "type", e.target.value)}
-                          className="border-2 border-slate-100 rounded-2xl px-3 py-2.5 text-sm font-bold bg-white focus:outline-none focus:border-[#312E81]"
+                          className="rounded-2xl px-3 py-2.5 text-sm font-bold focus:outline-none"
+                          style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616", color: "#ffffff" }}
                         >
                           <option value="pickup">استلام</option>
                           <option value="dropoff">توصيل</option>
@@ -256,13 +249,14 @@ export default function AdminCreateRequest() {
                           placeholder="العنوان..."
                           value={loc.address}
                           onChange={(e) => updateLocation(idx, "address", e.target.value)}
-                          className="flex-1 rounded-2xl border-2 border-slate-100 focus:border-[#312E81] font-bold"
+                          className="flex-1 rounded-2xl font-bold input-dark"
                         />
                       </div>
                     </div>
                     <button
                       onClick={() => removeLocation(idx)}
-                      className="mt-2.5 p-2 text-red-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                      className="mt-2.5 p-2 rounded-xl transition-colors"
+                      style={{ color: "#f87171", backgroundColor: "rgba(239,68,68,0.08)" }}
                     >
                       <X size={16} />
                     </button>
@@ -271,7 +265,8 @@ export default function AdminCreateRequest() {
 
                 <button
                   onClick={addLocation}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-[1.5rem] border-2 border-dashed border-slate-200 text-sm font-black text-slate-400 hover:border-[#312E81] hover:text-[#312E81] transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-[1.5rem] border-2 border-dashed text-sm font-black transition-colors"
+                  style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)" }}
                 >
                   <Plus size={16} /> إضافة موقع آخر
                 </button>
@@ -283,77 +278,71 @@ export default function AdminCreateRequest() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-500">⏰ وقت الذهاب</label>
+                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت الذهاب</label>
                     <Input
                       type="time"
                       value={morningTime}
                       onChange={(e) => setMorningTime(e.target.value)}
-                      className="rounded-2xl border-2 border-slate-100 focus:border-[#312E81] font-bold text-base"
+                      className="rounded-2xl font-bold text-base input-dark"
                       dir="ltr"
                     />
-                    {morningTime && <p className="text-xs font-bold text-[#312E81]">{formatTime12h(morningTime)}</p>}
+                    {morningTime && <p className="text-xs font-bold" style={{ color: "#deff9a" }}>{formatTime12h(morningTime)}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-500">⏰ وقت العودة</label>
+                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت العودة</label>
                     <Input
                       type="time"
                       value={eveningTime}
                       onChange={(e) => setEveningTime(e.target.value)}
-                      className="rounded-2xl border-2 border-slate-100 focus:border-[#312E81] font-bold text-base"
+                      className="rounded-2xl font-bold text-base input-dark"
                       dir="ltr"
                     />
-                    {eveningTime && <p className="text-xs font-bold text-[#312E81]">{formatTime12h(eveningTime)}</p>}
+                    {eveningTime && <p className="text-xs font-bold" style={{ color: "#deff9a" }}>{formatTime12h(eveningTime)}</p>}
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-black text-slate-500">أيام العمل</label>
+                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>أيام العمل</label>
                   <div className="flex gap-2 flex-wrap">
                     {DAYS.map((d) => (
                       <button
                         key={d.key}
                         onClick={() => toggleDay(d.key)}
-                        className={`w-10 h-10 rounded-full text-sm font-black transition-all active:scale-90 ${
-                          selectedDays.includes(d.key)
-                            ? "text-white shadow-md shadow-indigo-900/20"
-                            : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                        }`}
-                        style={
-                          selectedDays.includes(d.key)
-                            ? { background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }
-                            : {}
-                        }
+                        className="w-10 h-10 rounded-full text-sm font-black transition-all active:scale-90"
+                        style={selectedDays.includes(d.key) ? { backgroundColor: "#deff9a", color: "#0a0a0a" } : { backgroundColor: "#1a1a1a", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}
                       >
                         {d.label}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs font-bold text-slate-400">{selectedDays.length} أيام في الأسبوع</p>
+                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{selectedDays.length} أيام في الأسبوع</p>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500">👥 عدد الأشخاص</label>
+                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>👥 عدد الأشخاص</label>
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.max(1, parseInt(p) - 1)))}
-                      className="w-10 h-10 rounded-full bg-slate-100 text-[#0F172A] font-black text-xl hover:bg-slate-200 transition-colors"
-                    >−</button>
-                    <span className="text-[1.8rem] font-black text-[#312E81] w-10 text-center">{numberOfPeople}</span>
+                       className="w-10 h-10 rounded-full font-black text-xl transition-colors"
+                       style={{ backgroundColor: "#1a1a1a", color: "#ffffff", border: "1px solid rgba(255,255,255,0.08)" }}
+                     >−</button>
+                    <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "#deff9a" }}>{numberOfPeople}</span>
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.min(20, parseInt(p) + 1)))}
-                      className="w-10 h-10 rounded-full bg-slate-100 text-[#0F172A] font-black text-xl hover:bg-slate-200 transition-colors"
-                    >+</button>
+                       className="w-10 h-10 rounded-full font-black text-xl transition-colors"
+                       style={{ backgroundColor: "#1a1a1a", color: "#ffffff", border: "1px solid rgba(255,255,255,0.08)" }}
+                     >+</button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500">ملاحظات للسائقين (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>ملاحظات للسائقين (اختياري)</label>
                   <Textarea
                     placeholder="مثال: يفضل سائقة، باص كبير..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
-                    className="rounded-2xl border-2 border-slate-100 focus:border-[#312E81] font-bold resize-none"
+                    className="rounded-2xl font-bold resize-none input-dark"
                   />
                 </div>
               </div>
@@ -363,60 +352,60 @@ export default function AdminCreateRequest() {
             {step === 4 && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500">💰 السعر الشهري (ريال) *</label>
+                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري (ريال) *</label>
                   <div className="relative">
                     <Input
                       type="number" min="1" step="1"
                       placeholder="مثال: 800"
                       value={monthlyPrice}
                       onChange={(e) => setMonthlyPrice(e.target.value)}
-                      className="rounded-2xl border-2 border-slate-100 focus:border-[#312E81] text-xl font-black pl-14 h-14"
+                      className="rounded-2xl text-xl font-black pl-14 h-14 input-dark"
                       dir="ltr"
                     />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-black">ر.س</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black" style={{ color: "rgba(255,255,255,0.35)" }}>ر.س</span>
                   </div>
-                  <p className="text-xs font-bold text-slate-400">السعر الذي سيدفعه العميل شهرياً للسائق</p>
+                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>السعر الذي سيدفعه العميل شهرياً للسائق</p>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500">الاسم الكامل (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>الاسم الكامل (اختياري)</label>
                   <Input
                     placeholder="مثال: سارة أحمد"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="rounded-2xl border-2 border-slate-100 focus:border-[#312E81] font-bold h-12"
+                    className="rounded-2xl font-bold h-12 input-dark"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500">رقم الجوال *</label>
+                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>رقم الجوال *</label>
                   <Input
                     type="tel"
                     placeholder="05xxxxxxxx"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="rounded-2xl border-2 border-slate-100 focus:border-[#312E81] font-bold h-12"
+                    className="rounded-2xl font-bold h-12 input-dark"
                     dir="ltr"
                   />
-                  <p className="text-xs font-bold text-slate-400">يُخفى عن السائقين حتى يتم اختيار أحدهم</p>
+                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>يُخفى عن السائقين حتى يتم اختيار أحدهم</p>
                 </div>
 
                 {/* Summary */}
-                <div className="p-5 rounded-[1.5rem] bg-indigo-50/60 border-2 border-indigo-100 space-y-2">
-                  <h3 className="font-black text-[#312E81] text-sm mb-3">ملخص الطلب</h3>
-                  <div className="flex justify-between text-sm font-bold text-slate-600">
+                <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid rgba(222,255,154,0.16)" }}>
+                  <h3 className="font-black text-sm mb-3" style={{ color: "#deff9a" }}>ملخص الطلب</h3>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
                     <span>نوع الاشتراك</span><span className="font-black">{clientType}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold text-slate-600">
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
                     <span>من</span><span className="font-black text-left text-xs max-w-[55%] text-right">{homeLocation || "—"}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold text-slate-600">
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
                     <span>إلى</span><span className="font-black text-left text-xs max-w-[55%] text-right">{workLocation || "—"}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold text-slate-600">
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
                     <span>أيام العمل</span><span className="font-black">{selectedDays.length} أيام</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold text-slate-600">
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
                     <span>الركاب</span><span className="font-black">{numberOfPeople} أشخاص</span>
                   </div>
                 </div>
@@ -429,7 +418,8 @@ export default function AdminCreateRequest() {
             {step > 1 && (
               <button
                 onClick={() => setStep(step - 1)}
-                className="px-6 py-4 rounded-[1.5rem] border-2 border-slate-200 font-black text-slate-500 hover:border-slate-300 transition-colors"
+                className="px-6 py-4 rounded-[1.5rem] font-black transition-colors"
+                style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", backgroundColor: "#161616" }}
               >
                 رجوع
               </button>
@@ -451,7 +441,8 @@ export default function AdminCreateRequest() {
                 }
               }}
               disabled={submitting}
-              className="flex-1 bg-[#312E81] text-white font-black py-4 rounded-[1.5rem] text-base shadow-xl shadow-indigo-900/20 active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ backgroundColor: "#deff9a", color: "#0a0a0a", boxShadow: "0 18px 36px rgba(222,255,154,0.18)" }}
             >
               {step === 4 ? (
                 submitting ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>
