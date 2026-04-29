@@ -43,7 +43,7 @@ export default function SubmitOffer() {
   if (!user) return null;
 
   if (isLoading) {
-    return <Layout role="driver"><div className="text-center py-20 text-gray-400">جاري التحميل...</div></Layout>;
+    return <Layout role="driver"><div className="text-center py-20 font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div></Layout>;
   }
 
   if (!request) {
@@ -51,9 +51,9 @@ export default function SubmitOffer() {
       <Layout role="driver">
         <div className="text-center py-20">
           <p className="text-5xl mb-3">😕</p>
-          <p className="font-bold text-gray-700">الطلب غير موجود</p>
+          <p className="font-bold text-white">الطلب غير موجود</p>
           <Link href="/driver/dashboard">
-            <div className="mt-4 inline-block px-5 py-2 rounded-full text-white font-bold text-sm" style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}>
+            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
               العودة
             </div>
           </Link>
@@ -65,39 +65,40 @@ export default function SubmitOffer() {
   return (
     <Layout role="driver">
       <div dir="rtl" className="pb-6">
-        <Link href="/driver/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-4">
+        <Link href="/driver/dashboard" className="inline-flex items-center gap-1 text-sm font-bold transition-colors mb-5"
+          style={{ color: "rgba(255,255,255,0.45)" }}>
           <ArrowRight size={14} /> العودة للوحة السائق
         </Link>
 
         {/* Request Card */}
-        <div className="rounded-2xl overflow-hidden shadow-md mb-5" style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}>
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">مفتوح</span>
-              <span className="text-white/60 text-xs">REQ-{String(request.id).padStart(3, "0")}</span>
+        <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="p-5" style={{ backgroundColor: "#1a1a1a", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-black px-3 py-1 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>مفتوح</span>
+              <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>REQ-{String(request.id).padStart(3, "0")}</span>
             </div>
 
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-3 mb-5">
               <span className="text-3xl">
                 {(request as any).clientType === "موظفات" ? "👩‍💼" : (request as any).clientType === "طلاب" ? "🎓" : (request as any).clientType === "مدارس" ? "🏫" : "📦"}
               </span>
               <div>
                 <p className="text-white font-black text-lg">{(request as any).clientType || "طلب توصيل"}</p>
-                <p className="text-white/70 text-xs">{request.offerCount ?? 0} سائق قبل</p>
+                <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{request.offerCount ?? 0} سائق قبل</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <MapPin size={13} className="text-white/70 mt-0.5 shrink-0" />
-                <p className="text-white/90 text-sm">{request.homeLocation}</p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "#deff9a" }} />
+                <p className="text-sm text-white font-black">{request.homeLocation}</p>
               </div>
-              <div className="flex items-start gap-2">
-                <MapPin size={13} className="text-white/70 mt-0.5 shrink-0" />
-                <p className="text-white/90 text-sm">{request.workLocation}</p>
+              <div className="flex items-start gap-3">
+                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "#f87171" }} />
+                <p className="text-sm text-white font-black">{request.workLocation}</p>
               </div>
               <div className="flex items-center gap-4 mt-1">
-                <div className="flex items-center gap-1.5 text-white/70 text-xs">
+                <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>
                   <Clock size={11} />
                   {request.shifts && request.shifts.length > 0 ? (
                     <span dir="ltr">{request.shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
@@ -105,7 +106,7 @@ export default function SubmitOffer() {
                     <span dir="ltr">{formatTime12h(request.morningTime)}{request.eveningTime ? ` – ${formatTime12h(request.eveningTime)}` : ""}</span>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 text-white/70 text-xs">
+                <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>
                   <Users size={11} />
                   <span>{request.numberOfPeople} أشخاص</span>
                 </div>
@@ -114,60 +115,62 @@ export default function SubmitOffer() {
                 <div className="mt-2 space-y-1">
                   {request.additionalLocations.map((loc, idx) => (
                     <div key={idx} className="flex items-start gap-2">
-                      <MapPin size={11} className="text-white/50 mt-0.5 shrink-0" />
-                      <p className="text-white/70 text-xs">{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
+                      <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }} />
+                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
                     </div>
                   ))}
                 </div>
               )}
               {request.notes && (
-                <p className="text-white/60 text-xs mt-1">📝 {request.notes}</p>
+                <p className="text-xs mt-1 font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>📝 {request.notes}</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white/10 px-5 py-3">
+          <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex gap-1.5 flex-wrap">
               {DAYS_AR.map((d, i) => {
                 const active = i < (request.workingDaysPerWeek ?? 5);
                 return (
-                  <span key={i} className={`text-xs px-2 py-0.5 rounded-full font-medium ${active ? "bg-white text-green-700" : "bg-white/20 text-white/50"}`}>
+                  <span key={i} className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={active
+                      ? { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a", border: "1px solid rgba(222,255,154,0.2)" }
+                      : { backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
                     {d}
                   </span>
                 );
               })}
-              <span className="text-white/60 text-xs mr-auto">أيام العمل</span>
             </div>
           </div>
         </div>
 
         {/* Monthly Price */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 mb-5 text-center">
-          <p className="text-gray-400 text-sm mb-1">السعر الشهري المحدد من العميل</p>
-          <p className="text-4xl font-black text-gray-900" dir="ltr">
+        <div className="rounded-3xl p-6 mb-6 text-center" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <p className="text-sm font-bold mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>السعر الشهري المحدد من العميل</p>
+          <p className="text-5xl font-black tracking-tight" style={{ color: "#deff9a" }} dir="ltr">
             {(request as any).monthlyPrice?.toFixed(0) ?? "—"}{" "}
-            <span className="text-base font-normal text-gray-400">ر.س / شهر</span>
+            <span className="text-xl font-normal" style={{ color: "rgba(222,255,154,0.5)" }}>ر.س / شهر</span>
           </p>
         </div>
 
         {/* Accept Button */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h2 className="font-black text-gray-800">هل تقبل هذا الطلب؟</h2>
-            <p className="text-gray-400 text-xs mt-0.5">بالقبول ستظهر في قائمة اختيارات العميل</p>
+        <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <h2 className="font-black text-white">هل تقبل هذا الطلب؟</h2>
+            <p className="text-xs mt-0.5 font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>بالقبول ستظهر في قائمة اختيارات العميل</p>
           </div>
-          <div className="p-4 space-y-3">
+          <div className="p-5 space-y-3">
             <button
               onClick={handleAccept}
               disabled={createOffer.isPending}
-              className="w-full py-4 rounded-2xl text-white font-black text-base shadow-md active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}
+              className="w-full btn-primary disabled:opacity-50"
             >
               <CheckCircle size={20} />
               {createOffer.isPending ? "جاري القبول..." : "قبول الطلب"}
             </button>
             <Link href="/driver/dashboard">
-              <div className="w-full py-3 rounded-2xl text-center text-gray-500 font-bold text-sm border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+              <div className="w-full py-3.5 rounded-2xl text-center font-bold text-sm cursor-pointer"
+                style={{ backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 تجاهل
               </div>
             </Link>

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useClientLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -31,68 +30,78 @@ export default function ClientLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl">
-      <div className="p-5 pb-8" style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}>
-        <Link href="/" className="text-white/70 text-sm flex items-center gap-1 mb-6 hover:text-white">← العودة</Link>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">📦</div>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#000000" }} dir="rtl">
+      {/* Hero header */}
+      <div className="px-6 pt-10 pb-12">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>
+          ← العودة
+        </Link>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg" style={{ backgroundColor: "#deff9a" }}>
+            📦
+          </div>
           <div>
-            <h1 className="text-2xl font-black text-white">توصّلني</h1>
-            <p className="text-white/70 text-sm">بوابة العميل</p>
+            <h1 className="text-2xl font-black" style={{ color: "#deff9a" }}>توصّلني</h1>
+            <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>بوابة العميل</p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 px-5 -mt-4">
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <h2 className="text-xl font-black text-gray-900 mb-1">تسجيل الدخول</h2>
-          <p className="text-gray-400 text-sm mb-5">أدخل رقم جوالك وكلمة المرور</p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-gray-500 mb-1.5 block">رقم الجوال</label>
-              <Input
+      {/* Card */}
+      <div className="flex-1 px-5 -mt-2">
+        <div className="rounded-3xl p-7" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <h2 className="text-xl font-black text-white mb-1">تسجيل الدخول</h2>
+          <p className="text-sm font-bold mb-7" style={{ color: "rgba(255,255,255,0.4)" }}>أدخل رقم جوالك وكلمة المرور</p>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-sm font-bold block" style={{ color: "rgba(255,255,255,0.6)" }}>رقم الجوال</label>
+              <input
                 type="tel"
                 placeholder="05xxxxxxxx"
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
                 dir="ltr"
                 autoFocus
-                className="rounded-xl border-gray-200 focus:border-indigo-400"
+                className="input-dark w-full"
               />
             </div>
-            <div>
-              <label className="text-xs font-bold text-gray-500 mb-1.5 block">كلمة المرور</label>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold block" style={{ color: "rgba(255,255,255,0.6)" }}>كلمة المرور</label>
               <div className="relative">
-                <Input
+                <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   dir="ltr"
-                  className="rounded-xl border-gray-200 focus:border-indigo-400 pl-10"
+                  className="input-dark w-full pl-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "rgba(255,255,255,0.35)" }}
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
+
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full py-3.5 rounded-2xl text-white font-black shadow-md active:scale-[0.98] transition-transform disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}
+              className="w-full btn-primary mt-2 disabled:opacity-50"
             >
               {loginMutation.isPending ? "جاري الدخول..." : "دخول"}
             </button>
           </form>
-          <p className="text-center text-sm text-gray-400 mt-4">
+
+          <p className="text-center text-sm mt-6" style={{ color: "rgba(255,255,255,0.35)" }}>
             ليس لديك حساب؟{" "}
-            <Link href="/client/register" className="text-indigo-600 font-bold hover:underline">سجّل الآن</Link>
+            <Link href="/client/register" className="font-bold" style={{ color: "#deff9a" }}>سجّل الآن</Link>
           </p>
         </div>
       </div>

@@ -61,89 +61,118 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ── Premium Dark Theme (Default) ── */
 :root {
-  --background: 210 40% 98%;   /* #F8FAFC */
-  --foreground: 222 47% 11%;   /* #0F172A */
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
+  /* Pure black background */
+  --background: 0 0% 0%;        /* #000000 */
+  --foreground: 0 0% 98%;       /* #FAFAFA */
 
-  /* Primary: Indigo 900 — #312E81 */
-  --primary: 244 63% 34%;
-  --primary-foreground: 0 0% 100%;
+  /* Dark cards – slightly lifted from pure black */
+  --card: 0 0% 7%;              /* #111111 */
+  --card-foreground: 0 0% 98%;
 
-  --secondary: 214 32% 96%;
-  --secondary-foreground: 222 47% 11%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 98%;
 
-  --muted: 214 32% 96%;
-  --muted-foreground: 215 16% 47%;
+  /* Primary: Lime green #deff9a — hsl(76, 100%, 74%) */
+  --primary: 76 100% 74%;
+  --primary-foreground: 0 0% 5%; /* near-black text on lime buttons */
 
-  --accent: 214 32% 96%;
-  --accent-foreground: 222 47% 11%;
+  --secondary: 0 0% 13%;        /* #212121 */
+  --secondary-foreground: 0 0% 85%;
+
+  --muted: 0 0% 13%;
+  --muted-foreground: 0 0% 55%;
+
+  --accent: 0 0% 16%;           /* #292929 */
+  --accent-foreground: 0 0% 98%;
 
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 244 63% 34%;
+  --border: 0 0% 16%;           /* rgba white ~16% */
+  --input: 0 0% 14%;
+  --ring: 76 100% 74%;          /* lime ring */
+
+  /* Sidebar */
+  --sidebar: 0 0% 5%;
+  --sidebar-foreground: 0 0% 90%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-primary: 76 100% 74%;
+  --sidebar-primary-foreground: 0 0% 5%;
+  --sidebar-accent: 0 0% 12%;
+  --sidebar-accent-foreground: 0 0% 90%;
+  --sidebar-ring: 76 100% 74%;
 
   --app-font-sans: 'Cairo', sans-serif;
   --app-font-mono: 'Cairo', sans-serif;
-  --radius: 0.75rem; /* Rounded for the template style */
+  --radius: 1rem; /* slightly larger base radius */
+
+  /* Design tokens */
+  --lime: #deff9a;
+  --lime-dark: #bfe07a;
+  --surface: #111111;
+  --surface-2: #1a1a1a;
+  --surface-3: #222222;
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.15);
 }
 
+/* Keep a .dark alias so any explicit dark-mode classes still work */
 .dark {
-  --background: 222 47% 7%; /* #0F172A */
+  --background: 0 0% 0%;
   --foreground: 0 0% 98%;
-  --card: 222 47% 12%; /* #1E293B */
+  --card: 0 0% 7%;
   --card-foreground: 0 0% 98%;
-  --popover: 222 47% 12%;
+  --popover: 0 0% 8%;
   --popover-foreground: 0 0% 98%;
-
-  --primary: 244 63% 34%;
-  --primary-foreground: 0 0% 100%;
-
-  --secondary: 215 28% 17%;
-  --secondary-foreground: 0 0% 98%;
-
-  --muted: 215 28% 17%;
-  --muted-foreground: 215 20% 65%;
-
-  --accent: 215 28% 17%;
+  --primary: 76 100% 74%;
+  --primary-foreground: 0 0% 5%;
+  --secondary: 0 0% 13%;
+  --secondary-foreground: 0 0% 85%;
+  --muted: 0 0% 13%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 0 0% 16%;
   --accent-foreground: 0 0% 98%;
-
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-
-  --border: 215 28% 20%;
-  --input: 215 28% 20%;
-  --ring: 244 63% 34%;
+  --border: 0 0% 16%;
+  --input: 0 0% 14%;
+  --ring: 76 100% 74%;
 }
 
 @layer base {
   * {
     @apply border-border;
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
   }
 
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
+    background-color: #000000;
   }
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Cairo', sans-serif;
   }
+
+  /* Ensure scrollbars match dark theme */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #444; }
 }
 
 /* ── Twasalny Design System Utilities ── */
 @layer utilities {
+  /* Typography scale */
   .text-huge {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 900;
     line-height: 1.2;
+    letter-spacing: -0.02em;
   }
   .text-title {
     font-size: 1.1rem;
@@ -153,23 +182,108 @@
     font-size: 0.95rem;
     font-weight: 700;
   }
+
+  /* Surface helpers */
+  .bg-surface    { background-color: #111111; }
+  .bg-surface-2  { background-color: #1a1a1a; }
+  .bg-surface-3  { background-color: #222222; }
+  .border-subtle { border-color: rgba(255,255,255,0.08); }
+  .border-strong { border-color: rgba(255,255,255,0.15); }
+
+  /* Lime brand helpers */
+  .bg-lime-brand  { background-color: #deff9a; }
+  .text-lime-brand { color: #deff9a; }
+
+  /* Gradients */
   .brand-gradient {
-    background: linear-gradient(135deg, #312E81 0%, #4338CA 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 1px solid rgba(222,255,154,0.2);
+  }
+  .brand-gradient-lime {
+    background: linear-gradient(135deg, #c8f070 0%, #deff9a 100%);
   }
   .brand-gradient-emerald {
     background: linear-gradient(135deg, #064E3B 0%, #065F46 100%);
   }
-  .card-rounded {
-    border-radius: 2.5rem;
+
+  /* Card styles */
+  .card-dark {
+    background-color: #111111;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.5rem;
   }
+  .card-rounded { border-radius: 2.5rem; }
+
+  /* Primary action button – lime on black */
   .btn-primary {
-    @apply bg-[#312E81] text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-3;
-    min-height: 44px;
+    background-color: #deff9a;
+    color: #0a0a0a;
+    font-weight: 900;
+    padding-top: 1.1rem;
+    padding-bottom: 1.1rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px rgba(222,255,154,0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 56px;
+    font-size: 1rem;
   }
-  input::placeholder {
-    color: #94a3b8;
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:hover  { box-shadow: 0 6px 32px rgba(222,255,154,0.35); }
+
+  /* Secondary ghost button */
+  .btn-ghost {
+    background-color: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.75);
+    font-weight: 700;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    border-radius: 0.875rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: background-color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+  }
+  .btn-ghost:hover { background-color: rgba(255,255,255,0.1); }
+
+  /* Form input style */
+  .input-dark {
+    background-color: #1a1a1a;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 0.875rem;
+    color: #fff;
+    font-size: 1rem;
     font-weight: 600;
+    padding: 0.85rem 1rem;
+    width: 100%;
+    transition: border-color 0.15s ease;
+    font-family: 'Cairo', sans-serif;
   }
+  .input-dark:focus {
+    outline: none;
+    border-color: #deff9a;
+    box-shadow: 0 0 0 3px rgba(222,255,154,0.12);
+  }
+
+  /* Placeholder */
+  input::placeholder, textarea::placeholder {
+    color: rgba(255,255,255,0.3);
+    font-weight: 500;
+  }
+
+  /* Status pills */
+  .pill-open      { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .pill-selected  { background: rgba(222,255,154,0.12); color: #deff9a; border: 1px solid rgba(222,255,154,0.3); }
+  .pill-active    { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .pill-completed { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+  .pill-cancelled { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
   /* Ensure minimum touch target size on primary interactive elements */
   button:not(.touch-compact),
   a:not(.touch-compact),
@@ -177,11 +291,20 @@
     min-height: 44px;
     min-width: 44px;
   }
+
   /* Prevent horizontal scroll on tables */
-  table {
-    max-width: 100%;
+  table { max-width: 100%; }
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+
+  /* Shimmer loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 0.5rem;
   }
-  .overflow-x-auto {
-    -webkit-overflow-scrolling: touch;
+  @keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 }
