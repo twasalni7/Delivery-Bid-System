@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
-import { useGetDriverMe, getGetDriverMeQueryKey } from "@workspace/api-client-react";
+import { useGetDriverMe, getGetDriverMeQueryKey, useListRequests } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, Upload, CheckCircle2, Clock, X, Landmark, User, Phone, Car, Globe, CreditCard, AlertTriangle } from "lucide-react";
+import { Wallet, Upload, CheckCircle2, Clock, X, Landmark, User, Phone, Car, Globe, CreditCard, AlertTriangle, TrendingUp } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getSupabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,6 +32,9 @@ export default function DriverProfile() {
   const { data: driver, isLoading } = useGetDriverMe({
     query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user },
   });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { enabled: !!user, refetchInterval: 60_000 } as any });
 
   const [showChargeModal, setShowChargeModal] = useState(false);
   const [amount, setAmount] = useState("");
@@ -121,6 +124,11 @@ export default function DriverProfile() {
     return <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-bold" style={{ backgroundColor: "rgba(245,158,11,0.1)", color: "#fbbf24", border: "1px solid rgba(245,158,11,0.2)" }}><Clock size={11} />قيد المراجعة</span>;
   };
 
+  const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === Number(user.id)) ?? [];
+  const totalEarnings = mySelectedJobs.reduce((sum, r) => sum + ((r as any).monthlyPrice ?? 0), 0);
+  const estimatedMonthlyTrips = mySelectedJobs.reduce((sum, r) => sum + ((r as any).workingDaysPerWeek ?? 5) * 4, 0);
+  const avgPerTrip = estimatedMonthlyTrips > 0 ? Math.round(totalEarnings / estimatedMonthlyTrips) : 0;
+
   return (
     <Layout role="driver">
       <div dir="rtl" className="space-y-5">
@@ -186,6 +194,36 @@ export default function DriverProfile() {
 
         {driver && (
           <>
+            {/* ── Earnings Summary ── */}
+            <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(222,255,154,0.15)" }}>
+              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(222,255,154,0.1)", border: "1px solid rgba(222,255,154,0.2)" }}>
+                  <TrendingUp size={18} style={{ color: "#deff9a" }} />
+                </div>
+                <div>
+                  <p className="font-black text-white">الأرباح الشهرية</p>
+                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>إجمالي الدخل من الاشتراكات</p>
+                </div>
+              </div>
+              <div className="p-5">
+                <p className="text-5xl font-black tracking-tight mb-4" style={{ color: "#deff9a" }} dir="ltr">
+                  {totalEarnings.toFixed(0)} <span className="text-2xl" style={{ color: "rgba(222,255,154,0.5)" }}>ريال</span>
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "اشتراكات نشطة", value: String(mySelectedJobs.length) },
+                    { label: "رحلات / شهر", value: estimatedMonthlyTrips > 0 ? String(estimatedMonthlyTrips) : "—" },
+                    { label: "متوسط / رحلة", value: avgPerTrip > 0 ? `${avgPerTrip} ر.س` : "—" },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-2xl p-3 text-center" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <p className="font-black text-white text-base leading-tight">{s.value}</p>
+                      <p className="text-[10px] mt-0.5 leading-tight font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* ── Bank Accounts for Transfer ── */}
             {bankAccounts.length > 0 && (
               <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
