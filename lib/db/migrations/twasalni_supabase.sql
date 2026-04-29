@@ -10,14 +10,19 @@
 --    مرتبط بـ Supabase Auth — يُنشأ تلقائياً عند تسجيل المستخدم
 -- ─────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS profiles (
-  id           UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name    TEXT,
-  role         TEXT NOT NULL DEFAULT 'customer'
-                 CHECK (role IN ('customer', 'driver', 'admin')),
-  phone        TEXT,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                  UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name           TEXT,
+  role                TEXT NOT NULL DEFAULT 'customer'
+                        CHECK (role IN ('customer', 'driver', 'admin')),
+  phone               TEXT,
+  push_subscription   JSONB,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+COMMENT ON COLUMN profiles.push_subscription IS
+  'Web Push PushSubscription object { endpoint, keys: { p256dh, auth } }.'
+  ' Populated after the user grants notification permission in the browser.';
 
 -- Row Level Security لجدول profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
