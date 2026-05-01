@@ -143,6 +143,25 @@ export interface AddBalanceBody {
   amount: number;
 }
 
+export type CommuteRequestAdditionalLocationsItemType =
+  (typeof CommuteRequestAdditionalLocationsItemType)[keyof typeof CommuteRequestAdditionalLocationsItemType];
+
+export const CommuteRequestAdditionalLocationsItemType = {
+  pickup: "pickup",
+  dropoff: "dropoff",
+} as const;
+
+export type CommuteRequestAdditionalLocationsItem = {
+  type?: CommuteRequestAdditionalLocationsItemType;
+  address?: string;
+};
+
+export type CommuteRequestShiftsItem = {
+  label?: string;
+  goTime?: string;
+  returnTime?: string;
+};
+
 export type CommuteRequestStatus =
   (typeof CommuteRequestStatus)[keyof typeof CommuteRequestStatus];
 
@@ -156,25 +175,14 @@ export const CommuteRequestStatus = {
   FROZEN: "FROZEN",
 } as const;
 
-export interface CommuteRequestShift {
-  label?: string;
-  goTime: string;
-  returnTime?: string;
-}
-
-export interface CommuteRequestAdditionalLocation {
-  type: "pickup" | "dropoff";
-  address: string;
-}
-
 export interface CommuteRequest {
   id: number;
   clientId?: number | null;
   clientType?: string | null;
   homeLocation: string;
   workLocation: string;
-  additionalLocations?: CommuteRequestAdditionalLocation[] | null;
-  shifts?: CommuteRequestShift[] | null;
+  additionalLocations?: CommuteRequestAdditionalLocationsItem[] | null;
+  shifts?: CommuteRequestShiftsItem[] | null;
   /** null when caller is not authorized to see it */
   phone: string | null;
   phoneHidden: boolean;
@@ -184,21 +192,75 @@ export interface CommuteRequest {
   morningTime: string;
   eveningTime?: string | null;
   notes?: string | null;
-  monthlyPrice: number;
+  /** Home location latitude (WGS84) */
+  homeLat?: number | null;
+  /** Home location longitude (WGS84) */
+  homeLng?: number | null;
+  /** Destination latitude (WGS84) */
+  destLat?: number | null;
+  /** Destination longitude (WGS84) */
+  destLng?: number | null;
+  /** Straight-line distance in km (Haversine) */
+  distanceKm?: number | null;
+  /** True when distance > 40 km — admin must approve */
+  needsAdminReview?: boolean;
+  /** Monthly subscription price in SAR */
+  monthlyPrice?: number;
   status: CommuteRequestStatus;
   selectedDriverId?: number | null;
   selectedDriver?: Driver | null;
   createdAt?: string;
-  createdBy?: string;
   /** number of offers submitted for this request */
   offerCount?: number | null;
 }
 
+export type CreateRequestBodyClientType =
+  (typeof CreateRequestBodyClientType)[keyof typeof CreateRequestBodyClientType];
+
+export const CreateRequestBodyClientType = {
+  موظفات: "موظفات",
+  طلاب: "طلاب",
+  مدارس: "مدارس",
+  جامعات: "جامعات",
+  معلمات: "معلمات",
+  غيره: "غيره",
+} as const;
+
+export type CreateRequestBodyAdditionalLocationsItemType =
+  (typeof CreateRequestBodyAdditionalLocationsItemType)[keyof typeof CreateRequestBodyAdditionalLocationsItemType];
+
+export const CreateRequestBodyAdditionalLocationsItemType = {
+  pickup: "pickup",
+  dropoff: "dropoff",
+} as const;
+
+export type CreateRequestBodyAdditionalLocationsItem = {
+  type?: CreateRequestBodyAdditionalLocationsItemType;
+  address?: string;
+};
+
+export type CreateRequestBodyShiftsItem = {
+  label?: string;
+  goTime?: string;
+  returnTime?: string;
+};
+
 export interface CreateRequestBody {
-  clientType?: string;
+  clientType?: CreateRequestBodyClientType;
   homeLocation: string;
   workLocation: string;
-  additionalLocations?: CommuteRequestAdditionalLocation[];
+  /** Home location latitude (WGS84) */
+  homeLat?: number;
+  /** Home location longitude (WGS84) */
+  homeLng?: number;
+  /** Destination latitude (WGS84) */
+  destLat?: number;
+  /** Destination longitude (WGS84) */
+  destLng?: number;
+  /** Straight-line distance in km (Haversine) */
+  distanceKm?: number;
+  additionalLocations?: CreateRequestBodyAdditionalLocationsItem[];
+  shifts?: CreateRequestBodyShiftsItem[];
   phone: string;
   numberOfPeople: number;
   workingDaysPerWeek: number;
@@ -206,7 +268,7 @@ export interface CreateRequestBody {
   morningTime: string;
   eveningTime?: string;
   notes?: string;
-  monthlyPrice: number;
+  monthlyPrice?: number;
 }
 
 export type UpdateStatusBodyStatus =
@@ -231,13 +293,18 @@ export interface Offer {
   id: number;
   driverId: number;
   requestId: number;
-  status?: string | null;
+  price: number;
+  carType?: string | null;
+  nationality?: string | null;
   driver?: Driver | null;
   createdAt?: string;
 }
 
 export interface CreateOfferBody {
   requestId: number;
+  price: number;
+  carType: string;
+  nationality: string;
 }
 
 export interface Transaction {
