@@ -7,7 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@/lib/time-utils";
-import { ArrowRight, Plus, X, Home, Briefcase, Users, Clock, CheckCircle2, Check } from "lucide-react";
+import { calculateMonthlyPrice, haversineKm } from "@/lib/pricing";
+import MapPicker, { type MapCoords } from "@/components/MapPicker";
+import {
+  ArrowRight, Plus, X, Home, Briefcase, Users, Clock,
+  CheckCircle2, Check, AlertTriangle, Navigation,
+} from "lucide-react";
 
 const CLIENT_TYPES = [
   { value: "موظفات", emoji: "👩‍💼", label: "موظفات" },
@@ -66,6 +71,8 @@ export default function CreateRequest() {
   // Step 2
   const [homeLocation, setHomeLocation] = useState("");
   const [workLocation, setWorkLocation] = useState("");
+  const [homeCoords, setHomeCoords] = useState<MapCoords | null>(null);
+  const [workCoords, setWorkCoords] = useState<MapCoords | null>(null);
   const [additionalLocations, setAdditionalLocations] = useState<AdditionalLocation[]>([]);
 
   // Step 3
@@ -103,12 +110,23 @@ export default function CreateRequest() {
 
   const handleSubmit = () => {
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
+    
+    // Calculate distance if both coordinates are available
+    const distanceKm = homeCoords && workCoords 
+      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
+      : undefined;
+    
     createRequest.mutate(
       {
         data: {
           clientType: clientType as any,
-          homeLocation: homeLocation.trim(),
-          workLocation: workLocation.trim(),
+          homeLocation: homeCoords?.address || homeLocation.trim(),
+          workLocation: workCoords?.address || workLocation.trim(),
+          homeLat: homeCoords?.lat,
+          homeLng: homeCoords?.lng,
+          destLat: workCoords?.lat,
+          destLng: workCoords?.lng,
+          distanceKm,
           additionalLocations: validAdditional.length > 0 ? validAdditional : undefined,
           phone: phone.trim(),
           numberOfPeople: parseInt(numberOfPeople) || 1,
@@ -188,33 +206,84 @@ export default function CreateRequest() {
             {step === 2 && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>📍 موقع الانطلاق (المنزل)</label>
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
+                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    <Home className="inline-block ml-1" size={16} style={{ color: "#deff9a" }} />
+                    موقع الانطلاق (المنزل)
+                  </label>
+                  <MapPicker
+                    value={homeCoords}
+                    onChange={(coords) => {
+                      setHomeCoords(coords);
+                      setHomeLocation(coords.address);
+                    }}
+                    placeholder="اضغط على الخريطة لتحديد موقع المنزل"
+                    color="#deff9a"
+                  />
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
                     <Home className="shrink-0" size={22} style={{ color: "#deff9a" }} />
                     <Input
                       type="text"
-                      placeholder="مثال: حي الروضة، شارع التحلية..."
+                      placeholder="أو اكتب العنوان يدوياً: حي الروضة، شارع التحلية..."
                       value={homeLocation}
-                      onChange={(e) => setHomeLocation(e.target.value)}
+                      onChange={(e) => {
+                        setHomeLocation(e.target.value);
+                        // Clear coordinates when user manually edits the address
+                        // to maintain consistency between text and coordinates
+                        if (homeCoords && e.target.value !== homeCoords.address) {
+                          setHomeCoords(null);
+                        }
+                      }}
                       className="bg-transparent border-0 shadow-none focus-visible:ring-0 text-base font-bold p-0 h-auto"
-                      autoFocus
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>📍 موقع الوصول (الدوام)</label>
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
+                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    <Briefcase className="inline-block ml-1 text-rose-500" size={16} />
+                    موقع الوصول (الدوام)
+                  </label>
+                  <MapPicker
+                    value={workCoords}
+                    onChange={(coords) => {
+                      setWorkCoords(coords);
+                      setWorkLocation(coords.address);
+                    }}
+                    placeholder="اضغط على الخريطة لتحديد موقع العمل"
+                    color="#fb7185"
+                    initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+                  />
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
                     <Briefcase className="text-rose-500 shrink-0" size={22} />
                     <Input
                       type="text"
-                      placeholder="مثال: مستشفى الملك فهد، الرياض..."
+                      placeholder="أو اكتب العنوان يدوياً: مستشفى الملك فهد، الرياض..."
                       value={workLocation}
-                      onChange={(e) => setWorkLocation(e.target.value)}
+                      onChange={(e) => {
+                        setWorkLocation(e.target.value);
+                        // Clear coordinates when user manually edits the address
+                        // to maintain consistency between text and coordinates
+                        if (workCoords && e.target.value !== workCoords.address) {
+                          setWorkCoords(null);
+                        }
+                      }}
                       className="bg-transparent border-0 shadow-none focus-visible:ring-0 text-base font-bold p-0 h-auto"
                     />
                   </div>
                 </div>
+
+                {/* Distance indicator */}
+                {homeCoords && workCoords && (
+                  <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.2)" }}>
+                    <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>
+                      المسافة المقدرة:{" "}
+                      <span className="text-white">
+                        {haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng).toFixed(1)}{" "}
+                        كم
+                      </span>
+                    </p>
+                  </div>
+                )}
 
                 {additionalLocations.map((loc, idx) => (
                   <div key={idx} className="flex gap-2 items-start">

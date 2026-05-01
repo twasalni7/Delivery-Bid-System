@@ -199,20 +199,31 @@ export const GetDriverTransactionsResponse = zod.array(
  * @summary List commute requests
  */
 export const ListRequestsQueryParams = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
 });
 
 export const ListRequestsResponseItem = zod.object({
   id: zod.number(),
   clientId: zod.number().nullish(),
+  clientType: zod.string().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  clientType: zod.string().nullish(),
   additionalLocations: zod
-    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
     .nullish(),
   shifts: zod
-    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
     .nullish(),
   phone: zod
     .string()
@@ -221,11 +232,35 @@ export const ListRequestsResponseItem = zod.object({
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().nullish(),
   morningTime: zod.string(),
   eveningTime: zod.string().nullish(),
-  numberOfShifts: zod.number().nullish(),
   notes: zod.string().nullish(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  homeLat: zod.number().nullish().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().nullish().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().nullish().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().nullish().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .nullish()
+    .describe("Straight-line distance in km (Haversine)"),
+  needsAdminReview: zod
+    .boolean()
+    .optional()
+    .describe("True when distance > 40 km — admin must approve"),
+  monthlyPrice: zod
+    .number()
+    .optional()
+    .describe("Monthly subscription price in SAR"),
+  status: zod.enum([
+    "OPEN",
+    "SELECTED",
+    "ACTIVE",
+    "COMPLETED",
+    "CANCELLED",
+    "EXPIRED",
+    "FROZEN",
+  ]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -244,8 +279,6 @@ export const ListRequestsResponseItem = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
-  monthlyPrice: zod.number(),
-  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -257,10 +290,36 @@ export const ListRequestsResponse = zod.array(ListRequestsResponseItem);
  * @summary Create a commute request (requires client auth)
  */
 export const CreateRequestBody = zod.object({
-  clientType: zod.enum(["موظفات", "طلاب", "مدارس", "جامعات", "معلمات", "غيره"]).optional(),
+  clientType: zod
+    .enum(["موظفات", "طلاب", "مدارس", "جامعات", "معلمات", "غيره"])
+    .optional(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  additionalLocations: zod.array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() })).optional(),
+  homeLat: zod.number().optional().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().optional().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().optional().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().optional().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .optional()
+    .describe("Straight-line distance in km (Haversine)"),
+  additionalLocations: zod
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  shifts: zod
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
+    .optional(),
   phone: zod.string(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
@@ -281,14 +340,25 @@ export const GetRequestParams = zod.object({
 export const GetRequestResponse = zod.object({
   id: zod.number(),
   clientId: zod.number().nullish(),
+  clientType: zod.string().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  clientType: zod.string().nullish(),
   additionalLocations: zod
-    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
     .nullish(),
   shifts: zod
-    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
     .nullish(),
   phone: zod
     .string()
@@ -297,11 +367,35 @@ export const GetRequestResponse = zod.object({
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().nullish(),
   morningTime: zod.string(),
   eveningTime: zod.string().nullish(),
-  numberOfShifts: zod.number().nullish(),
   notes: zod.string().nullish(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  homeLat: zod.number().nullish().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().nullish().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().nullish().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().nullish().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .nullish()
+    .describe("Straight-line distance in km (Haversine)"),
+  needsAdminReview: zod
+    .boolean()
+    .optional()
+    .describe("True when distance > 40 km — admin must approve"),
+  monthlyPrice: zod
+    .number()
+    .optional()
+    .describe("Monthly subscription price in SAR"),
+  status: zod.enum([
+    "OPEN",
+    "SELECTED",
+    "ACTIVE",
+    "COMPLETED",
+    "CANCELLED",
+    "EXPIRED",
+    "FROZEN",
+  ]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -320,8 +414,6 @@ export const GetRequestResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
-  monthlyPrice: zod.number(),
-  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -336,21 +428,32 @@ export const AdminUpdateRequestByPathParams = zod.object({
 });
 
 export const AdminUpdateRequestByPathBody = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
   selectedDriverId: zod.number().nullish(),
 });
 
 export const AdminUpdateRequestByPathResponse = zod.object({
   id: zod.number(),
   clientId: zod.number().nullish(),
+  clientType: zod.string().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  clientType: zod.string().nullish(),
   additionalLocations: zod
-    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
     .nullish(),
   shifts: zod
-    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
     .nullish(),
   phone: zod
     .string()
@@ -359,11 +462,35 @@ export const AdminUpdateRequestByPathResponse = zod.object({
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().nullish(),
   morningTime: zod.string(),
   eveningTime: zod.string().nullish(),
-  numberOfShifts: zod.number().nullish(),
   notes: zod.string().nullish(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  homeLat: zod.number().nullish().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().nullish().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().nullish().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().nullish().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .nullish()
+    .describe("Straight-line distance in km (Haversine)"),
+  needsAdminReview: zod
+    .boolean()
+    .optional()
+    .describe("True when distance > 40 km — admin must approve"),
+  monthlyPrice: zod
+    .number()
+    .optional()
+    .describe("Monthly subscription price in SAR"),
+  status: zod.enum([
+    "OPEN",
+    "SELECTED",
+    "ACTIVE",
+    "COMPLETED",
+    "CANCELLED",
+    "EXPIRED",
+    "FROZEN",
+  ]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -382,8 +509,6 @@ export const AdminUpdateRequestByPathResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
-  monthlyPrice: zod.number(),
-  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -409,20 +534,31 @@ export const UpdateRequestStatusParams = zod.object({
 });
 
 export const UpdateRequestStatusBody = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]),
 });
 
 export const UpdateRequestStatusResponse = zod.object({
   id: zod.number(),
   clientId: zod.number().nullish(),
+  clientType: zod.string().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  clientType: zod.string().nullish(),
   additionalLocations: zod
-    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
     .nullish(),
   shifts: zod
-    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
     .nullish(),
   phone: zod
     .string()
@@ -431,11 +567,35 @@ export const UpdateRequestStatusResponse = zod.object({
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().nullish(),
   morningTime: zod.string(),
   eveningTime: zod.string().nullish(),
-  numberOfShifts: zod.number().nullish(),
   notes: zod.string().nullish(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  homeLat: zod.number().nullish().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().nullish().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().nullish().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().nullish().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .nullish()
+    .describe("Straight-line distance in km (Haversine)"),
+  needsAdminReview: zod
+    .boolean()
+    .optional()
+    .describe("True when distance > 40 km — admin must approve"),
+  monthlyPrice: zod
+    .number()
+    .optional()
+    .describe("Monthly subscription price in SAR"),
+  status: zod.enum([
+    "OPEN",
+    "SELECTED",
+    "ACTIVE",
+    "COMPLETED",
+    "CANCELLED",
+    "EXPIRED",
+    "FROZEN",
+  ]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -454,8 +614,6 @@ export const UpdateRequestStatusResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
-  monthlyPrice: zod.number(),
-  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -476,14 +634,25 @@ export const SelectOfferBody = zod.object({
 export const SelectOfferResponse = zod.object({
   id: zod.number(),
   clientId: zod.number().nullish(),
+  clientType: zod.string().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  clientType: zod.string().nullish(),
   additionalLocations: zod
-    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
     .nullish(),
   shifts: zod
-    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
     .nullish(),
   phone: zod
     .string()
@@ -492,11 +661,35 @@ export const SelectOfferResponse = zod.object({
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().nullish(),
   morningTime: zod.string(),
   eveningTime: zod.string().nullish(),
-  numberOfShifts: zod.number().nullish(),
   notes: zod.string().nullish(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  homeLat: zod.number().nullish().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().nullish().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().nullish().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().nullish().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .nullish()
+    .describe("Straight-line distance in km (Haversine)"),
+  needsAdminReview: zod
+    .boolean()
+    .optional()
+    .describe("True when distance > 40 km — admin must approve"),
+  monthlyPrice: zod
+    .number()
+    .optional()
+    .describe("Monthly subscription price in SAR"),
+  status: zod.enum([
+    "OPEN",
+    "SELECTED",
+    "ACTIVE",
+    "COMPLETED",
+    "CANCELLED",
+    "EXPIRED",
+    "FROZEN",
+  ]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -515,8 +708,6 @@ export const SelectOfferResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
-  monthlyPrice: zod.number(),
-  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -534,7 +725,9 @@ export const GetRequestOffersResponseItem = zod.object({
   id: zod.number(),
   driverId: zod.number(),
   requestId: zod.number(),
-  status: zod.enum(["PENDING", "SELECTED", "CANCELLED"]),
+  price: zod.number(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
   driver: zod
     .object({
       id: zod.number(),
@@ -562,7 +755,9 @@ export const ListOffersResponseItem = zod.object({
   id: zod.number(),
   driverId: zod.number(),
   requestId: zod.number(),
-  status: zod.enum(["PENDING", "SELECTED", "CANCELLED"]),
+  price: zod.number(),
+  carType: zod.string().nullish(),
+  nationality: zod.string().nullish(),
   driver: zod
     .object({
       id: zod.number(),
@@ -584,10 +779,13 @@ export const ListOffersResponseItem = zod.object({
 export const ListOffersResponse = zod.array(ListOffersResponseItem);
 
 /**
- * @summary Driver accepts a request (requires driver auth)
+ * @summary Driver submits an offer (requires driver auth)
  */
 export const CreateOfferBody = zod.object({
   requestId: zod.number(),
+  price: zod.number(),
+  carType: zod.string(),
+  nationality: zod.string(),
 });
 
 /**
@@ -614,6 +812,18 @@ export const GetAdminAnalyticsQueryParams = zod.object({
     .union([zod.literal(3), zod.literal(6), zod.literal(12)])
     .default(getAdminAnalyticsQueryMonthsDefault)
     .describe("Number of months to include in the analytics (3, 6, or 12)"),
+  from: zod
+    .date()
+    .optional()
+    .describe(
+      "Start date for custom date range (ISO date string, e.g. 2024-01-01). Overrides months when both from and to are provided.",
+    ),
+  to: zod
+    .date()
+    .optional()
+    .describe(
+      "End date for custom date range (ISO date string, e.g. 2024-03-31). Overrides months when both from and to are provided.",
+    ),
 });
 
 export const GetAdminAnalyticsResponse = zod.object({
@@ -854,14 +1064,25 @@ export const AdminListClientsResponse = zod.array(AdminListClientsResponseItem);
 export const AdminListRequestsResponseItem = zod.object({
   id: zod.number(),
   clientId: zod.number().nullish(),
+  clientType: zod.string().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  clientType: zod.string().nullish(),
   additionalLocations: zod
-    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
     .nullish(),
   shifts: zod
-    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
     .nullish(),
   phone: zod
     .string()
@@ -870,11 +1091,35 @@ export const AdminListRequestsResponseItem = zod.object({
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().nullish(),
   morningTime: zod.string(),
   eveningTime: zod.string().nullish(),
-  numberOfShifts: zod.number().nullish(),
   notes: zod.string().nullish(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  homeLat: zod.number().nullish().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().nullish().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().nullish().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().nullish().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .nullish()
+    .describe("Straight-line distance in km (Haversine)"),
+  needsAdminReview: zod
+    .boolean()
+    .optional()
+    .describe("True when distance > 40 km — admin must approve"),
+  monthlyPrice: zod
+    .number()
+    .optional()
+    .describe("Monthly subscription price in SAR"),
+  status: zod.enum([
+    "OPEN",
+    "SELECTED",
+    "ACTIVE",
+    "COMPLETED",
+    "CANCELLED",
+    "EXPIRED",
+    "FROZEN",
+  ]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -893,8 +1138,6 @@ export const AdminListRequestsResponseItem = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
-  monthlyPrice: zod.number(),
-  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()
@@ -912,21 +1155,32 @@ export const AdminUpdateRequestParams = zod.object({
 });
 
 export const AdminUpdateRequestBody = zod.object({
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]).optional(),
+  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED"]).optional(),
   selectedDriverId: zod.number().nullish(),
 });
 
 export const AdminUpdateRequestResponse = zod.object({
   id: zod.number(),
   clientId: zod.number().nullish(),
+  clientType: zod.string().nullish(),
   homeLocation: zod.string(),
   workLocation: zod.string(),
-  clientType: zod.string().nullish(),
   additionalLocations: zod
-    .array(zod.object({ type: zod.enum(["pickup", "dropoff"]), address: zod.string() }))
+    .array(
+      zod.object({
+        type: zod.enum(["pickup", "dropoff"]).optional(),
+        address: zod.string().optional(),
+      }),
+    )
     .nullish(),
   shifts: zod
-    .array(zod.object({ label: zod.string().optional(), goTime: zod.string(), returnTime: zod.string().optional() }))
+    .array(
+      zod.object({
+        label: zod.string().optional(),
+        goTime: zod.string().optional(),
+        returnTime: zod.string().optional(),
+      }),
+    )
     .nullish(),
   phone: zod
     .string()
@@ -935,11 +1189,35 @@ export const AdminUpdateRequestResponse = zod.object({
   phoneHidden: zod.boolean(),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
+  numberOfShifts: zod.number().nullish(),
   morningTime: zod.string(),
   eveningTime: zod.string().nullish(),
-  numberOfShifts: zod.number().nullish(),
   notes: zod.string().nullish(),
-  status: zod.enum(["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"]),
+  homeLat: zod.number().nullish().describe("Home location latitude (WGS84)"),
+  homeLng: zod.number().nullish().describe("Home location longitude (WGS84)"),
+  destLat: zod.number().nullish().describe("Destination latitude (WGS84)"),
+  destLng: zod.number().nullish().describe("Destination longitude (WGS84)"),
+  distanceKm: zod
+    .number()
+    .nullish()
+    .describe("Straight-line distance in km (Haversine)"),
+  needsAdminReview: zod
+    .boolean()
+    .optional()
+    .describe("True when distance > 40 km — admin must approve"),
+  monthlyPrice: zod
+    .number()
+    .optional()
+    .describe("Monthly subscription price in SAR"),
+  status: zod.enum([
+    "OPEN",
+    "SELECTED",
+    "ACTIVE",
+    "COMPLETED",
+    "CANCELLED",
+    "EXPIRED",
+    "FROZEN",
+  ]),
   selectedDriverId: zod.number().nullish(),
   selectedDriver: zod
     .object({
@@ -958,8 +1236,6 @@ export const AdminUpdateRequestResponse = zod.object({
     })
     .nullish(),
   createdAt: zod.string().optional(),
-  monthlyPrice: zod.number(),
-  createdBy: zod.string().optional(),
   offerCount: zod
     .number()
     .nullish()

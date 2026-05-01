@@ -1075,6 +1075,38 @@ components:
         notes:
           type: string
           nullable: true
+        homeLat:
+          type: number
+          format: double
+          nullable: true
+          description: Home location latitude (WGS84)
+        homeLng:
+          type: number
+          format: double
+          nullable: true
+          description: Home location longitude (WGS84)
+        destLat:
+          type: number
+          format: double
+          nullable: true
+          description: Destination latitude (WGS84)
+        destLng:
+          type: number
+          format: double
+          nullable: true
+          description: Destination longitude (WGS84)
+        distanceKm:
+          type: number
+          format: float
+          nullable: true
+          description: Straight-line distance in km (Haversine)
+        needsAdminReview:
+          type: boolean
+          description: True when distance > 40 km — admin must approve
+        monthlyPrice:
+          type: number
+          format: float
+          description: Monthly subscription price in SAR
         status:
           type: string
           enum: [OPEN, SELECTED, ACTIVE, COMPLETED, CANCELLED, EXPIRED, FROZEN]
@@ -1104,20 +1136,71 @@ components:
     CreateRequestBody:
       type: object
       properties:
+        clientType:
+          type: string
+          enum: [موظفات, طلاب, مدارس, جامعات, معلمات, غيره]
         homeLocation:
           type: string
         workLocation:
           type: string
+        homeLat:
+          type: number
+          format: double
+          description: Home location latitude (WGS84)
+        homeLng:
+          type: number
+          format: double
+          description: Home location longitude (WGS84)
+        destLat:
+          type: number
+          format: double
+          description: Destination latitude (WGS84)
+        destLng:
+          type: number
+          format: double
+          description: Destination longitude (WGS84)
+        distanceKm:
+          type: number
+          format: float
+          description: Straight-line distance in km (Haversine)
+        additionalLocations:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [pickup, dropoff]
+              address:
+                type: string
+        shifts:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              goTime:
+                type: string
+              returnTime:
+                type: string
         phone:
           type: string
         numberOfPeople:
           type: integer
         workingDaysPerWeek:
           type: integer
+        numberOfShifts:
+          type: integer
         morningTime:
           type: string
         eveningTime:
           type: string
+        notes:
+          type: string
+        monthlyPrice:
+          type: number
+          format: float
       required:
         - homeLocation
         - workLocation
@@ -1125,7 +1208,6 @@ components:
         - numberOfPeople
         - workingDaysPerWeek
         - morningTime
-        - eveningTime
 
     UpdateStatusBody:
       type: object
