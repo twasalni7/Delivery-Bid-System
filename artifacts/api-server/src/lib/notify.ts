@@ -2,8 +2,8 @@ import webpush from "web-push";
 import { db } from "@workspace/db";
 import { notificationsTable, clientsTable, driversTable, adminsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { logger } from "./logger";
 
-// ─── VAPID setup ──────────────────────────────────────────────────────────────
 const VAPID_PUBLIC_KEY = process.env["VAPID_PUBLIC_KEY"];
 const VAPID_PRIVATE_KEY = process.env["VAPID_PRIVATE_KEY"];
 const VAPID_SUBJECT = process.env["VAPID_SUBJECT"] || process.env["VAPID_EMAIL"] || "mailto:admin@twasalni.app";
@@ -12,7 +12,20 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 }
 
-// ─── Retrieve push subscription for a user ───────────────────────────────────
+async function clearExpiredSubscription(userId: number, userRole: "client" | "driver" | "admin") {
+  try {
+    if (userRole === "client") {
+      await db.update(clientsTable).set({ pushSubscription: null }).where(eq(clientsTable.id, userId));
+    } else if (userRole === "driver") {
+      await db.update(driversTable).set({ pushSubscription: null }).where(eq(driversTable.id, userId));
+    } else if (userRole === "admin") {
+      await db.update(adminsTable).set({ pushSubscription: null }).where(eq(adminsTable.id, userId));
+    }
+  } catch (err) {
+    logger.warn({ err, userId, userRole }, "notify: failed to clear expired push subscription");
+  }
+}
+
 async function getPushSubscription(
   userId: number,
   userRole: "client" | "driver" | "admin"
@@ -39,14 +52,15 @@ async function getPushSubscription(
       });
       return row?.pushSubscription ?? null;
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    logger.warn({ err, userId, userRole }, "notify: failed to fetch push subscription");
   }
   return null;
 }
 
-// ─── Send a web push notification ────────────────────────────────────────────
 async function sendWebPush(
+  userId: number,
+  userRole: "client" | "driver" | "admin",
   subscriptionJson: string,
   title: string,
   body: string,
@@ -59,12 +73,17 @@ async function sendWebPush(
       subscription,
       JSON.stringify({ title, body, url: url ?? "/" })
     );
-  } catch {
-    // Silent — push failures are non-critical (subscription may have expired)
+  } catch (err: unknown) {
+    const pushErr = err as { statusCode?: number };
+    if (pushErr?.statusCode === 404 || pushErr?.statusCode === 410) {
+      logger.info({ userId, userRole }, "notify: removing expired push subscription");
+      void clearExpiredSubscription(userId, userRole);
+    } else {
+      logger.warn({ err, userId, userRole }, "notify: web push delivery failed");
+    }
   }
 }
 
-// ─── Main notify function ─────────────────────────────────────────────────────
 export async function notify(params: {
   userId: number;
   userRole: "client" | "driver" | "admin";
@@ -84,19 +103,17 @@ export async function notify(params: {
       relatedId: params.relatedId ?? null,
       isRead: false,
     });
-  } catch {
-    // Silent — notifications are non-critical
+  } catch (err) {
+    logger.error({ err, params }, "notify: failed to insert notification record");
   }
 
-  // Fire-and-forget web push
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
-      void sendWebPush(sub, params.title, params.message, params.url);
+      void sendWebPush(params.userId, params.userRole, sub, params.title, params.message, params.url);
     }
   });
 }
 
-// ─── Notify all admin users ───────────────────────────────────────────────────
 export async function notifyAllAdmins(params: {
   title: string;
   message: string;
@@ -106,13 +123,10 @@ export async function notifyAllAdmins(params: {
 }) {
   try {
     const admins = await db.select({ id: adminsTable.id }).from(adminsTable);
-    for (const admin of admins) {
-      void notify({ userId: admin.id, userRole: "admin", ...params });
-    }
-  } catch {
-    // Silent
+    await Promise.all(admins.map((admin) => notify({ userId: admin.id, userRole: "admin", ...params })));
+  } catch (err) {
+    logger.error({ err }, "notifyAllAdmins: failed to fetch admins or send notifications");
   }
 }
 
-// ─── Convenience export for direct use ───────────────────────────────────────
 export { sendWebPush };
