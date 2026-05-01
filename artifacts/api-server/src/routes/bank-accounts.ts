@@ -10,7 +10,6 @@ const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 
-// Resolve a bank account by int_id or serial id (prefer int_id when available)
 async function findBankAccountByIntId(intId: number) {
   const byIntId = await db.query.bankAccountsTable.findFirst({
     where: eq(bankAccountsTable.intId, intId),
@@ -21,7 +20,6 @@ async function findBankAccountByIntId(intId: number) {
   });
 }
 
-// GET /api/bank-accounts — accessible to all authenticated users (drivers see payment details)
 router.get("/", requireAuth(), async (_req, res) => {
   try {
     const accounts = await db
@@ -36,7 +34,6 @@ router.get("/", requireAuth(), async (_req, res) => {
   }
 });
 
-// Admin-only routes
 router.use(requireAuth("admin"));
 
 router.get("/all", async (_req, res) => {
@@ -58,13 +55,15 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: "يرجى إدخال اسم البنك والـ IBAN واسم صاحب الحساب" });
     return;
   }
+  const IBAN_RE = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/;
+  if (!IBAN_RE.test(String(iban).trim().toUpperCase().replace(/\s/g, ""))) {
+    res.status(400).json({ error: "صيغة الـ IBAN غير صحيحة. مثال: SA0380000000608010167519" });
+    return;
+  }
   try {
     const [account] = await db
       .insert(bankAccountsTable)
       .values({
-        // NOTE: intId uses MAX+1 to generate a sequential human-readable ID.
-        // This is safe for low-concurrency admin operations. For high-concurrency
-        // scenarios, consider converting int_id to a SERIAL column via migration.
         intId: sql`(SELECT COALESCE(MAX("int_id"), 0) + 1 FROM "bank_accounts")`,
         bankName,
         iban,
@@ -74,7 +73,6 @@ router.post("/", async (req, res) => {
       })
       .returning();
 
-    // Log notification for admin audit trail
     void notifyAllAdmins({
       title: "تم إضافة حساب بنكي جديد",
       message: `تمت إضافة حساب ${bankName} باسم ${accountHolderName}`,
@@ -156,7 +154,6 @@ router.delete("/:id", async (req, res) => {
       return;
     }
 
-    // Log notification for admin audit trail
     void notifyAllAdmins({
       title: "تم حذف حساب بنكي",
       message: `تم حذف حساب ${existing.bankName} باسم ${existing.accountHolderName}`,
