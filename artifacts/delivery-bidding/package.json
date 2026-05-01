@@ -76,6 +76,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@workspace/db": "workspace:*",
     "@supabase/supabase-js": "^2.104.1",
     "leaflet": "^1.9.4",
     "xlsx": "^0.18.5"
