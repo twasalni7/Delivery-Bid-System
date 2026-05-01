@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@/lib/time-utils";
-import { calculateHaversineDistance } from "@/lib/distance";
-import { ArrowRight, Plus, X, Home, Briefcase, Users, Clock, CheckCircle2, Check } from "lucide-react";
-import MapPicker, { MapCoords } from "@/components/MapPicker";
+import { calculateMonthlyPrice, haversineKm } from "@/lib/pricing";
+import MapPicker, { type MapCoords } from "@/components/MapPicker";
+import {
+  ArrowRight, Plus, X, Home, Briefcase, Users, Clock,
+  CheckCircle2, Check, AlertTriangle, Navigation,
+} from "lucide-react";
 
 const CLIENT_TYPES = [
   { value: "موظفات", emoji: "👩‍💼", label: "موظفات" },
@@ -110,7 +113,7 @@ export default function CreateRequest() {
     
     // Calculate distance if both coordinates are available
     const distanceKm = homeCoords && workCoords 
-      ? calculateHaversineDistance(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
+      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
       : undefined;
     
     createRequest.mutate(
@@ -275,7 +278,7 @@ export default function CreateRequest() {
                     <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>
                       المسافة المقدرة:{" "}
                       <span className="text-white">
-                        {calculateHaversineDistance(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng).toFixed(1)}{" "}
+                        {haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng).toFixed(1)}{" "}
                         كم
                       </span>
                     </p>
