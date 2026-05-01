@@ -13,6 +13,8 @@ This directory contains incremental SQL migration files for the Twasalni (توص
 | `003_accept_offer_function.sql` | Atomic `accept_offer()` DB function that locks rows and performs the accept in a single transaction |
 | `004_shifts_messages_live_support.sql` | Add `shifts` JSONB column to requests, `LIVE_SUPPORT` ticket status, and `messages` table for live chat |
 | `005_push_subscription_webhook.sql` | Add `push_subscription JSONB` to `profiles`, enable `pg_net`, and create a DB trigger that calls the `send-push-notification` Supabase Edge Function on every `notifications` INSERT |
+| `006_critical_fixes.sql` | Create `app_config` key-value table for application settings and set default bid fee |
+| `007_pricing_and_coordinates.sql` | Add coordinate fields (lat/lng) and distance-based pricing with automatic admin review for 40km+ requests |
 
 ## Running migrations
 
@@ -30,6 +32,8 @@ psql "$DATABASE_URL" -f migrations/sql/002_indexes_and_constraints.sql
 psql "$DATABASE_URL" -f migrations/sql/003_accept_offer_function.sql
 psql "$DATABASE_URL" -f migrations/sql/004_shifts_messages_live_support.sql
 psql "$DATABASE_URL" -f migrations/sql/005_push_subscription_webhook.sql
+psql "$DATABASE_URL" -f migrations/sql/006_critical_fixes.sql
+psql "$DATABASE_URL" -f migrations/sql/007_pricing_and_coordinates.sql
 ```
 
 Or via Supabase SQL Editor: paste each file's content and run.
