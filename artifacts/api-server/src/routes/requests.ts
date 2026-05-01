@@ -5,6 +5,7 @@ import {
   driversTable,
   offersTable,
   transactionsTable,
+  ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notify";
@@ -204,7 +205,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
     const clientId = req.session.user!.id;
 
     const distanceKm = parsed.data.distanceKm ?? null;
-    const needsAdminReview = distanceKm != null && distanceKm > 40;
+    const needsAdminReview = distanceKm != null && distanceKm > ADMIN_REVIEW_DISTANCE_KM;
 
     const [created] = await db
       .insert(requestsTable)
