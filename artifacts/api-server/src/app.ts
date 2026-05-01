@@ -58,9 +58,10 @@ app.set("trust proxy", 1);
 app.use(csrfProtection);
 
 // ─── Rate limiting for auth endpoints ─────────────────────────────────────
+// Increased limits to accommodate multiple users from same network/IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  max: 50, // Increased from 5 to 50 to allow multiple simultaneous logins
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },
