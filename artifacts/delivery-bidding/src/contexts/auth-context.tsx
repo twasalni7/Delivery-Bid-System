@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { useGetMe, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
 import type { AuthUser } from "@workspace/api-client-react";
-import { subscribeToPush } from "@/lib/push-notifications";
+import { subscribeToPush, clearPushSubscriptionCache } from "@/lib/push-notifications";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refetchQuery]);
 
   const logout = useCallback(() => {
+    clearPushSubscriptionCache();
     logoutMutation.mutate(undefined, {
       onSettled: () => {
         refetchQuery();
