@@ -255,6 +255,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.104.1
         version: 2.104.1
+      '@workspace/db':
+        specifier: workspace:*
+        version: link:../../lib/db
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
