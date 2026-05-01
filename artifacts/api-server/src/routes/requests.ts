@@ -203,11 +203,20 @@ router.post("/", requireAuth("client"), async (req, res) => {
   try {
     const clientId = req.session.user!.id;
 
+    const distanceKm = parsed.data.distanceKm ?? null;
+    const needsAdminReview = distanceKm != null && distanceKm > 40;
+
     const [created] = await db
       .insert(requestsTable)
       .values({
         homeLocation: parsed.data.homeLocation,
         workLocation: parsed.data.workLocation,
+        homeLat: parsed.data.homeLat ?? null,
+        homeLng: parsed.data.homeLng ?? null,
+        destLat: parsed.data.destLat ?? null,
+        destLng: parsed.data.destLng ?? null,
+        distanceKm: distanceKm,
+        needsAdminReview,
         phone: parsed.data.phone,
         numberOfPeople: parsed.data.numberOfPeople,
         workingDaysPerWeek: parsed.data.workingDaysPerWeek,
