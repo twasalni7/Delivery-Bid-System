@@ -127,9 +127,14 @@ import { haversineKm, calculateMonthlyPrice } from "@workspace/db";
 
 // When creating a request with coordinates
 const distanceKm = haversineKm(homeLat, homeLng, destLat, destLng);
+
+// Determine trip type: if eveningTime is provided, it's a round trip
+// (client needs transportation both to work in morning and back home in evening)
+const tripType = eveningTime ? "round_trip" : "one_way";
+
 const pricing = calculateMonthlyPrice(
   distanceKm,
-  eveningTime ? "round_trip" : "one_way",
+  tripType,
   workingDaysPerWeek,
   numberOfPeople
 );
