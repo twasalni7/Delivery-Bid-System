@@ -86,6 +86,9 @@ export function calculateMonthlyPrice(
 
   // Find appropriate tier based on distance
   const tier = DISTANCE_TIERS.find((t) => distanceKm <= t.max);
+  // NOTE: This check is defensive programming. Given that distanceKm ≤ 40 here
+  // (checked above) and our tiers cover 0-40km, this should never trigger.
+  // However, it provides safety if tiers are modified in the future.
   if (!tier) {
     return {
       price: 0,
