@@ -60,8 +60,8 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
 
     import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
-      fixLeafletIcons(L.default ?? L);
-      const Lx = (L.default ?? L) as typeof import("leaflet");
+      const Lx = L.default || L;
+      fixLeafletIcons(Lx);
 
       const center = initialCenter ?? SAUDI_CENTER;
       const map = Lx.map(containerRef.current!, { center, zoom: 11, zoomControl: true });
@@ -75,7 +75,7 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
       setMapReady(true);
       setLoading(false);
 
-      map.on("click", async (e: import("leaflet").LeafletMouseEvent) => {
+      map.on("click", async (e: any) => {
         const { lat, lng } = e.latlng;
 
         if (markerRef.current) {
@@ -106,7 +106,7 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
     import("leaflet").then((L) => {
-      const Lx = (L.default ?? L) as typeof import("leaflet");
+      const Lx = L.default || L;
       if (value) {
         if (markerRef.current) {
           markerRef.current.setLatLng([value.lat, value.lng]);
