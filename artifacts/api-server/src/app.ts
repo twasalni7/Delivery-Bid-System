@@ -67,7 +67,8 @@ const authLimiter = rateLimit({
   message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },
 });
 app.use("/api/auth/login-client", authLimiter);
-app.use("/api/auth/login-driver", authLimiter);
+// Driver login has no rate limit to allow unlimited access
+// app.use("/api/auth/login-driver", authLimiter); 
 app.use("/api/auth/login-admin", authLimiter);
 app.use("/api/auth/register-client", authLimiter);
 
