@@ -66,9 +66,19 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },
 });
+
+// Very lenient rate limiter for driver login (1000 requests per 15 minutes)
+// This protects against DoS while allowing many simultaneous driver logins
+const driverAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Very high limit to effectively allow unlimited access
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },
+});
+
 app.use("/api/auth/login-client", authLimiter);
-// Driver login has no rate limit to allow unlimited access
-// app.use("/api/auth/login-driver", authLimiter); 
+app.use("/api/auth/login-driver", driverAuthLimiter);
 app.use("/api/auth/login-admin", authLimiter);
 app.use("/api/auth/register-client", authLimiter);
 
