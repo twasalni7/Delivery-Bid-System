@@ -48,6 +48,7 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
+  const geocodingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -84,15 +85,28 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
           markerRef.current = Lx.marker([lat, lng]).addTo(map);
         }
 
+        // Debounce geocoding to respect Nominatim's rate limit (1 req/sec)
+        // Clear any pending geocoding request
+        if (geocodingTimerRef.current) {
+          clearTimeout(geocodingTimerRef.current);
+        }
+
         setGeocoding(true);
-        const address = await reverseGeocode(lat, lng);
-        setGeocoding(false);
-        onChange({ lat, lng, address });
+        
+        // Debounce by 1 second to avoid rapid API calls
+        geocodingTimerRef.current = setTimeout(async () => {
+          const address = await reverseGeocode(lat, lng);
+          setGeocoding(false);
+          onChange({ lat, lng, address });
+        }, 1000);
       });
     });
 
     return () => {
       cancelled = true;
+      if (geocodingTimerRef.current) {
+        clearTimeout(geocodingTimerRef.current);
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -100,6 +114,10 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
         setMapReady(false);
       }
     };
+    // Intentionally omit onChange and initialCenter from dependencies:
+    // - onChange: Would cause map re-initialization on every parent re-render
+    // - initialCenter: Only needed for initial map setup, not for updates
+    // The map instance is created once and persists for the component lifetime
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

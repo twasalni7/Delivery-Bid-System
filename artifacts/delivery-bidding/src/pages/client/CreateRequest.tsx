@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@/lib/time-utils";
+import { calculateHaversineDistance } from "@/lib/distance";
 import { ArrowRight, Plus, X, Home, Briefcase, Users, Clock, CheckCircle2, Check } from "lucide-react";
 import MapPicker, { MapCoords } from "@/components/MapPicker";
 
@@ -108,21 +109,9 @@ export default function CreateRequest() {
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
     
     // Calculate distance if both coordinates are available
-    let distanceKm: number | undefined;
-    if (homeCoords && workCoords) {
-      // Use Haversine formula to calculate distance
-      const R = 6371; // Earth's radius in km
-      const dLat = ((workCoords.lat - homeCoords.lat) * Math.PI) / 180;
-      const dLng = ((workCoords.lng - homeCoords.lng) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((homeCoords.lat * Math.PI) / 180) *
-          Math.cos((workCoords.lat * Math.PI) / 180) *
-          Math.sin(dLng / 2) *
-          Math.sin(dLng / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      distanceKm = R * c;
-    }
+    const distanceKm = homeCoords && workCoords 
+      ? calculateHaversineDistance(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
+      : undefined;
     
     createRequest.mutate(
       {
@@ -233,7 +222,14 @@ export default function CreateRequest() {
                       type="text"
                       placeholder="أو اكتب العنوان يدوياً: حي الروضة، شارع التحلية..."
                       value={homeLocation}
-                      onChange={(e) => setHomeLocation(e.target.value)}
+                      onChange={(e) => {
+                        setHomeLocation(e.target.value);
+                        // Clear coordinates when user manually edits the address
+                        // to maintain consistency between text and coordinates
+                        if (homeCoords && e.target.value !== homeCoords.address) {
+                          setHomeCoords(null);
+                        }
+                      }}
                       className="bg-transparent border-0 shadow-none focus-visible:ring-0 text-base font-bold p-0 h-auto"
                     />
                   </div>
@@ -260,7 +256,14 @@ export default function CreateRequest() {
                       type="text"
                       placeholder="أو اكتب العنوان يدوياً: مستشفى الملك فهد، الرياض..."
                       value={workLocation}
-                      onChange={(e) => setWorkLocation(e.target.value)}
+                      onChange={(e) => {
+                        setWorkLocation(e.target.value);
+                        // Clear coordinates when user manually edits the address
+                        // to maintain consistency between text and coordinates
+                        if (workCoords && e.target.value !== workCoords.address) {
+                          setWorkCoords(null);
+                        }
+                      }}
                       className="bg-transparent border-0 shadow-none focus-visible:ring-0 text-base font-bold p-0 h-auto"
                     />
                   </div>
@@ -272,20 +275,7 @@ export default function CreateRequest() {
                     <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>
                       المسافة المقدرة:{" "}
                       <span className="text-white">
-                        {(() => {
-                          const R = 6371;
-                          const dLat = ((workCoords.lat - homeCoords.lat) * Math.PI) / 180;
-                          const dLng = ((workCoords.lng - homeCoords.lng) * Math.PI) / 180;
-                          const a =
-                            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                            Math.cos((homeCoords.lat * Math.PI) / 180) *
-                              Math.cos((workCoords.lat * Math.PI) / 180) *
-                              Math.sin(dLng / 2) *
-                              Math.sin(dLng / 2);
-                          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                          const distance = R * c;
-                          return distance.toFixed(1);
-                        })()}{" "}
+                        {calculateHaversineDistance(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng).toFixed(1)}{" "}
                         كم
                       </span>
                     </p>
