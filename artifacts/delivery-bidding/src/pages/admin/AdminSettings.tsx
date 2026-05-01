@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Landmark, Plus, Trash2, CheckCircle2, Eye, FileImage, AlertCircle, KeyRound, CreditCard, User, Tag } from "lucide-react";
+import { ShieldCheck, Landmark, Plus, Trash2, CheckCircle2, Eye, FileImage, AlertCircle, KeyRound, CreditCard, User } from "lucide-react";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -43,10 +43,6 @@ export default function AdminSettings() {
   const [walletTxs, setWalletTxs] = useState<WalletTx[]>([]);
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  // ── Pricing ──
-  const [bidFee, setBidFee] = useState<string>("");
-  const [savingBidFee, setSavingBidFee] = useState(false);
-
   useEffect(() => {
     fetch(`${API}/api/bank-accounts/all`, { credentials: "include" })
       .then((r) => r.json())
@@ -56,11 +52,6 @@ export default function AdminSettings() {
     fetch(`${API}/api/wallet-transactions`, { credentials: "include" })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setWalletTxs(d); })
-      .catch(() => {});
-
-    fetch(`${API}/api/pricing`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => { if (d && typeof d.bidFee === "number") setBidFee(String(d.bidFee)); })
       .catch(() => {});
   }, []);
 
@@ -88,31 +79,6 @@ export default function AdminSettings() {
     }
   };
 
-  const handleSaveBidFee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const fee = parseFloat(bidFee);
-    if (!isFinite(fee) || fee <= 0) {
-      toast({ title: "يرجى إدخال قيمة رسوم صحيحة وأكبر من صفر", variant: "destructive" });
-      return;
-    }
-    setSavingBidFee(true);
-    try {
-      const res = await fetch(`${API}/api/pricing`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ bidFee: fee }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "فشل تحديث رسوم العرض");
-      setBidFee(String(data.bidFee));
-      toast({ title: `✅ تم تحديث رسوم العرض إلى ${data.bidFee} ر.س` });
-    } catch (err: unknown) {
-      toast({ title: (err as Error).message, variant: "destructive" });
-    } finally {
-      setSavingBidFee(false);
-    }
-  };
   const handleAddBank = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bankName || !iban || !holderName) {
@@ -446,47 +412,6 @@ export default function AdminSettings() {
                     className="w-full py-3 rounded-xl text-white font-black disabled:opacity-50 min-h-[44px]"
                     style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
                     {saving ? "جاري التغيير..." : "تغيير الرمز"}
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* Pricing Card */}
-            <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.16)" }}>
-                  <Tag size={18} style={{ color: "#deff9a" }} />
-                </div>
-                <div>
-                  <p className="font-black text-white">رسوم العرض</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>المبلغ المخصوم من رصيد السائق عند اختياره</p>
-                </div>
-              </div>
-
-              <div className="p-5">
-                <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  يُخصم هذا المبلغ تلقائياً من رصيد السائق عند قبول العميل لعرضه. القيمة الحالية يجب أن تكون أكبر من صفر.
-                </p>
-                <form onSubmit={handleSaveBidFee} className="space-y-3">
-                  <div>
-                    <label className="text-xs font-bold mb-1.5 block" style={{ color: "rgba(255,255,255,0.45)" }}>رسوم العرض (ريال سعودي)</label>
-                    <Input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={bidFee}
-                      onChange={(e) => setBidFee(e.target.value)}
-                      placeholder="50"
-                      dir="ltr"
-                      className="rounded-xl h-11 input-dark"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={savingBidFee}
-                    className="w-full py-3 rounded-xl text-white font-black disabled:opacity-50 min-h-[44px]"
-                    style={{ background: "linear-gradient(135deg, #065F46, #064E3B)" }}>
-                    {savingBidFee ? "جاري الحفظ..." : "حفظ رسوم العرض"}
                   </button>
                 </form>
               </div>

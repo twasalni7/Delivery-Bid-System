@@ -29,7 +29,6 @@ const TABLES = [
   'support_tickets',
   'notifications',
   'user_sessions',
-  'app_config',
 ];
 
 async function applyRLS() {
