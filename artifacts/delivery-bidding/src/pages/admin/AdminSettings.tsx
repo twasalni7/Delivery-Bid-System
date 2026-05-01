@@ -472,7 +472,7 @@ export default function AdminSettings() {
                     <label className="text-xs font-bold mb-1.5 block" style={{ color: "rgba(255,255,255,0.45)" }}>رسوم العرض (ريال سعودي)</label>
                     <Input
                       type="number"
-                      min="1"
+                      min="0.01"
                       step="0.01"
                       value={bidFee}
                       onChange={(e) => setBidFee(e.target.value)}

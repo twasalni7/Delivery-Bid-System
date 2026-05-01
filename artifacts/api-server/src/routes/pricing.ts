@@ -25,8 +25,8 @@ export async function getBidFee(): Promise<number> {
       const fee = parseFloat(row.value);
       if (isFinite(fee) && fee > 0) return fee;
     }
-  } catch {
-    // Silent — fallback to default
+  } catch (err) {
+    logger.warn({ err }, "getBidFee: failed to read bid_fee from app_config, using default");
   }
   return DEFAULT_BID_FEE;
 }
