@@ -10,3 +10,4 @@ export * from "./bank-accounts";
 export * from "./wallet-transactions";
 export * from "./messages";
 export * from "./push-subscriptions";
+export * from "./app-config";
