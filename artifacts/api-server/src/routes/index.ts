@@ -11,6 +11,7 @@ import bankAccountsRouter from "./bank-accounts";
 import walletTransactionsRouter from "./wallet-transactions";
 import pushRouter from "./push";
 import messagesRouter from "./messages";
+import pricingRouter from "./pricing";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use("/bank-accounts", bankAccountsRouter);
 router.use("/wallet-transactions", walletTransactionsRouter);
 router.use("/push", pushRouter);
 router.use("/messages", messagesRouter);
+router.use("/pricing", pricingRouter);
 
 export default router;

@@ -16,6 +16,7 @@ import { generateLoginCode } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { CreateRequestBody } from "@workspace/api-zod";
 import { notify } from "../lib/notify";
+import { getBidFee, DEFAULT_BID_FEE } from "./pricing";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -118,7 +119,7 @@ router.get("/financial", async (_req, res) => {
         .from(transactionsTable);
       totalTransactionsAmount = Number(txSum?.total ?? 0);
     } catch {
-      totalFeesCollected = acceptedContractsCount * 50;
+      totalFeesCollected = acceptedContractsCount * DEFAULT_BID_FEE;
       totalTransactionsAmount = 0;
     }
 
@@ -943,22 +944,23 @@ router.post("/requests/:id/select-offer", async (req, res) => {
       return;
     }
 
-    // Atomically deduct the 50 SAR fee only if the balance is sufficient.
-    // Using a WHERE balance >= 50 condition makes the check-and-deduct atomic,
+    // Atomically deduct the bid fee only if the balance is sufficient.
+    // Using a WHERE balance >= bidFee condition makes the check-and-deduct atomic,
     // preventing a race condition if two operations run concurrently on the same driver.
+    const bidFee = await getBidFee();
     const [deductedDriver] = await db
       .update(driversTable)
-      .set({ balance: sql`${driversTable.balance} - 50` })
-      .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= 50`))
+      .set({ balance: sql`${driversTable.balance} - ${bidFee}` })
+      .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}`))
       .returning();
     if (!deductedDriver) {
-      res.status(400).json({ error: "رصيد السائق غير كافٍ (يتطلب 50 ريال على الأقل)" });
+      res.status(400).json({ error: `رصيد السائق غير كافٍ (يتطلب ${bidFee} ريال على الأقل)` });
       return;
     }
 
     await db.insert(transactionsTable).values({
       driverId: driver.id,
-      amount: -50,
+      amount: -bidFee,
       type: "fee",
     });
 
