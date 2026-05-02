@@ -7,7 +7,7 @@ import {
   transactionsTable,
   ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db";
-import { haversineKm, calculateMonthlyPrice } from "@workspace/db/utils/pricing";
+import { haversineKm } from "@workspace/db/utils/pricing";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notify";
 import {
@@ -19,7 +19,7 @@ import {
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
-import { loadPricingConfig } from "./pricing";
+import { getPriceFromMatrix } from "./pricing";
 import { logActivity } from "../lib/activity";
 
 const router = Router();
@@ -218,18 +218,10 @@ router.post("/", requireAuth("client"), async (req, res) => {
 
     const needsAdminReview = distanceKm != null && distanceKm > ADMIN_REVIEW_DISTANCE_KM;
 
-    // Calculate price server-side using DB config (client-sent price is ignored)
+    // Calculate price server-side from pricing_matrix table (client-sent price is ignored)
     let monthlyPrice = 0;
     if (distanceKm != null && !needsAdminReview) {
-      const config = await loadPricingConfig();
-      const tripType = data.eveningTime ? "round_trip" : "one_way";
-      const pricing = calculateMonthlyPrice(
-        distanceKm,
-        tripType,
-        data.workingDaysPerWeek,
-        data.numberOfPeople,
-        config,
-      );
+      const pricing = await getPriceFromMatrix(distanceKm, data.numberOfPeople);
       monthlyPrice = pricing.price;
     }
 

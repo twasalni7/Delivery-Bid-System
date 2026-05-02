@@ -1,6 +1,6 @@
 /**
  * Distance-based pricing utilities for delivery requests
- * نظام توصّلني — حساب الأسعار بناءً على المسافة
+ * نظام توصّلني — أدوات مساعدة للتسعير
  */
 
 /** A single distance-based pricing tier */
@@ -30,7 +30,7 @@ export interface PricingConfig {
   proximityTimeMinutes: number;
 }
 
-/** Default distance tiers (monthly, SAR) */
+/** Default distance tiers (monthly, SAR) — used as fallback if app_config is missing */
 export const DEFAULT_DISTANCE_TIERS: PricingTier[] = [
   { max: 5,  base: 500 },
   { max: 10, base: 800 },
@@ -41,7 +41,7 @@ export const DEFAULT_DISTANCE_TIERS: PricingTier[] = [
   { max: 40, base: 2200 },
 ];
 
-/** Default per-person sharing discounts */
+/** Default per-person sharing discounts — used as fallback if app_config is missing */
 export const DEFAULT_SHARING_DISCOUNTS: SharingDiscount[] = [
   { people: 1, factor: 1.00 },
   { people: 2, factor: 0.72 },
@@ -66,8 +66,6 @@ export function getDefaultPricingConfig(): PricingConfig {
 
 /** Requests exceeding this distance (km) require admin review before drivers can see them */
 export const ADMIN_REVIEW_DISTANCE_KM = 40;
-
-export type TripType = "one_way" | "round_trip";
 
 /**
  * Calculate Haversine straight-line distance between two coordinates
@@ -94,125 +92,4 @@ export function haversineKm(
       Math.sin(dLng / 2) ** 2;
   
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-/**
- * Returns the sharing discount factor for a given number of sharing people.
- * Uses the closest lower-or-equal entry; falls back to the last entry for
- * counts larger than any configured value.
- */
-export function getSharingFactor(
-  numberOfPeople: number,
-  discounts: SharingDiscount[]
-): number {
-  const sorted = [...discounts].sort((a, b) => a.people - b.people);
-  let factor = sorted[0]?.factor ?? 1.0;
-  for (const d of sorted) {
-    if (numberOfPeople >= d.people) factor = d.factor;
-  }
-  return factor;
-}
-
-export interface PricingResult {
-  /** Total monthly price for this subscription in SAR */
-  price: number;
-  /** Per-person monthly price in SAR */
-  pricePerPerson: number;
-  /** Whether distance exceeds 40km and requires admin review */
-  needsAdminReview: boolean;
-  /** Base tier price before multipliers */
-  baseTier: number | null;
-  /** Trip type multiplier (1.0 or 1.7) */
-  tripMultiplier: number;
-  /** Days per week multiplier (1.0, 1.15, or 1.25) */
-  daysMultiplier: number;
-  /**
-   * Per-person sharing discount factor (1.0, 0.72, 0.60, 0.52).
-   * Replaces the old `peopleMultiplier`.
-   */
-  shareDiscountFactor: number;
-  /** Number of people used for calculation */
-  numberOfPeople: number;
-}
-
-/**
- * Calculate monthly subscription price based on distance and parameters.
- * Returns needsAdminReview=true when distance > 40 km.
- *
- * Price formula:
- *   pricePerPerson = baseTier × tripMultiplier × daysMultiplier × shareDiscountFactor
- *   price (total)  = pricePerPerson × numberOfPeople
- *
- * @param distanceKm Distance in kilometers
- * @param tripType One-way or round trip
- * @param daysPerWeek Working days per week
- * @param numberOfPeople Number of passengers sharing this subscription
- * @param config Optional pricing config — uses system defaults when omitted
- * @returns PricingResult with calculated price and metadata
- */
-export function calculateMonthlyPrice(
-  distanceKm: number,
-  tripType: TripType,
-  daysPerWeek: number,
-  numberOfPeople: number,
-  config?: Partial<PricingConfig>
-): PricingResult {
-  const tiers = config?.tiers ?? DEFAULT_DISTANCE_TIERS;
-  const sharingDiscounts = config?.sharingDiscounts ?? DEFAULT_SHARING_DISCOUNTS;
-
-  // Distance exceeds threshold — requires admin review
-  if (distanceKm > ADMIN_REVIEW_DISTANCE_KM) {
-    return {
-      price: 0,
-      pricePerPerson: 0,
-      needsAdminReview: true,
-      baseTier: null,
-      tripMultiplier: 0,
-      daysMultiplier: 0,
-      shareDiscountFactor: 0,
-      numberOfPeople,
-    };
-  }
-
-  // Find appropriate tier based on distance (sorted ascending by max)
-  const sortedTiers = [...tiers].sort((a, b) => a.max - b.max);
-  const tier = sortedTiers.find((t) => distanceKm <= t.max);
-
-  // Defensive: no tier found (config gap) — require admin review
-  if (!tier) {
-    return {
-      price: 0,
-      pricePerPerson: 0,
-      needsAdminReview: true,
-      baseTier: null,
-      tripMultiplier: 0,
-      daysMultiplier: 0,
-      shareDiscountFactor: 0,
-      numberOfPeople,
-    };
-  }
-
-  // Multipliers
-  const tripMultiplier = tripType === "round_trip" ? 1.7 : 1.0;
-  const daysMultiplier = daysPerWeek >= 7 ? 1.25 : daysPerWeek >= 6 ? 1.15 : 1.0;
-  const shareDiscountFactor = getSharingFactor(numberOfPeople, sharingDiscounts);
-
-  // Per-person price
-  const pricePerPerson = Math.round(
-    tier.base * tripMultiplier * daysMultiplier * shareDiscountFactor
-  );
-
-  // Total price for all people in this subscription
-  const price = pricePerPerson * numberOfPeople;
-
-  return {
-    price,
-    pricePerPerson,
-    needsAdminReview: false,
-    baseTier: tier.base,
-    tripMultiplier,
-    daysMultiplier,
-    shareDiscountFactor,
-    numberOfPeople,
-  };
 }
