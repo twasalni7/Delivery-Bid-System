@@ -32,6 +32,10 @@ The React app is served as a static site and the Express API runs as a Vercel Se
    | `SUPABASE_DATABASE_URL` | Supabase Transaction Pooler connection string (port **6543**) | `postgresql://postgres:[password]@db.[ref].supabase.co:6543/postgres` |
    | `SESSION_SECRET` | A long random secret for signing session cookies | `openssl rand -hex 32` output |
    | `NODE_ENV` | Set to `production` | `production` |
+   | `VITE_SENTRY_DSN` | (Optional) Sentry DSN for frontend error monitoring | `https://...@sentry.io/...` |
+
+   > **Sentry (optional):** create a React project at https://sentry.io, copy the DSN, and add it as `VITE_SENTRY_DSN`.
+   > If not set, Sentry is silently disabled — no errors are thrown.
 
    > **Where to find `SUPABASE_DATABASE_URL`:**  
    > Supabase dashboard → your project → **Settings** → **Database** → **Connection string** → **Transaction Pooler** → copy the connection string.  

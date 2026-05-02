@@ -1,6 +1,6 @@
-/* توصّلني Service Worker — cache-first for assets, network-first for API */
+/* توصّلني Service Worker — network-first for HTML/API, cache-first for static assets */
 
-const CACHE_VERSION = 'twasalni-v2';
+const CACHE_VERSION = 'twasalni-v3';
 
 /* ─── Install: pre-cache the app shell ─────────────────────────────────── */
 self.addEventListener('install', (event) => {
@@ -37,16 +37,31 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
 
-  // Network-first for API calls (always need fresh data)
-  if (url.pathname.startsWith('/api/')) {
+  // Network-first for API calls and HTML navigation (always need fresh data)
+  // This prevents old cached HTML from breaking the app after a new deployment.
+  const isNavigation = request.mode === 'navigate';
+  if (url.pathname.startsWith('/api/') || isNavigation) {
     event.respondWith(
       fetch(request)
-        .catch(() => caches.match(request))
+        .then((response) => {
+          // Cache a successful HTML response so the app works offline too
+          if (isNavigation && response.ok) {
+            caches.open(CACHE_VERSION).then((cache) => cache.put(request, response.clone()));
+          }
+          return response;
+        })
+        .catch(async () => {
+          if (isNavigation) {
+            const cached = await caches.match('/index.html');
+            return cached ?? new Response('Offline', { status: 503 });
+          }
+          return caches.match(request) ?? new Response('Offline', { status: 503 });
+        })
     );
     return;
   }
 
-  // Cache-first with network fallback for everything else (JS, CSS, images…)
+  // Cache-first with network fallback for static assets (JS, CSS, images…)
   event.respondWith(
     caches.open(CACHE_VERSION).then(async (cache) => {
       const cached = await cache.match(request);
