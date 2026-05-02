@@ -11,3 +11,5 @@ export * from "./wallet-transactions";
 export * from "./messages";
 export * from "./push-subscriptions";
 export * from "./app-config";
+export * from "./activity-logs";
+export * from "./service-areas";

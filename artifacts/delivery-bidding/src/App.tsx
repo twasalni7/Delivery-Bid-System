@@ -36,6 +36,8 @@ import AdminSupport from "@/pages/admin/AdminSupport";
 import AdminCreateRequest from "@/pages/admin/AdminCreateRequest";
 import AdminRequestDetails from "@/pages/admin/AdminRequestDetails";
 import AdminPricing from "@/pages/admin/AdminPricing";
+import AdminActivityLogs from "@/pages/admin/AdminActivityLogs";
+import AdminServiceAreas from "@/pages/admin/AdminServiceAreas";
 
 // ─── PWA helpers ─────────────────────────────────────────────────────────────
 
@@ -290,6 +292,12 @@ function Router() {
         </Route>
         <Route path="/admin/request/:id">
           <AdminGuard><AdminRequestDetails /></AdminGuard>
+        </Route>
+        <Route path="/admin/activity-logs">
+          <AdminGuard><AdminActivityLogs /></AdminGuard>
+        </Route>
+        <Route path="/admin/service-areas">
+          <AdminGuard><AdminServiceAreas /></AdminGuard>
         </Route>
 
         <Route component={NotFound} />

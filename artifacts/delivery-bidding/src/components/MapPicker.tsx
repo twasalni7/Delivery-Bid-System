@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { MapPin, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { MapPin, Loader2, Search, X } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 export interface MapCoords {
@@ -40,18 +40,88 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
   }
 }
 
-const SAUDI_CENTER: [number, number] = [24.7136, 46.6753];
+type NominatimResult = {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+};
 
-export default function MapPicker({ value, onChange, placeholder = "اضغط على الخريطة لتحديد الموقع", color = "#deff9a", initialCenter }: MapPickerProps) {
+// Eastern Region bounding box: SW(25.5, 49.4) → NE(27.6, 50.7)
+const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
+// Default center: Dammam, Eastern Region
+const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
+// Debounce delays
+const SEARCH_DEBOUNCE_MS = 600;
+const GEOCODE_DEBOUNCE_MS = 1000;
+
+export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "#deff9a", initialCenter }: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
   const geocodingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+
+  // Search state
+  const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  const searchPlaces = useCallback(async (query: string) => {
+    if (query.trim().length < 2) { setSearchResults([]); setShowResults(false); return; }
+    setSearching(true);
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=ar&viewbox=${EASTERN_REGION_VIEWBOX}&bounded=1`;
+      const res = await fetch(url, { headers: { "Accept-Language": "ar" } });
+      if (!res.ok) return;
+      const results = await res.json() as NominatimResult[];
+      setSearchResults(results);
+      setShowResults(results.length > 0);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchText(val);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => searchPlaces(val), SEARCH_DEBOUNCE_MS);
+  };
+
+  const selectSearchResult = async (result: NominatimResult) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    setShowResults(false);
+    setSearchText(result.display_name);
+
+    if (mapRef.current) {
+      import("leaflet").then((L) => {
+        const Lx = L.default || L;
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+        } else {
+          markerRef.current = Lx.marker([lat, lng]).addTo(mapRef.current);
+        }
+        mapRef.current.setView([lat, lng], 15);
+      });
+    }
+    onChange({ lat, lng, address: result.display_name });
+  };
+
+  const clearSearch = () => {
+    setSearchText("");
+    setSearchResults([]);
+    setShowResults(false);
+  };
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -64,8 +134,8 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
       const Lx = L.default || L;
       fixLeafletIcons(Lx);
 
-      const center = initialCenter ?? SAUDI_CENTER;
-      const map = Lx.map(containerRef.current!, { center, zoom: 11, zoomControl: true });
+      const center = initialCenter ?? EASTERN_REGION_CENTER;
+      const map = Lx.map(containerRef.current!, { center, zoom: 12, zoomControl: true });
 
       Lx.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
@@ -97,16 +167,16 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
         geocodingTimerRef.current = setTimeout(async () => {
           const address = await reverseGeocode(lat, lng);
           setGeocoding(false);
+          setSearchText(address);
           onChange({ lat, lng, address });
-        }, 1000);
+        }, GEOCODE_DEBOUNCE_MS);
       });
     });
 
     return () => {
       cancelled = true;
-      if (geocodingTimerRef.current) {
-        clearTimeout(geocodingTimerRef.current);
-      }
+      if (geocodingTimerRef.current) clearTimeout(geocodingTimerRef.current);
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -139,6 +209,51 @@ export default function MapPicker({ value, onChange, placeholder = "اضغط ع�
 
   return (
     <div className="space-y-2">
+      {/* ── Search input ── */}
+      <div className="relative">
+        <div className="flex items-center gap-2 px-3 rounded-[1.5rem]" style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
+          {searching ? (
+            <Loader2 size={16} className="shrink-0 animate-spin" style={{ color: "rgba(255,255,255,0.4)" }} />
+          ) : (
+            <Search size={16} className="shrink-0" style={{ color: "rgba(255,255,255,0.4)" }} />
+          )}
+          <input
+            type="text"
+            value={searchText}
+            onChange={handleSearchInput}
+            onFocus={() => searchResults.length > 0 && setShowResults(true)}
+            placeholder="ابحث في المنطقة الشرقية..."
+            className="flex-1 bg-transparent py-3 text-sm text-white outline-none placeholder:text-white/30"
+            dir="rtl"
+          />
+          {searchText && (
+            <button onClick={clearSearch} className="shrink-0 p-1">
+              <X size={14} style={{ color: "rgba(255,255,255,0.4)" }} />
+            </button>
+          )}
+        </div>
+
+        {/* Search results dropdown */}
+        {showResults && searchResults.length > 0 && (
+          <div
+            className="absolute z-50 w-full mt-1 rounded-[1rem] overflow-hidden shadow-xl"
+            style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)" }}
+          >
+            {searchResults.map((r) => (
+              <button
+                key={r.place_id}
+                onClick={() => selectSearchResult(r)}
+                className="w-full flex items-start gap-2 px-4 py-3 text-right hover:bg-white/5 transition-colors"
+                dir="rtl"
+              >
+                <MapPin size={14} className="shrink-0 mt-0.5" style={{ color }} />
+                <span className="text-sm text-white/80 line-clamp-2">{r.display_name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Selected coordinates display */}
       {value && (
         <div

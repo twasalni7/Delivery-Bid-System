@@ -12,6 +12,8 @@ import walletTransactionsRouter from "./wallet-transactions";
 import pushRouter from "./push";
 import messagesRouter from "./messages";
 import pricingRouter from "./pricing";
+import activityLogsRouter from "./activity-logs";
+import serviceAreasRouter from "./service-areas";
 
 const router: IRouter = Router();
 
@@ -28,5 +30,7 @@ router.use("/wallet-transactions", walletTransactionsRouter);
 router.use("/push", pushRouter);
 router.use("/messages", messagesRouter);
 router.use("/pricing", pricingRouter);
+router.use("/activity-logs", activityLogsRouter);
+router.use("/service-areas", serviceAreasRouter);
 
 export default router;

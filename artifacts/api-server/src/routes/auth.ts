@@ -4,6 +4,7 @@ import { clientsTable, driversTable, adminsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { hashPassword, comparePassword } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { logActivity } from "../lib/activity";
 
 const router = Router();
 
@@ -47,6 +48,7 @@ router.post("/register-client", async (req, res) => {
       .returning();
     await regenerateSession(req);
     req.session.user = { id: client.id, role: "client", name: client.name };
+    await logActivity({ actorId: client.id, actorRole: "client", action: "client.registered", entity: "clients", entityId: client.id, req });
     res.status(201).json({
       id: client.id,
       name: client.name,
@@ -80,6 +82,7 @@ router.post("/login-client", async (req, res) => {
     }
     await regenerateSession(req);
     req.session.user = { id: client.id, role: "client", name: client.name };
+    await logActivity({ actorId: client.id, actorRole: "client", action: "auth.login", entity: "clients", entityId: client.id, req });
     res.json({
       id: client.id,
       name: client.name,
@@ -118,6 +121,7 @@ router.post("/login-driver", async (req, res) => {
     }
     await regenerateSession(req);
     req.session.user = { id: driver.id, role: "driver", name: driver.name };
+    await logActivity({ actorId: driver.id, actorRole: "driver", action: "auth.login", entity: "drivers", entityId: driver.id, req });
     res.json({
       id: driver.id,
       name: driver.name,
@@ -148,6 +152,7 @@ router.post("/login-admin", async (req, res) => {
     }
     await regenerateSession(req);
     req.session.user = { id: admin.id, role: "admin", name: admin.name };
+    await logActivity({ actorId: admin.id, actorRole: "admin", action: "auth.login", entity: "admins", entityId: admin.id, req });
     res.json({
       id: admin.id,
       name: admin.name,
