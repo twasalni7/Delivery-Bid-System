@@ -417,7 +417,7 @@ export default function CreateRequest() {
                       <span className="text-base mr-2" style={{ color: "rgba(255,255,255,0.45)" }}>ر.س / شهر</span>
                     </p>
                     <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
-                      محسوب بناءً على المسافة ({distanceKm!.toFixed(1)} كم)، {tripType === "round_trip" ? "ذهاب وإياب" : "اتجاه واحد"}، {selectedDays.length} أيام/أسبوع، {numberOfPeople} أشخاص
+                      محسوب بناءً على المسافة ({distanceKm?.toFixed(1)} كم)، {tripType === "round_trip" ? "ذهاب وإياب" : "اتجاه واحد"}، {selectedDays.length} أيام/أسبوع، {numberOfPeople} أشخاص
                     </p>
                   </div>
                 ) : pricingResult?.needsAdminReview ? (
@@ -425,7 +425,7 @@ export default function CreateRequest() {
                     <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري</p>
                     <p className="text-base font-black" style={{ color: "#fb7185" }}>يتطلب مراجعة الإدارة</p>
                     <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
-                      المسافة ({distanceKm!.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
+                      المسافة ({distanceKm?.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
                     </p>
                   </div>
                 ) : (
