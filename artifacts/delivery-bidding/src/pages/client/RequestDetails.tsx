@@ -205,7 +205,7 @@ export default function RequestDetails() {
               <div className="text-center">
                 <p className="text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Price per person</p>
                 <p className="text-lg font-black" style={{ color: "#deff9a" }} dir="ltr">
-                  {request.monthlyPrice != null && request.numberOfPeople
+                  {request.monthlyPrice != null && request.numberOfPeople > 0
                     ? (request.monthlyPrice / request.numberOfPeople).toFixed(0)
                     : (request.monthlyPrice?.toFixed(0) ?? "—")}{" "}
                   <span className="text-xs font-normal" style={{ color: "rgba(222,255,154,0.5)" }}>SAR</span>
