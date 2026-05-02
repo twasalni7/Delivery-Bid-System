@@ -85,7 +85,16 @@ export default function CreateRequest() {
   // Step 4
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
-  const [monthlyPrice, setMonthlyPrice] = useState("");
+
+  // Auto-calculate price from coordinates, trip type, days, and people
+  const distanceKm =
+    homeCoords && workCoords
+      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
+      : undefined;
+  const tripType = eveningTime ? "round_trip" : "one_way";
+  const pricingResult = distanceKm !== undefined
+    ? calculateMonthlyPrice(distanceKm, tripType, selectedDays.length, parseInt(numberOfPeople) || 1)
+    : undefined;
 
   const toggleDay = (key: string) =>
     setSelectedDays((prev) =>
@@ -105,16 +114,11 @@ export default function CreateRequest() {
     if (step === 1) return !!clientType;
     if (step === 2) return homeLocation.trim() && workLocation.trim();
     if (step === 3) return morningTime && selectedDays.length > 0;
-    return phone.trim().length >= 10 && monthlyPrice.trim() && parseFloat(monthlyPrice) > 0;
+    return phone.trim().length >= 10;
   };
 
   const handleSubmit = () => {
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
-    
-    // Calculate distance if both coordinates are available
-    const distanceKm = homeCoords && workCoords 
-      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
-      : undefined;
     
     createRequest.mutate(
       {
@@ -135,7 +139,7 @@ export default function CreateRequest() {
           morningTime,
           eveningTime: eveningTime || undefined,
           notes: notes.trim() || undefined,
-          monthlyPrice: parseFloat(monthlyPrice),
+          monthlyPrice: pricingResult?.needsAdminReview === false ? pricingResult.price : undefined,
         } as any,
       },
       {
@@ -404,21 +408,34 @@ export default function CreateRequest() {
             {/* ── Step 4: Financial & Contact ── */}
             {step === 4 && (
               <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري (ريال) *</label>
-                  <div className="relative">
-                    <Input
-                      type="number" min="1" step="1"
-                      placeholder="مثال: 800"
-                      value={monthlyPrice}
-                      onChange={(e) => setMonthlyPrice(e.target.value)}
-                      className="rounded-2xl text-xl font-black pl-14 h-14 input-dark"
-                      dir="ltr"
-                    />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black" style={{ color: "rgba(255,255,255,0.35)" }}>ر.س</span>
+                {/* Auto-calculated price display */}
+                {pricingResult && !pricingResult.needsAdminReview ? (
+                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.25)" }}>
+                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
+                    <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
+                      {pricingResult.price.toLocaleString("ar-SA")}
+                      <span className="text-base mr-2" style={{ color: "rgba(255,255,255,0.45)" }}>ر.س / شهر</span>
+                    </p>
+                    <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      محسوب بناءً على المسافة ({distanceKm!.toFixed(1)} كم)، {tripType === "round_trip" ? "ذهاب وإياب" : "اتجاه واحد"}، {selectedDays.length} أيام/أسبوع، {numberOfPeople} أشخاص
+                    </p>
                   </div>
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>هذا هو السعر الذي ستدفعه شهرياً للسائق</p>
-                </div>
+                ) : pricingResult?.needsAdminReview ? (
+                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(251,113,133,0.06)", border: "1px solid rgba(251,113,133,0.25)" }}>
+                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري</p>
+                    <p className="text-base font-black" style={{ color: "#fb7185" }}>يتطلب مراجعة الإدارة</p>
+                    <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      المسافة ({distanceKm!.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري</p>
+                    <p className="text-base font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      يرجى تحديد الموقعين على الخريطة في الخطوة الثانية لحساب السعر تلقائياً
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>الاسم الكامل (اختياري)</label>
