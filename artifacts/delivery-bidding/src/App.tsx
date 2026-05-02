@@ -204,6 +204,21 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function HomeRedirect() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جاري التحقق...</div>;
+  // Authenticated users go directly to their dashboard
+  if (user?.role === "admin") return <Redirect to="/admin" />;
+  if (user?.role === "driver") return <Redirect to="/driver/dashboard" />;
+  if (user?.role === "client") return <Redirect to="/client" />;
+  // Not authenticated — use stored role to show the right login page
+  const role = getStoredRole();
+  if (role === "admin") return <Redirect to="/admin/login" />;
+  if (role === "driver") return <Redirect to="/driver/login" />;
+  if (role === "client") return <Redirect to="/client/login" />;
+  return <Home />;
+}
+
 function Router() {
   return (
     <>
@@ -212,16 +227,8 @@ function Router() {
       {/* Dynamically switch manifest per portal */}
       <ManifestUpdater />
       <Switch>
-        {/* Smart home: redirect to role-specific login if the user has visited before */}
-        <Route path="/">
-          {() => {
-            const role = getStoredRole();
-            if (role === "admin") return <Redirect to="/admin/login" />;
-            if (role === "driver") return <Redirect to="/driver/login" />;
-            if (role === "client") return <Redirect to="/client/login" />;
-            return <Home />;
-          }}
-        </Route>
+        {/* Smart home: send authenticated users to their dashboard, others to login */}
+        <Route path="/" component={HomeRedirect} />
 
         <Route path="/client/login" component={ClientLogin} />
         <Route path="/client/register" component={ClientRegister} />
