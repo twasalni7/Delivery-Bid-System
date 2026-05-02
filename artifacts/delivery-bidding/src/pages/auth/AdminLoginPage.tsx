@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function AdminLoginPage() {
   const [, setLocation] = useLocation();
-  const { refetch } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
   const loginMutation = useAdminLogin();
   const [loginCode, setLoginCode] = useState("");
@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
     loginMutation.mutate(
       { data: { loginCode: loginCode.trim() } },
       {
-        onSuccess: async () => { await refetch(); setLocation("/admin"); },
+        onSuccess: (data) => { login(data); setLocation("/admin"); },
         onError: (err: Error) => { toast({ title: err.message ?? "رمز الدخول غير صحيح", variant: "destructive" }); },
       }
     );

@@ -360,10 +360,10 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  // When a cross-origin base URL is configured, cookies must be explicitly
-  // included; otherwise rely on the caller's (or browser's default) setting.
-  const credentials: RequestCredentials | undefined =
-    _baseUrl ? "include" : init.credentials;
+  // Use caller's credentials setting (or browser default).
+  // When a bearer token getter is configured, auth is handled via the
+  // Authorization header so we do not force cookies to be included.
+  const credentials = init.credentials;
 
   const response = await fetch(input, { ...init, method, headers, credentials });
 

@@ -7,7 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 export default function ClientLogin() {
   const [, setLocation] = useLocation();
-  const { refetch } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
   const loginMutation = useClientLogin();
   const [mobile, setMobile] = useState("");
@@ -23,7 +23,7 @@ export default function ClientLogin() {
     loginMutation.mutate(
       { data: { mobile: mobile.trim(), password } },
       {
-        onSuccess: async () => { await refetch(); setLocation("/client"); },
+        onSuccess: (data) => { login(data); setLocation("/client"); },
         onError: (err: Error) => { toast({ title: err.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" }); },
       }
     );

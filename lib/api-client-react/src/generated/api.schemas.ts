@@ -47,6 +47,8 @@ export interface AuthUser {
   mobile?: string | null;
   balance?: number | null;
   status?: string | null;
+  /** Auth token returned by login/register endpoints. Store in localStorage. */
+  token?: string | null;
 }
 
 export interface ClientRegisterBody {
