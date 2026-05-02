@@ -9,6 +9,7 @@ import {
   transactionsTable,
   walletTransactionsTable,
   supportTicketsTable,
+  ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db";
 import { eq, count, ne, desc, sql, sum, inArray, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
@@ -853,11 +854,20 @@ router.post("/requests", async (req, res) => {
     req.body?.selectedDriverId != null ? Number(req.body.selectedDriverId) : null;
 
   try {
+    const distanceKm = parsed.data.distanceKm ?? null;
+    const needsAdminReview = distanceKm != null && distanceKm > ADMIN_REVIEW_DISTANCE_KM;
+
     const [created] = await db
       .insert(requestsTable)
       .values({
         homeLocation: parsed.data.homeLocation,
         workLocation: parsed.data.workLocation,
+        homeLat: parsed.data.homeLat ?? null,
+        homeLng: parsed.data.homeLng ?? null,
+        destLat: parsed.data.destLat ?? null,
+        destLng: parsed.data.destLng ?? null,
+        distanceKm: distanceKm,
+        needsAdminReview,
         phone: parsed.data.phone,
         numberOfPeople: parsed.data.numberOfPeople,
         workingDaysPerWeek: parsed.data.workingDaysPerWeek,

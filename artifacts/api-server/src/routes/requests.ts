@@ -5,6 +5,7 @@ import {
   driversTable,
   offersTable,
   transactionsTable,
+  ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notify";
@@ -203,11 +204,20 @@ router.post("/", requireAuth("client"), async (req, res) => {
   try {
     const clientId = req.session.user!.id;
 
+    const distanceKm = parsed.data.distanceKm ?? null;
+    const needsAdminReview = distanceKm != null && distanceKm > ADMIN_REVIEW_DISTANCE_KM;
+
     const [created] = await db
       .insert(requestsTable)
       .values({
         homeLocation: parsed.data.homeLocation,
         workLocation: parsed.data.workLocation,
+        homeLat: parsed.data.homeLat ?? null,
+        homeLng: parsed.data.homeLng ?? null,
+        destLat: parsed.data.destLat ?? null,
+        destLng: parsed.data.destLng ?? null,
+        distanceKm: distanceKm,
+        needsAdminReview,
         phone: parsed.data.phone,
         numberOfPeople: parsed.data.numberOfPeople,
         workingDaysPerWeek: parsed.data.workingDaysPerWeek,

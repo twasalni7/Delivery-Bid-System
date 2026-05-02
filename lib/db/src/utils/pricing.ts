@@ -12,6 +12,9 @@ const DISTANCE_TIERS = [
   { max: 40, base: 1700 },
 ] as const;
 
+/** Requests exceeding this distance (km) require admin review before drivers can see them */
+export const ADMIN_REVIEW_DISTANCE_KM = 40;
+
 export type TripType = "one_way" | "round_trip";
 
 /**
@@ -72,8 +75,8 @@ export function calculateMonthlyPrice(
   daysPerWeek: number,
   numberOfPeople: number
 ): PricingResult {
-  // Distance exceeds 40km - requires admin review
-  if (distanceKm > 40) {
+  // Distance exceeds threshold - requires admin review
+  if (distanceKm > ADMIN_REVIEW_DISTANCE_KM) {
     return {
       price: 0,
       needsAdminReview: true,

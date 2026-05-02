@@ -320,7 +320,7 @@ export const CreateRequestBody = zod.object({
       }),
     )
     .optional(),
-  phone: zod.string(),
+  phone: zod.string().min(10, "رقم الجوال يجب أن يكون 10 أرقام على الأقل"),
   numberOfPeople: zod.number(),
   workingDaysPerWeek: zod.number(),
   numberOfShifts: zod.number().optional(),

@@ -99,7 +99,7 @@ export default function AdminCreateRequest() {
     if (step === 1) return !!clientType;
     if (step === 2) return homeLocation.trim() && workLocation.trim();
     if (step === 3) return morningTime && selectedDays.length > 0;
-    return phone.trim().length > 0;
+    return phone.trim().length >= 10;
   };
 
   const handleSubmit = async () => {
