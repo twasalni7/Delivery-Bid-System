@@ -68,29 +68,48 @@ export async function getPriceFromMatrix(
     return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
   }
 
+  // Fetch the base-price row (num_passengers=1) which stores price_sar —
+  // the total route cost for a single occupant. Dividing by the actual
+  // passenger count gives each person's dynamic share.
   const rows = await db
-    .select({ pricePerPerson: pricingMatrixTable.pricePerPerson })
+    .select({
+      priceSar: pricingMatrixTable.priceSar,
+      passengersMax: pricingMatrixTable.passengersMax,
+      pricePerPerson: pricingMatrixTable.pricePerPerson,
+    })
     .from(pricingMatrixTable)
     .where(
       and(
         lte(pricingMatrixTable.minKm, distanceKm),
         gt(pricingMatrixTable.maxKm, distanceKm),
-        eq(pricingMatrixTable.numPassengers, numPassengers),
+        eq(pricingMatrixTable.numPassengers, 1),
       )
     )
     .limit(1);
 
-  if (rows.length === 0 || rows[0].pricePerPerson == null) {
+  if (rows.length === 0) {
     return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
   }
 
-  const pricePerPerson = rows[0].pricePerPerson;
+  const row = rows[0];
+
+  // Use price_sar when available (dynamic: reflects any changes made in the
+  // dashboard). Fall back to the stored price_per_person for 1 passenger.
+  const priceSar = row.priceSar ?? row.pricePerPerson;
+  if (priceSar == null) {
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
+  }
+
+  const passengersMax = row.passengersMax ?? 4;
+  const effectivePassengers = Math.min(Math.max(numPassengers, 1), passengersMax);
+  const pricePerPerson = priceSar / effectivePassengers;
+
   return {
     pricePerPerson,
-    price: pricePerPerson * numPassengers,
+    price: pricePerPerson * effectivePassengers,
     needsAdminReview: false,
     distanceKm,
-    numberOfPeople: numPassengers,
+    numberOfPeople: effectivePassengers,
   };
 }
 
