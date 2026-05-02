@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { notificationsTable } from "@workspace/db";
 import { eq, and, desc, count } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -10,7 +11,7 @@ const router = Router();
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 
 router.get("/", requireAuth(), async (req, res) => {
-  const user = req.session.user!;
+  const user = getSessionUser(req)!;
   try {
     const rows = await db
       .select()
@@ -32,7 +33,7 @@ router.get("/", requireAuth(), async (req, res) => {
 });
 
 router.get("/unread-count", requireAuth(), async (req, res) => {
-  const user = req.session.user!;
+  const user = getSessionUser(req)!;
   try {
     const [result] = await db
       .select({ count: count() })
@@ -53,7 +54,7 @@ router.get("/unread-count", requireAuth(), async (req, res) => {
 });
 
 router.patch("/mark-all-read", requireAuth(), async (req, res) => {
-  const user = req.session.user!;
+  const user = getSessionUser(req)!;
   try {
     await db
       .update(notificationsTable)
@@ -75,7 +76,7 @@ router.patch("/mark-all-read", requireAuth(), async (req, res) => {
 
 router.patch("/:id/read", requireAuth(), async (req, res) => {
   const id = Number(req.params["id"]);
-  const user = req.session.user!;
+  const user = getSessionUser(req)!;
 
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });

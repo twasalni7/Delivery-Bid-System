@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import { Plus, Trash2, Save, RefreshCw, AlertTriangle, MapPin, Clock, Users, Settings2 } from "lucide-react";
 import type { PricingConfig, PricingTier, SharingDiscount } from "@/lib/pricing";
 
@@ -37,7 +38,7 @@ export default function AdminPricing() {
   const [customPrices, setCustomPrices] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    fetch(`${API}/api/pricing/config`, { credentials: "include" })
+    fetch(`${API}/api/pricing/config`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d: PricingConfig) => {
         setConfig(d);
@@ -50,7 +51,7 @@ export default function AdminPricing() {
       .catch(() => toast({ title: "فشل تحميل إعدادات التسعير", variant: "destructive" }))
       .finally(() => setLoading(false));
 
-    fetch(`${API}/api/pricing/review-requests`, { credentials: "include" })
+    fetch(`${API}/api/pricing/review-requests`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setReviewRequests(d); })
       .catch(() => {})
@@ -62,8 +63,7 @@ export default function AdminPricing() {
     try {
       const res = await fetch(`${API}/api/pricing/config`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
           tiers,
           sharingDiscounts: discounts,
@@ -107,8 +107,7 @@ export default function AdminPricing() {
     try {
       const res = await fetch(`${API}/api/admin/requests/${requestId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ monthlyPrice: price, needsAdminReview: false }),
       });
       const data = await res.json();

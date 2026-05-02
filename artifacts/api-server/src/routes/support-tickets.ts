@@ -29,7 +29,7 @@ function formatTicket(t: typeof supportTicketsTable.$inferSelect, user?: { name:
 
 // Client or Driver: submit ticket
 router.post("/", requireAuth(), async (req, res) => {
-  const sessionUser = req.session.user!;
+  const sessionUser = getSessionUser(req)!;
   const { type, message, requestId } = req.body ?? {};
 
   const VALID_TYPES = ["تأخير", "دفع", "إلغاء", "أخرى"];
@@ -85,7 +85,7 @@ router.post("/", requireAuth(), async (req, res) => {
 // Client: get own tickets
 router.get("/my", requireAuth("client"), async (req, res) => {
   try {
-    const sessionUser = req.session.user!;
+    const sessionUser = getSessionUser(req)!;
     const tickets = await db
       .select()
       .from(supportTicketsTable)
@@ -101,7 +101,7 @@ router.get("/my", requireAuth("client"), async (req, res) => {
 // Driver: get own tickets
 router.get("/driver/my", requireAuth("driver"), async (req, res) => {
   try {
-    const sessionUser = req.session.user!;
+    const sessionUser = getSessionUser(req)!;
     const tickets = await db
       .select()
       .from(supportTicketsTable)

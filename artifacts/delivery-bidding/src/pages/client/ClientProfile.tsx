@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -24,7 +25,7 @@ export default function ClientProfile() {
       if (name.trim()) body.name = name.trim();
       if (mobile.trim()) body.mobile = mobile.trim();
       const res = await fetch(`${API}/api/auth/me/client`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
+        method: "PATCH", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -42,7 +43,7 @@ export default function ClientProfile() {
     setSavingPassword(true);
     try {
       const res = await fetch(`${API}/api/auth/me/password`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
+        method: "PATCH", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       const data = await res.json();

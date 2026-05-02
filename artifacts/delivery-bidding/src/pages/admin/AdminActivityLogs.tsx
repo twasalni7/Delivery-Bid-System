@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import { RefreshCw, ChevronRight, ChevronLeft, Activity } from "lucide-react";
 
 type LogEntry = {
@@ -62,7 +63,7 @@ export default function AdminActivityLogs() {
       if (filterFrom)   params.set("from", filterFrom);
       if (filterTo)     params.set("to", filterTo);
 
-      const res = await fetch(`${API}/api/activity-logs?${params}`, { credentials: "include" });
+      const res = await fetch(`${API}/api/activity-logs?${params}`, { headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "فشل التحميل");
       setLogs(data.data ?? []);

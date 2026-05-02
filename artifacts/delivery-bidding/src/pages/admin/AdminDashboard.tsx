@@ -10,6 +10,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import { timeAgo } from "@/lib/time-utils";
 
 const ARABIC_MONTHS = [
@@ -89,7 +90,7 @@ export default function AdminDashboard() {
   // Fetch recent events and set up auto-refresh
   const fetchRecentEvents = async () => {
     try {
-      const res = await fetch(`${API}/api/admin/recent-events`, { credentials: "include" });
+      const res = await fetch(`${API}/api/admin/recent-events`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json() as RecentEvent[];
         setRecentEvents(data);

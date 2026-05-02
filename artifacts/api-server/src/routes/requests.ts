@@ -203,7 +203,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
   }
 
   try {
-    const clientId = req.session.user!.id;
+    const clientId = getSessionUser(req)!.id;
     const data = parsed.data;
 
     // Calculate distance and price server-side from coordinates when available
@@ -334,7 +334,7 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
     }
 
     await logActivity({
-      actorId:   req.session.user?.id,
+      actorId:   getSessionUser(req)?.id,
       actorRole: "admin",
       action:    "request.status_changed",
       entity:    "requests",
@@ -393,7 +393,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   }
 
   const { offerId } = parsed.data;
-  const clientId = req.session.user!.id;
+  const clientId = getSessionUser(req)!.id;
   try {
     const { existingRequest, updated, updatedDriver } = await withDbTransaction(async (tx, meta) => {
       const existingRequest = await tx.query.requestsTable.findFirst({

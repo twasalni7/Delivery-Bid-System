@@ -10,6 +10,7 @@ import { formatTime12h } from "@/lib/time-utils";
 import { haversineKm } from "@/lib/pricing";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import {
   ArrowRight, Plus, X, Home, Briefcase, Users, Clock,
   CheckCircle2, Check, AlertTriangle, Navigation, Share2, Lock,
@@ -120,8 +121,7 @@ export default function CreateRequest() {
     }
     fetch(`${API}/api/pricing/calculate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({ distanceKm, numberOfPeople: sharingCount }),
     })
       .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
@@ -139,7 +139,7 @@ export default function CreateRequest() {
       destLng: String(workCoords.lng),
       ...(morningTime ? { morningTime } : {}),
     });
-    fetch(`${API}/api/pricing/suggestions?${params}`, { credentials: "include" })
+    fetch(`${API}/api/pricing/suggestions?${params}`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (typeof d.count === "number") setSharedSuggestions({ count: d.count }); })
       .catch(() => {});

@@ -9,6 +9,7 @@ import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
 
@@ -45,7 +46,7 @@ export default function AdminRequestDetails() {
   const { data: chatMessages } = useQuery<Message[]>({
     queryKey: ["messages", id],
     queryFn: async () => {
-      const res = await fetch(`${API}/api/messages/${id}`, { credentials: "include" });
+      const res = await fetch(`${API}/api/messages/${id}`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error("فشل جلب الرسائل");
       return res.json();
     },
@@ -56,8 +57,8 @@ export default function AdminRequestDetails() {
   const sendMessage = useMutation({
     mutationFn: async () => {
       const res = await fetch(`${API}/api/messages/${id}`, {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ body: chatMessage.trim() }),
       });
       if (!res.ok) throw new Error("فشل إرسال الرسالة");
@@ -75,8 +76,7 @@ export default function AdminRequestDetails() {
     mutationFn: async (offerId: number) => {
       const res = await fetch(`${API}/api/admin/requests/${id}/select-offer`, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ offerId }),
       });
       const data = await res.json();

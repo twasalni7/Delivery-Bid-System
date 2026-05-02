@@ -1,4 +1,5 @@
 import { API_ORIGIN } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 const PUSH_SUBSCRIBED_KEY = "push_subscribed";
 
@@ -16,7 +17,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 async function fetchVapidPublicKey(): Promise<string | null> {
   try {
     const res = await fetch(`${API_ORIGIN}/api/push/vapid-public-key`, {
-      credentials: "include",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { publicKey?: string };
@@ -32,8 +33,7 @@ async function saveSubscription(
 ): Promise<void> {
   await fetch(`${API_ORIGIN}/api/push/subscribe`, {
     method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify({ subscription: subscription.toJSON(), role }),
   });
 }

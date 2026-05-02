@@ -16,13 +16,17 @@ vi.mock("@workspace/db", () => {
     update: vi.fn(() => ({
       set: vi.fn(() => ({ where: vi.fn(() => ({ returning: vi.fn() })) })),
     })),
+    delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) })),
   };
   return {
     db: mockDb,
     clientsTable: {},
     driversTable: {},
     adminsTable: {},
+    userTokensTable: {},
     eq: vi.fn(),
+    and: vi.fn(),
+    gte: vi.fn(),
   };
 });
 

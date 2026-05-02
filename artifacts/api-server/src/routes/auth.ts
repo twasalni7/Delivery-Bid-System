@@ -1,12 +1,43 @@
 import { Router, Request } from "express";
+import { randomBytes } from "crypto";
 import { db } from "@workspace/db";
-import { clientsTable, driversTable, adminsTable } from "@workspace/db";
+import { clientsTable, driversTable, adminsTable, userTokensTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { hashPassword, comparePassword } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
 
 const router = Router();
+
+// Token lifetime: 30 days
+const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function generateToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+async function createAuthToken(
+  userId: number,
+  role: "client" | "driver" | "admin",
+  name: string,
+): Promise<string> {
+  const token = generateToken();
+  const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
+  await db.insert(userTokensTable).values({ token, userId, role, name, expiresAt });
+  return token;
+}
+
+async function deleteAuthToken(req: Request): Promise<void> {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader?.startsWith("Bearer ")) return;
+  const token = authHeader.slice(7).trim();
+  if (!token) return;
+  try {
+    await db.delete(userTokensTable).where(eq(userTokensTable.token, token));
+  } catch {
+    // Ignore errors during token cleanup
+  }
+}
 
 // Mobile validation: must contain only digits and optional leading +, length 9-15
 const MOBILE_RE = /^\+?[0-9]{9,15}$/;
@@ -48,12 +79,14 @@ router.post("/register-client", async (req, res) => {
       .returning();
     await regenerateSession(req);
     req.session.user = { id: client.id, role: "client", name: client.name };
+    const token = await createAuthToken(client.id, "client", client.name);
     await logActivity({ actorId: client.id, actorRole: "client", action: "client.registered", entity: "clients", entityId: client.id, req });
     res.status(201).json({
       id: client.id,
       name: client.name,
       mobile: client.mobile,
       role: "client",
+      token,
     });
   } catch (err) {
     logger.error({ err }, "register-client error");
@@ -82,12 +115,14 @@ router.post("/login-client", async (req, res) => {
     }
     await regenerateSession(req);
     req.session.user = { id: client.id, role: "client", name: client.name };
+    const token = await createAuthToken(client.id, "client", client.name);
     await logActivity({ actorId: client.id, actorRole: "client", action: "auth.login", entity: "clients", entityId: client.id, req });
     res.json({
       id: client.id,
       name: client.name,
       mobile: client.mobile,
       role: "client",
+      token,
     });
   } catch (err) {
     logger.error({ err }, "login-client error");
@@ -121,6 +156,7 @@ router.post("/login-driver", async (req, res) => {
     }
     await regenerateSession(req);
     req.session.user = { id: driver.id, role: "driver", name: driver.name };
+    const token = await createAuthToken(driver.id, "driver", driver.name);
     await logActivity({ actorId: driver.id, actorRole: "driver", action: "auth.login", entity: "drivers", entityId: driver.id, req });
     res.json({
       id: driver.id,
@@ -129,6 +165,7 @@ router.post("/login-driver", async (req, res) => {
       balance: driver.balance,
       status: driver.status,
       role: "driver",
+      token,
     });
   } catch (err) {
     logger.error({ err }, "login-driver error");
@@ -152,11 +189,13 @@ router.post("/login-admin", async (req, res) => {
     }
     await regenerateSession(req);
     req.session.user = { id: admin.id, role: "admin", name: admin.name };
+    const token = await createAuthToken(admin.id, "admin", admin.name);
     await logActivity({ actorId: admin.id, actorRole: "admin", action: "auth.login", entity: "admins", entityId: admin.id, req });
     res.json({
       id: admin.id,
       name: admin.name,
       role: "admin",
+      token,
     });
   } catch (err) {
     logger.error({ err }, "login-admin error");
@@ -164,14 +203,15 @@ router.post("/login-admin", async (req, res) => {
   }
 });
 
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
+  await deleteAuthToken(req);
   req.session.destroy(() => {
     res.json({ message: "تم تسجيل الخروج" });
   });
 });
 
 router.get("/me", (req, res) => {
-  const user = req.session.user;
+  const user = req.session.user ?? req.tokenUser;
   if (!user) {
     res.status(401).json({ error: "غير مسجّل الدخول" });
     return;
@@ -180,7 +220,7 @@ router.get("/me", (req, res) => {
 });
 
 router.patch("/me/client", async (req, res) => {
-  const user = req.session.user;
+  const user = req.session.user ?? req.tokenUser;
   if (!user || user.role !== "client") {
     res.status(401).json({ error: "غير مصرح" });
     return;
@@ -221,7 +261,7 @@ router.patch("/me/client", async (req, res) => {
 });
 
 router.patch("/me/password", async (req, res) => {
-  const user = req.session.user;
+  const user = req.session.user ?? req.tokenUser;
   if (!user || user.role !== "client") {
     res.status(401).json({ error: "غير مصرح" });
     return;
@@ -261,3 +301,4 @@ router.patch("/me/password", async (req, res) => {
 });
 
 export default router;
+

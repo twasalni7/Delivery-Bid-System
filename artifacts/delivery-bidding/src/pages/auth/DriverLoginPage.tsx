@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function DriverLoginPage() {
   const [, setLocation] = useLocation();
-  const { refetch } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
   const loginMutation = useDriverLogin();
   const [mobile, setMobile] = useState("");
@@ -21,7 +21,7 @@ export default function DriverLoginPage() {
     loginMutation.mutate(
       { data: { mobile: mobile.trim(), loginCode: loginCode.trim() } },
       {
-        onSuccess: async () => { await refetch(); setLocation("/driver/dashboard"); },
+        onSuccess: (data) => { login(data); setLocation("/driver/dashboard"); },
         onError: (err: Error) => { toast({ title: err.message ?? "بيانات الدخول غير صحيحة", variant: "destructive" }); },
       }
     );

@@ -7,7 +7,7 @@ import { Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 
 export default function ClientRegister() {
   const [, setLocation] = useLocation();
-  const { refetch } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
   const registerMutation = useClientRegister();
   const [name, setName] = useState("");
@@ -38,7 +38,7 @@ export default function ClientRegister() {
     registerMutation.mutate(
       { data: { name: name.trim(), mobile: mobile.trim(), password } },
       {
-        onSuccess: async () => { await refetch(); setLocation("/client"); },
+        onSuccess: (data) => { login(data); setLocation("/client"); },
         onError: (err: Error) => { toast({ title: err.message ?? "فشل إنشاء الحساب", variant: "destructive" }); },
       }
     );

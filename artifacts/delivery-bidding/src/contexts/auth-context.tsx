@@ -1,39 +1,56 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { useGetMe, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useLogout } from "@workspace/api-client-react";
 import type { AuthUser } from "@workspace/api-client-react";
 import { subscribeToPush, clearPushSubscriptionCache } from "@/lib/push-notifications";
+
+const LS_USER_KEY = "auth_user";
+const LS_TOKEN_KEY = "auth_token";
+
+function readStoredUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(LS_USER_KEY);
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
-  refetch: () => Promise<void>;
+  login: (data: AuthUser) => void;
+  refetch: () => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [enabled, setEnabled] = useState(true);
-  const { data: user, isLoading, isFetching, refetch: refetchQuery } = useGetMe({
-    query: { queryKey: getGetMeQueryKey(), retry: false, enabled },
-  });
+  const [user, setUser] = useState<AuthUser | null>(readStoredUser);
   const logoutMutation = useLogout();
 
-  const refetch = useCallback(async () => {
-    setEnabled(true);
-    await refetchQuery();
-  }, [refetchQuery]);
+  const login = useCallback((data: AuthUser) => {
+    const { token, ...userData } = data;
+    if (token) {
+      try { localStorage.setItem(LS_TOKEN_KEY, token); } catch { /* ignore */ }
+    }
+    try { localStorage.setItem(LS_USER_KEY, JSON.stringify(userData)); } catch { /* ignore */ }
+    setUser(userData);
+  }, []);
+
+  const refetch = useCallback(() => {
+    setUser(readStoredUser());
+  }, []);
 
   const logout = useCallback(() => {
     clearPushSubscriptionCache();
-    logoutMutation.mutate(undefined, {
-      onSettled: () => {
-        refetchQuery();
-      },
-    });
-  }, [logoutMutation, refetchQuery]);
+    try { localStorage.removeItem(LS_TOKEN_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(LS_USER_KEY); } catch { /* ignore */ }
+    setUser(null);
+    logoutMutation.mutate(undefined);
+  }, [logoutMutation]);
 
-  // Subscribe to push notifications after a successful login (pass role for correct table routing)
+  // Subscribe to push notifications when the user is set
   useEffect(() => {
     if (user) {
       void subscribeToPush(user.role);
@@ -41,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user: user ?? null, isLoading: isLoading || isFetching, refetch, logout }}>
+    <AuthContext.Provider value={{ user, isLoading: false, login, refetch, logout }}>
       {children}
     </AuthContext.Provider>
   );

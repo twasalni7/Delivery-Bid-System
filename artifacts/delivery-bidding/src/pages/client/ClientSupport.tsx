@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { getTicketStatusColor, getTicketStatusLabel } from "@/lib/status-utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN } from "@/lib/api-config";
 const API_BASE = API_ORIGIN + "/api";
@@ -20,7 +21,7 @@ export default function ClientSupport() {
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
     queryKey: ["my-tickets"],
     queryFn: async () => {
-      const r = await fetch(`${API_BASE}/support-tickets/my`, { credentials: "include" });
+      const r = await fetch(`${API_BASE}/support-tickets/my`, { headers: getAuthHeaders() });
       if (!r.ok) throw new Error("فشل تحميل التذاكر");
       return r.json();
     },
@@ -34,8 +35,8 @@ export default function ClientSupport() {
   const submit = useMutation({
     mutationFn: async () => {
       const r = await fetch(`${API_BASE}/support-tickets`, {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ type, message, requestId: requestId ? Number(requestId) : undefined }),
       });
       if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "فشل الإرسال"); }

@@ -4,6 +4,7 @@ import { offersTable, driversTable, requestsTable, clientsTable } from "@workspa
 import { eq, and, ne, count, inArray } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
+import { getSessionUser } from "../lib/session";
 import { notify } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
@@ -63,7 +64,7 @@ router.get("/", requireAuth("admin"), async (_req, res) => {
 
 router.get("/my", requireAuth("driver"), async (req, res) => {
   try {
-    const driverId = req.session.user!.id;
+    const driverId = getSessionUser(req)!.id;
 
     const offers = await db
       .select()
@@ -191,7 +192,7 @@ router.delete("/:id", requireAuth("driver"), async (req, res) => {
     return;
   }
 
-  const driverId = req.session.user!.id;
+  const driverId = getSessionUser(req)!.id;
   try {
     const offer = await db.query.offersTable.findFirst({
       where: eq(offersTable.id, offerId),
@@ -236,7 +237,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     return;
   }
 
-  const driverId = req.session.user!.id;
+  const driverId = getSessionUser(req)!.id;
   const { requestId } = parsed.data;
   try {
     const driver = await db.query.driversTable.findFirst({

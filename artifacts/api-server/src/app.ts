@@ -7,6 +7,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
 import { csrfProtection } from "./middleware/csrfProtection";
+import { resolveTokenUser } from "./middleware/resolveTokenUser";
 
 const app = express();
 
@@ -102,6 +103,8 @@ app.use(
     },
   })
 );
+
+app.use(resolveTokenUser);
 
 app.get("/", (_req, res) => {
   res.send("Server is running");

@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { clientsTable, driversTable, adminsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { getSessionUser } from "../lib/session";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get("/vapid-public-key", (_req, res) => {
  * Body: { subscription: PushSubscriptionJSON }
  */
 router.post("/subscribe", requireAuth(), async (req, res) => {
-  const user = req.session.user!;
+  const user = getSessionUser(req)!;
   const { subscription } = req.body ?? {};
 
   if (!subscription || typeof subscription !== "object") {

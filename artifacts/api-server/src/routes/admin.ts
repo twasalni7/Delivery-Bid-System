@@ -17,6 +17,7 @@ import { generateLoginCode } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { CreateRequestBody } from "@workspace/api-zod";
 import { notify } from "../lib/notify";
+import { getSessionUser } from "../lib/session";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -737,7 +738,7 @@ router.delete("/requests/:id", async (req, res) => {
 });
 
 router.post("/change-code", async (req, res) => {
-  const adminId = req.session.user!.id;
+  const adminId = getSessionUser(req)!.id;
   const { newCode } = req.body ?? {};
   if (!newCode || typeof newCode !== "string" || newCode.trim().length < 6) {
     res.status(400).json({ error: "يجب أن يكون الرمز 6 أحرف أو أكثر" });
