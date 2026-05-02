@@ -124,7 +124,7 @@ export default function CreateRequest() {
       credentials: "include",
       body: JSON.stringify({ distanceKm, numberOfPeople: sharingCount }),
     })
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
       .then((data) => setPricingResult(data))
       .catch(() => setPricingResult(undefined));
   }, [distanceKm, sharingCount]);
