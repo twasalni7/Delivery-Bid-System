@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@/lib/time-utils";
-import { calculateMonthlyPrice, haversineKm } from "@/lib/pricing";
+import { calculateMonthlyPrice, haversineKm, type PricingConfig } from "@/lib/pricing";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import {
@@ -91,6 +91,16 @@ export default function CreateRequest() {
   const [sharedSuggestions, setSharedSuggestions] = useState<{ count: number } | null>(null);
   const [subscriptionType, setSubscriptionType] = useState<"private" | "shared">("private");
 
+  // Pricing config fetched from server (matches admin-configured values)
+  const [pricingConfig, setPricingConfig] = useState<PricingConfig | undefined>(undefined);
+
+  useEffect(() => {
+    fetch(`${API}/api/pricing/config`, { credentials: "include" })
+      .then((r) => { if (!r.ok) throw new Error(`pricing config: ${r.status}`); return r.json(); })
+      .then((d: PricingConfig) => setPricingConfig(d))
+      .catch((err) => console.warn("Failed to load pricing config, using defaults:", err));
+  }, []);
+
   // Auto-calculate price from coordinates, trip type, days, and people
   const distanceKm =
     homeCoords && workCoords
@@ -105,7 +115,7 @@ export default function CreateRequest() {
       : parseInt(numberOfPeople) || 1;
 
   const pricingResult = distanceKm !== undefined
-    ? calculateMonthlyPrice(distanceKm, tripType, selectedDays.length, sharingCount)
+    ? calculateMonthlyPrice(distanceKm, tripType, selectedDays.length, sharingCount, pricingConfig)
     : undefined;
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
