@@ -15,7 +15,7 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async function (OneSignal: OneSignalNamespace) {
       await OneSignal.init({
-        appId: import.meta.env.VITE_ONESIGNAL_APP_ID as string,
+        appId: "936a2461-9f06-4231-986e-29578e9a56d7",
       });
     });
   }, []);
