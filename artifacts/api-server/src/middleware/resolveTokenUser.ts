@@ -43,9 +43,14 @@ export async function resolveTokenUser(
     });
 
     if (record) {
+      const role = record.role;
+      if (role !== "client" && role !== "driver" && role !== "admin") {
+        next();
+        return;
+      }
       req.session.user = {
         id: record.userId,
-        role: record.role as "client" | "driver" | "admin",
+        role,
         name: record.name,
       };
     }
