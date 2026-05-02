@@ -783,9 +783,6 @@ export const ListOffersResponse = zod.array(ListOffersResponseItem);
  */
 export const CreateOfferBody = zod.object({
   requestId: zod.number(),
-  price: zod.number(),
-  carType: zod.string(),
-  nationality: zod.string(),
 });
 
 /**

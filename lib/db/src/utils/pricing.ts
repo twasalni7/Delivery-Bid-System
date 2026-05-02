@@ -67,6 +67,55 @@ export function getDefaultPricingConfig(): PricingConfig {
 /** Requests exceeding this distance (km) require admin review before drivers can see them */
 export const ADMIN_REVIEW_DISTANCE_KM = 40;
 
+/** Result returned by calculateMonthlyPrice */
+export interface MonthlyPriceResult {
+  price: number;
+  needsAdminReview: boolean;
+}
+
+/**
+ * Calculate monthly price from distance and trip parameters using default tiers.
+ * Returns needsAdminReview=true (and price=0) when distance exceeds the admin threshold.
+ */
+export function calculateMonthlyPrice(
+  distanceKm: number,
+  tripType: "round_trip" | "one_way",
+  workingDaysPerWeek?: number | null,
+  numberOfPeople?: number | null,
+): MonthlyPriceResult {
+  if (distanceKm > ADMIN_REVIEW_DISTANCE_KM) {
+    return { price: 0, needsAdminReview: true };
+  }
+
+  const tier = DEFAULT_DISTANCE_TIERS.find((t) => distanceKm <= t.max);
+  if (!tier) {
+    return { price: 0, needsAdminReview: true };
+  }
+
+  let base = tier.base;
+
+  // Round-trip (2 shifts) doubles the base fare
+  if (tripType === "round_trip") {
+    base *= 2;
+  }
+
+  // Apply working days scaling relative to a standard 5-day work week
+  const STANDARD_WORK_WEEK_DAYS = 5;
+  if (workingDaysPerWeek != null && workingDaysPerWeek > 0) {
+    base = (base / STANDARD_WORK_WEEK_DAYS) * workingDaysPerWeek;
+  }
+
+  // Apply per-person sharing discount
+  const people = numberOfPeople != null && numberOfPeople > 0 ? numberOfPeople : 1;
+  const discount =
+    DEFAULT_SHARING_DISCOUNTS.find((d) => d.people === people) ??
+    DEFAULT_SHARING_DISCOUNTS[DEFAULT_SHARING_DISCOUNTS.length - 1];
+  const factor = discount?.factor ?? 1;
+  const price = Math.round(base * factor * people);
+
+  return { price, needsAdminReview: false };
+}
+
 /**
  * Calculate Haversine straight-line distance between two coordinates
  * @param lat1 Latitude of first point (degrees)
