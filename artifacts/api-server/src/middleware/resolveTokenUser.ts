@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "@workspace/db";
 import { userTokensTable } from "@workspace/db";
 import { and, eq, gte } from "drizzle-orm";
+import { logger } from "../lib/logger";
 
 /**
  * Middleware that runs after the session middleware.
@@ -53,6 +54,7 @@ export async function resolveTokenUser(
     if (record) {
       const role = record.role;
       if (role !== "client" && role !== "driver" && role !== "admin") {
+        logger.warn({ role, tokenId: record.id }, "resolveTokenUser: unexpected role in user_tokens");
         next();
         return;
       }
@@ -64,8 +66,9 @@ export async function resolveTokenUser(
         name: record.name,
       };
     }
-  } catch {
-    // DB error — continue without auth; the route's requireAuth will reject.
+  } catch (err) {
+    // DB error — log and continue without auth; the route's requireAuth will reject.
+    logger.error({ err }, "resolveTokenUser: DB error validating bearer token");
   }
 
   next();
