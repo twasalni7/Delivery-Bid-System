@@ -519,25 +519,23 @@ export default function CreateRequest() {
                       </div>
                     </div>
 
-                    {/* Per-person price (for shared) */}
-                    {sharingCount > 1 ? (
-                      <div className="space-y-1">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
-                            {pricingResult.pricePerPerson.toLocaleString("ar-SA")}
-                          </p>
-                          <p className="text-base font-black" style={{ color: "rgba(255,255,255,0.45)" }}>ر.س / شخص / شهر</p>
-                        </div>
+                    {/* Per-person price — always displayed */}
+                    <div className="space-y-1">
+                      <p className="text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
+                        Price per person
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
+                          {pricingResult.pricePerPerson.toLocaleString("ar-SA")}
+                        </p>
+                        <p className="text-base font-black" style={{ color: "rgba(255,255,255,0.45)" }}>SAR / شخص / شهر</p>
+                      </div>
+                      {sharingCount > 1 && (
                         <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>
                           ({sharingCount} أشخاص × {pricingResult.pricePerPerson.toLocaleString("ar-SA")} = {pricingResult.price.toLocaleString("ar-SA")} ر.س إجمالي)
                         </p>
-                      </div>
-                    ) : (
-                      <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
-                        {pricingResult.price.toLocaleString("ar-SA")}
-                        <span className="text-base mr-2" style={{ color: "rgba(255,255,255,0.45)" }}>ر.س / شهر</span>
-                      </p>
-                    )}
+                      )}
+                    </div>
 
                     {/* Pricing breakdown */}
                     <div className="pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>

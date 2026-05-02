@@ -203,10 +203,18 @@ export default function RequestDetails() {
                 <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
               </div>
               <div className="text-center">
-                <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>السعر الشهري</p>
+                <p className="text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Price per person</p>
                 <p className="text-lg font-black" style={{ color: "#deff9a" }} dir="ltr">
-                  {request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-xs font-normal" style={{ color: "rgba(222,255,154,0.5)" }}>ر.س</span>
+                  {request.monthlyPrice != null && request.numberOfPeople > 0
+                    ? (request.monthlyPrice / request.numberOfPeople).toFixed(0)
+                    : (request.monthlyPrice?.toFixed(0) ?? "—")}{" "}
+                  <span className="text-xs font-normal" style={{ color: "rgba(222,255,154,0.5)" }}>SAR</span>
                 </p>
+                {request.numberOfPeople > 1 && request.monthlyPrice != null && (
+                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    {request.numberOfPeople} × {(request.monthlyPrice / request.numberOfPeople).toFixed(0)} = {request.monthlyPrice.toFixed(0)} ر.س إجمالي
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-1.5 flex-wrap">
