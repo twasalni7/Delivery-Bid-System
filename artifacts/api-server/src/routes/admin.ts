@@ -661,7 +661,7 @@ router.patch("/requests/:id", async (req, res) => {
     res.status(400).json({ error: "معرّف غير صحيح" });
     return;
   }
-  const { status, selectedDriverId } = req.body ?? {};
+  const { status, selectedDriverId, monthlyPrice, needsAdminReview } = req.body ?? {};
   const updates: Record<string, unknown> = {};
   if (status !== undefined) {
     if (!VALID_REQUEST_STATUSES.has(status as string)) {
@@ -671,6 +671,15 @@ router.patch("/requests/:id", async (req, res) => {
     updates.status = status as typeof requestsTable.$inferSelect["status"];
   }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
+  if (monthlyPrice !== undefined) {
+    const price = parseFloat(monthlyPrice);
+    if (isNaN(price) || price < 0) {
+      res.status(400).json({ error: "السعر الشهري غير صحيح" });
+      return;
+    }
+    updates.monthlyPrice = price;
+  }
+  if (needsAdminReview !== undefined) updates.needsAdminReview = Boolean(needsAdminReview);
 
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });

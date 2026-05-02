@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateRequest, getListRequestsQueryKey } from "@workspace/api-client-react";
@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@/lib/time-utils";
 import { calculateMonthlyPrice, haversineKm } from "@/lib/pricing";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
+import { API_ORIGIN as API } from "@/lib/api-config";
 import {
   ArrowRight, Plus, X, Home, Briefcase, Users, Clock,
-  CheckCircle2, Check, AlertTriangle, Navigation,
+  CheckCircle2, Check, AlertTriangle, Navigation, Share2, Lock,
 } from "lucide-react";
 
 const CLIENT_TYPES = [
@@ -86,15 +87,48 @@ export default function CreateRequest() {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
 
+  // Shared subscription state
+  const [sharedSuggestions, setSharedSuggestions] = useState<{ count: number } | null>(null);
+  const [subscriptionType, setSubscriptionType] = useState<"private" | "shared">("private");
+
   // Auto-calculate price from coordinates, trip type, days, and people
   const distanceKm =
     homeCoords && workCoords
       ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
       : undefined;
   const tripType = eveningTime ? "round_trip" : "one_way";
+
+  // Number of people for pricing: for shared subscription, add suggestion count to household
+  const sharingCount =
+    subscriptionType === "shared" && sharedSuggestions && sharedSuggestions.count > 0
+      ? Math.min(parseInt(numberOfPeople) + sharedSuggestions.count, 4)
+      : parseInt(numberOfPeople) || 1;
+
   const pricingResult = distanceKm !== undefined
-    ? calculateMonthlyPrice(distanceKm, tripType, selectedDays.length, parseInt(numberOfPeople) || 1)
+    ? calculateMonthlyPrice(distanceKm, tripType, selectedDays.length, sharingCount)
     : undefined;
+
+  // Fetch shared subscription suggestions whenever coordinates + time are set
+  const fetchSuggestions = useCallback(() => {
+    if (!homeCoords || !workCoords) return;
+    const params = new URLSearchParams({
+      homeLat: String(homeCoords.lat),
+      homeLng: String(homeCoords.lng),
+      destLat: String(workCoords.lat),
+      destLng: String(workCoords.lng),
+      ...(morningTime ? { morningTime } : {}),
+    });
+    fetch(`${API}/api/pricing/suggestions?${params}`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.count === "number") setSharedSuggestions({ count: d.count }); })
+      .catch(() => {});
+  }, [homeCoords, workCoords, morningTime]);
+
+  useEffect(() => {
+    if (step === 4 && homeCoords && workCoords) {
+      fetchSuggestions();
+    }
+  }, [step, fetchSuggestions]);
 
   const toggleDay = (key: string) =>
     setSelectedDays((prev) =>
@@ -119,7 +153,12 @@ export default function CreateRequest() {
 
   const handleSubmit = () => {
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
-    
+    // Build notes: include sharing preference if applicable
+    const sharingNote = subscriptionType === "shared" && sharedSuggestions && sharedSuggestions.count > 0
+      ? `[اشتراك مشترك - ${sharingCount} أشخاص]`
+      : null;
+    const finalNotes = [sharingNote, notes.trim()].filter(Boolean).join(" — ") || undefined;
+
     createRequest.mutate(
       {
         data: {
@@ -133,13 +172,15 @@ export default function CreateRequest() {
           distanceKm,
           additionalLocations: validAdditional.length > 0 ? validAdditional : undefined,
           phone: phone.trim(),
-          numberOfPeople: parseInt(numberOfPeople) || 1,
+          numberOfPeople: sharingCount,
           workingDaysPerWeek: selectedDays.length,
           numberOfShifts: eveningTime ? 2 : 1,
           morningTime,
           eveningTime: eveningTime || undefined,
-          notes: notes.trim() || undefined,
-          monthlyPrice: pricingResult?.needsAdminReview === false ? pricingResult.price : undefined,
+          notes: finalNotes,
+          // monthlyPrice is intentionally not sent — the server calculates
+          // it from coordinates using the DB pricing config to prevent
+          // client-side price manipulation.
         } as any,
       },
       {
@@ -408,17 +449,87 @@ export default function CreateRequest() {
             {/* ── Step 4: Financial & Contact ── */}
             {step === 4 && (
               <div className="space-y-5">
+                {/* Shared Subscription Suggestion */}
+                {sharedSuggestions && sharedSuggestions.count > 0 && (
+                  <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(99,102,241,0.3)", backgroundColor: "rgba(99,102,241,0.06)" }}>
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(99,102,241,0.15)" }}>
+                          <Share2 size={18} style={{ color: "#a5b4fc" }} />
+                        </div>
+                        <div>
+                          <p className="font-black text-white text-sm">اشتراك مشترك متاح!</p>
+                          <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                            وُجد {sharedSuggestions.count} {sharedSuggestions.count === 1 ? "شخص" : "أشخاص"} قريبين منك — يمكنكم المشاركة بسعر مخفّض
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setSubscriptionType("shared")}
+                          className="flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all"
+                          style={subscriptionType === "shared"
+                            ? { backgroundColor: "#a5b4fc", color: "#1e1b4b" }
+                            : { backgroundColor: "rgba(99,102,241,0.1)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.2)" }}
+                        >
+                          <Share2 size={15} /> مشترك (أرخص)
+                        </button>
+                        <button
+                          onClick={() => setSubscriptionType("private")}
+                          className="flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all"
+                          style={subscriptionType === "private"
+                            ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
+                            : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}
+                        >
+                          <Lock size={15} /> خاص
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Auto-calculated price display */}
                 {pricingResult && !pricingResult.needsAdminReview ? (
-                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.25)" }}>
-                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
-                    <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
-                      {pricingResult.price.toLocaleString("ar-SA")}
-                      <span className="text-base mr-2" style={{ color: "rgba(255,255,255,0.45)" }}>ر.س / شهر</span>
-                    </p>
-                    <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
-                      محسوب بناءً على المسافة ({distanceKm?.toFixed(1)} كم)، {tripType === "round_trip" ? "ذهاب وإياب" : "اتجاه واحد"}، {selectedDays.length} أيام/أسبوع، {numberOfPeople} أشخاص
-                    </p>
+                  <div className="p-5 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.25)" }}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                        <Lock size={10} /> محمي
+                      </div>
+                    </div>
+
+                    {/* Per-person price (for shared) */}
+                    {sharingCount > 1 ? (
+                      <div className="space-y-1">
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
+                            {pricingResult.pricePerPerson.toLocaleString("ar-SA")}
+                          </p>
+                          <p className="text-base font-black" style={{ color: "rgba(255,255,255,0.45)" }}>ر.س / شخص / شهر</p>
+                        </div>
+                        <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>
+                          ({sharingCount} أشخاص × {pricingResult.pricePerPerson.toLocaleString("ar-SA")} = {pricingResult.price.toLocaleString("ar-SA")} ر.س إجمالي)
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
+                        {pricingResult.price.toLocaleString("ar-SA")}
+                        <span className="text-base mr-2" style={{ color: "rgba(255,255,255,0.45)" }}>ر.س / شهر</span>
+                      </p>
+                    )}
+
+                    {/* Pricing breakdown */}
+                    <div className="pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        السعر الأساسي: {pricingResult.baseTier?.toLocaleString("ar-SA")} ر.س
+                        {" × "}{tripType === "round_trip" ? "ذهاب وإياب (×1.7)" : "ذهاب فقط (×1.0)"}
+                        {" × "}{selectedDays.length >= 7 ? "7 أيام (×1.25)" : selectedDays.length >= 6 ? "6 أيام (×1.15)" : "5 أيام (×1.0)"}
+                        {sharingCount > 1 && ` × خصم المشاركة (×${pricingResult.shareDiscountFactor})`}
+                      </p>
+                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+                        المسافة: {distanceKm?.toFixed(1)} كم
+                      </p>
+                    </div>
                   </div>
                 ) : pricingResult?.needsAdminReview ? (
                   <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(251,113,133,0.06)", border: "1px solid rgba(251,113,133,0.25)" }}>
@@ -482,8 +593,22 @@ export default function CreateRequest() {
                     <span>أيام العمل</span><span className="font-black">{selectedDays.length} أيام</span>
                   </div>
                   <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
-                    <span>الركاب</span><span className="font-black">{numberOfPeople} أشخاص</span>
+                    <span>الركاب</span><span className="font-black">{sharingCount} أشخاص</span>
                   </div>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <span>نوع الاشتراك</span>
+                    <span className="font-black" style={{ color: subscriptionType === "shared" ? "#a5b4fc" : "#deff9a" }}>
+                      {subscriptionType === "shared" ? "مشترك" : "خاص"}
+                    </span>
+                  </div>
+                  {pricingResult && !pricingResult.needsAdminReview && (
+                    <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      <span>السعر / شخص</span>
+                      <span className="font-black" style={{ color: "#deff9a" }}>
+                        {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
+                      </span>
+                    </div>
+                  )}
                   {notes.trim() && (
                     <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
                       <span>ملاحظات</span><span className="font-black text-xs max-w-[55%] text-right">{notes.trim()}</span>
