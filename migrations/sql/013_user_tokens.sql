@@ -2,7 +2,7 @@
 -- Persistent auth tokens stored in localStorage on clients (replaces cookie-based sessions)
 
 CREATE TABLE IF NOT EXISTS user_tokens (
-  token       TEXT PRIMARY KEY,
+  token       TEXT PRIMARY KEY CHECK (length(token) = 64),
   user_id     INTEGER NOT NULL,
   role        TEXT NOT NULL CHECK (role IN ('client', 'driver', 'admin')),
   name        TEXT NOT NULL,
