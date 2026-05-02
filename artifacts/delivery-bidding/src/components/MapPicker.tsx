@@ -155,6 +155,11 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           markerRef.current = Lx.marker([lat, lng]).addTo(map);
         }
 
+        // Immediately save coordinates so they are never lost if the user
+        // navigates away before the geocoding debounce fires.
+        const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        onChange({ lat, lng, address: fallbackAddress });
+
         // Debounce geocoding to respect Nominatim's rate limit (1 req/sec)
         // Clear any pending geocoding request
         if (geocodingTimerRef.current) {
@@ -162,8 +167,8 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         }
 
         setGeocoding(true);
-        
-        // Debounce by 1 second to avoid rapid API calls
+
+        // Debounce by 1 second to avoid rapid API calls, then update address
         geocodingTimerRef.current = setTimeout(async () => {
           const address = await reverseGeocode(lat, lng);
           setGeocoding(false);
@@ -202,6 +207,9 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           markerRef.current = Lx.marker([value.lat, value.lng]).addTo(mapRef.current);
         }
         mapRef.current.setView([value.lat, value.lng], 14);
+        // Sync the search-box text with the stored address (e.g. when the
+        // component remounts after the user navigates back to this step).
+        setSearchText((prev) => (prev !== "" ? prev : value.address));
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
