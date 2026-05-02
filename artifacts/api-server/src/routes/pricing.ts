@@ -80,9 +80,9 @@ export async function getPriceFromMatrix(
     .from(pricingMatrixTable)
     .where(
       and(
-        lte(pricingMatrixTable.minKm, distanceKm),
-        gt(pricingMatrixTable.maxKm, distanceKm),
-        eq(pricingMatrixTable.numPassengers, 1),
+        lte(pricingMatrixTable.distanceMinKm, distanceKm),
+        gt(pricingMatrixTable.distanceMaxKm, distanceKm),
+        eq(pricingMatrixTable.passengersMin, 1),
       )
     )
     .limit(1);
