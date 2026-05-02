@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet, Search, X } from "lucide-react";
 import type { DriverDetail } from "@workspace/api-client-react";
 import * as XLSX from "xlsx";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -154,8 +155,7 @@ function ImportDriversDialog({ open, onClose, onImported }: {
       }));
       const res = await fetch(`${API}/api/admin/drivers/import`, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ drivers: payload }),
       });
       const data: ImportResult = await res.json();
@@ -414,7 +414,7 @@ export default function AdminDrivers() {
   const { data: drivers, isLoading } = useAdminListDrivers();
   const { data: deletedDrivers, isLoading: loadingDeleted, refetch: refetchDeleted } = useQuery<DriverDetail[]>({
     queryKey: ["admin-drivers-deleted"],
-    queryFn: () => fetch(`${API}/api/admin/drivers?status=DELETED`, { credentials: "include" }).then((r) => r.json()),
+    queryFn: () => fetch(`${API}/api/admin/drivers?status=DELETED`, { headers: getAuthHeaders() }).then((r) => r.json()),
     enabled: showDeleted,
   });
   const createDriver = useAdminCreateDriver();

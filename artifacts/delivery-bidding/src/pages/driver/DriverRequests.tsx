@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout";
 import { MessageCircle, Send, X } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 import { useToast } from "@/hooks/use-toast";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -44,7 +45,7 @@ export default function DriverRequests() {
   const { data: requests, isLoading } = useQuery<DriverRequest[]>({
     queryKey: ["driver-me-requests"],
     queryFn: async () => {
-      const res = await fetch(`${API}/api/drivers/me/requests`, { credentials: "include" });
+      const res = await fetch(`${API}/api/drivers/me/requests`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error("فشل جلب البيانات");
       return res.json();
     },
@@ -54,7 +55,7 @@ export default function DriverRequests() {
   const { data: chatMessages } = useQuery<Message[]>({
     queryKey: ["messages", openChatId],
     queryFn: async () => {
-      const res = await fetch(`${API}/api/messages/${openChatId}`, { credentials: "include" });
+      const res = await fetch(`${API}/api/messages/${openChatId}`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error("فشل جلب الرسائل");
       return res.json();
     },
@@ -65,8 +66,8 @@ export default function DriverRequests() {
   const sendMessage = useMutation({
     mutationFn: async () => {
       const res = await fetch(`${API}/api/messages/${openChatId}`, {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ body: chatMessage.trim() }),
       });
       if (!res.ok) throw new Error("فشل إرسال الرسالة");

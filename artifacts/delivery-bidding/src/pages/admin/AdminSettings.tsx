@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Landmark, Plus, Trash2, CheckCircle2, Eye, FileImage, AlertCircle, KeyRound, CreditCard, User } from "lucide-react";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -44,12 +45,12 @@ export default function AdminSettings() {
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/api/bank-accounts/all`, { credentials: "include" })
+    fetch(`${API}/api/bank-accounts/all`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setAccounts(d); })
       .catch(() => {});
 
-    fetch(`${API}/api/wallet-transactions`, { credentials: "include" })
+    fetch(`${API}/api/wallet-transactions`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setWalletTxs(d); })
       .catch(() => {});
@@ -64,8 +65,7 @@ export default function AdminSettings() {
     try {
       const res = await fetch(`${API}/api/admin/change-code`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ newCode: newCode.trim() }),
       });
       const data = await res.json();
@@ -89,8 +89,7 @@ export default function AdminSettings() {
     try {
       const res = await fetch(`${API}/api/bank-accounts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ bankName, iban, accountHolderName: holderName }),
       });
       const data = await res.json();
@@ -110,7 +109,7 @@ export default function AdminSettings() {
     try {
       const res = await fetch(`${API}/api/bank-accounts/${intId}`, {
         method: "DELETE",
-        credentials: "include",
+        headers: getAuthHeaders(),
       });
       if (!res.ok) throw new Error("فشل الحذف");
       setAccounts((prev) => prev.filter((a) => a.intId !== intId));
@@ -125,7 +124,7 @@ export default function AdminSettings() {
     try {
       const res = await fetch(`${API}/api/wallet-transactions/${intId}/${action}`, {
         method: "POST",
-        credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "فشلت العملية");

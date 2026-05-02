@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, X, CheckCheck, Package2, Truck, MessageSquare, Info } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -42,7 +43,7 @@ export function NotificationsBell() {
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const r = await fetch(`${API}/api/notifications`, { credentials: "include" });
+      const r = await fetch(`${API}/api/notifications`, { headers: getAuthHeaders() });
       if (!r.ok) return [];
       return r.json();
     },
@@ -55,7 +56,7 @@ export function NotificationsBell() {
     mutationFn: async () => {
       await fetch(`${API}/api/notifications/mark-all-read`, {
         method: "PATCH",
-        credentials: "include",
+        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
@@ -65,7 +66,7 @@ export function NotificationsBell() {
     mutationFn: async (id: number) => {
       await fetch(`${API}/api/notifications/${id}/read`, {
         method: "PATCH",
-        credentials: "include",
+        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),

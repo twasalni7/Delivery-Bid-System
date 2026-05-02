@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 type Client = { id: number; name: string; mobile: string; createdAt: string };
 
 async function apiFetch(path: string, opts?: RequestInit) {
-  const res = await fetch(`${API}${path}`, { ...opts, credentials: "include", headers: { "Content-Type": "application/json", ...(opts?.headers ?? {}) } });
+  const res = await fetch(`${API}${path}`, { ...opts, headers: { "Content-Type": "application/json", ...getAuthHeaders(), ...(opts?.headers ?? {}) } });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "خطأ في الخادم");
   return data;

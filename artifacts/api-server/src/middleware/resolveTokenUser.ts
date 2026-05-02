@@ -8,8 +8,16 @@ import { and, eq, gte } from "drizzle-orm";
  * If the session already has a user, it is left unchanged.
  * Otherwise, if an `Authorization: Bearer <token>` header is present,
  * the token is validated against the `user_tokens` table and, if valid,
- * `req.session.user` is populated so that all downstream middleware and
- * route handlers can treat it as a normal authenticated session.
+ * `req.tokenUser` is populated.
+ *
+ * Downstream middleware (requireAuth) reads `req.session.user ?? req.tokenUser`,
+ * so all route handlers work transparently whether the client authenticated via
+ * a session cookie or a bearer token.
+ *
+ * NOTE: We deliberately do NOT write to `req.session` here.  Writing to the
+ * session on every token-authenticated request causes connect-pg-simple to
+ * persist a new row to `user_sessions` for every API call, which bloats the
+ * database.  Token auth is stateless on the server side.
  */
 export async function resolveTokenUser(
   req: Request,
@@ -48,7 +56,9 @@ export async function resolveTokenUser(
         next();
         return;
       }
-      req.session.user = {
+      // Populate req.tokenUser only — do NOT touch req.session to avoid
+      // spurious session DB writes on every token-authenticated request.
+      req.tokenUser = {
         id: record.userId,
         role,
         name: record.name,

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import { MapPin, Plus, Trash2, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 
 type ServiceArea = {
@@ -30,7 +31,7 @@ export default function AdminServiceAreas() {
   const fetchAreas = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/service-areas/all`, { credentials: "include" });
+      const res = await fetch(`${API}/api/service-areas/all`, { headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "فشل التحميل");
       if (Array.isArray(data)) setAreas(data);
@@ -50,8 +51,7 @@ export default function AdminServiceAreas() {
     try {
       const res = await fetch(`${API}/api/service-areas`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
           city: city.trim(),
           district: district.trim() || null,
@@ -75,8 +75,7 @@ export default function AdminServiceAreas() {
     try {
       const res = await fetch(`${API}/api/service-areas/${area.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ isActive: !area.isActive }),
       });
       const data = await res.json();
@@ -93,7 +92,7 @@ export default function AdminServiceAreas() {
     try {
       const res = await fetch(`${API}/api/service-areas/${area.id}`, {
         method: "DELETE",
-        credentials: "include",
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "فشل الحذف");

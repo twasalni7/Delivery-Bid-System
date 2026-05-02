@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { walletTransactionsTable, driversTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { getSessionUser } from "../lib/session";
 import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 
@@ -12,7 +13,7 @@ const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحا�
 
 // GET /api/wallet-transactions — driver sees own transactions, admin sees all
 router.get("/", requireAuth(), async (req, res) => {
-  const user = req.session.user!;
+  const user = getSessionUser(req)!;
   try {
     if (user.role === "driver") {
       const rows = await db
@@ -54,7 +55,7 @@ router.get("/", requireAuth(), async (req, res) => {
 
 // POST /api/wallet-transactions — driver submits a top-up request
 router.post("/", requireAuth("driver"), async (req, res) => {
-  const driverId = req.session.user!.id;
+  const driverId = getSessionUser(req)!.id;
   const { amount, receiptUrl } = req.body ?? {};
 
   if (!amount || typeof amount !== "number" || amount <= 0) {

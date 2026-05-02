@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { Wallet, Upload, CheckCircle2, Clock, X, Landmark, User, Phone, Car, Globe, CreditCard, AlertTriangle, TrendingUp } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import { getSupabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -48,12 +49,12 @@ export default function DriverProfile() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`${API}/api/wallet-transactions`, { credentials: "include" })
+    fetch(`${API}/api/wallet-transactions`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setTransactions(data); })
       .catch(() => {});
 
-    fetch(`${API}/api/bank-accounts`, { credentials: "include" })
+    fetch(`${API}/api/bank-accounts`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setBankAccounts(data); })
       .catch(() => {});
@@ -98,8 +99,7 @@ export default function DriverProfile() {
 
       const res = await fetch(`${API}/api/wallet-transactions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ amount: numAmount, receiptUrl }),
       });
       const data = await res.json();

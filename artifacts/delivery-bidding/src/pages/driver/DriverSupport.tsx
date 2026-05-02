@@ -5,6 +5,7 @@ import { Plus, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { getTicketStatusColor, getTicketStatusLabel } from "@/lib/status-utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN } from "@/lib/api-config";
 const API_BASE = API_ORIGIN + "/api";
@@ -30,7 +31,7 @@ export default function DriverSupport() {
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
     queryKey: ["driver-my-tickets"],
     queryFn: async () => {
-      const r = await fetch(`${API_BASE}/support-tickets/driver/my`, { credentials: "include" });
+      const r = await fetch(`${API_BASE}/support-tickets/driver/my`, { headers: getAuthHeaders() });
       if (!r.ok) throw new Error("فشل تحميل التذاكر");
       return r.json();
     },
@@ -48,8 +49,7 @@ export default function DriverSupport() {
     mutationFn: async () => {
       const r = await fetch(`${API_BASE}/support-tickets`, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
           type,
           message,

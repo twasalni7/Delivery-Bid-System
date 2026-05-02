@@ -4,6 +4,7 @@ import { driversTable, transactionsTable, requestsTable } from "@workspace/db";
 import { eq, ne } from "drizzle-orm";
 import { AddDriverBalanceBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
+import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -37,7 +38,7 @@ router.get("/", async (_req, res) => {
 
 router.get("/me", requireAuth("driver"), async (req, res) => {
   try {
-    const driverId = req.session.user!.id;
+    const driverId = getSessionUser(req)!.id;
     const driver = await db.query.driversTable.findFirst({
       where: eq(driversTable.id, driverId),
     });
@@ -66,7 +67,7 @@ router.get("/me", requireAuth("driver"), async (req, res) => {
 
 router.get("/me/requests", requireAuth("driver"), async (req, res) => {
   try {
-    const driverId = req.session.user!.id;
+    const driverId = getSessionUser(req)!.id;
     const rows = await db
       .select()
       .from(requestsTable)

@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronDown, ChevronUp, Trash2, Search, X } from "lucide-react";
 import { getTicketStatusColor, getTicketStatusLabel } from "@/lib/status-utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 import { API_ORIGIN } from "@/lib/api-config";
 const API_BASE = API_ORIGIN + "/api";
@@ -31,7 +32,7 @@ export default function AdminSupport() {
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
     queryKey: ["admin-tickets"],
     queryFn: async () => {
-      const r = await fetch(`${API_BASE}/support-tickets`, { credentials: "include" });
+      const r = await fetch(`${API_BASE}/support-tickets`, { headers: getAuthHeaders() });
       if (!r.ok) throw new Error("فشل تحميل التذاكر");
       return r.json();
     },
@@ -63,8 +64,8 @@ export default function AdminSupport() {
   const update = useMutation({
     mutationFn: async ({ id, adminReply, status }: { id: number; adminReply?: string; status?: string }) => {
       const r = await fetch(`${API_BASE}/support-tickets/${id}`, {
-        method: "PATCH", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ adminReply, status }),
       });
       if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "فشل التحديث"); }
@@ -76,7 +77,7 @@ export default function AdminSupport() {
 
   const remove = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(`${API_BASE}/support-tickets/${id}`, { method: "DELETE", credentials: "include" });
+      const r = await fetch(`${API_BASE}/support-tickets/${id}`, { method: "DELETE", headers: getAuthHeaders() });
       if (!r.ok) throw new Error("فشل الحذف");
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-tickets"] }); toast({ title: "تم حذف التذكرة" }); },

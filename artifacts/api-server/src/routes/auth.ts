@@ -211,7 +211,7 @@ router.post("/logout", async (req, res) => {
 });
 
 router.get("/me", (req, res) => {
-  const user = req.session.user;
+  const user = req.session.user ?? req.tokenUser;
   if (!user) {
     res.status(401).json({ error: "غير مسجّل الدخول" });
     return;
@@ -220,7 +220,7 @@ router.get("/me", (req, res) => {
 });
 
 router.patch("/me/client", async (req, res) => {
-  const user = req.session.user;
+  const user = req.session.user ?? req.tokenUser;
   if (!user || user.role !== "client") {
     res.status(401).json({ error: "غير مصرح" });
     return;
@@ -261,7 +261,7 @@ router.patch("/me/client", async (req, res) => {
 });
 
 router.patch("/me/password", async (req, res) => {
-  const user = req.session.user;
+  const user = req.session.user ?? req.tokenUser;
   if (!user || user.role !== "client") {
     res.status(401).json({ error: "غير مصرح" });
     return;
