@@ -1,15 +1,15 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { appConfigTable, requestsTable } from "@workspace/db";
+import { appConfigTable, requestsTable, pricingMatrixTable } from "@workspace/db";
 import {
-  calculateMonthlyPrice,
   haversineKm,
   getDefaultPricingConfig,
   type PricingConfig,
   type PricingTier,
   type SharingDiscount,
+  ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db/utils/pricing";
-import { eq, and } from "drizzle-orm";
+import { eq, and, lte, gt } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
 
@@ -47,6 +47,51 @@ export async function loadPricingConfig(): Promise<PricingConfig> {
     logger.error({ err }, "loadPricingConfig: DB read failed, using defaults");
     return getDefaultPricingConfig();
   }
+}
+
+// ─── Helper: query price_per_person from pricing_matrix ───────────────────────
+
+export interface MatrixPricingResult {
+  pricePerPerson: number;
+  price: number;
+  needsAdminReview: boolean;
+  distanceKm: number;
+  numberOfPeople: number;
+}
+
+export async function getPriceFromMatrix(
+  distanceKm: number,
+  numPassengers: number,
+): Promise<MatrixPricingResult> {
+  const needsAdminReview = distanceKm > ADMIN_REVIEW_DISTANCE_KM;
+  if (needsAdminReview) {
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
+  }
+
+  const rows = await db
+    .select({ pricePerPerson: pricingMatrixTable.pricePerPerson })
+    .from(pricingMatrixTable)
+    .where(
+      and(
+        lte(pricingMatrixTable.minKm, distanceKm),
+        gt(pricingMatrixTable.maxKm, distanceKm),
+        eq(pricingMatrixTable.numPassengers, numPassengers),
+      )
+    )
+    .limit(1);
+
+  if (rows.length === 0 || rows[0].pricePerPerson == null) {
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
+  }
+
+  const pricePerPerson = rows[0].pricePerPerson;
+  return {
+    pricePerPerson,
+    price: pricePerPerson * numPassengers,
+    needsAdminReview: false,
+    distanceKm,
+    numberOfPeople: numPassengers,
+  };
 }
 
 // ─── Helper: upsert a single app_config key ──────────────────────────────────
@@ -136,7 +181,7 @@ router.patch("/config", requireAuth("admin"), async (req, res) => {
 router.post("/calculate", requireAuth(), async (req, res) => {
   const {
     homeLat, homeLng, destLat, destLng,
-    tripType, daysPerWeek, numberOfPeople,
+    numberOfPeople,
     distanceKm: clientDistanceKm,
   } = req.body ?? {};
 
@@ -155,16 +200,8 @@ router.post("/calculate", requireAuth(), async (req, res) => {
       return;
     }
 
-    const config = await loadPricingConfig();
-    const result = calculateMonthlyPrice(
-      distKm,
-      tripType === "round_trip" ? "round_trip" : "one_way",
-      Number(daysPerWeek) || 5,
-      Number(numberOfPeople) || 1,
-      config,
-    );
-
-    res.json({ ...result, distanceKm: distKm });
+    const result = await getPriceFromMatrix(distKm, Number(numberOfPeople) || 1);
+    res.json(result);
   } catch (err) {
     logger.error({ err }, "pricing POST /calculate error");
     res.status(500).json({ error: SERVER_ERROR_MSG });

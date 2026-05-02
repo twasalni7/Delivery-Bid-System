@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@/lib/time-utils";
-import { calculateMonthlyPrice, haversineKm, type PricingConfig } from "@/lib/pricing";
+import { haversineKm } from "@/lib/pricing";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import {
@@ -91,22 +91,20 @@ export default function CreateRequest() {
   const [sharedSuggestions, setSharedSuggestions] = useState<{ count: number } | null>(null);
   const [subscriptionType, setSubscriptionType] = useState<"private" | "shared">("private");
 
-  // Pricing config fetched from server (matches admin-configured values)
-  const [pricingConfig, setPricingConfig] = useState<PricingConfig | undefined>(undefined);
+  // Pricing result fetched from server
+  const [pricingResult, setPricingResult] = useState<{
+    pricePerPerson: number;
+    price: number;
+    needsAdminReview: boolean;
+    distanceKm: number;
+    numberOfPeople: number;
+  } | undefined>(undefined);
 
-  useEffect(() => {
-    fetch(`${API}/api/pricing/config`, { credentials: "include" })
-      .then((r) => { if (!r.ok) throw new Error(`pricing config: ${r.status}`); return r.json(); })
-      .then((d: PricingConfig) => setPricingConfig(d))
-      .catch((err) => console.warn("Failed to load pricing config, using defaults:", err));
-  }, []);
-
-  // Auto-calculate price from coordinates, trip type, days, and people
+  // Distance calculated from selected coordinates
   const distanceKm =
     homeCoords && workCoords
       ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
       : undefined;
-  const tripType = eveningTime ? "round_trip" : "one_way";
 
   // Number of people for pricing: for shared subscription, add suggestion count to household
   const sharingCount =
@@ -114,9 +112,22 @@ export default function CreateRequest() {
       ? Math.min(parseInt(numberOfPeople) + sharedSuggestions.count, 4)
       : parseInt(numberOfPeople) || 1;
 
-  const pricingResult = distanceKm !== undefined
-    ? calculateMonthlyPrice(distanceKm, tripType, selectedDays.length, sharingCount, pricingConfig)
-    : undefined;
+  // Fetch price from server whenever distance or passengers change
+  useEffect(() => {
+    if (distanceKm === undefined) {
+      setPricingResult(undefined);
+      return;
+    }
+    fetch(`${API}/api/pricing/calculate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ distanceKm, numberOfPeople: sharingCount }),
+    })
+      .then((r) => r.json())
+      .then((data) => setPricingResult(data))
+      .catch(() => setPricingResult(undefined));
+  }, [distanceKm, sharingCount]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
@@ -530,12 +541,6 @@ export default function CreateRequest() {
 
                     {/* Pricing breakdown */}
                     <div className="pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
-                        السعر الأساسي: {pricingResult.baseTier?.toLocaleString("ar-SA")} ر.س
-                        {" × "}{tripType === "round_trip" ? "ذهاب وإياب (×1.7)" : "ذهاب فقط (×1.0)"}
-                        {" × "}{selectedDays.length >= 7 ? "7 أيام (×1.25)" : selectedDays.length >= 6 ? "6 أيام (×1.15)" : "5 أيام (×1.0)"}
-                        {sharingCount > 1 && ` × خصم المشاركة (×${pricingResult.shareDiscountFactor})`}
-                      </p>
                       <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
                         المسافة: {distanceKm?.toFixed(1)} كم
                       </p>
