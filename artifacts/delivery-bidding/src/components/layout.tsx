@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { LogOut, Menu, X, Home, FileText, User, LifeBuoy, Settings, Users, Car, BarChart2, ClipboardList, Navigation, DollarSign, Activity, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NotificationsBell } from "@/components/notifications-bell";
 
 type NavLink = { href: string; label: string; icon: typeof Home; primary?: boolean };
@@ -10,6 +10,15 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function (OneSignal: OneSignalNamespace) {
+      await OneSignal.init({
+        appId: import.meta.env.VITE_ONESIGNAL_APP_ID as string,
+      });
+    });
+  }, []);
 
   const navLinks: NavLink[] =
     role === "client"
