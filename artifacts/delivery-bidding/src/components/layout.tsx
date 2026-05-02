@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LogOut, Menu, X, Home, FileText, User, LifeBuoy, Settings, Users, Car, BarChart2, ClipboardList, Navigation } from "lucide-react";
+import { LogOut, Menu, X, Home, FileText, User, LifeBuoy, Settings, Users, Car, BarChart2, ClipboardList, Navigation, DollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -31,6 +31,7 @@ export function Layout({ children, role }: { children: React.ReactNode; role: "c
           { href: "/admin/drivers", label: "السائقون", icon: Car },
           { href: "/admin/clients", label: "العملاء", icon: Users },
           { href: "/admin/offers", label: "العروض", icon: ClipboardList },
+          { href: "/admin/pricing", label: "التسعير", icon: DollarSign },
           { href: "/admin/support", label: "الدعم", icon: LifeBuoy },
           { href: "/admin/settings", label: "الإعدادات", icon: Settings },
         ];

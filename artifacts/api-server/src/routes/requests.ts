@@ -7,6 +7,7 @@ import {
   transactionsTable,
   ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db";
+import { haversineKm, calculateMonthlyPrice } from "@workspace/db/utils/pricing";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notify";
 import {
@@ -18,6 +19,7 @@ import {
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
+import { loadPricingConfig } from "./pricing";
 
 const router = Router();
 
@@ -203,31 +205,54 @@ router.post("/", requireAuth("client"), async (req, res) => {
 
   try {
     const clientId = req.session.user!.id;
+    const data = parsed.data;
 
-    const distanceKm = parsed.data.distanceKm ?? null;
+    // Calculate distance from coordinates when available; fall back to client-supplied value
+    let distanceKm: number | null = null;
+    if (data.homeLat != null && data.homeLng != null && data.destLat != null && data.destLng != null) {
+      distanceKm = haversineKm(data.homeLat, data.homeLng, data.destLat, data.destLng);
+    } else if (data.distanceKm != null) {
+      distanceKm = data.distanceKm;
+    }
+
     const needsAdminReview = distanceKm != null && distanceKm > ADMIN_REVIEW_DISTANCE_KM;
+
+    // Calculate price server-side using DB config (client-sent price is ignored)
+    let monthlyPrice = 0;
+    if (distanceKm != null && !needsAdminReview) {
+      const config = await loadPricingConfig();
+      const tripType = data.eveningTime ? "round_trip" : "one_way";
+      const pricing = calculateMonthlyPrice(
+        distanceKm,
+        tripType,
+        data.workingDaysPerWeek,
+        data.numberOfPeople,
+        config,
+      );
+      monthlyPrice = pricing.price;
+    }
 
     const [created] = await db
       .insert(requestsTable)
       .values({
-        homeLocation: parsed.data.homeLocation,
-        workLocation: parsed.data.workLocation,
-        homeLat: parsed.data.homeLat ?? null,
-        homeLng: parsed.data.homeLng ?? null,
-        destLat: parsed.data.destLat ?? null,
-        destLng: parsed.data.destLng ?? null,
-        distanceKm: distanceKm,
+        homeLocation: data.homeLocation,
+        workLocation: data.workLocation,
+        homeLat: data.homeLat ?? null,
+        homeLng: data.homeLng ?? null,
+        destLat: data.destLat ?? null,
+        destLng: data.destLng ?? null,
+        distanceKm,
         needsAdminReview,
-        phone: parsed.data.phone,
-        numberOfPeople: parsed.data.numberOfPeople,
-        workingDaysPerWeek: parsed.data.workingDaysPerWeek,
-        numberOfShifts: parsed.data.numberOfShifts ?? 1,
-        morningTime: parsed.data.morningTime,
-        eveningTime: parsed.data.eveningTime,
-        additionalLocations: parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
-        notes: parsed.data.notes,
-        clientType: parsed.data.clientType ?? "غيره",
-        monthlyPrice: parsed.data.monthlyPrice ?? 0,
+        phone: data.phone,
+        numberOfPeople: data.numberOfPeople,
+        workingDaysPerWeek: data.workingDaysPerWeek,
+        numberOfShifts: data.numberOfShifts ?? 1,
+        morningTime: data.morningTime,
+        eveningTime: data.eveningTime,
+        additionalLocations: data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
+        notes: data.notes,
+        clientType: data.clientType ?? "غيره",
+        monthlyPrice,
         clientId,
         status: "OPEN",
       })

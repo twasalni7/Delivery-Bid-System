@@ -35,6 +35,7 @@ import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminSupport from "@/pages/admin/AdminSupport";
 import AdminCreateRequest from "@/pages/admin/AdminCreateRequest";
 import AdminRequestDetails from "@/pages/admin/AdminRequestDetails";
+import AdminPricing from "@/pages/admin/AdminPricing";
 
 // ─── PWA helpers ─────────────────────────────────────────────────────────────
 
@@ -274,6 +275,9 @@ function Router() {
         </Route>
         <Route path="/admin/settings">
           <AdminGuard><AdminSettings /></AdminGuard>
+        </Route>
+        <Route path="/admin/pricing">
+          <AdminGuard><AdminPricing /></AdminGuard>
         </Route>
         <Route path="/admin/support">
           <AdminGuard><AdminSupport /></AdminGuard>

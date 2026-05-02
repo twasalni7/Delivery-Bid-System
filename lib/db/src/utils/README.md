@@ -4,14 +4,22 @@ This module provides utilities for calculating monthly subscription prices based
 
 ## Overview
 
-The pricing system uses the Haversine formula to calculate straight-line distances between coordinates and applies tiered pricing with multipliers based on various factors.
+The pricing system uses the Haversine formula to calculate straight-line distances between coordinates and applies tiered pricing with multipliers based on various factors. All configuration can be overridden via the database (`app_config` table) and managed through the admin panel.
 
 ## Usage
 
 ### Import
 
 ```typescript
-import { haversineKm, calculateMonthlyPrice, type TripType, type PricingResult } from "@workspace/db";
+import {
+  haversineKm,
+  calculateMonthlyPrice,
+  getDefaultPricingConfig,
+  getSharingFactor,
+  type TripType,
+  type PricingResult,
+  type PricingConfig,
+} from "@workspace/db";
 ```
 
 ### Calculate Distance
@@ -28,80 +36,94 @@ const distanceKm = haversineKm(
 
 ```typescript
 const result = calculateMonthlyPrice(
-  15,            // Distance in km
+  25,            // Distance in km
   "round_trip",  // Trip type: "one_way" | "round_trip"
   6,             // Working days per week
-  2              // Number of people
+  2              // Number of people sharing
 );
 
 console.log(result);
 // {
-//   price: 2972,              // Monthly price in SAR
-//   needsAdminReview: false,  // true if distance > 40km
-//   baseTier: 950,            // Base price for distance tier
-//   tripMultiplier: 1.7,      // Applied multiplier (round trip)
-//   daysMultiplier: 1.15,     // Applied multiplier (6 days)
-//   peopleMultiplier: 1.6     // Applied multiplier (2 people)
+//   price: 3460,                 // Total monthly price for 2 people (SAR)
+//   pricePerPerson: 1730,        // Per-person monthly price (SAR)
+//   needsAdminReview: false,
+//   baseTier: 1400,              // Base price for 20-25 km tier
+//   tripMultiplier: 1.7,
+//   daysMultiplier: 1.15,
+//   shareDiscountFactor: 0.72,   // 2-person sharing discount
+//   numberOfPeople: 2
 // }
 ```
 
 ## Pricing Tiers
 
-Distance-based base prices (monthly, SAR):
+Distance-based base prices (monthly, SAR) — configurable via admin panel:
 
-| Distance Range | Base Price |
-|----------------|------------|
-| 0-5 km         | 400 SAR    |
-| 5-10 km        | 650 SAR    |
-| 10-20 km       | 950 SAR    |
-| 20-30 km       | 1,300 SAR  |
-| 30-40 km       | 1,700 SAR  |
+| Distance Range | Base Price (default) |
+|----------------|----------------------|
+| 0–5 km         | 500 SAR              |
+| 5–10 km        | 800 SAR              |
+| 10–15 km       | 1,000 SAR            |
+| 15–20 km       | 1,200 SAR            |
+| 20–25 km       | 1,400 SAR            |
+| 25–30 km       | 1,700 SAR            |
+| 30–40 km       | 2,200 SAR            |
 | > 40 km        | Requires admin review |
 
 ## Multipliers
 
 ### Trip Type
-- **One-way**: 1.0x
-- **Round trip**: 1.7x
+- **One-way**: ×1.0
+- **Round trip**: ×1.7
 
 ### Working Days per Week
-- **1-5 days**: 1.0x
-- **6 days**: 1.15x
-- **7 days**: 1.25x
+- **1–5 days**: ×1.0
+- **6 days**: ×1.15
+- **7 days**: ×1.25
 
-### Number of People
-- **1 person**: 1.0x
-- **2 people**: 1.6x
-- **3+ people**: 2.1x
+### Sharing Discount (per person) — configurable via admin panel
+| People sharing | Discount factor | Price vs. solo |
+|---------------|-----------------|----------------|
+| 1 person       | 100% (×1.00)   | full price     |
+| 2 people       | 72%  (×0.72)   | −28%           |
+| 3 people       | 60%  (×0.60)   | −40%           |
+| 4 people       | 52%  (×0.52)   | −48%           |
+
+**Price formula:**
+```
+pricePerPerson = baseTier × tripMultiplier × daysMultiplier × shareDiscountFactor
+price (total)  = pricePerPerson × numberOfPeople
+```
 
 ## Examples
 
-### Example 1: Basic Calculation
+### Example 1: Solo Subscription
 ```typescript
 // 4km, one-way, 5 days/week, 1 person
 const result = calculateMonthlyPrice(4, "one_way", 5, 1);
-// Price: 400 SAR (400 × 1.0 × 1.0 × 1.0)
+// pricePerPerson: 500 SAR (500 × 1.0 × 1.0 × 1.0)
+// price: 500 SAR
 ```
 
-### Example 2: Round Trip with Multiple Passengers
+### Example 2: Shared Subscription (2 people)
 ```typescript
-// 15km, round-trip, 6 days/week, 2 people
-const result = calculateMonthlyPrice(15, "round_trip", 6, 2);
-// Price: 2,972 SAR (950 × 1.7 × 1.15 × 1.6)
+// 25km, round-trip, 5 days/week, 2 people sharing
+const result = calculateMonthlyPrice(25, "round_trip", 5, 2);
+// pricePerPerson: 1,008 SAR (1,400 × 1.7 × 1.0 × 0.72)
+// price: 2,016 SAR total
 ```
 
 ### Example 3: Admin Review Required
 ```typescript
 // 45km (exceeds 40km limit)
 const result = calculateMonthlyPrice(45, "one_way", 5, 1);
-// {
-//   price: 0,
-//   needsAdminReview: true,
-//   baseTier: null,
-//   tripMultiplier: 0,
-//   daysMultiplier: 0,
-//   peopleMultiplier: 0
-// }
+// { needsAdminReview: true, price: 0, pricePerPerson: 0 }
+```
+
+### Example 4: Custom Config (DB-driven)
+```typescript
+const config = await fetchPricingConfigFromDb();
+const result = calculateMonthlyPrice(12, "one_way", 5, 1, config);
 ```
 
 ## Database Schema
