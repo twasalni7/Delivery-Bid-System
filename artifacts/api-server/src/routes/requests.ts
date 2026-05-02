@@ -20,6 +20,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 import { loadPricingConfig } from "./pricing";
+import { logActivity } from "../lib/activity";
 
 const router = Router();
 
@@ -258,6 +259,16 @@ router.post("/", requireAuth("client"), async (req, res) => {
       })
       .returning();
 
+    await logActivity({
+      actorId:   clientId,
+      actorRole: "client",
+      action:    "request.created",
+      entity:    "requests",
+      entityId:  created.id,
+      metadata:  { homeLocation: created.homeLocation, workLocation: created.workLocation, distanceKm, monthlyPrice },
+      req,
+    });
+
     res.status(201).json(formatRequest(req, created, null));
   } catch (err) {
     logger.error({ err }, "requests POST / error");
@@ -330,6 +341,16 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
       res.status(404).json({ error: "الطلب غير موجود" });
       return;
     }
+
+    await logActivity({
+      actorId:   req.session.user?.id,
+      actorRole: "admin",
+      action:    "request.status_changed",
+      entity:    "requests",
+      entityId:  id,
+      metadata:  { newStatus: parsed.data.status },
+      req,
+    });
 
     // Notify the client about status change
     if (updated.clientId) {

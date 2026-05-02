@@ -6,6 +6,7 @@ import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { notify } from "../lib/notify";
 import { logger } from "../lib/logger";
+import { logActivity } from "../lib/activity";
 
 const router = Router();
 
@@ -282,6 +283,16 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       .insert(offersTable)
       .values({ driverId, requestId, status: "PENDING" })
       .returning();
+
+    await logActivity({
+      actorId:   driverId,
+      actorRole: "driver",
+      action:    "offer.created",
+      entity:    "offers",
+      entityId:  created.id,
+      metadata:  { requestId, driverId },
+      req,
+    });
 
     // Notify the client that a driver accepted their request
     if (request.clientId) {
