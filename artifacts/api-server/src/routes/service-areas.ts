@@ -57,13 +57,18 @@ router.post("/", requireAuth("admin"), async (req, res) => {
   }
 
   try {
+    const parsedLat = lat != null ? parseFloat(lat) : null;
+    const parsedLng = lng != null ? parseFloat(lng) : null;
+    if (parsedLat !== null && isNaN(parsedLat)) { res.status(400).json({ error: "إحداثيات خط العرض غير صحيحة" }); return; }
+    if (parsedLng !== null && isNaN(parsedLng)) { res.status(400).json({ error: "إحداثيات خط الطول غير صحيحة" }); return; }
+
     const [created] = await db
       .insert(serviceAreasTable)
       .values({
         city:     city.trim(),
         district: district?.trim() || null,
-        lat:      lat != null ? parseFloat(lat) : null,
-        lng:      lng != null ? parseFloat(lng) : null,
+        lat:      parsedLat,
+        lng:      parsedLng,
         isActive: true,
       })
       .returning();
@@ -96,8 +101,16 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   const updates: Partial<typeof serviceAreasTable.$inferInsert> = {};
   if (city      !== undefined) updates.city      = city.trim();
   if (district  !== undefined) updates.district  = district?.trim() || null;
-  if (lat       !== undefined) updates.lat       = parseFloat(lat);
-  if (lng       !== undefined) updates.lng       = parseFloat(lng);
+  if (lat       !== undefined) {
+    const parsedLat = parseFloat(lat);
+    if (isNaN(parsedLat)) { res.status(400).json({ error: "إحداثيات خط العرض غير صحيحة" }); return; }
+    updates.lat = parsedLat;
+  }
+  if (lng       !== undefined) {
+    const parsedLng = parseFloat(lng);
+    if (isNaN(parsedLng)) { res.status(400).json({ error: "إحداثيات خط الطول غير صحيحة" }); return; }
+    updates.lng = parsedLng;
+  }
   if (isActive  !== undefined) updates.isActive  = Boolean(isActive);
 
   if (Object.keys(updates).length === 0) {

@@ -51,6 +51,9 @@ type NominatimResult = {
 const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 // Default center: Dammam, Eastern Region
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
+// Debounce delays
+const SEARCH_DEBOUNCE_MS = 600;
+const GEOCODE_DEBOUNCE_MS = 1000;
 
 export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "#deff9a", initialCenter }: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,7 +94,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
     const val = e.target.value;
     setSearchText(val);
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => searchPlaces(val), 600);
+    searchTimerRef.current = setTimeout(() => searchPlaces(val), SEARCH_DEBOUNCE_MS);
   };
 
   const selectSearchResult = async (result: NominatimResult) => {
@@ -166,7 +169,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           setGeocoding(false);
           setSearchText(address);
           onChange({ lat, lng, address });
-        }, 1000);
+        }, GEOCODE_DEBOUNCE_MS);
       });
     });
 
