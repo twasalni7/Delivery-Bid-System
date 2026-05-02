@@ -178,7 +178,9 @@ export default function CreateRequest() {
           morningTime,
           eveningTime: eveningTime || undefined,
           notes: finalNotes,
-          // monthlyPrice is intentionally omitted — server calculates it
+          // monthlyPrice is intentionally not sent — the server calculates
+          // it from coordinates using the DB pricing config to prevent
+          // client-side price manipulation.
         } as any,
       },
       {

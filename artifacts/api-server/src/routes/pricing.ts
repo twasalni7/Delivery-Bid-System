@@ -214,8 +214,10 @@ router.get("/suggestions", requireAuth("client"), async (req, res) => {
       // Time proximity (optional)
       if (morningTime && r.morningTime) {
         const toMinutes = (t: string) => {
-          const [h, m] = t.split(":").map(Number);
-          return (h ?? 0) * 60 + (m ?? 0);
+          const parts = t.split(":");
+          const h = parseInt(parts[0] ?? "0", 10);
+          const m = parseInt(parts[1] ?? "0", 10);
+          return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
         };
         const diff = Math.abs(toMinutes(morningTime) - toMinutes(r.morningTime));
         if (diff > config.proximityTimeMinutes) return false;
