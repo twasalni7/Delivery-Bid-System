@@ -26,8 +26,14 @@ DROP INDEX IF EXISTS idx_activity_logs_entity;
 
 -- ─────────────────────────────────────────────────────────────────────
 -- Alter column types from uuid to integer
--- Existing rows (if any) will have these columns set to NULL because
--- UUID values cannot be cast to integers.
+--
+-- ⚠️  Data-loss note:
+--   UUID values stored in actor_id / entity_id on existing rows cannot
+--   be automatically converted to integers, so they are coerced to NULL.
+--   activity_logs is an append-only audit table; the rows themselves are
+--   preserved and only the (now-meaningless) uuid actor/entity references
+--   are cleared.  Take a database backup before running this migration
+--   in production if the existing rows carry audit value.
 -- ─────────────────────────────────────────────────────────────────────
 ALTER TABLE public.activity_logs
   ALTER COLUMN actor_id  TYPE INTEGER USING NULL,
