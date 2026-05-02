@@ -5,9 +5,8 @@ import {
   driversTable,
   offersTable,
   transactionsTable,
-  ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db";
-import { haversineKm } from "@workspace/db/utils/pricing";
+import { haversineKm, calculateMonthlyPrice } from "@workspace/db";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notify";
 import {
@@ -19,7 +18,6 @@ import {
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
-import { getPriceFromMatrix } from "./pricing";
 import { logActivity } from "../lib/activity";
 
 const router = Router();
@@ -208,21 +206,22 @@ router.post("/", requireAuth("client"), async (req, res) => {
     const clientId = req.session.user!.id;
     const data = parsed.data;
 
-    // Calculate distance from coordinates when available; fall back to client-supplied value
-    let distanceKm: number | null = null;
+    // Calculate distance and price server-side from coordinates when available
+    let monthlyPrice = 0;
+    let needsAdminReview = false;
+    let distanceKm = data.distanceKm ?? null;
+
     if (data.homeLat != null && data.homeLng != null && data.destLat != null && data.destLng != null) {
       distanceKm = haversineKm(data.homeLat, data.homeLng, data.destLat, data.destLng);
-    } else if (data.distanceKm != null) {
-      distanceKm = data.distanceKm;
-    }
-
-    const needsAdminReview = distanceKm != null && distanceKm > ADMIN_REVIEW_DISTANCE_KM;
-
-    // Calculate price server-side from pricing_matrix table (client-sent price is ignored)
-    let monthlyPrice = 0;
-    if (distanceKm != null && !needsAdminReview) {
-      const pricing = await getPriceFromMatrix(distanceKm, data.numberOfPeople);
-      monthlyPrice = pricing.price;
+      const tripType = (data.numberOfShifts ?? 1) >= 2 ? "round_trip" : "one_way";
+      const result = calculateMonthlyPrice(distanceKm, tripType, data.workingDaysPerWeek, data.numberOfPeople);
+      monthlyPrice = result.price;
+      needsAdminReview = result.needsAdminReview;
+    } else if (distanceKm != null) {
+      const tripType = (data.numberOfShifts ?? 1) >= 2 ? "round_trip" : "one_way";
+      const result = calculateMonthlyPrice(distanceKm, tripType, data.workingDaysPerWeek, data.numberOfPeople);
+      monthlyPrice = result.price;
+      needsAdminReview = result.needsAdminReview;
     }
 
     const [created] = await db
@@ -247,7 +246,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
         clientType: data.clientType ?? "غيره",
         monthlyPrice,
         clientId,
-        status: "OPEN",
+        status: needsAdminReview ? "FROZEN" : "OPEN",
       })
       .returning();
 
