@@ -113,7 +113,7 @@ export default function DriverSupport() {
                       className="px-3 py-1.5 rounded-full text-sm font-bold transition-colors"
                       style={type === t
                         ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
-                        : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
+                        : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
                     >
                       {t}
                     </button>
@@ -171,7 +171,7 @@ export default function DriverSupport() {
           <div className="text-center py-16 font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
         ) : tickets.length === 0 ? (
           <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
-            <MessageSquare size={40} className="mx-auto mb-4" style={{ color: "rgba(255,255,255,0.2)" }} />
+            <MessageSquare size={40} className="mx-auto mb-4" style={{ color: "var(--text-hint)" }} />
             <p className="text-xl font-black text-white">لا توجد تذاكر</p>
             <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>أرسل تذكرة إذا واجهت أي مشكلة</p>
           </div>
@@ -195,7 +195,7 @@ export default function DriverSupport() {
                         <span className="font-black text-white text-sm">{t.type}</span>
                         {t.requestId && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                             طلب #{t.requestId}
                           </span>
                         )}
@@ -218,8 +218,8 @@ export default function DriverSupport() {
                   </div>
 
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-4 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                    <div className="px-5 pb-5 pt-4 space-y-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                      <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--border-subtle)" }}>
                         <p className="text-xs font-bold mb-1.5" style={{ color: "var(--text-hint)" }}>رسالتك:</p>
                         <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{t.message}</p>
                       </div>
@@ -234,7 +234,7 @@ export default function DriverSupport() {
                           <p className="text-xs font-black" style={{ color: "#fbbf24" }}>⏳ في انتظار رد الإدارة...</p>
                         </div>
                       )}
-                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>
+                      <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                         أُرسلت في {new Date(t.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
                     </div>

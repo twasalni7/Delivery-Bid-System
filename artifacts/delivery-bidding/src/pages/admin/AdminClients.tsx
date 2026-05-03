@@ -127,7 +127,7 @@ export default function AdminClients() {
             <div className="hidden md:block rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               <table className="w-full" dir="rtl">
                 <thead>
-                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
                     <th className="text-right px-5 py-4 text-sm font-black w-12" style={{ color: "var(--text-muted)" }}>#</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الاسم</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>رقم الجوال</th>
@@ -137,7 +137,7 @@ export default function AdminClients() {
                 </thead>
                 <tbody>
                   {filtered.map((c, idx) => (
-                    <tr key={c.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", backgroundColor: idx % 2 === 1 ? "rgba(255,255,255,0.02)" : undefined }}>
+                    <tr key={c.id} style={{ borderBottom: "1px solid var(--border-subtle)", backgroundColor: idx % 2 === 1 ? "var(--border-subtle)" : undefined }}>
                       <td className="px-5 py-4 text-sm font-mono font-bold" style={{ color: "var(--text-hint)" }}>#{c.id}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ export default function AdminClients() {
                   ))}
                 </tbody>
               </table>
-              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid rgba(255,255,255,0.06)", color: "var(--text-hint)" }}>
+              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border-subtle)", color: "var(--text-hint)" }}>
                 يُعرض <strong className="text-white">{filtered.length}</strong> من <strong className="text-white">{clients?.length ?? 0}</strong> عميل
               </div>
             </div>

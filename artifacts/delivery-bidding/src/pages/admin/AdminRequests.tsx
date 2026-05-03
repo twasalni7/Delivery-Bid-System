@@ -154,7 +154,7 @@ export default function AdminRequests() {
                   className="h-9 px-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5"
                   style={statusFilter === s.val
                     ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
-                    : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                    : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                   {s.label}
                   <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={statusFilter === s.val ? { backgroundColor: "rgba(0,0,0,0.2)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>{s.count}</span>
                 </button>
@@ -172,7 +172,7 @@ export default function AdminRequests() {
               {activeFilters > 0 || search ? "لا توجد نتائج مطابقة" : "لا توجد طلبات"}
             </p>
             {(activeFilters > 0 || search) && (
-              <button onClick={resetFilters} className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold" style={{ color: "var(--brand)", border: "1px solid rgba(222,255,154,0.3)" }}>مسح الفلاتر</button>
+              <button onClick={resetFilters} className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold" style={{ color: "var(--brand)", border: "1px solid var(--brand-border)" }}>مسح الفلاتر</button>
             )}
           </div>
         )}
@@ -183,7 +183,7 @@ export default function AdminRequests() {
             <div className="hidden md:block rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               <table className="w-full" dir="rtl">
                 <thead>
-                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
                     <th className="text-right px-5 py-4 text-sm font-black w-16" style={{ color: "var(--text-muted)" }}>#</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الحالة</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>النوع</th>
@@ -196,7 +196,7 @@ export default function AdminRequests() {
                 </thead>
                 <tbody>
                   {filteredRequests.map((req, idx) => (
-                    <tr key={req.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", backgroundColor: idx % 2 === 1 ? "rgba(255,255,255,0.02)" : "transparent" }}>
+                    <tr key={req.id} style={{ borderBottom: "1px solid var(--border-subtle)", backgroundColor: idx % 2 === 1 ? "var(--border-subtle)" : "transparent" }}>
                       <td className="px-5 py-4 text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>
                          #{req.id}
                          {req.createdBy === "admin" && (
@@ -209,7 +209,7 @@ export default function AdminRequests() {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ color: "var(--text-sub)", backgroundColor: "rgba(255,255,255,0.06)" }}>{(req as any).clientType ?? "—"}</span>
+                        <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ color: "var(--text-sub)", backgroundColor: "var(--border-subtle)" }}>{(req as any).clientType ?? "—"}</span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 text-sm text-white">
@@ -247,27 +247,27 @@ export default function AdminRequests() {
                         <div className="flex items-center gap-1.5 text-sm text-white">
                           <Users size={13} style={{ color: "var(--text-hint)" }} />
                           <span className="font-bold">{req.numberOfPeople}</span>
-                          <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
+                          <span style={{ color: "var(--text-hint)" }}>·</span>
                           <span>{req.workingDaysPerWeek} أيام</span>
                         </div>
                       </td>
                       <td className="px-5 py-4">
                         {req.selectedDriver ? (
-                          <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ backgroundColor: "rgba(222,255,154,0.15)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>
+                          <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ backgroundColor: "var(--brand-border)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>
                         ) : (
-                          <span className="text-sm" style={{ color: "rgba(255,255,255,0.2)" }}>—</span>
+                          <span className="text-sm" style={{ color: "var(--text-hint)" }}>—</span>
                         )}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
                           <Link href={`/admin/request/${req.id}`}>
-                            <button className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid var(--brand-border)" }}>
+                            <button className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                               <Eye size={14} style={{ color: "var(--brand)" }} />
                             </button>
                           </Link>
                           <button onClick={() => handleEdit(req)}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border-subtle)" }}>
-                            <Edit2 size={14} style={{ color: "rgba(255,255,255,0.5)" }} />
+                            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                            <Edit2 size={14} style={{ color: "var(--text-muted)" }} />
                           </button>
                           <button onClick={() => handleDelete(req)}
                             className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
@@ -279,7 +279,7 @@ export default function AdminRequests() {
                   ))}
                 </tbody>
               </table>
-              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid rgba(255,255,255,0.06)", color: "var(--text-hint)" }}>
+              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border-subtle)", color: "var(--text-hint)" }}>
                 يُعرض <strong className="text-white">{filteredRequests.length}</strong> من <strong className="text-white">{requests?.length ?? 0}</strong> طلب
               </div>
             </div>
@@ -297,13 +297,13 @@ export default function AdminRequests() {
                       <span className="text-sm px-3 py-0.5 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                         {getStatusLabel(req.status)}
                       </span>
-                      {req.selectedDriver && <span className="text-sm px-2.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(222,255,154,0.15)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>}
+                      {req.selectedDriver && <span className="text-sm px-2.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--brand-border)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>}
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Link href={`/admin/request/${req.id}`}>
-                        <button className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid var(--brand-border)" }}><Eye size={14} style={{ color: "var(--brand)" }} /></button>
+                        <button className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}><Eye size={14} style={{ color: "var(--brand)" }} /></button>
                       </Link>
-                      <button onClick={() => handleEdit(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border-subtle)" }}><Edit2 size={14} style={{ color: "rgba(255,255,255,0.5)" }} /></button>
+                      <button onClick={() => handleEdit(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}><Edit2 size={14} style={{ color: "var(--text-muted)" }} /></button>
                       <button onClick={() => handleDelete(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}><Trash2 size={14} style={{ color: "#ef4444" }} /></button>
                     </div>
                   </div>

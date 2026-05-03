@@ -94,7 +94,7 @@ export default function ClientProfile() {
         <div className="rounded-3xl p-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-              style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>🔒</div>
+              style={{ backgroundColor: "var(--border-subtle)" }}>🔒</div>
             <p className="font-black text-white text-lg">تغيير كلمة المرور</p>
           </div>
           <form onSubmit={handleChangePassword} className="space-y-5">

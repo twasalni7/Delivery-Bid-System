@@ -203,11 +203,11 @@ export default function AdminRequestDetails() {
             </div>
           </div>
 
-          <div className="px-4 py-3" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-4 py-3" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Calendar size={13} style={{ color: "var(--text-hint)" }} />
-                <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
               </div>
               <div className="text-center">
                 <p className="text-xs" style={{ color: "var(--text-hint)" }}>السعر الشهري</p>
@@ -230,7 +230,7 @@ export default function AdminRequestDetails() {
                   <span
                     key={i}
                     className="text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={active ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } : { backgroundColor: "rgba(255,255,255,0.05)", color: "var(--text-hint)" }}
+                    style={active ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}
                   >
                     {d}
                   </span>
@@ -255,7 +255,7 @@ export default function AdminRequestDetails() {
               )}
             </div>
             {request.selectedDriver.mobile && (
-              <div className="px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
                 <Phone size={14} className="text-green-600" />
                 <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-white" dir="ltr">
                   {request.selectedDriver.mobile}
@@ -280,7 +280,7 @@ export default function AdminRequestDetails() {
             {canChat && (
               <button onClick={() => setShowChat(!showChat)}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-colors"
-                style={{ color: "var(--brand)", backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid var(--brand-border)" }}>
+                style={{ color: "var(--brand)", backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                 <MessageCircle size={14} /> {showChat ? "إخفاء" : "المحادثة"}
               </button>
             )}
@@ -288,7 +288,7 @@ export default function AdminRequestDetails() {
 
           {showChat && canChat && (
             <div className="mb-5 rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid var(--border-subtle)" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#161616", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#161616", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-2">
                   <MessageCircle size={15} style={{ color: "var(--brand)" }} />
                   <span className="text-white font-black text-sm">محادثة مع السائق</span>
@@ -315,7 +315,7 @@ export default function AdminRequestDetails() {
                 })}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-2 flex gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", backgroundColor: "var(--surface)" }}>
+              <div className="p-2 flex gap-2" style={{ borderTop: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
                 <input
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
@@ -340,7 +340,7 @@ export default function AdminRequestDetails() {
           {loadingOffers && <div className="text-center py-8 text-sm" style={{ color: "var(--text-muted)" }}>جاري التحميل...</div>}
 
           {!loadingOffers && (!offers || offers.length === 0) && (
-            <div className="text-center py-12 border-2 border-dashed rounded-2xl" style={{ borderColor: "rgba(255,255,255,0.12)", backgroundColor: "var(--surface)" }}>
+            <div className="text-center py-12 border-2 border-dashed rounded-2xl" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
               <p className="text-3xl mb-2">⏳</p>
               <p className="font-bold text-white">لا يوجد سائقون قبلوا بعد</p>
               <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>ستظهر أسماء السائقين هنا عند قبولهم الطلب</p>
@@ -358,7 +358,7 @@ export default function AdminRequestDetails() {
                       <span className="text-white text-xs font-bold">السائق المؤكَّد</span>
                     </div>
                   )}
-                  <div className="p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>

@@ -50,7 +50,7 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
         <div
           key={s}
           className="w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10"
-          style={s <= currentStep ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" } : { backgroundColor: "var(--surface)", borderColor: "rgba(255,255,255,0.12)" }}
+          style={s <= currentStep ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" } : { backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
         />
       ))}
     </div>
@@ -228,7 +228,7 @@ export default function CreateRequest() {
 
         <div className="rounded-[2.5rem] overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 24px 56px rgba(0,0,0,0.4)" }}>
           {/* Step header */}
-          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 4</p>
             <h2 className="text-[1.8rem] font-black tracking-tight leading-none text-white">{STEP_TITLES[step - 1]}</h2>
           </div>
@@ -242,12 +242,12 @@ export default function CreateRequest() {
                     key={t.value}
                     onClick={() => setClientType(t.value)}
                     className="flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98]"
-                    style={clientType === t.value ? { borderColor: "rgba(222,255,154,0.3)", backgroundColor: "rgba(222,255,154,0.06)" } : { borderColor: "var(--border-subtle)", backgroundColor: "#161616" }}
+                    style={clientType === t.value ? { borderColor: "var(--brand-border)", backgroundColor: "var(--brand-subtle)" } : { borderColor: "var(--border-subtle)", backgroundColor: "#161616" }}
                     >
                       <div className="flex items-center gap-4">
                         <div
                           className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
-                          style={clientType === t.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "rgba(255,255,255,0.06)" }}
+                          style={clientType === t.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--border-subtle)" }}
                         >
                           {clientType === t.value ? (
                           <Users size={22} />
@@ -259,7 +259,7 @@ export default function CreateRequest() {
                       </div>
                       <div
                         className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                        style={clientType === t.value ? { borderColor: "var(--brand)", backgroundColor: "var(--brand)", color: "var(--bg)" } : { borderColor: "rgba(255,255,255,0.12)" }}
+                        style={clientType === t.value ? { borderColor: "var(--brand)", backgroundColor: "var(--brand)", color: "var(--bg)" } : { borderColor: "var(--border)" }}
                       >
                         {clientType === t.value && <Check size={12} strokeWidth={4} />}
                       </div>
@@ -272,7 +272,7 @@ export default function CreateRequest() {
             {step === 2 && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
                     <Home className="inline-block ml-1" size={16} style={{ color: "var(--brand)" }} />
                     موقع الانطلاق (المنزل)
                   </label>
@@ -305,7 +305,7 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
                     <Briefcase className="inline-block ml-1 text-rose-500" size={16} />
                     موقع الوصول (الدوام)
                   </label>
@@ -340,7 +340,7 @@ export default function CreateRequest() {
 
                 {/* Distance indicator */}
                 {homeCoords && workCoords && (
-                  <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid var(--brand-border)" }}>
+                  <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                     <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       المسافة المقدرة:{" "}
                       <span className="text-white">
@@ -385,7 +385,7 @@ export default function CreateRequest() {
                 <button
                   onClick={addLocation}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-[1.5rem] border-2 border-dashed text-sm font-black transition-colors"
-                  style={{ borderColor: "rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
+                  style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
                 >
                   <Plus size={16} /> إضافة موقع آخر
                 </button>
@@ -397,7 +397,7 @@ export default function CreateRequest() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت الذهاب</label>
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت الذهاب</label>
                     <Input
                       type="time"
                       value={morningTime}
@@ -408,7 +408,7 @@ export default function CreateRequest() {
                     {morningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(morningTime)}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت العودة</label>
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت العودة</label>
                     <Input
                       type="time"
                       value={eveningTime}
@@ -421,7 +421,7 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>أيام العمل</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>أيام العمل</label>
                   <div className="flex gap-2 flex-wrap">
                     {DAYS.map((d) => (
                       <button
@@ -438,7 +438,7 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>👥 عدد الأشخاص</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>👥 عدد الأشخاص</label>
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.max(1, parseInt(p) - 1)))}
@@ -455,7 +455,7 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>ملاحظات للسائقين (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>ملاحظات للسائقين (اختياري)</label>
                   <Textarea
                     placeholder="مثال: يفضل سائقة، باص كبير..."
                     value={notes}
@@ -480,7 +480,7 @@ export default function CreateRequest() {
                         </div>
                         <div>
                           <p className="font-black text-white text-sm">اشتراك مشترك متاح!</p>
-                          <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                          <p className="text-xs" style={{ color: "var(--text-sub)" }}>
                             وُجد {sharedSuggestions.count} {sharedSuggestions.count === 1 ? "شخص" : "أشخاص"} قريبين منك — يمكنكم المشاركة بسعر مخفّض
                           </p>
                         </div>
@@ -500,7 +500,7 @@ export default function CreateRequest() {
                           className="flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all"
                           style={subscriptionType === "private"
                             ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
-                            : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
+                            : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
                         >
                           <Lock size={15} /> خاص
                         </button>
@@ -511,10 +511,10 @@ export default function CreateRequest() {
 
                 {/* Auto-calculated price display */}
                 {pricingResult && !pricingResult.needsAdminReview ? (
-                  <div className="p-5 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.25)" }}>
+                  <div className="p-5 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                      <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                         <Lock size={10} /> محمي
                       </div>
                     </div>
@@ -538,7 +538,7 @@ export default function CreateRequest() {
                     </div>
 
                     {/* Pricing breakdown */}
-                    <div className="pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="pt-2 space-y-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                       <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                         المسافة: {distanceKm?.toFixed(1)} كم
                       </p>
@@ -546,7 +546,7 @@ export default function CreateRequest() {
                   </div>
                 ) : pricingResult?.needsAdminReview ? (
                   <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(251,113,133,0.06)", border: "1px solid rgba(251,113,133,0.25)" }}>
-                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري</p>
+                    <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
                     <p className="text-base font-black" style={{ color: "#fb7185" }}>يتطلب مراجعة الإدارة</p>
                     <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
                       المسافة ({distanceKm?.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
@@ -554,7 +554,7 @@ export default function CreateRequest() {
                   </div>
                 ) : (
                   <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid var(--border)" }}>
-                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري</p>
+                    <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
                     <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                       يرجى تحديد الموقعين على الخريطة في الخطوة الثانية لحساب السعر تلقائياً
                     </p>
@@ -562,7 +562,7 @@ export default function CreateRequest() {
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>الاسم الكامل (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>الاسم الكامل (اختياري)</label>
                   <Input
                     placeholder="مثال: سارة أحمد"
                     value={name}
@@ -572,7 +572,7 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>رقم الجوال *</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>رقم الجوال *</label>
                   <Input
                     type="tel"
                     placeholder="05xxxxxxxx"
@@ -587,35 +587,35 @@ export default function CreateRequest() {
                 {/* Summary */}
                 <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid var(--brand-border)" }}>
                   <h3 className="font-black text-sm mb-3" style={{ color: "var(--brand)" }}>ملخص الطلب</h3>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>نوع الاشتراك</span><span className="font-black">{clientType}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>من</span><span className="font-black text-left text-xs max-w-[55%] text-right">{homeLocation || "—"}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>إلى</span><span className="font-black text-left text-xs max-w-[55%] text-right">{workLocation || "—"}</span>
                   </div>
                   {additionalLocations.filter((l) => l.address.trim()).map((loc, idx) => (
-                    <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}</span>
                       <span className="font-black text-xs max-w-[55%] text-right">{loc.address}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>أيام العمل</span><span className="font-black">{selectedDays.length} أيام</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>الركاب</span><span className="font-black">{sharingCount} أشخاص</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>نوع الاشتراك</span>
                     <span className="font-black" style={{ color: subscriptionType === "shared" ? "#a5b4fc" : "var(--brand)" }}>
                       {subscriptionType === "shared" ? "مشترك" : "خاص"}
                     </span>
                   </div>
                   {pricingResult && !pricingResult.needsAdminReview && (
-                    <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>السعر / شخص</span>
                       <span className="font-black" style={{ color: "var(--brand)" }}>
                         {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
@@ -623,7 +623,7 @@ export default function CreateRequest() {
                     </div>
                   )}
                   {notes.trim() && (
-                    <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>ملاحظات</span><span className="font-black text-xs max-w-[55%] text-right">{notes.trim()}</span>
                     </div>
                   )}
@@ -638,7 +638,7 @@ export default function CreateRequest() {
               <button
                 onClick={() => setStep(step - 1)}
                 className="px-6 py-4 rounded-[1.5rem] font-black transition-colors"
-                style={{ border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-sub)", backgroundColor: "#161616" }}
+                style={{ border: "1px solid var(--border)", color: "var(--text-sub)", backgroundColor: "#161616" }}
               >
                 رجوع
               </button>
@@ -661,7 +661,7 @@ export default function CreateRequest() {
               }}
               disabled={createRequest.isPending}
               className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "var(--brand)", color: "var(--bg)", boxShadow: "0 18px 36px rgba(222,255,154,0.18)" }}
+              style={{ backgroundColor: "var(--brand)", color: "var(--bg)", boxShadow: "0 18px 36px var(--brand-border)" }}
             >
               {step === 4 ? (
                 createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>

@@ -165,7 +165,7 @@ export default function RequestDetails() {
                 </div>
               </div>
               <div className="flex items-center gap-4 mt-1">
-                <div className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <div className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                   <Clock size={13} />
                   {shifts && shifts.length > 0 ? (
                     <span dir="ltr">{shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
@@ -176,7 +176,7 @@ export default function RequestDetails() {
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <div className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                   <Users size={13} />
                   <span>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</span>
                 </div>
@@ -186,7 +186,7 @@ export default function RequestDetails() {
                   {additionalLocations.map((loc, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: "var(--text-hint)" }} />
-                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
+                      <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
                     </div>
                   ))}
                 </div>
@@ -201,7 +201,7 @@ export default function RequestDetails() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Calendar size={13} style={{ color: "var(--text-hint)" }} />
-                <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
+                <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
               </div>
               <div className="text-center">
                 <p className="text-xs font-black uppercase tracking-widest" style={{ color: "var(--text-hint)" }}>Price per person</p>
@@ -209,7 +209,7 @@ export default function RequestDetails() {
                   {request.monthlyPrice != null && request.numberOfPeople > 0
                     ? (request.monthlyPrice / request.numberOfPeople).toFixed(0)
                     : (request.monthlyPrice?.toFixed(0) ?? "—")}{" "}
-                  <span className="text-xs font-normal" style={{ color: "rgba(222,255,154,0.5)" }}>SAR</span>
+                  <span className="text-xs font-normal" style={{ color: "var(--brand)" }}>SAR</span>
                 </p>
                 {request.numberOfPeople > 1 && request.monthlyPrice != null && (
                   <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
@@ -225,7 +225,7 @@ export default function RequestDetails() {
                   <span key={i} className="text-xs px-2 py-0.5 rounded-full font-black"
                     style={active
                       ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
-                      : { backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
+                      : { backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}>
                     {d}
                   </span>
                 );
@@ -236,7 +236,7 @@ export default function RequestDetails() {
 
         {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
           <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>
-            <div className="p-5" style={{ backgroundColor: "rgba(222,255,154,0.07)", borderBottom: "1px solid rgba(222,255,154,0.15)" }}>
+            <div className="p-5" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle size={16} style={{ color: "var(--brand)" }} />
                 <span className="font-bold" style={{ color: "var(--brand)" }}>
@@ -277,7 +277,7 @@ export default function RequestDetails() {
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-colors"
                 style={showChat
                   ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
-                  : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)", border: "1px solid var(--border-subtle)" }}>
+                  : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border-subtle)" }}>
                 <MessageCircle size={14} /> {showChat ? "إخفاء" : "المحادثة"}
               </button>
             )}
@@ -285,7 +285,7 @@ export default function RequestDetails() {
 
           {showChat && canChat && (
             <div className="mb-6 rounded-3xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-2">
                   <MessageCircle size={15} style={{ color: "var(--brand)" }} />
                   <span className="font-black text-sm" style={{ color: "var(--brand)" }}>محادثة مع السائق</span>
@@ -303,7 +303,7 @@ export default function RequestDetails() {
                       <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
                         style={isMe
                           ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
-                          : { backgroundColor: "#1e1e1e", color: "rgba(255,255,255,0.8)", border: "1px solid var(--border-subtle)" }}>
+                          : { backgroundColor: "#1e1e1e", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
                         {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>{msg.senderRole === "admin" ? "الإدارة" : "السائق"}</p>}
                         <p>{msg.body}</p>
                       </div>
@@ -312,7 +312,7 @@ export default function RequestDetails() {
                 })}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-2 flex gap-2" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="p-2 flex gap-2" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
                 <input
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
@@ -347,9 +347,9 @@ export default function RequestDetails() {
               const isSelected = request.selectedDriverId === offer.driverId;
               return (
                 <div key={offer.id} className="rounded-2xl overflow-hidden"
-                  style={{ backgroundColor: "var(--surface)", border: `1px solid ${isSelected ? "rgba(222,255,154,0.25)" : "var(--border-subtle)"}` }}>
+                  style={{ backgroundColor: "var(--surface)", border: `1px solid ${isSelected ? "var(--brand-border)" : "var(--border-subtle)"}` }}>
                   {isSelected && (
-                    <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "rgba(222,255,154,0.08)", borderBottom: "1px solid rgba(222,255,154,0.15)" }}>
+                    <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
                       <CheckCircle size={14} style={{ color: "var(--brand)" }} />
                       <span className="text-xs font-bold" style={{ color: "var(--brand)" }}>السائق المؤكَّد</span>
                     </div>

@@ -86,7 +86,7 @@ export default function AdminOffers() {
             <div className="hidden md:block rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               <table className="w-full" dir="rtl">
                 <thead>
-                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
                     <th className="text-right px-5 py-4 text-sm font-black w-14" style={{ color: "var(--text-muted)" }}>#</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الطلب</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>السائق</th>
@@ -96,7 +96,7 @@ export default function AdminOffers() {
                 </thead>
                 <tbody>
                   {filtered.map((offer, idx) => (
-                    <tr key={offer.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", backgroundColor: idx % 2 === 1 ? "rgba(255,255,255,0.02)" : undefined }}>
+                    <tr key={offer.id} style={{ borderBottom: "1px solid var(--border-subtle)", backgroundColor: idx % 2 === 1 ? "var(--border-subtle)" : undefined }}>
                       <td className="px-5 py-4 text-sm font-mono font-bold" style={{ color: "var(--text-hint)" }}>#{offer.id}</td>
                       <td className="px-5 py-4">
                         <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>طلب #{offer.requestId}</span>
@@ -109,7 +109,7 @@ export default function AdminOffers() {
                       </td>
                       <td className="px-5 py-4">
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                          style={offer.status === "SELECTED" ? { backgroundColor: "rgba(222,255,154,0.15)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "rgba(239,68,68,0.15)", color: "#ef4444" } : { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+                          style={offer.status === "SELECTED" ? { backgroundColor: "var(--brand-border)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "rgba(239,68,68,0.15)", color: "#ef4444" } : { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
                           {offer.status === "PENDING" ? "منتظر" : offer.status === "SELECTED" ? "مختار" : "ملغي"}
                         </span>
                       </td>
@@ -118,7 +118,7 @@ export default function AdminOffers() {
                   ))}
                 </tbody>
               </table>
-              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid rgba(255,255,255,0.06)", color: "var(--text-hint)" }}>
+              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border-subtle)", color: "var(--text-hint)" }}>
                 يُعرض <strong className="text-white">{filtered.length}</strong> من <strong className="text-white">{offers?.length ?? 0}</strong> قبول
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function AdminOffers() {
                         <span className="font-black text-white text-base">{offer.driver?.name ?? `سائق #${offer.driverId}`}</span>
                       </div>
                       <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                        style={offer.status === "SELECTED" ? { backgroundColor: "rgba(222,255,154,0.15)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "rgba(239,68,68,0.15)", color: "#ef4444" } : { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+                        style={offer.status === "SELECTED" ? { backgroundColor: "var(--brand-border)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "rgba(239,68,68,0.15)", color: "#ef4444" } : { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
                         {offer.status === "PENDING" ? "منتظر" : offer.status === "SELECTED" ? "مختار" : "ملغي"}
                       </span>
                     </div>

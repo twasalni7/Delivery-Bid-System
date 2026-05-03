@@ -63,7 +63,7 @@ type RecentEvent = {
 };
 
 const EVENT_TYPE_CONFIG: Record<RecentEvent["type"], { icon: React.ReactNode; label: string; color: string; style?: React.CSSProperties }> = {
-  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "rgba(222,255,154,0.15)", color: "var(--brand)" } },
+  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "var(--brand-border)", color: "var(--brand)" } },
   support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "", style: { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" } },
   request: { icon: <FileText size={14} />, label: "طلب جديد", color: "", style: { backgroundColor: "rgba(99,102,241,0.15)", color: "#a5b4fc" } },
   offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "", style: { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } },
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                         <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>#</th>
                         <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>السائق</th>
                         <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>الرصيد (ريال)</th>
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody>
                       {financial.driverBalances.map((driver, index) => (
-                        <tr key={driver.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <tr key={driver.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                           <td className="py-2 px-2 font-bold" style={{ color: "var(--text-muted)" }}>{index + 1}</td>
                           <td className="py-2 px-2 font-bold text-white">{driver.name}</td>
                           <td className="py-2 px-2">
@@ -257,7 +257,7 @@ export default function AdminDashboard() {
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-base font-black text-white">الرسوم البيانية</h2>
-            <div className="flex gap-1 rounded-xl p-1" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+            <div className="flex gap-1 rounded-xl p-1" style={{ backgroundColor: "var(--border-subtle)" }}>
               {MONTH_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-xl p-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl p-2" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
             <span className="text-xs font-bold shrink-0" style={{ color: "var(--text-muted)" }}>نطاق مخصص:</span>
             <input
               type="date"
@@ -316,7 +316,7 @@ export default function AdminDashboard() {
           <div className="relative">
             {analyticsFetching && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl gap-3" style={{ backgroundColor: "rgba(0,0,0,0.7)" }}>
-                <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: "rgba(222,255,154,0.3)", borderTopColor: "var(--brand)" }} />
+                <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: "var(--brand-border)", borderTopColor: "var(--brand)" }} />
                 <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>جاري التحميل...</span>
               </div>
             )}
@@ -365,7 +365,7 @@ export default function AdminDashboard() {
                 <p className="text-sm font-black text-white mb-3">🏆 أفضل السائقين</p>
                 <div className="space-y-2">
                   {analytics?.topDrivers.map((d, i) => (
-                    <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                    <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: "var(--border-subtle)" }}>
                       <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 text-black" style={{ backgroundColor: "var(--brand)" }}>{i + 1}</span>
                       <span className="flex-1 font-bold text-sm text-white">{d.name}</span>
                       <span className="text-sm font-black" style={{ color: "var(--brand)" }}>{d.acceptedBids} عقد</span>
@@ -402,12 +402,12 @@ export default function AdminDashboard() {
 
         {/* ── Recent Events ── */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <h2 className="text-base font-black text-white flex items-center gap-2">
               <Clock size={16} style={{ color: "var(--brand)" }} />
               الأحداث الأخيرة
             </h2>
-            <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ color: "var(--text-hint)", backgroundColor: "rgba(255,255,255,0.04)" }}>يُحدَّث كل 30 ث</span>
+            <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ color: "var(--text-hint)", backgroundColor: "var(--border-subtle)" }}>يُحدَّث كل 30 ث</span>
           </div>
           {recentEvents.length === 0 ? (
             <div className="py-12 text-center">
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
                     key={`${event.type}-${event.id}-${idx}`}
                     onClick={() => navigate(event.url)}
                     className="w-full flex items-center gap-3 px-5 py-3.5 transition-colors text-right group"
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                    style={{ borderBottom: "1px solid var(--border-subtle)" }}
                   >
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black shrink-0" style={cfg.style}>
                       {cfg.icon}

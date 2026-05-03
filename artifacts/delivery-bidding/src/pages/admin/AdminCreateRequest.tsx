@@ -45,7 +45,7 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
         <div
           key={s}
           className="w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10"
-          style={s <= currentStep ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" } : { backgroundColor: "var(--surface)", borderColor: "rgba(255,255,255,0.12)" }}
+          style={s <= currentStep ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" } : { backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
         />
       ))}
     </div>
@@ -160,7 +160,7 @@ export default function AdminCreateRequest() {
 
         <div className="rounded-[2.5rem] overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 24px 56px rgba(0,0,0,0.4)" }}>
           {/* Step header */}
-          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 4</p>
             <h2 className="text-[1.8rem] font-black tracking-tight leading-none text-white">{STEP_TITLES[step - 1]}</h2>
           </div>
@@ -174,12 +174,12 @@ export default function AdminCreateRequest() {
                     key={t.value}
                     onClick={() => setClientType(t.value)}
                     className="flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98]"
-                    style={clientType === t.value ? { borderColor: "rgba(222,255,154,0.3)", backgroundColor: "rgba(222,255,154,0.06)" } : { borderColor: "var(--border-subtle)", backgroundColor: "#161616" }}
+                    style={clientType === t.value ? { borderColor: "var(--brand-border)", backgroundColor: "var(--brand-subtle)" } : { borderColor: "var(--border-subtle)", backgroundColor: "#161616" }}
                     >
                       <div className="flex items-center gap-4">
                         <div
                           className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
-                          style={clientType === t.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "rgba(255,255,255,0.06)" }}
+                          style={clientType === t.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--border-subtle)" }}
                         >
                           {clientType === t.value ? (
                             <Users size={22} />
@@ -191,7 +191,7 @@ export default function AdminCreateRequest() {
                       </div>
                       <div
                         className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                        style={clientType === t.value ? { borderColor: "var(--brand)", backgroundColor: "var(--brand)", color: "var(--bg)" } : { borderColor: "rgba(255,255,255,0.12)" }}
+                        style={clientType === t.value ? { borderColor: "var(--brand)", backgroundColor: "var(--brand)", color: "var(--bg)" } : { borderColor: "var(--border)" }}
                       >
                         {clientType === t.value && <Check size={12} strokeWidth={4} />}
                       </div>
@@ -204,7 +204,7 @@ export default function AdminCreateRequest() {
             {step === 2 && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>📍 موقع الانطلاق (المنزل)</label>
+                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>📍 موقع الانطلاق (المنزل)</label>
                   <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "#161616" }}>
                     <Home className="shrink-0" size={22} style={{ color: "var(--brand)" }} />
                     <Input
@@ -219,7 +219,7 @@ export default function AdminCreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>📍 موقع الوصول (الدوام)</label>
+                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>📍 موقع الوصول (الدوام)</label>
                   <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "#161616" }}>
                     <Briefcase className="text-rose-500 shrink-0" size={22} />
                     <Input
@@ -266,7 +266,7 @@ export default function AdminCreateRequest() {
                 <button
                   onClick={addLocation}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-[1.5rem] border-2 border-dashed text-sm font-black transition-colors"
-                  style={{ borderColor: "rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
+                  style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
                 >
                   <Plus size={16} /> إضافة موقع آخر
                 </button>
@@ -278,7 +278,7 @@ export default function AdminCreateRequest() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت الذهاب</label>
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت الذهاب</label>
                     <Input
                       type="time"
                       value={morningTime}
@@ -289,7 +289,7 @@ export default function AdminCreateRequest() {
                     {morningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(morningTime)}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت العودة</label>
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت العودة</label>
                     <Input
                       type="time"
                       value={eveningTime}
@@ -302,7 +302,7 @@ export default function AdminCreateRequest() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>أيام العمل</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>أيام العمل</label>
                   <div className="flex gap-2 flex-wrap">
                     {DAYS.map((d) => (
                       <button
@@ -319,7 +319,7 @@ export default function AdminCreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>👥 عدد الأشخاص</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>👥 عدد الأشخاص</label>
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.max(1, parseInt(p) - 1)))}
@@ -336,7 +336,7 @@ export default function AdminCreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>ملاحظات للسائقين (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>ملاحظات للسائقين (اختياري)</label>
                   <Textarea
                     placeholder="مثال: يفضل سائقة، باص كبير..."
                     value={notes}
@@ -352,7 +352,7 @@ export default function AdminCreateRequest() {
             {step === 4 && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري (ريال) *</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري (ريال) *</label>
                   <div className="relative">
                     <Input
                       type="number" min="1" step="1"
@@ -368,7 +368,7 @@ export default function AdminCreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>الاسم الكامل (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>الاسم الكامل (اختياري)</label>
                   <Input
                     placeholder="مثال: سارة أحمد"
                     value={name}
@@ -378,7 +378,7 @@ export default function AdminCreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>رقم الجوال *</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>رقم الجوال *</label>
                   <Input
                     type="tel"
                     placeholder="05xxxxxxxx"
@@ -393,19 +393,19 @@ export default function AdminCreateRequest() {
                 {/* Summary */}
                 <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid var(--brand-border)" }}>
                   <h3 className="font-black text-sm mb-3" style={{ color: "var(--brand)" }}>ملخص الطلب</h3>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>نوع الاشتراك</span><span className="font-black">{clientType}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>من</span><span className="font-black text-left text-xs max-w-[55%] text-right">{homeLocation || "—"}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>إلى</span><span className="font-black text-left text-xs max-w-[55%] text-right">{workLocation || "—"}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>أيام العمل</span><span className="font-black">{selectedDays.length} أيام</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>الركاب</span><span className="font-black">{numberOfPeople} أشخاص</span>
                   </div>
                 </div>
@@ -419,7 +419,7 @@ export default function AdminCreateRequest() {
               <button
                 onClick={() => setStep(step - 1)}
                 className="px-6 py-4 rounded-[1.5rem] font-black transition-colors"
-                style={{ border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-sub)", backgroundColor: "#161616" }}
+                style={{ border: "1px solid var(--border)", color: "var(--text-sub)", backgroundColor: "#161616" }}
               >
                 رجوع
               </button>
@@ -442,7 +442,7 @@ export default function AdminCreateRequest() {
               }}
               disabled={submitting}
               className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "var(--brand)", color: "var(--bg)", boxShadow: "0 18px 36px rgba(222,255,154,0.18)" }}
+              style={{ backgroundColor: "var(--brand)", color: "var(--bg)", boxShadow: "0 18px 36px var(--brand-border)" }}
             >
               {step === 4 ? (
                 submitting ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>

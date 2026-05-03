@@ -8,7 +8,7 @@ export default function Home() {
       <div className="text-center mb-10">
         <div
           className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] mb-5 shadow-2xl rotate-[-3deg]"
-          style={{ background: "linear-gradient(135deg, #c8f070 0%, var(--brand) 100%)", boxShadow: "0 24px 60px rgba(222,255,154,0.18)" }}
+          style={{ background: "linear-gradient(135deg, #c8f070 0%, var(--brand) 100%)", boxShadow: "0 24px 60px var(--brand-border)" }}
         >
           <Navigation size={36} strokeWidth={3} style={{ color: "var(--bg)" }} />
         </div>
@@ -32,7 +32,7 @@ export default function Home() {
                 <p className="text-sm font-bold mt-0.5" style={{ color: "var(--brand)" }}>Customer</p>
                 <p className="text-xs mt-1" style={{ color: "var(--text-sub)" }}>اطلب توصيلاً واستعرض عروض السائقين</p>
               </div>
-              <div className="text-2xl" style={{ color: "rgba(222,255,154,0.7)" }}>‹</div>
+              <div className="text-2xl" style={{ color: "var(--brand)" }}>‹</div>
             </div>
           </div>
         </Link>
@@ -70,7 +70,7 @@ export default function Home() {
               </div>
               <div className="flex-1">
                 <p className="text-[1.5rem] font-black tracking-tight leading-none text-white">إدارة</p>
-                <p className="text-sm font-bold mt-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>Admin</p>
+                <p className="text-sm font-bold mt-0.5" style={{ color: "var(--text-sub)" }}>Admin</p>
                 <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>إدارة النظام والمستخدمين</p>
               </div>
               <div className="text-2xl" style={{ color: "var(--text-hint)" }}>‹</div>

@@ -72,9 +72,9 @@ export default function SubmitOffer() {
 
         {/* Request Card */}
         <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <div className="p-5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="p-5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-black px-3 py-1 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "rgba(255,255,255,0.5)" }}>مفتوح</span>
+              <span className="text-xs font-black px-3 py-1 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>مفتوح</span>
               <span className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>REQ-{String(request.id).padStart(3, "0")}</span>
             </div>
 
@@ -116,7 +116,7 @@ export default function SubmitOffer() {
                   {request.additionalLocations.map((loc, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: "var(--text-hint)" }} />
-                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
+                      <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
                     </div>
                   ))}
                 </div>
@@ -127,7 +127,7 @@ export default function SubmitOffer() {
             </div>
           </div>
 
-          <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <div className="flex gap-1.5 flex-wrap">
               {DAYS_AR.map((d, i) => {
                 const active = i < (request.workingDaysPerWeek ?? 5);
@@ -135,7 +135,7 @@ export default function SubmitOffer() {
                   <span key={i} className="text-xs px-2 py-0.5 rounded-full font-medium"
                     style={active
                       ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
-                      : { backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
+                      : { backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}>
                     {d}
                   </span>
                 );
@@ -149,13 +149,13 @@ export default function SubmitOffer() {
           <p className="text-sm font-bold mb-2" style={{ color: "var(--text-muted)" }}>السعر الشهري المحدد من العميل</p>
           <p className="text-5xl font-black tracking-tight" style={{ color: "var(--brand)" }} dir="ltr">
             {(request as any).monthlyPrice?.toFixed(0) ?? "—"}{" "}
-            <span className="text-xl font-normal" style={{ color: "rgba(222,255,154,0.5)" }}>ر.س / شهر</span>
+            <span className="text-xl font-normal" style={{ color: "var(--brand)" }}>ر.س / شهر</span>
           </p>
         </div>
 
         {/* Accept Button */}
         <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <h2 className="font-black text-white">هل تقبل هذا الطلب؟</h2>
             <p className="text-xs mt-0.5 font-bold" style={{ color: "var(--text-muted)" }}>بالقبول ستظهر في قائمة اختيارات العميل</p>
           </div>
@@ -170,7 +170,7 @@ export default function SubmitOffer() {
             </button>
             <Link href="/driver/dashboard">
               <div className="w-full py-3.5 rounded-2xl text-center font-bold text-sm cursor-pointer"
-                style={{ backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid var(--border-subtle)" }}>
+                style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
                 تجاهل
               </div>
             </Link>

@@ -126,7 +126,7 @@ export default function AdminPricing() {
       <Layout role="admin">
         <div className="flex items-center justify-center py-20">
           <div className="text-center space-y-3">
-            <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mx-auto" style={{ borderColor: "rgba(222,255,154,0.3)", borderTopColor: "var(--brand)" }} />
+            <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mx-auto" style={{ borderColor: "var(--brand-border)", borderTopColor: "var(--brand)" }} />
             <p className="font-bold" style={{ color: "var(--text-muted)" }}>جاري تحميل إعدادات التسعير...</p>
           </div>
         </div>
@@ -161,8 +161,8 @@ export default function AdminPricing() {
 
           {/* ── Distance Tiers ── */}
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid var(--brand-border)" }}>
+            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                 <MapPin size={18} style={{ color: "var(--brand)" }} />
               </div>
               <div>
@@ -216,7 +216,7 @@ export default function AdminPricing() {
 
           {/* ── Sharing Discounts ── */}
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}>
                 <Users size={18} style={{ color: "#a5b4fc" }} />
               </div>
@@ -276,7 +276,7 @@ export default function AdminPricing() {
 
           {/* ── Proximity Settings ── */}
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)" }}>
                 <Settings2 size={18} style={{ color: "#fbbf24" }} />
               </div>
@@ -288,7 +288,7 @@ export default function AdminPricing() {
 
             <div className="p-5 space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
                   المسافة بين المنازل (كم)
                 </label>
                 <input
@@ -301,7 +301,7 @@ export default function AdminPricing() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
                   المسافة بين جهات العمل (كم)
                 </label>
                 <input
@@ -314,7 +314,7 @@ export default function AdminPricing() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
                   فارق وقت الدوام (دقيقة)
                 </label>
                 <input
@@ -332,7 +332,7 @@ export default function AdminPricing() {
           {/* ── Pricing Preview ── */}
           {config && (
             <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
                   <Clock size={18} style={{ color: "#34d399" }} />
                 </div>
@@ -345,7 +345,7 @@ export default function AdminPricing() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                         <th className="pb-2 font-black text-right" style={{ color: "var(--text-muted)" }}>النطاق (كم)</th>
                         {[1, 2, 3, 4].map((p) => (
                           <th key={p} className="pb-2 font-black text-center" style={{ color: "var(--text-muted)" }}>{p} شخص</th>
@@ -356,7 +356,7 @@ export default function AdminPricing() {
                       {tiers.sort((a, b) => a.max - b.max).map((tier, i) => {
                         const prevMax = i === 0 ? 0 : (tiers.sort((a, b) => a.max - b.max)[i - 1]?.max ?? 0);
                         return (
-                          <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          <tr key={i} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                             <td className="py-2 font-bold text-white">{prevMax}–{tier.max}</td>
                             {[1, 2, 3, 4].map((people) => {
                               const factor = discounts
@@ -382,7 +382,7 @@ export default function AdminPricing() {
 
         {/* ── Admin Review Requests ── */}
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
               <AlertTriangle size={18} style={{ color: "#f87171" }} />
             </div>
@@ -407,7 +407,7 @@ export default function AdminPricing() {
               <p className="font-bold" style={{ color: "var(--text-muted)" }}>لا توجد طلبات تحتاج مراجعة</p>
             </div>
           ) : (
-            <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+            <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
               {reviewRequests.map((r) => (
                 <div key={r.id} className="p-5 space-y-4">
                   <div className="flex items-start justify-between gap-3">

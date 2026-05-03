@@ -109,7 +109,7 @@ export default function AdminActivityLogs() {
           <button
             onClick={() => fetchLogs(page)}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold"
-            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)" }}
+            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             تحديث
@@ -117,7 +117,7 @@ export default function AdminActivityLogs() {
         </div>
 
         {/* Filters */}
-        <div className="p-4 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}>
+        <div className="p-4 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
           <p className="text-sm font-bold text-white/60">فلترة السجلات</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <select
@@ -157,7 +157,7 @@ export default function AdminActivityLogs() {
             <button onClick={applyFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
               تطبيق
             </button>
-            <button onClick={clearFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)" }}>
+            <button onClick={clearFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}>
               مسح
             </button>
           </div>
@@ -173,7 +173,7 @@ export default function AdminActivityLogs() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm" dir="rtl">
                 <thead>
-                  <tr style={{ backgroundColor: "rgba(255,255,255,0.04)", borderBottom: "1px solid var(--border-subtle)" }}>
+                  <tr style={{ backgroundColor: "var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
                     {["#", "الوقت", "الدور", "الهوية", "العملية", "الجدول", "المعرف", "IP"].map((h) => (
                       <th key={h} className="px-4 py-3 text-right font-bold text-white/50 whitespace-nowrap">{h}</th>
                     ))}
@@ -183,7 +183,7 @@ export default function AdminActivityLogs() {
                   {logs.map((log, i) => (
                     <tr
                       key={log.id}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                      style={{ borderBottom: "1px solid var(--border-subtle)" }}
                       className="hover:bg-white/[0.02] transition-colors"
                     >
                       <td className="px-4 py-3 text-white/30 font-mono text-xs">{(page - 1) * pageSize + i + 1}</td>
@@ -214,7 +214,7 @@ export default function AdminActivityLogs() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1 || loading}
             className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
-            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)" }}
+            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             <ChevronRight size={16} /> السابق
           </button>
@@ -223,7 +223,7 @@ export default function AdminActivityLogs() {
             onClick={() => setPage((p) => p + 1)}
             disabled={!hasMore || loading}
             className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
-            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)" }}
+            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             التالي <ChevronLeft size={16} />
           </button>

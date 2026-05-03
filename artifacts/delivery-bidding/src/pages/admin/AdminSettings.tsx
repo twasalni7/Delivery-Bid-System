@@ -175,7 +175,7 @@ export default function AdminSettings() {
           {/* ── LEFT COLUMN: Wallet Transactions (3/5) ── */}
           <div className="w-full lg:w-3/5">
             <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-              <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                     style={{ background: "linear-gradient(135deg, #064E3B, #065F46)" }}>
@@ -200,7 +200,7 @@ export default function AdminSettings() {
                   <p className="font-bold" style={{ color: "var(--text-muted)" }}>لا توجد طلبات شحن حتى الآن</p>
                 </div>
               ) : (
-                <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
                   {walletTxs.map((tx) => {
                     const driverInitial = (tx.driverName ?? `س${tx.driverId}`).charAt(0);
                     const isPending = tx.status === "pending";
@@ -246,7 +246,7 @@ export default function AdminSettings() {
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 mb-3 px-3 py-2 rounded-xl text-xs font-bold transition-colors min-h-[36px]"
-                            style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid var(--brand-border)", color: "var(--brand)" }}
+                            style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", color: "var(--brand)" }}
                           >
                             <Eye size={14} />
                             عرض صورة الإيصال
@@ -287,8 +287,8 @@ export default function AdminSettings() {
 
             {/* Bank Accounts Card */}
             <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid var(--brand-border)" }}>
+              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                   <Landmark size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>
@@ -305,7 +305,7 @@ export default function AdminSettings() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-black text-white text-sm">{acc.bankName}</p>
-                            <p className="text-sm font-mono mt-1 break-all" dir="ltr" style={{ color: "rgba(255,255,255,0.65)" }}>{acc.iban}</p>
+                            <p className="text-sm font-mono mt-1 break-all" dir="ltr" style={{ color: "var(--text-sub)" }}>{acc.iban}</p>
                             <div className="flex items-center gap-1.5 mt-1.5">
                               <User size={12} className="shrink-0" style={{ color: "var(--text-hint)" }} />
                               <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{acc.accountHolderName}</p>
@@ -323,13 +323,13 @@ export default function AdminSettings() {
                   </div>
                 ) : (
                   <div className="text-center py-6 mb-4">
-                    <Landmark size={28} className="mx-auto mb-2" style={{ color: "rgba(255,255,255,0.18)" }} />
+                    <Landmark size={28} className="mx-auto mb-2" style={{ color: "var(--border)" }} />
                     <p className="text-sm" style={{ color: "var(--text-muted)" }}>لا توجد حسابات بنكية مضافة</p>
                   </div>
                 )}
 
                 {/* Add Bank Form */}
-                <form onSubmit={handleAddBank} className="space-y-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <form onSubmit={handleAddBank} className="space-y-3 pt-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                   <p className="text-xs font-black flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
                     <Plus size={13} />
                     إضافة حساب جديد
@@ -367,8 +367,8 @@ export default function AdminSettings() {
 
             {/* Login Code Card */}
             <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid var(--brand-border)" }}>
+              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                   <KeyRound size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>

@@ -121,7 +121,7 @@ export default function AdminSupport() {
             {[{ value: "ALL", label: "الكل" }, ...TICKET_STATUSES].map((s) => (
               <button key={s.value} onClick={() => setFilterStatus(s.value)}
                 className="h-9 px-3.5 rounded-xl text-sm font-bold transition-colors"
-                style={filterStatus === s.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                style={filterStatus === s.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                 {s.label}
               </button>
             ))}
@@ -184,13 +184,13 @@ export default function AdminSupport() {
                   </div>
 
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-3 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="rounded-xl p-3" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                    <div className="px-4 pb-4 pt-3 space-y-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                      <div className="rounded-xl p-3" style={{ backgroundColor: "var(--border-subtle)" }}>
                         <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>رسالة المستخدم:</p>
                         <p className="text-sm" style={{ color: "var(--text-sub)" }}>{t.message}</p>
                       </div>
                       {t.adminReply && (
-                        <div className="rounded-xl p-3" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.15)" }}>
+                        <div className="rounded-xl p-3" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                           <p className="text-xs font-bold mb-1" style={{ color: "var(--brand)" }}>ردك السابق:</p>
                           <p className="text-sm" style={{ color: "var(--text-sub)" }}>{t.adminReply}</p>
                         </div>
@@ -211,7 +211,7 @@ export default function AdminSupport() {
                             <button key={s.value} onClick={() => update.mutate({ id: t.id, status: s.value })}
                               disabled={t.status === s.value || update.isPending}
                               className="px-3 py-1.5 rounded-full text-xs font-bold transition-colors disabled:opacity-50"
-                              style={t.status === s.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                              style={t.status === s.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                               {s.label}
                             </button>
                           ))}

@@ -103,7 +103,7 @@ export default function ClientDashboard() {
               return (
                 <Link key={req.id} href={`/client/request/${req.id}`}>
                   <div className="rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
-                    style={{ backgroundColor: "var(--surface)", border: `1px solid ${unread > 0 ? "rgba(222,255,154,0.3)" : "var(--border-subtle)"}` }}>
+                    style={{ backgroundColor: "var(--surface)", border: `1px solid ${unread > 0 ? "var(--brand-border)" : "var(--border-subtle)"}` }}>
                     {/* Status header */}
                     <div className="p-5" style={{ backgroundColor: statusStyle.bg, borderBottom: `1px solid ${statusStyle.border}` }}>
                       <div className="flex items-start justify-between">
@@ -177,7 +177,7 @@ export default function ClientDashboard() {
                             <span key={i} className="text-xs px-2.5 py-1 rounded-full font-black"
                               style={active
                                 ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
-                                : { backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
+                                : { backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}>
                               {d}
                             </span>
                           );
@@ -185,7 +185,7 @@ export default function ClientDashboard() {
                       </div>
 
                       {req.selectedDriver && (
-                        <div className="flex items-center gap-2.5 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div className="flex items-center gap-2.5 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                           <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black"
                             style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
                             {req.selectedDriver.name?.charAt(0) ?? "س"}
@@ -204,7 +204,7 @@ export default function ClientDashboard() {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                         <span className="text-sm font-black" style={{ color: "var(--brand)" }}>
                           {req.status === "SELECTED" || req.status === "ACTIVE"
                             ? "عرض تفاصيل الرحلات اليومية ‹"

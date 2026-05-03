@@ -77,7 +77,7 @@ export default function ClientSupport() {
                       className="px-3 py-1.5 rounded-full text-sm font-bold transition-colors"
                       style={type === t
                         ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
-                        : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)", border: "1px solid var(--border)" }}>
+                        : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}>
                       {t}
                     </button>
                   ))}
@@ -131,7 +131,7 @@ export default function ClientSupport() {
                       <span className="font-black text-sm text-white">{t.type}</span>
                       {t.requestId && (
                         <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                          style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                          style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                           طلب #{t.requestId}
                         </span>
                       )}
@@ -139,7 +139,7 @@ export default function ClientSupport() {
                         {getTicketStatusLabel(t.status)}
                       </span>
                     </div>
-                    <p className="text-sm font-bold mb-3" style={{ color: "rgba(255,255,255,0.55)" }}>{t.message}</p>
+                    <p className="text-sm font-bold mb-3" style={{ color: "var(--text-sub)" }}>{t.message}</p>
                     {t.adminReply && (
                       <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
                         <p className="text-xs font-black mb-1.5" style={{ color: "#34d399" }}>رد الإدارة:</p>
@@ -147,7 +147,7 @@ export default function ClientSupport() {
                       </div>
                     )}
                   </div>
-                  <span className="text-xs font-mono shrink-0" style={{ color: "rgba(255,255,255,0.2)" }}>#{t.id}</span>
+                  <span className="text-xs font-mono shrink-0" style={{ color: "var(--text-hint)" }}>#{t.id}</span>
                 </div>
               </div>
             ))}

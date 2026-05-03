@@ -127,7 +127,7 @@ export default function AdminServiceAreas() {
           <button
             onClick={fetchAreas}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold"
-            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)" }}
+            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             تحديث
@@ -138,7 +138,7 @@ export default function AdminServiceAreas() {
         <form
           onSubmit={handleAdd}
           className="p-5 rounded-[1.5rem] space-y-4"
-          style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}
+          style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}
         >
           <p className="text-sm font-bold text-white">إضافة منطقة جديدة</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -194,7 +194,7 @@ export default function AdminServiceAreas() {
             { label: "مفعّلة", value: areas.filter((a) => a.isActive).length, color: "#34d399" },
             { label: "موقوفة", value: areas.filter((a) => !a.isActive).length, color: "#f87171" },
           ].map((s) => (
-            <div key={s.label} className="p-4 rounded-[1.5rem] text-center" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)" }}>
+            <div key={s.label} className="p-4 rounded-[1.5rem] text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
               <p className="text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
               <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{s.label}</p>
             </div>
@@ -210,10 +210,10 @@ export default function AdminServiceAreas() {
           <div className="space-y-4">
             {Object.entries(grouped).map(([cityName, cityAreas]) => (
               <div key={cityName} className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
-                <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderBottom: "1px solid var(--border-subtle)" }}>
+                <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
                   <MapPin size={16} style={{ color: "#34d399" }} />
                   <span className="font-black text-white">{cityName}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "rgba(255,255,255,0.5)" }}>
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                     {cityAreas.length} منطقة
                   </span>
                 </div>
