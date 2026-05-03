@@ -150,7 +150,7 @@ export default function AdminPricing() {
             onClick={handleSave}
             disabled={saving}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-sm disabled:opacity-50 transition-all active:scale-95"
-            style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
           >
             {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
             {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
@@ -441,7 +441,7 @@ export default function AdminPricing() {
                       onClick={() => handleSetReviewPrice(r.id)}
                       disabled={settingPrice === r.id}
                       className="px-4 py-3 rounded-xl font-black text-sm disabled:opacity-50 active:scale-95 transition-transform"
-                      style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+                      style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                     >
                       {settingPrice === r.id ? "..." : "تحديد السعر"}
                     </button>

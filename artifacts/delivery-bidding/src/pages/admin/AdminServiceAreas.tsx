@@ -180,7 +180,7 @@ export default function AdminServiceAreas() {
             type="submit"
             disabled={saving}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50"
-            style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
           >
             <Plus size={16} />
             {saving ? "جاري الإضافة..." : "إضافة"}

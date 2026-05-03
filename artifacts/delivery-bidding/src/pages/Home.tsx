@@ -10,7 +10,7 @@ export default function Home() {
           className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] mb-5 shadow-2xl rotate-[-3deg]"
           style={{ background: "linear-gradient(135deg, #c8f070 0%, var(--brand) 100%)", boxShadow: "0 24px 60px var(--brand-border)" }}
         >
-          <Navigation size={36} strokeWidth={3} style={{ color: "var(--bg)" }} />
+          <Navigation size={36} strokeWidth={3} style={{ color: "var(--brand-fg)" }} />
         </div>
         <h1 className="text-[2.2rem] font-black tracking-tighter italic leading-none" style={{ color: "var(--brand)" }}>توصّلني</h1>
         <p className="font-bold text-sm mt-2" style={{ color: "var(--text-muted)" }}>نظام اشتراكات التوصيل الشهري</p>

@@ -105,7 +105,7 @@ export default function DriverRequests() {
             <button key={f} onClick={() => setFilter(f)}
               className="px-5 py-2.5 rounded-full text-sm font-black transition-all"
               style={filter === f
-                ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
+                ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
                 : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
               {label}
             </button>
@@ -213,8 +213,8 @@ export default function DriverRequests() {
                           <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                             <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
                               style={isMe
-                                ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
-                                : { backgroundColor: "#1e1e1e", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
+                                ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                                : { backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
                               {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>{msg.senderRole === "admin" ? "الإدارة" : "العميل"}</p>}
                               <p>{msg.body}</p>
                             </div>
@@ -236,7 +236,7 @@ export default function DriverRequests() {
                       <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
                         disabled={!chatMessage.trim() || sendMessage.isPending}
                         className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-50"
-                        style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+                        style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                         <Send size={15} />
                       </button>
                     </div>

@@ -91,7 +91,7 @@ export default function DriverSupport() {
           <button
             onClick={() => setShowForm(!showForm)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm"
-            style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
           >
             <Plus size={16} />
             تذكرة جديدة
@@ -112,7 +112,7 @@ export default function DriverSupport() {
                       onClick={() => setType(t)}
                       className="px-3 py-1.5 rounded-full text-sm font-bold transition-colors"
                       style={type === t
-                        ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
+                        ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
                         : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
                     >
                       {t}

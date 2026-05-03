@@ -301,7 +301,7 @@ export default function AdminSettings() {
                 {accounts.length > 0 ? (
                   <div className="space-y-3 mb-5">
                     {accounts.map((acc) => (
-                      <div key={acc.intId} className="relative p-4 rounded-xl" style={{ backgroundColor: "#161616", border: "1px solid var(--border-subtle)" }}>
+                      <div key={acc.intId} className="relative p-4 rounded-xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-black text-white text-sm">{acc.bankName}</p>

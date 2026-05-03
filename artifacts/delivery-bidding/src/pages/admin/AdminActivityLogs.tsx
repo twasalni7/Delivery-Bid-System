@@ -154,7 +154,7 @@ export default function AdminActivityLogs() {
             />
           </div>
           <div className="flex gap-2">
-            <button onClick={applyFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+            <button onClick={applyFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
               تطبيق
             </button>
             <button onClick={clearFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}>

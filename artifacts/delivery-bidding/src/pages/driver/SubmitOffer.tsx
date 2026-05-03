@@ -53,7 +53,7 @@ export default function SubmitOffer() {
           <p className="text-5xl mb-3">😕</p>
           <p className="font-bold text-white">الطلب غير موجود</p>
           <Link href="/driver/dashboard">
-            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
               العودة
             </div>
           </Link>

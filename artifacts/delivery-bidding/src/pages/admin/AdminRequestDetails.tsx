@@ -120,7 +120,7 @@ export default function AdminRequestDetails() {
           <p className="text-5xl mb-3">😕</p>
           <p className="font-bold text-lg text-white">الطلب غير موجود</p>
           <Link href="/admin/requests">
-            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>العودة</div>
+            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>العودة</div>
           </Link>
         </div>
       </Layout>
@@ -288,7 +288,7 @@ export default function AdminRequestDetails() {
 
           {showChat && canChat && (
             <div className="mb-5 rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid var(--border-subtle)" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#161616", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-2">
                   <MessageCircle size={15} style={{ color: "var(--brand)" }} />
                   <span className="text-white font-black text-sm">محادثة مع السائق</span>
@@ -305,7 +305,7 @@ export default function AdminRequestDetails() {
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                       <div
                         className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
-                        style={isMe ? { color: "var(--bg)", backgroundColor: "var(--brand)" } : { backgroundColor: "#161616", border: "1px solid var(--border-subtle)", color: "#ffffff" }}
+                        style={isMe ? { color: "var(--brand-fg)", backgroundColor: "var(--brand)" } : { backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "#ffffff" }}
                       >
                         {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>{msg.senderRole === "client" ? "العميل" : "السائق"}</p>}
                         <p>{msg.body}</p>
@@ -322,14 +322,14 @@ export default function AdminRequestDetails() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                   placeholder="اكتب رسالة..."
                   className="flex-1 text-sm px-3 py-2 rounded-xl focus:outline-none"
-                  style={{ border: "1px solid var(--border-subtle)", backgroundColor: "#161616", color: "#ffffff" }}
+                  style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "#ffffff" }}
                   dir="rtl"
                 />
                 <button
                   onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
                   disabled={!chatMessage.trim() || sendMessage.isPending}
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white disabled:opacity-50"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
                   <Send size={15} />
                 </button>

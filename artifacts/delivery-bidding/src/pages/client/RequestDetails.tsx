@@ -118,7 +118,7 @@ export default function RequestDetails() {
           <p className="text-5xl mb-3">😕</p>
           <p className="font-bold text-lg text-white">الطلب غير موجود</p>
           <Link href="/client">
-            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>العودة</div>
+            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>العودة</div>
           </Link>
         </div>
       </Layout>
@@ -302,8 +302,8 @@ export default function RequestDetails() {
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                       <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
                         style={isMe
-                          ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
-                          : { backgroundColor: "#1e1e1e", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
+                          ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                          : { backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
                         {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>{msg.senderRole === "admin" ? "الإدارة" : "السائق"}</p>}
                         <p>{msg.body}</p>
                       </div>
@@ -325,7 +325,7 @@ export default function RequestDetails() {
                 <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
                   disabled={!chatMessage.trim() || sendMessage.isPending}
                   className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-50"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                   <Send size={15} />
                 </button>
               </div>
@@ -371,7 +371,7 @@ export default function RequestDetails() {
                           onClick={() => handleSelect(offer.id)}
                           disabled={selectOffer.isPending}
                           className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform disabled:opacity-50"
-                          style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+                          style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                         >
                           تأكيد السائق
                         </button>

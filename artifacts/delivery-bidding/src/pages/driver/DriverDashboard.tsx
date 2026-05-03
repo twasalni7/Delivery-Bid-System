@@ -167,7 +167,7 @@ export default function DriverDashboard() {
               onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black whitespace-nowrap transition-all"
               style={activeTab === tab.id
-                ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
+                ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
                 : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}
             >
               <span>{tab.icon}</span>
@@ -175,7 +175,7 @@ export default function DriverDashboard() {
               {tab.count !== undefined && tab.count > 0 && (
                 <span className="text-xs rounded-full px-2 py-0.5 font-black leading-none"
                   style={activeTab === tab.id
-                    ? { backgroundColor: "rgba(0,0,0,0.2)", color: "var(--bg)" }
+                    ? { backgroundColor: "rgba(0,0,0,0.2)", color: "var(--brand-fg)" }
                     : { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
                   {tab.count}
                 </span>

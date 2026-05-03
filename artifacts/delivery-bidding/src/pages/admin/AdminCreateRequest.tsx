@@ -174,12 +174,12 @@ export default function AdminCreateRequest() {
                     key={t.value}
                     onClick={() => setClientType(t.value)}
                     className="flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98]"
-                    style={clientType === t.value ? { borderColor: "var(--brand-border)", backgroundColor: "var(--brand-subtle)" } : { borderColor: "var(--border-subtle)", backgroundColor: "#161616" }}
+                    style={clientType === t.value ? { borderColor: "var(--brand-border)", backgroundColor: "var(--brand-subtle)" } : { borderColor: "var(--border-subtle)", backgroundColor: "var(--surface)" }}
                     >
                       <div className="flex items-center gap-4">
                         <div
                           className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
-                          style={clientType === t.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--border-subtle)" }}
+                          style={clientType === t.value ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "var(--border-subtle)" }}
                         >
                           {clientType === t.value ? (
                             <Users size={22} />
@@ -191,7 +191,7 @@ export default function AdminCreateRequest() {
                       </div>
                       <div
                         className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                        style={clientType === t.value ? { borderColor: "var(--brand)", backgroundColor: "var(--brand)", color: "var(--bg)" } : { borderColor: "var(--border)" }}
+                        style={clientType === t.value ? { borderColor: "var(--brand)", backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { borderColor: "var(--border)" }}
                       >
                         {clientType === t.value && <Check size={12} strokeWidth={4} />}
                       </div>
@@ -205,7 +205,7 @@ export default function AdminCreateRequest() {
               <div className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>📍 موقع الانطلاق (المنزل)</label>
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "#161616" }}>
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
                     <Home className="shrink-0" size={22} style={{ color: "var(--brand)" }} />
                     <Input
                       type="text"
@@ -220,7 +220,7 @@ export default function AdminCreateRequest() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>📍 موقع الوصول (الدوام)</label>
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "#161616" }}>
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
                     <Briefcase className="text-rose-500 shrink-0" size={22} />
                     <Input
                       type="text"
@@ -240,7 +240,7 @@ export default function AdminCreateRequest() {
                           value={loc.type}
                           onChange={(e) => updateLocation(idx, "type", e.target.value)}
                           className="rounded-2xl px-3 py-2.5 text-sm font-bold focus:outline-none"
-                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "#161616", color: "#ffffff" }}
+                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "#ffffff" }}
                         >
                           <option value="pickup">استلام</option>
                           <option value="dropoff">توصيل</option>
@@ -309,7 +309,7 @@ export default function AdminCreateRequest() {
                         key={d.key}
                         onClick={() => toggleDay(d.key)}
                         className="w-10 h-10 rounded-full text-sm font-black transition-all active:scale-90"
-                        style={selectedDays.includes(d.key) ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--surface-2)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}
+                        style={selectedDays.includes(d.key) ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "var(--surface-2)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}
                       >
                         {d.label}
                       </button>
@@ -391,7 +391,7 @@ export default function AdminCreateRequest() {
                 </div>
 
                 {/* Summary */}
-                <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid var(--brand-border)" }}>
+                <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>
                   <h3 className="font-black text-sm mb-3" style={{ color: "var(--brand)" }}>ملخص الطلب</h3>
                   <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>نوع الاشتراك</span><span className="font-black">{clientType}</span>
@@ -419,7 +419,7 @@ export default function AdminCreateRequest() {
               <button
                 onClick={() => setStep(step - 1)}
                 className="px-6 py-4 rounded-[1.5rem] font-black transition-colors"
-                style={{ border: "1px solid var(--border)", color: "var(--text-sub)", backgroundColor: "#161616" }}
+                style={{ border: "1px solid var(--border)", color: "var(--text-sub)", backgroundColor: "var(--surface)" }}
               >
                 رجوع
               </button>
@@ -442,7 +442,7 @@ export default function AdminCreateRequest() {
               }}
               disabled={submitting}
               className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "var(--brand)", color: "var(--bg)", boxShadow: "0 18px 36px var(--brand-border)" }}
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
             >
               {step === 4 ? (
                 submitting ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>

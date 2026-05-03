@@ -57,7 +57,7 @@ export default function ClientDashboard() {
               <h1 className="text-[1.9rem] font-black text-white tracking-tight">اشتراكاتي</h1>
               {totalUnread > 0 && (
                 <span className="inline-flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                   <Bell size={12} /> {totalUnread}
                 </span>
               )}
@@ -114,7 +114,7 @@ export default function ClientDashboard() {
                           </span>
                           {unread > 0 && (
                             <span className="text-xs font-black px-2.5 py-0.5 rounded-full flex items-center gap-1"
-                              style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+                              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                               <Bell size={11} /> {unread} جديد
                             </span>
                           )}

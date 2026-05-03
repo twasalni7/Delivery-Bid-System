@@ -121,7 +121,7 @@ export default function AdminSupport() {
             {[{ value: "ALL", label: "الكل" }, ...TICKET_STATUSES].map((s) => (
               <button key={s.value} onClick={() => setFilterStatus(s.value)}
                 className="h-9 px-3.5 rounded-xl text-sm font-bold transition-colors"
-                style={filterStatus === s.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+                style={filterStatus === s.value ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                 {s.label}
               </button>
             ))}
@@ -211,7 +211,7 @@ export default function AdminSupport() {
                             <button key={s.value} onClick={() => update.mutate({ id: t.id, status: s.value })}
                               disabled={t.status === s.value || update.isPending}
                               className="px-3 py-1.5 rounded-full text-xs font-bold transition-colors disabled:opacity-50"
-                              style={t.status === s.value ? { backgroundColor: "var(--brand)", color: "var(--bg)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+                              style={t.status === s.value ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                               {s.label}
                             </button>
                           ))}
@@ -220,7 +220,7 @@ export default function AdminSupport() {
                       <div className="flex gap-2">
                         <button
                           className="flex-1 py-2.5 rounded-xl font-black disabled:opacity-50"
-                          style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+                          style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                           disabled={update.isPending}
                           onClick={() => update.mutate({ id: t.id, adminReply: replies[t.id] ?? t.adminReply ?? undefined })}>
                           حفظ الرد

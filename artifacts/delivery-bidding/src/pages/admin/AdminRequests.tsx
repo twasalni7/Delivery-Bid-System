@@ -153,7 +153,7 @@ export default function AdminRequests() {
                 <button key={s.val} onClick={() => setStatusFilter(s.val)}
                   className="h-9 px-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5"
                   style={statusFilter === s.val
-                    ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
+                    ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
                     : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                   {s.label}
                   <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={statusFilter === s.val ? { backgroundColor: "rgba(0,0,0,0.2)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>{s.count}</span>
@@ -351,7 +351,7 @@ export default function AdminRequests() {
             <DialogFooter className="gap-2 flex-row-reverse">
               <button onClick={handleSave} disabled={updateRequest.isPending}
                 className="flex-1 py-3 rounded-xl font-black text-base disabled:opacity-50"
-                style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+                style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                 {updateRequest.isPending ? "جاري الحفظ..." : "حفظ"}
               </button>
               <button onClick={() => setEditDialog(null)} className="flex-1 py-3 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-sub)" }}>إلغاء</button>

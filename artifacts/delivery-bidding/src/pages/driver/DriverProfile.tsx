@@ -173,7 +173,7 @@ export default function DriverProfile() {
                 <button
                   onClick={() => setShowChargeModal(true)}
                   className="flex items-center gap-2 px-5 py-3 rounded-xl font-black text-sm min-h-[44px]"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
                   <Wallet size={16} />
                   شحن المحفظة
@@ -269,7 +269,7 @@ export default function DriverProfile() {
                 <button
                   onClick={() => setShowChargeModal(true)}
                   className="flex items-center gap-1.5 text-xs font-black px-3 py-2 rounded-xl min-h-[36px]"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
                   + شحن جديد
                 </button>
@@ -282,7 +282,7 @@ export default function DriverProfile() {
                   <button
                     onClick={() => setShowChargeModal(true)}
                     className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold min-h-[40px]"
-                    style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
+                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                   >
                     <Wallet size={14} />
                     ابدأ بشحن محفظتك

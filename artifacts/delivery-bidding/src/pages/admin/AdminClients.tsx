@@ -86,7 +86,7 @@ export default function AdminClients() {
           </div>
           <button onClick={openCreate}
             className="flex items-center gap-2 px-5 py-3 rounded-xl font-black text-base"
-            style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
             <Plus size={18} /> عميل جديد
           </button>
         </div>
@@ -116,7 +116,7 @@ export default function AdminClients() {
               <button onClick={() => setSearch("")} className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold" style={{ border: "1px solid var(--border)", color: "var(--text-sub)" }}>مسح البحث</button>
             ) : (
               <button onClick={openCreate} className="mt-5 px-6 py-3 rounded-xl font-black text-base"
-                style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>إضافة عميل</button>
+                style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>إضافة عميل</button>
             )}
           </div>
         )}
@@ -210,7 +210,7 @@ export default function AdminClients() {
             <div className="flex gap-2 pt-1">
               <button type="submit" disabled={saveMutation.isPending}
                 className="flex-1 py-3 rounded-xl font-black text-base disabled:opacity-50"
-                style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
+                style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                 {saveMutation.isPending ? "جاري الحفظ..." : "حفظ"}
               </button>
               <button type="button" onClick={() => setDialogOpen(false)} className="flex-1 py-3 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-sub)" }}>إلغاء</button>
