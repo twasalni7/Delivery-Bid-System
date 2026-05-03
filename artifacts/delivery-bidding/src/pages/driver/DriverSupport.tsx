@@ -81,7 +81,7 @@ export default function DriverSupport() {
         {/* Header */}
         <div className="flex items-center justify-between mb-7">
           <div>
-            <h1 className="text-2xl font-black text-white">الدعم والمساعدة</h1>
+            <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>الدعم والمساعدة</h1>
             <p className="text-sm font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>
               {tickets.length > 0
                 ? `${tickets.length} تذكرة${unrepliedCount > 0 ? ` — ${unrepliedCount} بانتظار الرد` : ""}`
@@ -101,7 +101,7 @@ export default function DriverSupport() {
         {/* New ticket form */}
         {showForm && (
           <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-            <p className="font-black text-white mb-5">إرسال تذكرة دعم جديدة</p>
+            <p className="font-black mb-5" style={{ color: "var(--text)" }}>إرسال تذكرة دعم جديدة</p>
             <div className="space-y-5">
               <div>
                 <label className="text-sm font-bold block mb-2.5" style={{ color: "var(--text-sub)" }}>نوع المشكلة</label>
@@ -172,7 +172,7 @@ export default function DriverSupport() {
         ) : tickets.length === 0 ? (
           <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <MessageSquare size={40} className="mx-auto mb-4" style={{ color: "var(--text-hint)" }} />
-            <p className="text-xl font-black text-white">لا توجد تذاكر</p>
+            <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد تذاكر</p>
             <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>أرسل تذكرة إذا واجهت أي مشكلة</p>
           </div>
         ) : (
@@ -192,7 +192,7 @@ export default function DriverSupport() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="font-black text-white text-sm">{t.type}</span>
+                        <span className="font-black text-sm" style={{ color: "var(--text)" }}>{t.type}</span>
                         {t.requestId && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-bold"
                             style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
@@ -204,7 +204,7 @@ export default function DriverSupport() {
                         </span>
                         {t.adminReply && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                            style={{ backgroundColor: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }}>
+                            style={{ backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)", border: "1px solid var(--status-active-border)" }}>
                             رُدّ عليها
                           </span>
                         )}
@@ -224,14 +224,14 @@ export default function DriverSupport() {
                         <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{t.message}</p>
                       </div>
                       {t.adminReply && (
-                        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                          <p className="text-xs font-black mb-1.5" style={{ color: "#34d399" }}>رد الإدارة:</p>
+                        <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)" }}>
+                          <p className="text-xs font-black mb-1.5" style={{ color: "var(--status-active-text)" }}>رد الإدارة:</p>
                           <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{t.adminReply}</p>
                         </div>
                       )}
                       {!t.adminReply && (
                         <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)" }}>
-                          <p className="text-xs font-black" style={{ color: "#fbbf24" }}>⏳ في انتظار رد الإدارة...</p>
+                          <p className="text-xs font-black" style={{ color: "var(--status-open-text)" }}>⏳ في انتظار رد الإدارة...</p>
                         </div>
                       )}
                       <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>

@@ -51,7 +51,7 @@ export default function SubmitOffer() {
       <Layout role="driver">
         <div className="text-center py-20">
           <p className="text-5xl mb-3">😕</p>
-          <p className="font-bold text-white">الطلب غير موجود</p>
+          <p className="font-bold" style={{ color: "var(--text)" }}>الطلب غير موجود</p>
           <Link href="/driver/dashboard">
             <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
               العودة
@@ -83,7 +83,7 @@ export default function SubmitOffer() {
                 {(request as any).clientType === "موظفات" ? "👩‍💼" : (request as any).clientType === "طلاب" ? "🎓" : (request as any).clientType === "مدارس" ? "🏫" : "📦"}
               </span>
               <div>
-                <p className="text-white font-black text-lg">{(request as any).clientType || "طلب توصيل"}</p>
+                <p className="font-black text-lg" style={{ color: "var(--text)" }}>{(request as any).clientType || "طلب توصيل"}</p>
                 <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{request.offerCount ?? 0} سائق قبل</p>
               </div>
             </div>
@@ -91,11 +91,11 @@ export default function SubmitOffer() {
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
-                <p className="text-sm text-white font-black">{request.homeLocation}</p>
+                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{request.homeLocation}</p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "#f87171" }} />
-                <p className="text-sm text-white font-black">{request.workLocation}</p>
+                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
+                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{request.workLocation}</p>
               </div>
               <div className="flex items-center gap-4 mt-1">
                 <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "var(--text-muted)" }}>
@@ -156,7 +156,7 @@ export default function SubmitOffer() {
         {/* Accept Button */}
         <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <h2 className="font-black text-white">هل تقبل هذا الطلب؟</h2>
+            <h2 className="font-black" style={{ color: "var(--text)" }}>هل تقبل هذا الطلب؟</h2>
             <p className="text-xs mt-0.5 font-bold" style={{ color: "var(--text-muted)" }}>بالقبول ستظهر في قائمة اختيارات العميل</p>
           </div>
           <div className="p-5 space-y-3">

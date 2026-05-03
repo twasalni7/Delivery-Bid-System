@@ -55,7 +55,7 @@ export default function ClientSupport() {
       <div className="max-w-2xl mx-auto" dir="rtl">
         <div className="flex items-center justify-between mb-7">
           <div>
-            <h1 className="text-2xl font-black text-white">الدعم والمساعدة</h1>
+            <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>الدعم والمساعدة</h1>
             <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>تواصل معنا عند أي مشكلة</p>
           </div>
           <button onClick={() => setShowForm(!showForm)}
@@ -67,7 +67,7 @@ export default function ClientSupport() {
 
         {showForm && (
           <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-            <p className="font-black text-white mb-5">إرسال تذكرة دعم</p>
+            <p className="font-black mb-5" style={{ color: "var(--text)" }}>إرسال تذكرة دعم</p>
             <div className="space-y-5">
               <div>
                 <label className="text-sm font-bold block mb-2.5" style={{ color: "var(--text-sub)" }}>نوع المشكلة</label>
@@ -118,7 +118,7 @@ export default function ClientSupport() {
         ) : tickets.length === 0 ? (
           <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-4xl mb-3">🎫</p>
-            <p className="font-black text-white">لا توجد تذاكر دعم بعد</p>
+            <p className="font-black" style={{ color: "var(--text)" }}>لا توجد تذاكر دعم بعد</p>
             <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>اضغط "تذكرة جديدة" لإرسال استفسارك</p>
           </div>
         ) : (
@@ -128,7 +128,7 @@ export default function ClientSupport() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="font-black text-sm text-white">{t.type}</span>
+                      <span className="font-black text-sm" style={{ color: "var(--text)" }}>{t.type}</span>
                       {t.requestId && (
                         <span className="text-xs px-2 py-0.5 rounded-full font-bold"
                           style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>

@@ -109,7 +109,7 @@ export default function DriverDashboard() {
       <div dir="rtl">
         {/* Page title */}
         <div className="mb-6">
-          <h1 className="text-[1.9rem] font-black text-white tracking-tight">لوحة السائق</h1>
+          <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>لوحة السائق</h1>
           <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>الاشتراكات والطلبات</p>
         </div>
 
@@ -118,13 +118,13 @@ export default function DriverDashboard() {
           <div className="rounded-3xl p-5 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-white font-black text-xl tracking-tight">{driver.name}</p>
+                <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{driver.name}</p>
                 <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>سائق توصّلني</p>
               </div>
               <div className={`text-right px-4 py-2.5 rounded-2xl ${hasEnoughBalance ? "" : "border border-red-500/30"}`}
                 style={{ backgroundColor: hasEnoughBalance ? "var(--brand-subtle)" : "rgba(248,113,113,0.08)" }}>
                 <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>الرصيد</p>
-                <p className="font-black text-lg" style={{ color: hasEnoughBalance ? "var(--brand)" : "#f87171" }} dir="ltr">{driver.balance.toFixed(0)} ر.س</p>
+                <p className="font-black text-lg" style={{ color: hasEnoughBalance ? "var(--brand)" : "var(--status-cancelled-text)" }} dir="ltr">{driver.balance.toFixed(0)} ر.س</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -133,7 +133,7 @@ export default function DriverDashboard() {
                 { label: "اشتراكات نشطة", value: String(mySelectedJobs.length) },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-2xl p-3 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                  <p className="text-white font-black text-xl leading-tight">{stat.value}</p>
+                  <p className="font-black text-xl leading-tight" style={{ color: "var(--text)" }}>{stat.value}</p>
                   <p className="text-xs mt-0.5 leading-tight font-bold" style={{ color: "var(--text-muted)" }}>{stat.label}</p>
                 </div>
               ))}
@@ -191,7 +191,7 @@ export default function DriverDashboard() {
             {!isLoading && (!openRequests || openRequests.length === 0) && (
               <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
                 <p className="text-4xl mb-3">📋</p>
-                <p className="text-xl font-black text-white">لا توجد طلبات مفتوحة</p>
+                <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد طلبات مفتوحة</p>
                 <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>تحقق لاحقاً لعروض دوام جديدة</p>
               </div>
             )}
@@ -209,7 +209,7 @@ export default function DriverDashboard() {
                           <div className="flex items-center gap-3">
                             <span className="text-3xl">{emoji}</span>
                             <div>
-                              <p className="text-white font-black text-lg tracking-tight">{clientTypeLabel}</p>
+                              <p className="font-black text-lg tracking-tight" style={{ color: "var(--text)" }}>{clientTypeLabel}</p>
                               <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>REQ-{String(req.id).padStart(3, "0")}</p>
                             </div>
                           </div>
@@ -227,14 +227,14 @@ export default function DriverDashboard() {
                             <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
                             <div>
                               <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>من (المنطلق)</p>
-                              <p className="text-sm text-white font-black">{req.homeLocation}</p>
+                              <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.homeLocation}</p>
                             </div>
                           </div>
                           <div className="flex items-start gap-3 relative z-10">
-                            <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#f87171", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
+                            <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
                             <div>
                               <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
-                              <p className="text-sm text-white font-black">{req.workLocation}</p>
+                              <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workLocation}</p>
                             </div>
                           </div>
                         </div>
@@ -242,19 +242,19 @@ export default function DriverDashboard() {
                         <div className="grid grid-cols-3 gap-2">
                           <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
                             <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Clock size={12} /></div>
-                            <p className="text-xs font-black text-white" dir="ltr">{formatTime12h(req.morningTime)}</p>
+                            <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.morningTime)}</p>
                             <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الذهاب</p>
                           </div>
                           {req.eveningTime && (
                             <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
                               <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Clock size={12} /></div>
-                              <p className="text-xs font-black text-white" dir="ltr">{formatTime12h(req.eveningTime)}</p>
+                              <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.eveningTime)}</p>
                               <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>العودة</p>
                             </div>
                           )}
                           <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
                             <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Users size={12} /></div>
-                            <p className="text-xs font-black text-white">{req.numberOfPeople}</p>
+                            <p className="text-xs font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
                             <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>أشخاص</p>
                           </div>
                         </div>
@@ -311,7 +311,7 @@ export default function DriverDashboard() {
             {mySelectedJobs.length === 0 && (
               <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
                 <p className="text-4xl mb-3">🗓️</p>
-                <p className="text-xl font-black text-white">لا توجد اشتراكات نشطة</p>
+                <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد اشتراكات نشطة</p>
                 <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>ستظهر هنا اشتراكاتك بعد اختيارك من العملاء</p>
               </div>
             )}
@@ -328,22 +328,22 @@ export default function DriverDashboard() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "var(--brand)" }} />
-                      <p className="text-sm font-black text-white">{req.homeLocation}</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.homeLocation}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "#f87171" }} />
-                      <p className="text-sm font-black text-white">{req.workLocation}</p>
+                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workLocation}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
                       <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>الذهاب</p>
-                      <p className="text-white font-black text-sm" dir="ltr">{formatTime12h(req.morningTime)}</p>
+                      <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.morningTime)}</p>
                     </div>
                     {req.eveningTime && (
                       <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
                         <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>العودة</p>
-                        <p className="text-white font-black text-sm" dir="ltr">{formatTime12h(req.eveningTime)}</p>
+                        <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.eveningTime)}</p>
                       </div>
                     )}
                   </div>
@@ -365,7 +365,7 @@ export default function DriverDashboard() {
                       </div>
                       <div className="flex-1">
                         <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>العميل</p>
-                        <a href={`tel:${req.phone}`} className="text-sm font-black text-white" dir="ltr">{req.phone}</a>
+                        <a href={`tel:${req.phone}`} className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{req.phone}</a>
                       </div>
                       <a href={`tel:${req.phone}`}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black"

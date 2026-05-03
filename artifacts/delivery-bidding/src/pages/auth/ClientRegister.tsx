@@ -65,7 +65,7 @@ export default function ClientRegister() {
       {/* Card */}
       <div className="flex-1 px-5 -mt-2 pb-8">
         <div className="rounded-3xl p-7" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <h2 className="text-xl font-black text-white mb-1">إنشاء حساب</h2>
+          <h2 className="text-xl font-black mb-1" style={{ color: "var(--text)" }}>إنشاء حساب</h2>
           <p className="text-sm font-bold mb-7" style={{ color: "var(--text-muted)" }}>أدخل بياناتك لإنشاء حساب عميل</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">

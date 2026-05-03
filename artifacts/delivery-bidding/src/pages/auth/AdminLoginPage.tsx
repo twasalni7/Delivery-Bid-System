@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
       {/* Card */}
       <div className="flex-1 px-5 -mt-2">
         <div className="rounded-3xl p-7" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <h2 className="text-xl font-black text-white mb-1">دخول الإدارة</h2>
+          <h2 className="text-xl font-black mb-1" style={{ color: "var(--text)" }}>دخول الإدارة</h2>
           <p className="text-sm font-bold mb-7" style={{ color: "var(--text-muted)" }}>أدخل رمز دخول المدير للوصول</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">

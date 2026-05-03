@@ -96,7 +96,7 @@ export default function DriverRequests() {
     <Layout role="driver">
       <div dir="rtl">
         <div className="mb-7">
-          <h1 className="text-[1.9rem] font-black text-white tracking-tight">قائمة الاتفاقات</h1>
+          <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>قائمة الاتفاقات</h1>
           <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>الطلبات التي تم اختيارك فيها</p>
         </div>
 
@@ -119,7 +119,7 @@ export default function DriverRequests() {
         {!isLoading && filtered.length === 0 && (
           <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-4xl mb-3">🤝</p>
-            <p className="font-black text-white">لا توجد اتفاقيات</p>
+            <p className="font-black" style={{ color: "var(--text)" }}>لا توجد اتفاقيات</p>
             <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>لم يتم اختيارك في أي طلب بعد</p>
             <Link href="/driver/dashboard"
               className="mt-5 inline-block px-5 py-2.5 rounded-full text-sm font-black"
@@ -149,14 +149,14 @@ export default function DriverRequests() {
                     <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
                     <div>
                       <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الانطلاق</p>
-                      <p className="text-sm text-white font-black">{r.homeLocation}</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{r.homeLocation}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 relative z-10">
-                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#f87171", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
+                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
                     <div>
                       <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الوصول</p>
-                      <p className="text-sm text-white font-black">{r.workLocation}</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{r.workLocation}</p>
                     </div>
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export default function DriverRequests() {
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                         placeholder="اكتب رسالة..."
                         className="flex-1 text-sm px-3 py-2 rounded-xl"
-                        style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "#fff", outline: "none" }}
+                        style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }}
                         dir="rtl"
                       />
                       <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}

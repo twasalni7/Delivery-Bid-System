@@ -54,7 +54,7 @@ export default function ClientDashboard() {
         <div className="flex items-center justify-between mb-7">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-[1.9rem] font-black text-white tracking-tight">اشتراكاتي</h1>
+              <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكاتي</h1>
               {totalUnread > 0 && (
                 <span className="inline-flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full"
                   style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
@@ -86,7 +86,7 @@ export default function ClientDashboard() {
         {!isLoading && (!requests || requests.length === 0) && (
           <div className="text-center py-24 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-5xl mb-4">📦</p>
-            <p className="text-xl font-black text-white">لا توجد اشتراكات بعد</p>
+            <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد اشتراكات بعد</p>
             <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>أضف أول طلب دوام شهري للحصول على عروض السائقين</p>
           </div>
         )}
@@ -126,7 +126,7 @@ export default function ClientDashboard() {
                       <div className="flex items-center gap-3 mt-4">
                         <span className="text-4xl">{emoji}</span>
                         <div>
-                          {clientTypeLabel && <p className="text-white font-black text-xl tracking-tight">{clientTypeLabel}</p>}
+                          {clientTypeLabel && <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{clientTypeLabel}</p>}
                           <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>طلب #{req.id}</p>
                         </div>
                       </div>
@@ -138,35 +138,35 @@ export default function ClientDashboard() {
                         <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
                         <div className="flex-1">
                           <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>من (الانطلاق)</p>
-                          <p className="text-sm text-white font-black">{req.homeLocation}</p>
+                          <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.homeLocation}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#f87171" }} />
                         <div className="flex-1">
                           <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
-                          <p className="text-sm text-white font-black">{req.workLocation}</p>
+                          <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workLocation}</p>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         <div className="flex items-center gap-1.5">
                           <Clock size={14} style={{ color: "var(--text-hint)" }} />
-                          <span className="text-sm text-white font-black" dir="ltr">{formatTime12h(req.morningTime)}</span>
+                          <span className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.morningTime)}</span>
                         </div>
                         {req.eveningTime && (
                           <div className="flex items-center gap-1.5">
                             <Clock size={14} style={{ color: "var(--text-hint)" }} />
-                            <span className="text-sm text-white font-black" dir="ltr">{formatTime12h(req.eveningTime)}</span>
+                            <span className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.eveningTime)}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-1.5">
                           <Users size={14} style={{ color: "var(--text-hint)" }} />
-                          <span className="text-sm text-white font-black">{req.numberOfPeople} ركاب</span>
+                          <span className="text-sm font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople} ركاب</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Calendar size={14} style={{ color: "var(--text-hint)" }} />
-                          <span className="text-sm text-white font-black">{req.workingDaysPerWeek} أيام/أسبوع</span>
+                          <span className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workingDaysPerWeek} أيام/أسبوع</span>
                         </div>
                       </div>
 
@@ -192,7 +192,7 @@ export default function ClientDashboard() {
                           </div>
                           <div className="flex-1">
                             <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>السائق</p>
-                            <p className="text-sm font-black text-white">{req.selectedDriver.name}</p>
+                            <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.selectedDriver.name}</p>
                           </div>
                           {req.selectedDriver.mobile && (
                             <a href={`tel:${req.selectedDriver.mobile}`}
