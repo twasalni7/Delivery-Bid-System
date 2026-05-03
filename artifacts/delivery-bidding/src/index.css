@@ -246,7 +246,23 @@
     box-shadow: 0 0 0 3px var(--input-ring);
   }
   /* Alias used in existing pages */
-  .input-dark { @apply input-field; }
+  .input-dark {
+    background-color: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    border-radius: var(--radius-md);
+    color: var(--input-text);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-family: var(--font-arabic);
+    padding: 0.7rem 0.875rem;
+    width: 100%;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+  }
+  .input-dark:focus {
+    border-color: var(--input-border-focus);
+    box-shadow: 0 0 0 3px var(--input-ring);
+  }
 
   /* ── Status pills ── */
   .pill {
