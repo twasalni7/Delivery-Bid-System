@@ -119,7 +119,7 @@ export default function AdminOffers() {
                 </tbody>
               </table>
               <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border-subtle)", color: "var(--text-hint)" }}>
-                يُعرض <strong className="text-white">{filtered.length}</strong> من <strong className="text-white">{offers?.length ?? 0}</strong> قبول
+                يُعرض <strong style={{ color: "var(--text)" }}>{filtered.length}</strong> من <strong style={{ color: "var(--text)" }}>{offers?.length ?? 0}</strong> قبول
               </div>
             </div>
 

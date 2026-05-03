@@ -160,7 +160,7 @@ export default function AdminClients() {
                 </tbody>
               </table>
               <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border-subtle)", color: "var(--text-hint)" }}>
-                يُعرض <strong className="text-white">{filtered.length}</strong> من <strong className="text-white">{clients?.length ?? 0}</strong> عميل
+                يُعرض <strong style={{ color: "var(--text)" }}>{filtered.length}</strong> من <strong style={{ color: "var(--text)" }}>{clients?.length ?? 0}</strong> عميل
               </div>
             </div>
 

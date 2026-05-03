@@ -305,7 +305,7 @@ export default function AdminRequestDetails() {
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                       <div
                         className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
-                        style={isMe ? { color: "var(--brand-fg)", backgroundColor: "var(--brand)" } : { backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "#ffffff" }}
+                        style={isMe ? { color: "var(--brand-fg)", backgroundColor: "var(--brand)" } : { backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "var(--text)" }}
                       >
                         {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>{msg.senderRole === "client" ? "العميل" : "السائق"}</p>}
                         <p>{msg.body}</p>
@@ -322,7 +322,7 @@ export default function AdminRequestDetails() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                   placeholder="اكتب رسالة..."
                   className="flex-1 text-sm px-3 py-2 rounded-xl focus:outline-none"
-                  style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "#ffffff" }}
+                  style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
                   dir="rtl"
                 />
                 <button

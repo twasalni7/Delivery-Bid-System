@@ -259,7 +259,7 @@ export default function DriverProfile() {
               <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)" }}>
-                    <CreditCard size={18} style={{ color: "#a78bfa" }} />
+                    <CreditCard size={18} style={{ color: "var(--status-frozen-text)" }} />
                   </div>
                   <div>
                     <p className="font-black text-white">سجل الشحن</p>

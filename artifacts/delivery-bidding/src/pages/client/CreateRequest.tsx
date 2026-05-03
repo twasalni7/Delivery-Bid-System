@@ -316,7 +316,7 @@ export default function CreateRequest() {
                       setWorkLocation(coords.address);
                     }}
                     placeholder="اضغط على الخريطة لتحديد موقع العمل"
-                    color="#fb7185"
+                    color="var(--brand)"
                     initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
                   />
                   <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
@@ -359,7 +359,7 @@ export default function CreateRequest() {
                           value={loc.type}
                           onChange={(e) => updateLocation(idx, "type", e.target.value)}
                           className="rounded-2xl px-3 py-2.5 text-sm font-bold focus:outline-none"
-                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "#ffffff" }}
+                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
                         >
                           <option value="pickup">استلام</option>
                           <option value="dropoff">توصيل</option>
@@ -443,13 +443,13 @@ export default function CreateRequest() {
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.max(1, parseInt(p) - 1)))}
                        className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "var(--surface-2)", color: "#ffffff", border: "1px solid var(--border-subtle)" }}
+                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                      >−</button>
                     <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "var(--brand)" }}>{numberOfPeople}</span>
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.min(20, parseInt(p) + 1)))}
                        className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "var(--surface-2)", color: "#ffffff", border: "1px solid var(--border-subtle)" }}
+                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                      >+</button>
                   </div>
                 </div>
@@ -547,7 +547,7 @@ export default function CreateRequest() {
                 ) : pricingResult?.needsAdminReview ? (
                   <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(251,113,133,0.06)", border: "1px solid rgba(251,113,133,0.25)" }}>
                     <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
-                    <p className="text-base font-black" style={{ color: "#fb7185" }}>يتطلب مراجعة الإدارة</p>
+                    <p className="text-base font-black" style={{ color: "var(--brand)" }}>يتطلب مراجعة الإدارة</p>
                     <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
                       المسافة ({distanceKm?.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
                     </p>

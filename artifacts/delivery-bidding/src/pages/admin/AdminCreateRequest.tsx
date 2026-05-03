@@ -240,7 +240,7 @@ export default function AdminCreateRequest() {
                           value={loc.type}
                           onChange={(e) => updateLocation(idx, "type", e.target.value)}
                           className="rounded-2xl px-3 py-2.5 text-sm font-bold focus:outline-none"
-                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "#ffffff" }}
+                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
                         >
                           <option value="pickup">استلام</option>
                           <option value="dropoff">توصيل</option>
@@ -324,13 +324,13 @@ export default function AdminCreateRequest() {
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.max(1, parseInt(p) - 1)))}
                        className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "var(--surface-2)", color: "#ffffff", border: "1px solid var(--border-subtle)" }}
+                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                      >−</button>
                     <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "var(--brand)" }}>{numberOfPeople}</span>
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.min(20, parseInt(p) + 1)))}
                        className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "var(--surface-2)", color: "#ffffff", border: "1px solid var(--border-subtle)" }}
+                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                      >+</button>
                   </div>
                 </div>

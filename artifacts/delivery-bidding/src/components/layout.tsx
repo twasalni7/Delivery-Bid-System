@@ -1,8 +1,8 @@
 import { Link, useLocation } from "wouter";
 import {
-  LogOut, Menu, X, Home, FileText, User, LifeBuoy, Settings,
+  LogOut, Menu, Home, FileText, User, LifeBuoy, Settings,
   Users, Car, BarChart2, ClipboardList, DollarSign, Activity,
-  MapPin, Bell, Search, ChevronRight, Sun, Moon, Coffee,
+  MapPin, Search, ChevronRight, Sun, Moon, Coffee,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme, Theme } from "@/contexts/theme-context";
@@ -10,16 +10,6 @@ import { useState, useEffect } from "react";
 import { NotificationsBell } from "@/components/notifications-bell";
 
 type NavLink = { href: string; label: string; icon: typeof Home; badge?: number };
-
-const AVATAR_COLORS = [
-  "#C8102E","#2563EB","#059669","#D97706","#7C3AED","#0891B2",
-  "#BE185D","#065F46","#92400E","#1E40AF",
-];
-function nameToColor(name: string) {
-  let n = 0;
-  for (let i = 0; i < name.length; i++) n += name.charCodeAt(i);
-  return AVATAR_COLORS[n % AVATAR_COLORS.COLORS_LENGTH] ?? AVATAR_COLORS[n % AVATAR_COLORS.length];
-}
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();

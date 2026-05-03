@@ -209,11 +209,11 @@ export default function AdminSettings() {
                         {/* Driver + amount row */}
                         <div className="flex items-start gap-3 mb-3">
                           <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg shrink-0"
-                            style={{ background: "linear-gradient(135deg, #312E81, #4338CA)" }}>
+                            style={{ background: "linear-gradient(135deg, var(--brand-hover), var(--brand))" }}>
                             {driverInitial}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-black text-white text-base truncate">
+                            <p className="font-bold text-base truncate" style={{ color: "var(--text)" }}>
                               {tx.driverName ?? `سائق #${tx.driverId}`}
                             </p>
                             <p className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>

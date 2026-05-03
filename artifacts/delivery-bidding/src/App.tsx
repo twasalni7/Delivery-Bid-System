@@ -152,23 +152,25 @@ function InstallBanner() {
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 shadow-2xl"
-      style={{ background: "linear-gradient(135deg, #312E81 0%, #4338CA 100%)" }}
+      style={{ background: "linear-gradient(135deg, var(--brand-hover) 0%, var(--brand) 100%)" }}
       dir="rtl"
     >
       <span className="text-2xl shrink-0">📦</span>
       <div className="flex-1 min-w-0">
-        <p className="text-white font-black text-sm leading-tight">ثبّت {appLabel}</p>
-        <p className="text-white/60 text-xs">وصول سريع بدون المتصفح</p>
+        <p className="font-bold text-sm leading-tight" style={{ color: "var(--brand-fg)" }}>ثبّت {appLabel}</p>
+        <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>وصول سريع بدون المتصفح</p>
       </div>
       <button
         onClick={install}
-        className="shrink-0 bg-white text-[#312E81] font-black text-sm px-4 py-2 rounded-xl active:scale-95 transition-transform"
+        className="shrink-0 font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-transform"
+        style={{ backgroundColor: "var(--brand-fg)", color: "var(--brand)" }}
       >
         ثبّت
       </button>
       <button
         onClick={() => setDeferredPrompt(null)}
-        className="shrink-0 text-white/50 hover:text-white text-lg leading-none px-1"
+        className="shrink-0 text-lg leading-none px-1"
+        style={{ color: "rgba(255,255,255,0.5)" }}
         aria-label="إغلاق"
       >
         ✕
@@ -185,28 +187,28 @@ const queryClient = new QueryClient({
 
 function ClientGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جاري التحقق...</div>;
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen" style={{ color: "var(--text-muted)", fontFamily: "var(--font-arabic)" }}>جاري التحقق...</div>;
   if (!user || user.role !== "client") return <Redirect to="/client/login" />;
   return <>{children}</>;
 }
 
 function DriverGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جاري التحقق...</div>;
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen" style={{ color: "var(--text-muted)", fontFamily: "var(--font-arabic)" }}>جاري التحقق...</div>;
   if (!user || user.role !== "driver") return <Redirect to="/driver/login" />;
   return <>{children}</>;
 }
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جاري التحقق...</div>;
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen" style={{ color: "var(--text-muted)", fontFamily: "var(--font-arabic)" }}>جاري التحقق...</div>;
   if (!user || user.role !== "admin") return <Redirect to="/admin/login" />;
   return <>{children}</>;
 }
 
 function HomeRedirect() {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جاري التحقق...</div>;
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen" style={{ color: "var(--text-muted)", fontFamily: "var(--font-arabic)" }}>جاري التحقق...</div>;
   // Authenticated users go directly to their dashboard
   if (user?.role === "admin") return <Redirect to="/admin" />;
   if (user?.role === "driver") return <Redirect to="/driver/dashboard" />;

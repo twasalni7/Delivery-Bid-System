@@ -280,7 +280,7 @@ export default function AdminRequests() {
                 </tbody>
               </table>
               <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border-subtle)", color: "var(--text-hint)" }}>
-                يُعرض <strong className="text-white">{filteredRequests.length}</strong> من <strong className="text-white">{requests?.length ?? 0}</strong> طلب
+                يُعرض <strong style={{ color: "var(--text)" }}>{filteredRequests.length}</strong> من <strong style={{ color: "var(--text)" }}>{requests?.length ?? 0}</strong> طلب
               </div>
             </div>
 

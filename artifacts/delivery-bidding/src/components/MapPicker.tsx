@@ -55,7 +55,7 @@ const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 const SEARCH_DEBOUNCE_MS = 600;
 const GEOCODE_DEBOUNCE_MS = 1000;
 
-export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "#deff9a", initialCenter }: MapPickerProps) {
+export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "var(--brand)", initialCenter }: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
@@ -219,11 +219,11 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
     <div className="space-y-2">
       {/* ── Search input ── */}
       <div className="relative">
-        <div className="flex items-center gap-2 px-3 rounded-[1.5rem]" style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
+        <div className="flex items-center gap-2 px-3 rounded-xl" style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)" }}>
           {searching ? (
-            <Loader2 size={16} className="shrink-0 animate-spin" style={{ color: "rgba(255,255,255,0.4)" }} />
+            <Loader2 size={16} className="shrink-0 animate-spin" style={{ color: "var(--text-muted)" }} />
           ) : (
-            <Search size={16} className="shrink-0" style={{ color: "rgba(255,255,255,0.4)" }} />
+            <Search size={16} className="shrink-0" style={{ color: "var(--text-muted)" }} />
           )}
           <input
             type="text"
@@ -231,12 +231,13 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
             onChange={handleSearchInput}
             onFocus={() => searchResults.length > 0 && setShowResults(true)}
             placeholder="ابحث في المنطقة الشرقية..."
-            className="flex-1 bg-transparent py-3 text-sm text-white outline-none placeholder:text-white/30"
+            className="flex-1 bg-transparent py-3 text-sm outline-none"
+            style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none", minHeight: "auto" }}
             dir="rtl"
           />
           {searchText && (
-            <button onClick={clearSearch} className="shrink-0 p-1">
-              <X size={14} style={{ color: "rgba(255,255,255,0.4)" }} />
+            <button onClick={clearSearch} className="touch-compact shrink-0 p-1" style={{ minHeight: "auto", minWidth: "auto" }}>
+              <X size={14} style={{ color: "var(--text-muted)" }} />
             </button>
           )}
         </div>
@@ -244,18 +245,21 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         {/* Search results dropdown */}
         {showResults && searchResults.length > 0 && (
           <div
-            className="absolute z-50 w-full mt-1 rounded-[1rem] overflow-hidden shadow-xl"
-            style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)" }}
+            className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
+            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
           >
             {searchResults.map((r) => (
               <button
                 key={r.place_id}
                 onClick={() => selectSearchResult(r)}
-                className="w-full flex items-start gap-2 px-4 py-3 text-right hover:bg-white/5 transition-colors"
+                className="w-full flex items-start gap-2 px-4 py-3 text-right transition-colors"
+                style={{ color: "var(--text-sub)" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--surface-2)")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "")}
                 dir="rtl"
               >
                 <MapPin size={14} className="shrink-0 mt-0.5" style={{ color }} />
-                <span className="text-sm text-white/80 line-clamp-2">{r.display_name}</span>
+                <span className="text-sm line-clamp-2">{r.display_name}</span>
               </button>
             ))}
           </div>
@@ -265,13 +269,13 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
       {/* Selected coordinates display */}
       {value && (
         <div
-          className="flex items-start gap-3 p-4 rounded-[1.5rem] text-sm"
-          style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.2)" }}
+          className="flex items-start gap-3 p-4 rounded-xl text-sm"
+          style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}
         >
           <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-white line-clamp-2">{value.address}</p>
-            <p className="text-xs mt-1 font-mono" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="font-semibold line-clamp-2" style={{ color: "var(--text)" }}>{value.address}</p>
+            <p className="text-xs mt-1 font-mono" style={{ color: "var(--text-muted)" }}>
               {value.lat.toFixed(6)}, {value.lng.toFixed(6)}
             </p>
           </div>

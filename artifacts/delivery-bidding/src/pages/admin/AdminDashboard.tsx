@@ -63,10 +63,10 @@ type RecentEvent = {
 };
 
 const EVENT_TYPE_CONFIG: Record<RecentEvent["type"], { icon: React.ReactNode; label: string; color: string; style?: React.CSSProperties }> = {
-  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "var(--brand-border)", color: "var(--brand)" } },
-  support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "", style: { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" } },
-  request: { icon: <FileText size={14} />, label: "طلب جديد", color: "", style: { backgroundColor: "rgba(99,102,241,0.15)", color: "#a5b4fc" } },
-  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "", style: { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } },
+  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } },
+  support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "", style: { backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" } },
+  request: { icon: <FileText size={14} />, label: "طلب جديد", color: "", style: { backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" } },
+  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "", style: { backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)" } },
 };
 
 export default function AdminDashboard() {
