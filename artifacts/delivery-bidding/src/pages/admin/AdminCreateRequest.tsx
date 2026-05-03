@@ -152,7 +152,7 @@ export default function AdminCreateRequest() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black mb-3" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
               🛡️ إنشاء من الإدارة
             </div>
-            <h1 className="text-[1.8rem] font-black tracking-tight leading-none text-white">طلب توصيل جديد</h1>
+            <h1 className="text-[1.8rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>طلب توصيل جديد</h1>
             <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>تُنشئه الإدارة نيابةً عن العميل — نفس الخطوات تماماً</p>
           </div>
 
@@ -162,7 +162,7 @@ export default function AdminCreateRequest() {
           {/* Step header */}
           <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 4</p>
-            <h2 className="text-[1.8rem] font-black tracking-tight leading-none text-white">{STEP_TITLES[step - 1]}</h2>
+            <h2 className="text-[1.8rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>{STEP_TITLES[step - 1]}</h2>
           </div>
 
           <div className="p-6 space-y-5">
@@ -187,7 +187,7 @@ export default function AdminCreateRequest() {
                             <span>{t.emoji}</span>
                           )}
                         </div>
-                        <span className="text-[1.1rem] font-black text-white">{t.label}</span>
+                        <span className="text-[1.1rem] font-black" style={{ color: "var(--text)" }}>{t.label}</span>
                       </div>
                       <div
                         className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"

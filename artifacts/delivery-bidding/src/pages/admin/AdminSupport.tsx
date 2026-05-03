@@ -92,7 +92,7 @@ export default function AdminSupport() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-3xl font-black text-white">تذاكر الدعم</h1>
+            <h1 className="text-3xl font-black" style={{ color: "var(--text)" }}>تذاكر الدعم</h1>
             <p className="text-base mt-0.5" style={{ color: "var(--text-muted)" }}>
               {filtered.length} من {tickets.length} تذكرة
               {openCount > 0 && <span className="mr-2 text-red-500 font-black">· {openCount} مفتوحة</span>}
@@ -109,7 +109,8 @@ export default function AdminSupport() {
             placeholder="ابحث برسالة التذكرة، اسم العميل، النوع..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 text-base bg-transparent outline-none text-white placeholder-gray-600"
+            className="flex-1 text-base bg-transparent outline-none"
+            style={{ color: "var(--text)" }}
           />
           {search && <button onClick={() => setSearch("")} style={{ color: "var(--text-hint)" }}><X size={15} /></button>}
         </div>
@@ -167,7 +168,7 @@ export default function AdminSupport() {
                     onClick={() => setExpanded(isOpen ? null : t.id)}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-black text-white text-sm">{t.type}</span>
+                        <span className="font-black text-sm" style={{ color: "var(--text)" }}>{t.type}</span>
                         {t.submitterName && <span className="text-xs" style={{ color: "var(--text-hint)" }}>— {t.submitterName}</span>}
                         {t.requestId && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>طلب #{t.requestId}</span>}
                         <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${getTicketStatusColor(t.status)}`}>

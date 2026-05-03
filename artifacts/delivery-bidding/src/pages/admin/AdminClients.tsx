@@ -152,7 +152,7 @@ export default function AdminClients() {
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
                           <button onClick={() => openEdit(c)} className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ border: "1px solid var(--border)", color: "var(--text-sub)" }}><Pencil size={14} /></button>
-                          <button onClick={() => handleDelete(c)} className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}><Trash2 size={14} /></button>
+                          <button onClick={() => handleDelete(c)} className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -179,7 +179,7 @@ export default function AdminClients() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => openEdit(c)} className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" style={{ border: "1px solid var(--border)", color: "var(--text-sub)" }}><Pencil size={15} /></button>
-                      <button onClick={() => handleDelete(c)} className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}><Trash2 size={15} /></button>
+                      <button onClick={() => handleDelete(c)} className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}><Trash2 size={15} /></button>
                     </div>
                   </div>
                 </div>

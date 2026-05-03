@@ -158,7 +158,7 @@ export default function RequestDetails() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "#f87171" }} />
+                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
                 <div>
                   <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>إلى</p>
                   <p className="text-white font-black text-sm">{request.workLocation}</p>
@@ -250,7 +250,7 @@ export default function RequestDetails() {
             </div>
             {request.selectedDriver.mobile && (
               <div className="px-5 py-4 flex items-center gap-3">
-                <Phone size={14} style={{ color: "#34d399" }} />
+                <Phone size={14} style={{ color: "var(--status-active-text)" }} />
                 <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-white" dir="ltr">
                   {request.selectedDriver.mobile}
                 </a>

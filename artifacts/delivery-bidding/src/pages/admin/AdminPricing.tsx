@@ -141,7 +141,7 @@ export default function AdminPricing() {
         {/* ── Header ── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-black text-white">إدارة نظام التسعير</h1>
+            <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>إدارة نظام التسعير</h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
               تعديل نطاقات المسافة، خصومات المشاركة، ومعايير القرب
             </p>
@@ -166,7 +166,7 @@ export default function AdminPricing() {
                 <MapPin size={18} style={{ color: "var(--brand)" }} />
               </div>
               <div>
-                <p className="font-black text-white">نطاقات المسافة والأسعار</p>
+                <p className="font-black" style={{ color: "var(--text)" }}>نطاقات المسافة والأسعار</p>
                 <p className="text-xs" style={{ color: "var(--text-hint)" }}>السعر الشهري الأساسي (ريال) لكل نطاق</p>
               </div>
             </div>
@@ -183,7 +183,7 @@ export default function AdminPricing() {
                     type="number"
                     value={tier.max}
                     onChange={(e) => updateTier(idx, "max", e.target.value)}
-                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
+                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
                     style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                     min="0"
                   />
@@ -191,7 +191,7 @@ export default function AdminPricing() {
                     type="number"
                     value={tier.base}
                     onChange={(e) => updateTier(idx, "base", e.target.value)}
-                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
+                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
                     style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                     min="0"
                   />
@@ -217,11 +217,11 @@ export default function AdminPricing() {
           {/* ── Sharing Discounts ── */}
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-frozen-bg)", border: "1px solid var(--status-frozen-border)" }}>
                 <Users size={18} style={{ color: "var(--status-frozen-text)" }} />
               </div>
               <div>
-                <p className="font-black text-white">خصومات الاشتراك المشترك</p>
+                <p className="font-black" style={{ color: "var(--text)" }}>خصومات الاشتراك المشترك</p>
                 <p className="text-xs" style={{ color: "var(--text-hint)" }}>نسبة السعر لكل شخص (1.0 = 100%)</p>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function AdminPricing() {
                     type="number"
                     value={d.people}
                     onChange={(e) => updateDiscount(idx, "people", e.target.value)}
-                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
+                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
                     style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                     min="1"
                   />
@@ -247,7 +247,7 @@ export default function AdminPricing() {
                       type="number"
                       value={d.factor}
                       onChange={(e) => updateDiscount(idx, "factor", e.target.value)}
-                      className="w-full rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
+                      className="w-full rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
                       style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                       min="0" max="1" step="0.01"
                     />
@@ -277,11 +277,11 @@ export default function AdminPricing() {
           {/* ── Proximity Settings ── */}
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
                 <Settings2 size={18} style={{ color: "var(--status-open-text)" }} />
               </div>
               <div>
-                <p className="font-black text-white">معايير القرب للاشتراك المشترك</p>
+                <p className="font-black" style={{ color: "var(--text)" }}>معايير القرب للاشتراك المشترك</p>
                 <p className="text-xs" style={{ color: "var(--text-hint)" }}>الحد الأقصى للمسافة/الوقت للتصنيف كـ"قريبين"</p>
               </div>
             </div>
@@ -295,7 +295,7 @@ export default function AdminPricing() {
                   type="number"
                   value={proximityHomeKm}
                   onChange={(e) => setProximityHomeKm(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
+                  className="w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
                   style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                   min="0.1" step="0.5"
                 />
@@ -308,7 +308,7 @@ export default function AdminPricing() {
                   type="number"
                   value={proximityWorkKm}
                   onChange={(e) => setProximityWorkKm(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
+                  className="w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
                   style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                   min="0.1" step="0.5"
                 />
@@ -321,7 +321,7 @@ export default function AdminPricing() {
                   type="number"
                   value={proximityTimeMinutes}
                   onChange={(e) => setProximityTimeMinutes(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
+                  className="w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
                   style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                   min="1" step="5"
                 />
@@ -333,11 +333,11 @@ export default function AdminPricing() {
           {config && (
             <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)" }}>
                   <Clock size={18} style={{ color: "var(--status-active-text)" }} />
                 </div>
                 <div>
-                  <p className="font-black text-white">مثال على التسعير الحالي</p>
+                  <p className="font-black" style={{ color: "var(--text)" }}>مثال على التسعير الحالي</p>
                   <p className="text-xs" style={{ color: "var(--text-hint)" }}>ذهاب فقط، 5 أيام/أسبوع</p>
                 </div>
               </div>
@@ -357,7 +357,7 @@ export default function AdminPricing() {
                         const prevMax = i === 0 ? 0 : (tiers.sort((a, b) => a.max - b.max)[i - 1]?.max ?? 0);
                         return (
                           <tr key={i} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                            <td className="py-2 font-bold text-white">{prevMax}–{tier.max}</td>
+                            <td className="py-2 font-bold">{prevMax}–{tier.max}</td>
                             {[1, 2, 3, 4].map((people) => {
                               const factor = discounts
                                 .sort((a, b) => a.people - b.people)
@@ -387,7 +387,7 @@ export default function AdminPricing() {
               <AlertTriangle size={18} style={{ color: "var(--status-cancelled-text)" }} />
             </div>
             <div className="flex-1">
-              <p className="font-black text-white">طلبات تحتاج مراجعة الإدارة</p>
+              <p className="font-black" style={{ color: "var(--text)" }}>طلبات تحتاج مراجعة الإدارة</p>
               <p className="text-xs" style={{ color: "var(--text-hint)" }}>طلبات تتجاوز المسافة 40 كم — يجب تحديد السعر يدوياً</p>
             </div>
             {reviewRequests.length > 0 && (
@@ -420,8 +420,8 @@ export default function AdminPricing() {
                           {r.distanceKm ? `${r.distanceKm.toFixed(1)} كم` : "—"} · {r.numberOfPeople} أشخاص
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-white truncate">من: {r.homeLocation}</p>
-                      <p className="text-sm font-bold text-white truncate">إلى: {r.workLocation}</p>
+                      <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>من: {r.homeLocation}</p>
+                      <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>إلى: {r.workLocation}</p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         وقت الذهاب: {r.morningTime}
                       </p>
@@ -433,7 +433,7 @@ export default function AdminPricing() {
                       placeholder="السعر الشهري (ريال)"
                       value={customPrices[r.id] ?? ""}
                       onChange={(e) => setCustomPrices((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                      className="flex-1 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
+                      className="flex-1 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
                       style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                       min="0"
                     />

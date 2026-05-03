@@ -47,10 +47,10 @@ function exportAnalyticsCSV(analytics: AdminAnalytics) {
 }
 
 const STAT_CARDS = [
-  { key: "totalRequests", label: "إجمالي الطلبات", bg: "#8B5CF6" },
-  { key: "openRequests", label: "مفتوح", bg: "#3B82F6" },
-  { key: "selectedRequests", label: "تم الاختيار", bg: "#F59E0B" },
-  { key: "activeRequests", label: "نشط", bg: "#10B981" },
+  { key: "totalRequests", label: "إجمالي الطلبات", bg: "var(--brand)" },
+  { key: "openRequests", label: "مفتوح", bg: "var(--status-frozen-text)" },
+  { key: "selectedRequests", label: "تم الاختيار", bg: "var(--status-open-text)" },
+  { key: "activeRequests", label: "نشط", bg: "var(--status-active-text)" },
 ] as const;
 
 type RecentEvent = {
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
       <div dir="rtl">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-2xl font-black text-white">لوحة الإدارة</h1>
+            <h1 className="text-2xl font-black">لوحة الإدارة</h1>
             <p className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>نظرة عامة على المنصة والإحصائيات</p>
           </div>
           {analytics && (
@@ -181,11 +181,11 @@ export default function AdminDashboard() {
               </div>
               <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>السائقون</p>
-                <p className="text-2xl font-black text-white">{stats.totalDrivers}</p>
+                <p className="text-2xl font-black">{stats.totalDrivers}</p>
               </div>
               <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>العروض</p>
-                <p className="text-2xl font-black text-white">{stats.totalOffers}</p>
+                <p className="text-2xl font-black">{stats.totalOffers}</p>
               </div>
             </div>
           </>
@@ -193,18 +193,18 @@ export default function AdminDashboard() {
 
         {financial && (
           <div className="mb-5">
-            <h2 className="text-base font-black text-white mb-3 flex items-center gap-2">
+            <h2 className="text-base font-black mb-3 flex items-center gap-2">
               <Banknote size={16} /> الإحصائيات المالية
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                   <Banknote size={12} /> إجمالي الرسوم المحصّلة
                 </p>
                 <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalFeesCollected.toLocaleString("ar-SA")} ريال</p>
                 <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>{financial.acceptedContractsCount} عقد × 50 ريال</p>
               </div>
-              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                   <Wallet size={12} /> إجمالي أرصدة السائقين
                 </p>
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                 <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>مجموع أرصدة {financial.driverBalances.length} سائق</p>
               </div>
               {financial.totalTransactionsAmount > 0 && (
-                <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
                   <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>إجمالي المعاملات المالية</p>
                   <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalTransactionsAmount.toLocaleString("ar-SA")} ريال</p>
                   <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>من جدول المعاملات</p>
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
             </div>
             {financial.driverBalances.length > 0 && (
               <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-sm font-black text-white mb-3 flex items-center gap-2">
+                <p className="text-sm font-black mb-3 flex items-center gap-2">
                   <Wallet size={14} /> توزيع أرصدة السائقين
                 </p>
                 <div className="overflow-x-auto">
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
                       {financial.driverBalances.map((driver, index) => (
                         <tr key={driver.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                           <td className="py-2 px-2 font-bold" style={{ color: "var(--text-muted)" }}>{index + 1}</td>
-                          <td className="py-2 px-2 font-bold text-white">{driver.name}</td>
+                          <td className="py-2 px-2 font-bold">{driver.name}</td>
                           <td className="py-2 px-2">
                             <span className={`font-black ${driver.balance > 0 ? "text-emerald-400" : driver.balance < 0 ? "text-red-400" : ""}`}
                               style={driver.balance === 0 ? { color: "var(--text-hint)" } : {}}>
@@ -256,19 +256,17 @@ export default function AdminDashboard() {
 
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-black text-white">الرسوم البيانية</h2>
+            <h2 className="text-base font-black">الرسوم البيانية</h2>
             <div className="flex gap-1 rounded-xl p-1" style={{ backgroundColor: "var(--border-subtle)" }}>
               {MONTH_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => handleMonthSelect(opt.value)}
                   disabled={analyticsFetching}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                    selectedMonths === opt.value && !appliedRange
-                      ? "text-black"
-                      : "text-white"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  style={selectedMonths === opt.value && !appliedRange ? { backgroundColor: "var(--brand)" } : { color: "var(--text-muted)" }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  style={selectedMonths === opt.value && !appliedRange
+                    ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                    : { color: "var(--text-muted)" }}
                 >
                   {opt.label}
                 </button>
@@ -324,7 +322,7 @@ export default function AdminDashboard() {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
               <div className="rounded-2xl p-4 lg:col-span-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-sm font-black text-white mb-3">حجم الطلبات الشهري</p>
+                <p className="text-sm font-black mb-3">حجم الطلبات الشهري</p>
                 {monthlyChartData.length === 0
                   ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "var(--text-hint)" }}>لا توجد بيانات</div>
                   : <ResponsiveContainer width="100%" height={200}>
@@ -339,7 +337,7 @@ export default function AdminDashboard() {
                 }
               </div>
               <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-sm font-black text-white mb-2">توزيع الحالات</p>
+                <p className="text-sm font-black mb-2">توزيع الحالات</p>
                 {totalRequests === 0
                   ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "var(--text-hint)" }}>لا توجد بيانات</div>
                   : <>
@@ -362,12 +360,12 @@ export default function AdminDashboard() {
 
             {(analytics?.topDrivers.length ?? 0) > 0 && (
               <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-sm font-black text-white mb-3">🏆 أفضل السائقين</p>
+                <p className="text-sm font-black mb-3">🏆 أفضل السائقين</p>
                 <div className="space-y-2">
                   {analytics?.topDrivers.map((d, i) => (
                     <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: "var(--border-subtle)" }}>
                       <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 text-black" style={{ backgroundColor: "var(--brand)" }}>{i + 1}</span>
-                      <span className="flex-1 font-bold text-sm text-white">{d.name}</span>
+                      <span className="flex-1 font-bold text-sm">{d.name}</span>
                       <span className="text-sm font-black" style={{ color: "var(--brand)" }}>{d.acceptedBids} عقد</span>
                     </div>
                   ))}
@@ -395,7 +393,7 @@ export default function AdminDashboard() {
               style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}
             >
               <span className="text-2xl">{item.emoji}</span>
-              <span className="text-sm font-black text-white">{item.label}</span>
+              <span className="text-sm font-black">{item.label}</span>
             </Link>
           ))}
         </div>
@@ -403,7 +401,7 @@ export default function AdminDashboard() {
         {/* ── Recent Events ── */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <h2 className="text-base font-black text-white flex items-center gap-2">
+            <h2 className="text-base font-black flex items-center gap-2">
               <Clock size={16} style={{ color: "var(--brand)" }} />
               الأحداث الأخيرة
             </h2>
@@ -431,7 +429,7 @@ export default function AdminDashboard() {
                       {cfg.label}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{event.description}</p>
+                      <p className="text-sm font-bold truncate">{event.description}</p>
                       {event.userName && (
                         <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-muted)" }}>{event.userName}</p>
                       )}

@@ -148,7 +148,7 @@ export default function AdminSettings() {
         {/* ── Page Header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-white">إعدادات الإدارة</h1>
+            <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>إعدادات الإدارة</h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>إدارة الحسابات البنكية وطلبات الشحن ورمز الدخول</p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function AdminSettings() {
               <p className="font-black text-sm" style={{ color: "var(--status-open-text)" }}>
                 يوجد {pendingTxs.length} {pendingTxs.length === 1 ? "طلب شحن معلّق" : "طلبات شحن معلّقة"} تنتظر مراجعتك
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(251,191,36,0.82)" }}>راجع قسم طلبات الشحن أدناه وقم بالقبول أو الرفض</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--status-open-text)" }}>راجع قسم طلبات الشحن أدناه وقم بالقبول أو الرفض</p>
             </div>
             <span className="text-3xl font-black shrink-0" style={{ color: "var(--status-open-text)" }}>{pendingTxs.length}</span>
           </div>
@@ -221,7 +221,7 @@ export default function AdminSettings() {
                             </p>
                           </div>
                           <div className="text-left shrink-0">
-                            <p className="font-black text-2xl text-white" dir="ltr">
+                            <p className="font-black text-2xl" style={{ color: "var(--text)" }} dir="ltr">
                               {parseFloat(String(tx.amount)).toFixed(0)}
                               <span className="text-sm font-bold mr-1" style={{ color: "var(--text-hint)" }}>ر.س</span>
                             </p>
@@ -230,7 +230,7 @@ export default function AdminSettings() {
                                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--status-open-text)" }} />معلّق
                               </span>
                             ) : tx.status === "approved" ? (
-                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(16,185,129,0.12)", color: "#34d399" }}>
+                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)" }}>
                                 <CheckCircle2 size={11} />مقبول
                               </span>
                             ) : (
@@ -292,7 +292,7 @@ export default function AdminSettings() {
                   <Landmark size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>
-                  <p className="font-black text-white">الحسابات البنكية</p>
+                  <p className="font-black" style={{ color: "var(--text)" }}>الحسابات البنكية</p>
                   <p className="text-xs" style={{ color: "var(--text-hint)" }}>للتحويل من قِبل السائقين</p>
                 </div>
               </div>
@@ -304,7 +304,7 @@ export default function AdminSettings() {
                       <div key={acc.intId} className="relative p-4 rounded-xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-black text-white text-sm">{acc.bankName}</p>
+                            <p className="font-black text-sm" style={{ color: "var(--text)" }}>{acc.bankName}</p>
                             <p className="text-sm font-mono mt-1 break-all" dir="ltr" style={{ color: "var(--text-sub)" }}>{acc.iban}</p>
                             <div className="flex items-center gap-1.5 mt-1.5">
                               <User size={12} className="shrink-0" style={{ color: "var(--text-hint)" }} />
@@ -372,7 +372,7 @@ export default function AdminSettings() {
                   <KeyRound size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>
-                  <p className="font-black text-white">رمز الدخول السري</p>
+                  <p className="font-black" style={{ color: "var(--text)" }}>رمز الدخول السري</p>
                   <p className="text-xs" style={{ color: "var(--text-hint)" }}>تغيير رمز تسجيل دخول المشرف</p>
                 </div>
               </div>
@@ -380,7 +380,7 @@ export default function AdminSettings() {
               <div className="p-5">
                 <div className="flex items-start gap-2 p-3 rounded-xl mb-4" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
                   <ShieldCheck size={15} className="mt-0.5 shrink-0" style={{ color: "var(--status-open-text)" }} />
-                  <p className="text-xs" style={{ color: "rgba(251,191,36,0.9)" }}>احتفظ بالرمز الجديد في مكان آمن. ستحتاجه لتسجيل الدخول لاحقاً.</p>
+                  <p className="text-xs" style={{ color: "var(--status-open-text)" }}>احتفظ بالرمز الجديد في مكان آمن. ستحتاجه لتسجيل الدخول لاحقاً.</p>
                 </div>
 
                 <form onSubmit={handleChangeCode} className="space-y-3">

@@ -375,7 +375,7 @@ export default function CreateRequest() {
                     <button
                       onClick={() => removeLocation(idx)}
                       className="mt-2.5 p-2 rounded-xl transition-colors"
-                      style={{ color: "#f87171", backgroundColor: "rgba(239,68,68,0.08)" }}
+                      style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
                     >
                       <X size={16} />
                     </button>
@@ -472,14 +472,14 @@ export default function CreateRequest() {
               <div className="space-y-5">
                 {/* Shared Subscription Suggestion */}
                 {sharedSuggestions && sharedSuggestions.count > 0 && (
-                  <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(99,102,241,0.3)", backgroundColor: "rgba(99,102,241,0.06)" }}>
+                  <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid var(--status-frozen-border)", backgroundColor: "var(--status-frozen-bg)" }}>
                     <div className="p-4 space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(99,102,241,0.15)" }}>
-                          <Share2 size={18} style={{ color: "#a5b4fc" }} />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--status-frozen-bg)" }}>
+                          <Share2 size={18} style={{ color: "var(--status-frozen-text)" }} />
                         </div>
                         <div>
-                          <p className="font-black text-white text-sm">اشتراك مشترك متاح!</p>
+                          <p className="font-black text-sm" style={{ color: "var(--text)" }}>اشتراك مشترك متاح!</p>
                           <p className="text-xs" style={{ color: "var(--text-sub)" }}>
                             وُجد {sharedSuggestions.count} {sharedSuggestions.count === 1 ? "شخص" : "أشخاص"} قريبين منك — يمكنكم المشاركة بسعر مخفّض
                           </p>
@@ -490,8 +490,8 @@ export default function CreateRequest() {
                           onClick={() => setSubscriptionType("shared")}
                           className="flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all"
                           style={subscriptionType === "shared"
-                            ? { backgroundColor: "#a5b4fc", color: "#1e1b4b" }
-                            : { backgroundColor: "rgba(99,102,241,0.1)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.2)" }}
+                            ? { backgroundColor: "var(--status-frozen-text)", color: "var(--brand-fg)" }
+                            : { backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)", border: "1px solid var(--status-frozen-border)" }}
                         >
                           <Share2 size={15} /> مشترك (أرخص)
                         </button>
@@ -545,7 +545,7 @@ export default function CreateRequest() {
                     </div>
                   </div>
                 ) : pricingResult?.needsAdminReview ? (
-                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(251,113,133,0.06)", border: "1px solid rgba(251,113,133,0.25)" }}>
+                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
                     <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
                     <p className="text-base font-black" style={{ color: "var(--brand)" }}>يتطلب مراجعة الإدارة</p>
                     <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
@@ -610,7 +610,7 @@ export default function CreateRequest() {
                   </div>
                   <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>نوع الاشتراك</span>
-                    <span className="font-black" style={{ color: subscriptionType === "shared" ? "#a5b4fc" : "var(--brand)" }}>
+                    <span className="font-black" style={{ color: subscriptionType === "shared" ? "var(--status-frozen-text)" : "var(--brand)" }}>
                       {subscriptionType === "shared" ? "مشترك" : "خاص"}
                     </span>
                   </div>

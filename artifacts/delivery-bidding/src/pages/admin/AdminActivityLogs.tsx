@@ -98,7 +98,7 @@ export default function AdminActivityLogs() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(96,165,250,0.15)" }}>
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--status-frozen-bg)" }}>
               <Activity size={20} style={{ color: "var(--status-frozen-text)" }} />
             </div>
             <div>
@@ -118,12 +118,12 @@ export default function AdminActivityLogs() {
 
         {/* Filters */}
         <div className="p-4 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-          <p className="text-sm font-bold text-white/60">فلترة السجلات</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>فلترة السجلات</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none"
+              className="input-field"
               dir="rtl"
             >
               <option value="">كل الأدوار</option>
@@ -137,20 +137,20 @@ export default function AdminActivityLogs() {
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
               placeholder="العملية (مثال: auth.login)"
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none placeholder:text-white/30"
+              className="input-field"
               dir="ltr"
             />
             <input
               type="date"
               value={filterFrom}
               onChange={(e) => setFilterFrom(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none"
+              className="input-field"
             />
             <input
               type="date"
               value={filterTo}
               onChange={(e) => setFilterTo(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none"
+              className="input-field"
             />
           </div>
           <div className="flex gap-2">
@@ -166,9 +166,9 @@ export default function AdminActivityLogs() {
         {/* Table */}
         <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
           {loading ? (
-            <div className="p-12 text-center text-white/40 text-sm">جاري التحميل...</div>
+            <div className="p-12 text-center text-sm" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
           ) : logs.length === 0 ? (
-            <div className="p-12 text-center text-white/40 text-sm">لا توجد سجلات</div>
+            <div className="p-12 text-center text-sm" style={{ color: "var(--text-hint)" }}>لا توجد سجلات</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm" dir="rtl">

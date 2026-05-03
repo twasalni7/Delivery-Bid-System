@@ -118,7 +118,7 @@ export default function AdminRequestDetails() {
       <Layout role="admin">
         <div className="text-center py-20">
           <p className="text-5xl mb-3">😕</p>
-          <p className="font-bold text-lg text-white">الطلب غير موجود</p>
+          <p className="font-bold text-lg" style={{ color: "var(--text)" }}>الطلب غير موجود</p>
           <Link href="/admin/requests">
             <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>العودة</div>
           </Link>
@@ -220,7 +220,7 @@ export default function AdminRequestDetails() {
             {request.phone && (
               <div className="flex items-center gap-2 mb-2">
                 <Phone size={13} style={{ color: "var(--text-hint)" }} />
-                <a href={`tel:${request.phone}`} className="text-sm font-bold text-white" dir="ltr">{request.phone}</a>
+                <a href={`tel:${request.phone}`} className="text-sm font-bold" style={{ color: "var(--text)" }} dir="ltr">{request.phone}</a>
               </div>
             )}
             <div className="flex gap-1.5 flex-wrap">
@@ -257,7 +257,7 @@ export default function AdminRequestDetails() {
             {request.selectedDriver.mobile && (
               <div className="px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
                 <Phone size={14} className="text-green-600" />
-                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-white" dir="ltr">
+                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold" style={{ color: "var(--text)" }} dir="ltr">
                   {request.selectedDriver.mobile}
                 </a>
                 <a
@@ -292,9 +292,9 @@ export default function AdminRequestDetails() {
               <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-2">
                   <MessageCircle size={15} style={{ color: "var(--brand)" }} />
-                  <span className="text-white font-black text-sm">محادثة مع السائق</span>
+                  <span className="font-black text-sm" style={{ color: "var(--text)" }}>محادثة مع السائق</span>
                 </div>
-                <button onClick={() => setShowChat(false)} className="text-white/70 hover:text-white"><X size={14} /></button>
+                <button onClick={() => setShowChat(false)} style={{ color: "var(--text-muted)" }}><X size={14} /></button>
               </div>
               <div className="max-h-72 overflow-y-auto p-3 space-y-2" dir="rtl" style={{ backgroundColor: "var(--header-bg)" }}>
                 {(!chatMessages || chatMessages.length === 0) && (
@@ -343,7 +343,7 @@ export default function AdminRequestDetails() {
           {!loadingOffers && (!offers || offers.length === 0) && (
             <div className="text-center py-12 border-2 border-dashed rounded-2xl" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
               <p className="text-3xl mb-2">⏳</p>
-              <p className="font-bold text-white">لا يوجد سائقون قبلوا بعد</p>
+              <p className="font-bold" style={{ color: "var(--text)" }}>لا يوجد سائقون قبلوا بعد</p>
               <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>ستظهر أسماء السائقين هنا عند قبولهم الطلب</p>
             </div>
           )}
@@ -366,7 +366,7 @@ export default function AdminRequestDetails() {
                           {offer.driver?.name?.charAt(0) ?? "س"}
                         </div>
                         <div>
-                          <p className="font-bold text-white">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                          <p className="font-bold" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
                           {offer.driver?.carType && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</p>}
                           {/* Admin always sees driver mobile */}
                           {(offer.driver as any)?.mobile && (

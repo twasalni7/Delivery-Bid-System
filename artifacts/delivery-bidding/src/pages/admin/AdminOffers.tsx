@@ -32,7 +32,7 @@ export default function AdminOffers() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-3xl font-black text-white">القبولات</h1>
+            <h1 className="text-3xl font-black" style={{ color: "var(--text)" }}>القبولات</h1>
             <p className="text-base mt-0.5" style={{ color: "var(--text-muted)" }}>
               {offers ? `${filtered.length} من ${offers.length} قبول` : "جميع قبولات السائقين"}
             </p>
@@ -62,7 +62,8 @@ export default function AdminOffers() {
               placeholder="ابحث باسم السائق أو رقم الطلب..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 text-base bg-transparent outline-none text-white placeholder-gray-600"
+              className="flex-1 text-base bg-transparent outline-none"
+              style={{ color: "var(--text)" }}
             />
             {search && <button onClick={() => setSearch("")} style={{ color: "var(--text-hint)" }}><X size={15} /></button>}
           </div>
@@ -104,12 +105,12 @@ export default function AdminOffers() {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0" style={{ backgroundColor: "var(--brand-subtle)" }}>🚗</div>
-                          <p className="font-black text-white text-base">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                          <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
                         </div>
                       </td>
                       <td className="px-5 py-4">
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                          style={offer.status === "SELECTED" ? { backgroundColor: "var(--brand-border)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "rgba(239,68,68,0.15)", color: "#ef4444" } : { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+                          style={offer.status === "SELECTED" ? { backgroundColor: "var(--brand-border)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" } : { backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" }}>
                           {offer.status === "PENDING" ? "منتظر" : offer.status === "SELECTED" ? "مختار" : "ملغي"}
                         </span>
                       </td>
@@ -132,10 +133,10 @@ export default function AdminOffers() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1.5">
                         <span className="text-sm font-bold px-2.5 py-0.5 rounded-lg" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>طلب #{offer.requestId}</span>
-                        <span className="font-black text-white text-base">{offer.driver?.name ?? `سائق #${offer.driverId}`}</span>
+                        <span className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</span>
                       </div>
                       <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                        style={offer.status === "SELECTED" ? { backgroundColor: "var(--brand-border)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "rgba(239,68,68,0.15)", color: "#ef4444" } : { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+                        style={offer.status === "SELECTED" ? { backgroundColor: "var(--brand-border)", color: "var(--brand)" } : offer.status === "CANCELLED" ? { backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" } : { backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" }}>
                         {offer.status === "PENDING" ? "منتظر" : offer.status === "SELECTED" ? "مختار" : "ملغي"}
                       </span>
                     </div>

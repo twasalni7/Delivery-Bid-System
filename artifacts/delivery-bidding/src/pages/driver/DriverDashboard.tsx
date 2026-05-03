@@ -122,7 +122,7 @@ export default function DriverDashboard() {
                 <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>سائق توصّلني</p>
               </div>
               <div className={`text-right px-4 py-2.5 rounded-2xl ${hasEnoughBalance ? "" : "border border-red-500/30"}`}
-                style={{ backgroundColor: hasEnoughBalance ? "var(--brand-subtle)" : "rgba(248,113,113,0.08)" }}>
+                style={{ backgroundColor: hasEnoughBalance ? "var(--brand-subtle)" : "var(--status-cancelled-bg)" }}>
                 <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>الرصيد</p>
                 <p className="font-black text-lg" style={{ color: hasEnoughBalance ? "var(--brand)" : "var(--status-cancelled-text)" }} dir="ltr">{driver.balance.toFixed(0)} ر.س</p>
               </div>
@@ -143,7 +143,7 @@ export default function DriverDashboard() {
 
         {/* Low balance warning */}
         {!hasEnoughBalance && driver && (
-          <div className="flex items-start gap-3 rounded-2xl px-5 py-4 mb-6" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+          <div className="flex items-start gap-3 rounded-2xl px-5 py-4 mb-6" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
             <AlertTriangle size={18} className="text-amber-400 mt-0.5 shrink-0" />
             <div>
               <p className="font-black text-amber-300 text-sm">رصيد غير كافٍ</p>
@@ -280,11 +280,11 @@ export default function DriverDashboard() {
                             <Link href={`/driver/request/${req.id}`}>
                               <div className="btn-primary w-full">
                                 قدم عرضك الشهري
-                                <ChevronLeft size={16} style={{ color: "rgba(0,0,0,0.5)" }} aria-hidden="true" />
+                                <ChevronLeft size={16} style={{ color: "var(--text-hint)" }} aria-hidden="true" />
                               </div>
                             </Link>
                           ) : (
-                            <div className="p-4 rounded-2xl" style={{ backgroundColor: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                            <div className="p-4 rounded-2xl" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
                               <p className="text-center text-sm font-black text-red-400 mb-2">⚠️ رصيدك غير كافٍ لتقديم عرض</p>
                               <p className="text-center text-xs text-red-400/70 mb-3">تحتاج 50 ريال كحد أدنى</p>
                               <button

@@ -116,8 +116,8 @@ export default function AdminServiceAreas() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(52,211,153,0.15)" }}>
-              <MapPin size={20} style={{ color: "#34d399" }} />
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--status-active-bg)" }}>
+              <MapPin size={20} style={{ color: "var(--status-active-text)" }} />
             </div>
             <div>
               <h1 className="text-2xl font-black text-white">مناطق الخدمة</h1>
@@ -190,9 +190,9 @@ export default function AdminServiceAreas() {
         {/* Summary stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "إجمالي المناطق", value: areas.length, color: "#60a5fa" },
-            { label: "مفعّلة", value: areas.filter((a) => a.isActive).length, color: "#34d399" },
-            { label: "موقوفة", value: areas.filter((a) => !a.isActive).length, color: "#f87171" },
+            { label: "إجمالي المناطق", value: areas.length, color: "var(--status-frozen-text)" },
+            { label: "مفعّلة", value: areas.filter((a) => a.isActive).length, color: "var(--status-active-text)" },
+            { label: "موقوفة", value: areas.filter((a) => !a.isActive).length, color: "var(--status-cancelled-text)" },
           ].map((s) => (
             <div key={s.label} className="p-4 rounded-[1.5rem] text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
               <p className="text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
@@ -211,7 +211,7 @@ export default function AdminServiceAreas() {
             {Object.entries(grouped).map(([cityName, cityAreas]) => (
               <div key={cityName} className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
                 <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
-                  <MapPin size={16} style={{ color: "#34d399" }} />
+                  <MapPin size={16} style={{ color: "var(--status-active-text)" }} />
                   <span className="font-black text-white">{cityName}</span>
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                     {cityAreas.length} منطقة
@@ -235,7 +235,7 @@ export default function AdminServiceAreas() {
                           className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
                         >
                           {area.isActive
-                            ? <ToggleRight size={20} style={{ color: "#34d399" }} />
+                            ? <ToggleRight size={20} style={{ color: "var(--status-active-text)" }} />
                             : <ToggleLeft size={20} style={{ color: "var(--text-hint)" }} />}
                         </button>
                         <button
@@ -243,7 +243,7 @@ export default function AdminServiceAreas() {
                           title="حذف"
                           className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
                         >
-                          <Trash2 size={16} style={{ color: "#f87171" }} />
+                          <Trash2 size={16} style={{ color: "var(--status-cancelled-text)" }} />
                         </button>
                       </div>
                     </div>

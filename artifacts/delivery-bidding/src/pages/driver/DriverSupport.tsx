@@ -230,7 +230,7 @@ export default function DriverSupport() {
                         </div>
                       )}
                       {!t.adminReply && (
-                        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)" }}>
+                        <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
                           <p className="text-xs font-black" style={{ color: "var(--status-open-text)" }}>⏳ في انتظار رد الإدارة...</p>
                         </div>
                       )}

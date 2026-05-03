@@ -141,8 +141,8 @@ export default function ClientSupport() {
                     </div>
                     <p className="text-sm font-bold mb-3" style={{ color: "var(--text-sub)" }}>{t.message}</p>
                     {t.adminReply && (
-                      <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                        <p className="text-xs font-black mb-1.5" style={{ color: "#34d399" }}>رد الإدارة:</p>
+                      <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)" }}>
+                        <p className="text-xs font-black mb-1.5" style={{ color: "var(--status-active-text)" }}>رد الإدارة:</p>
                         <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{t.adminReply}</p>
                       </div>
                     )}

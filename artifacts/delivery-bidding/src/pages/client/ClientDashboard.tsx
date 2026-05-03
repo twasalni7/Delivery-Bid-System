@@ -142,7 +142,7 @@ export default function ClientDashboard() {
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
-                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#f87171" }} />
+                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
                         <div className="flex-1">
                           <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
                           <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workLocation}</p>
