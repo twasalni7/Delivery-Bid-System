@@ -198,7 +198,7 @@ export default function AdminPricing() {
                   <button
                     onClick={() => removeTier(idx)}
                     className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
-                    style={{ backgroundColor: "rgba(239,68,68,0.08)", color: "#f87171" }}
+                    style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -218,7 +218,7 @@ export default function AdminPricing() {
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}>
-                <Users size={18} style={{ color: "#a5b4fc" }} />
+                <Users size={18} style={{ color: "var(--status-frozen-text)" }} />
               </div>
               <div>
                 <p className="font-black text-white">خصومات الاشتراك المشترك</p>
@@ -258,7 +258,7 @@ export default function AdminPricing() {
                   <button
                     onClick={() => removeDiscount(idx)}
                     className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
-                    style={{ backgroundColor: "rgba(239,68,68,0.08)", color: "#f87171" }}
+                    style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -278,7 +278,7 @@ export default function AdminPricing() {
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)" }}>
-                <Settings2 size={18} style={{ color: "#fbbf24" }} />
+                <Settings2 size={18} style={{ color: "var(--status-open-text)" }} />
               </div>
               <div>
                 <p className="font-black text-white">معايير القرب للاشتراك المشترك</p>
@@ -334,7 +334,7 @@ export default function AdminPricing() {
             <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                  <Clock size={18} style={{ color: "#34d399" }} />
+                  <Clock size={18} style={{ color: "var(--status-active-text)" }} />
                 </div>
                 <div>
                   <p className="font-black text-white">مثال على التسعير الحالي</p>
@@ -383,15 +383,15 @@ export default function AdminPricing() {
         {/* ── Admin Review Requests ── */}
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <AlertTriangle size={18} style={{ color: "#f87171" }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
+              <AlertTriangle size={18} style={{ color: "var(--status-cancelled-text)" }} />
             </div>
             <div className="flex-1">
               <p className="font-black text-white">طلبات تحتاج مراجعة الإدارة</p>
               <p className="text-xs" style={{ color: "var(--text-hint)" }}>طلبات تتجاوز المسافة 40 كم — يجب تحديد السعر يدوياً</p>
             </div>
             {reviewRequests.length > 0 && (
-              <span className="px-3 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171" }}>
+              <span className="px-3 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>
                 {reviewRequests.length} طلب
               </span>
             )}
@@ -413,7 +413,7 @@ export default function AdminPricing() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171" }}>
+                        <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>
                           طلب #{r.id}
                         </span>
                         <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>

@@ -140,7 +140,7 @@ export default function AdminSupport() {
           {activeFilters > 0 && (
             <button onClick={resetFilters}
               className="h-9 px-3.5 rounded-xl text-sm font-bold flex items-center gap-1.5 transition-colors"
-              style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}>
+              style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}>
               <X size={13} /> مسح ({activeFilters})
             </button>
           )}
@@ -201,7 +201,7 @@ export default function AdminSupport() {
                           placeholder="اكتب ردك هنا..."
                           value={replies[t.id] ?? t.adminReply ?? ""}
                           onChange={(e) => setReplies((prev) => ({ ...prev, [t.id]: e.target.value }))}
-                          rows={3} className="rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "#fff" }}
+                          rows={3} className="rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "var(--text)" }}
                         />
                       </div>
                       <div>
@@ -227,7 +227,7 @@ export default function AdminSupport() {
                         </button>
                         <button onClick={() => { if (confirm("هل تريد حذف هذه التذكرة؟")) { remove.mutate(t.id); setExpanded(null); } }}
                           className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                          style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}>
+                          style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}>
                           <Trash2 size={15} />
                         </button>
                       </div>

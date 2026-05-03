@@ -155,17 +155,17 @@ export default function AdminSettings() {
 
         {/* ── Pending Alert Banner ── */}
         {pendingTxs.length > 0 && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(245,158,11,0.12)" }}>
-              <AlertCircle size={20} style={{ color: "#fbbf24" }} />
+          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--status-open-bg)" }}>
+              <AlertCircle size={20} style={{ color: "var(--status-open-text)" }} />
             </div>
             <div className="flex-1">
-              <p className="font-black text-sm" style={{ color: "#fbbf24" }}>
+              <p className="font-black text-sm" style={{ color: "var(--status-open-text)" }}>
                 يوجد {pendingTxs.length} {pendingTxs.length === 1 ? "طلب شحن معلّق" : "طلبات شحن معلّقة"} تنتظر مراجعتك
               </p>
               <p className="text-xs mt-0.5" style={{ color: "rgba(251,191,36,0.82)" }}>راجع قسم طلبات الشحن أدناه وقم بالقبول أو الرفض</p>
             </div>
-            <span className="text-3xl font-black shrink-0" style={{ color: "#fbbf24" }}>{pendingTxs.length}</span>
+            <span className="text-3xl font-black shrink-0" style={{ color: "var(--status-open-text)" }}>{pendingTxs.length}</span>
           </div>
         )}
 
@@ -187,8 +187,8 @@ export default function AdminSettings() {
                   </div>
                 </div>
                 {pendingTxs.length > 0 && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black" style={{ backgroundColor: "rgba(245,158,11,0.12)", color: "#fbbf24" }}>
-                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "#fbbf24" }} />
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black" style={{ backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" }}>
+                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-open-text)" }} />
                     {pendingTxs.length} معلّق
                   </span>
                 )}
@@ -205,7 +205,7 @@ export default function AdminSettings() {
                     const driverInitial = (tx.driverName ?? `س${tx.driverId}`).charAt(0);
                     const isPending = tx.status === "pending";
                     return (
-                      <div key={tx.intId} className="p-5 transition-colors" style={{ backgroundColor: isPending ? "rgba(245,158,11,0.04)" : "transparent" }}>
+                      <div key={tx.intId} className="p-5 transition-colors" style={{ backgroundColor: isPending ? "var(--status-open-bg)" : "transparent" }}>
                         {/* Driver + amount row */}
                         <div className="flex items-start gap-3 mb-3">
                           <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg shrink-0"
@@ -226,15 +226,15 @@ export default function AdminSettings() {
                               <span className="text-sm font-bold mr-1" style={{ color: "var(--text-hint)" }}>ر.س</span>
                             </p>
                             {isPending ? (
-                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(245,158,11,0.12)", color: "#fbbf24" }}>
-                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#fbbf24" }} />معلّق
+                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--status-open-text)" }} />معلّق
                               </span>
                             ) : tx.status === "approved" ? (
                               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(16,185,129,0.12)", color: "#34d399" }}>
                                 <CheckCircle2 size={11} />مقبول
                               </span>
                             ) : (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171" }}>مرفوض</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>مرفوض</span>
                             )}
                           </div>
                         </div>
@@ -269,7 +269,7 @@ export default function AdminSettings() {
                               onClick={() => handleWalletAction(tx.intId, "reject")}
                               disabled={processingId === tx.intId}
                               className="px-5 py-3 rounded-xl font-black text-sm disabled:opacity-50 min-h-[44px] transition-colors"
-                              style={{ backgroundColor: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}>
+                              style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)" }}>
                               رفض
                             </button>
                           </div>
@@ -314,7 +314,7 @@ export default function AdminSettings() {
                           <button
                             onClick={() => handleDeleteBank(acc.intId)}
                             className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 min-h-[32px]"
-                            style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
+                            style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}>
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -378,8 +378,8 @@ export default function AdminSettings() {
               </div>
 
               <div className="p-5">
-                <div className="flex items-start gap-2 p-3 rounded-xl mb-4" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
-                  <ShieldCheck size={15} className="mt-0.5 shrink-0" style={{ color: "#fbbf24" }} />
+                <div className="flex items-start gap-2 p-3 rounded-xl mb-4" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
+                  <ShieldCheck size={15} className="mt-0.5 shrink-0" style={{ color: "var(--status-open-text)" }} />
                   <p className="text-xs" style={{ color: "rgba(251,191,36,0.9)" }}>احتفظ بالرمز الجديد في مكان آمن. ستحتاجه لتسجيل الدخول لاحقاً.</p>
                 </div>
 

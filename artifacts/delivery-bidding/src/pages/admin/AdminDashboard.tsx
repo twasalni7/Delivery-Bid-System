@@ -332,7 +332,7 @@ export default function AdminDashboard() {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                         <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--text-muted)" }} angle={-40} textAnchor="end" interval={0} />
                         <YAxis tick={{ fontSize: 11, fill: "var(--text-muted)" }} allowDecimals={false} />
-                        <Tooltip formatter={(value: number) => [value, "طلب"]} contentStyle={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "#fff" }} />
+                        <Tooltip formatter={(value: number) => [value, "طلب"]} contentStyle={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }} />
                         <Bar dataKey="count" fill="var(--brand)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -349,7 +349,7 @@ export default function AdminDashboard() {
                             {pieData.map((_e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                           </Pie>
                           <Legend formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-sub)" }}>{v}</span>} />
-                          <Tooltip formatter={(v: number) => [v, "طلب"]} contentStyle={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "#fff" }} />
+                          <Tooltip formatter={(v: number) => [v, "طلب"]} contentStyle={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }} />
                         </PieChart>
                       </ResponsiveContainer>
                       <p className="text-center text-xs mt-1" style={{ color: "var(--text-muted)" }}>

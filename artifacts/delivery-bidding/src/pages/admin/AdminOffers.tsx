@@ -43,7 +43,7 @@ export default function AdminOffers() {
         {offers && (
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div className="rounded-2xl px-4 py-3 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-              <p className="text-2xl font-black" style={{ color: "#fbbf24" }}>{offers.filter((o) => o.status === "PENDING").length}</p>
+              <p className="text-2xl font-black" style={{ color: "var(--status-open-text)" }}>{offers.filter((o) => o.status === "PENDING").length}</p>
               <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>قيد الانتظار</p>
             </div>
             <div className="rounded-2xl px-4 py-3 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>

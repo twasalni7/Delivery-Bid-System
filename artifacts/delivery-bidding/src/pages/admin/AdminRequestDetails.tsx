@@ -263,7 +263,8 @@ export default function AdminRequestDetails() {
                 <a
                   href={`https://wa.me/${request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966")}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="mr-auto bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                  className="mr-auto text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                  style={{ backgroundColor: "#25D366", color: "#fff" }}
                 >
                   <MessageCircle size={11} /> واتساب
                 </a>
@@ -274,7 +275,7 @@ export default function AdminRequestDetails() {
 
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-black text-white">
+            <h2 className="text-lg font-black" style={{ color: "var(--text)" }}>
               السائقون المقبِلون {offers ? `(${offers.length})` : ""}
             </h2>
             {canChat && (

@@ -86,14 +86,14 @@ export default function AdminRequests() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-5">
           <div className="flex-1">
-            <h1 className="text-3xl font-black text-white">الطلبات</h1>
+            <h1 className="text-3xl font-black" style={{ color: "var(--text)" }}>الطلبات</h1>
             <p className="text-base mt-0.5 font-bold" style={{ color: "var(--text-muted)" }}>
               {requests ? `${filteredRequests.length} من ${requests.length} طلب` : "إدارة طلبات الدوام الشهري"}
             </p>
           </div>
           <Link href="/admin/requests/new">
             <button
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-black font-black text-sm active:scale-95 transition-transform"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm active:scale-95 transition-transform"
               style={{ backgroundColor: "var(--brand)" }}
             >
               <Plus size={16} /> إضافة طلب جديد
@@ -111,7 +111,7 @@ export default function AdminRequests() {
               placeholder="ابحث بالموقع، الجوال، السائق، رقم الطلب..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 text-base bg-transparent outline-none text-white placeholder-gray-600"
+              className="flex-1 text-base bg-transparent outline-none"
             />
             {search && (
               <button onClick={() => setSearch("")} style={{ color: "var(--text-muted)" }}>
@@ -138,7 +138,7 @@ export default function AdminRequests() {
             {activeFilters > 0 && (
               <button onClick={resetFilters}
                 className="h-9 px-3.5 rounded-xl text-sm font-bold flex items-center gap-1.5"
-                style={{ color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", backgroundColor: "rgba(239,68,68,0.08)" }}>
+                style={{ color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)", backgroundColor: "var(--status-cancelled-bg)" }}>
                 <X size={13} /> مسح الفلاتر ({activeFilters})
               </button>
             )}
@@ -200,7 +200,7 @@ export default function AdminRequests() {
                       <td className="px-5 py-4 text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>
                          #{req.id}
                          {req.createdBy === "admin" && (
-                           <span className="mr-1.5 text-xs px-1.5 py-0.5 rounded-full font-black align-middle" style={{ backgroundColor: "rgba(165,180,252,0.15)", color: "#a5b4fc" }}>إداري</span>
+                           <span className="mr-1.5 text-xs px-1.5 py-0.5 rounded-full font-black align-middle" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>إداري</span>
                          )}
                        </td>
                       <td className="px-5 py-4">
@@ -212,7 +212,7 @@ export default function AdminRequests() {
                         <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ color: "var(--text-sub)", backgroundColor: "var(--border-subtle)" }}>{(req as any).clientType ?? "—"}</span>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 text-sm text-white">
+                        <div className="flex items-center gap-1.5 text-sm">
                           <MapPin size={13} style={{ color: "var(--brand)" }} className="shrink-0" />
                           <span className="font-medium">{req.homeLocation}</span>
                           <span style={{ color: "var(--text-hint)" }}>←</span>
@@ -228,7 +228,7 @@ export default function AdminRequests() {
                         {(req as any).shifts && (req as any).shifts.length > 0 ? (
                           <div className="space-y-0.5">
                             {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
-                              <div key={i} className="flex items-center gap-1 text-xs text-white" dir="ltr">
+                              <div key={i} className="flex items-center gap-1 text-xs" dir="ltr">
                                 <Clock size={11} style={{ color: "var(--text-hint)" }} />
                                 <span className="font-medium">{formatTime12h(s.goTime)}{s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}</span>
                                 {s.label && <span style={{ color: "var(--text-hint)" }}>({s.label})</span>}
@@ -236,7 +236,7 @@ export default function AdminRequests() {
                             ))}
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1 text-sm text-white" dir="ltr">
+                          <div className="flex items-center gap-1 text-sm" dir="ltr">
                             <Clock size={13} style={{ color: "var(--text-hint)" }} />
                             <span className="font-medium">{formatTime12h(req.morningTime)}</span>
                             {req.eveningTime && <><span style={{ color: "var(--text-hint)" }}>–</span><span className="font-medium">{formatTime12h(req.eveningTime)}</span></>}
@@ -244,7 +244,7 @@ export default function AdminRequests() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 text-sm text-white">
+                        <div className="flex items-center gap-1.5 text-sm">
                           <Users size={13} style={{ color: "var(--text-hint)" }} />
                           <span className="font-bold">{req.numberOfPeople}</span>
                           <span style={{ color: "var(--text-hint)" }}>·</span>
@@ -270,8 +270,8 @@ export default function AdminRequests() {
                             <Edit2 size={14} style={{ color: "var(--text-muted)" }} />
                           </button>
                           <button onClick={() => handleDelete(req)}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                            <Trash2 size={14} style={{ color: "#ef4444" }} />
+                            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
+                            <Trash2 size={14} style={{ color: "var(--status-cancelled-text)" }} />
                           </button>
                         </div>
                       </td>
@@ -292,7 +292,7 @@ export default function AdminRequests() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>#{req.id}</span>
                        {req.createdBy === "admin" && (
-                         <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "rgba(165,180,252,0.15)", color: "#a5b4fc" }}>إداري</span>
+                         <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>إداري</span>
                        )}
                       <span className="text-sm px-3 py-0.5 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                         {getStatusLabel(req.status)}
@@ -304,18 +304,18 @@ export default function AdminRequests() {
                         <button className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}><Eye size={14} style={{ color: "var(--brand)" }} /></button>
                       </Link>
                       <button onClick={() => handleEdit(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}><Edit2 size={14} style={{ color: "var(--text-muted)" }} /></button>
-                      <button onClick={() => handleDelete(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}><Trash2 size={14} style={{ color: "#ef4444" }} /></button>
+                      <button onClick={() => handleDelete(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}><Trash2 size={14} style={{ color: "var(--status-cancelled-text)" }} /></button>
                     </div>
                   </div>
                   <div className="px-4 pb-4 space-y-2">
-                    <div className="flex items-center gap-1.5 text-sm text-white">
+                    <div className="flex items-center gap-1.5 text-sm">
                       <MapPin size={13} style={{ color: "var(--brand)" }} className="shrink-0" />
                       <span className="font-medium">{req.homeLocation} ← {req.workLocation}</span>
                     </div>
                     {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
                       <p key={i} className="text-xs" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                     ))}
-                    <div className="flex flex-wrap gap-4 text-sm text-white">
+                    <div className="flex flex-wrap gap-4 text-sm">
                       {(req as any).shifts && (req as any).shifts.length > 0 ? (
                         <span className="flex items-center gap-1 flex-wrap" dir="ltr">
                           <Clock size={13} />
@@ -340,7 +340,7 @@ export default function AdminRequests() {
         <Dialog open={!!editDialog} onOpenChange={(o) => !o && setEditDialog(null)}>
           <DialogContent dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-lg font-black text-white">تعديل حالة الطلب #{editDialog?.id}</DialogTitle>
+              <DialogTitle className="text-lg font-black" style={{ color: "var(--text)" }}>تعديل حالة الطلب #{editDialog?.id}</DialogTitle>
             </DialogHeader>
             <Select value={editStatus} onValueChange={setEditStatus}>
               <SelectTrigger className="rounded-xl h-12 text-base"><SelectValue placeholder="اختر الحالة" /></SelectTrigger>

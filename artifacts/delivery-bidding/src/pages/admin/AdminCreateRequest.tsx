@@ -256,7 +256,7 @@ export default function AdminCreateRequest() {
                     <button
                       onClick={() => removeLocation(idx)}
                       className="mt-2.5 p-2 rounded-xl transition-colors"
-                      style={{ color: "#f87171", backgroundColor: "rgba(239,68,68,0.08)" }}
+                      style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
                     >
                       <X size={16} />
                     </button>

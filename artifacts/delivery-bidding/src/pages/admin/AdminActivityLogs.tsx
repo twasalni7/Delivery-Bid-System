@@ -25,14 +25,14 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  "auth.login":             "#60a5fa",
-  "client.registered":      "#34d399",
-  "request.created":        "#a78bfa",
-  "request.status_changed": "#f59e0b",
-  "offer.created":          "#fb923c",
-  "service_area.created":   "#34d399",
-  "service_area.updated":   "#f59e0b",
-  "service_area.deleted":   "#f87171",
+  "auth.login":             "var(--status-frozen-text)",
+  "client.registered":      "var(--status-active-text)",
+  "request.created":        "var(--brand)",
+  "request.status_changed": "var(--status-open-text)",
+  "offer.created":          "var(--status-open-text)",
+  "service_area.created":   "var(--status-active-text)",
+  "service_area.updated":   "var(--status-open-text)",
+  "service_area.deleted":   "var(--status-cancelled-text)",
 };
 
 function actionColor(action: string): string {
@@ -99,10 +99,10 @@ export default function AdminActivityLogs() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(96,165,250,0.15)" }}>
-              <Activity size={20} style={{ color: "#60a5fa" }} />
+              <Activity size={20} style={{ color: "var(--status-frozen-text)" }} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white">سجل النشاط</h1>
+              <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>سجل النشاط</h1>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>كل العمليات المُسجَّلة في النظام</p>
             </div>
           </div>
