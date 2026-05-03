@@ -64,6 +64,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: "/admin/pricing",      label: "التسعير",    icon: DollarSign },
     { href: "/admin/service-areas",label: "المناطق",    icon: MapPin },
     { href: "/admin/activity-logs",label: "سجل النشاط", icon: Activity },
+    { href: "/admin/push-debug",   label: "الإشعارات",  icon: Search },
     { href: "/admin/support",      label: "الدعم",      icon: LifeBuoy },
     { href: "/admin/settings",     label: "الإعدادات",  icon: Settings },
   ];
