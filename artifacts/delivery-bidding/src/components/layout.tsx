@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LogOut, Menu, Home, FileText, User, LifeBuoy, Settings,
   Users, Car, BarChart2, ClipboardList, DollarSign, Activity,
-  MapPin, Search, ChevronRight, Sun, Moon, Coffee,
+  MapPin, Search, ChevronRight, Sun, Moon, Coffee, BellRing,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme, Theme } from "@/contexts/theme-context";
@@ -64,7 +64,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: "/admin/pricing",      label: "التسعير",    icon: DollarSign },
     { href: "/admin/service-areas",label: "المناطق",    icon: MapPin },
     { href: "/admin/activity-logs",label: "سجل النشاط", icon: Activity },
-    { href: "/admin/push-debug",   label: "الإشعارات",  icon: Search },
+    { href: "/admin/push-debug",   label: "الإشعارات",  icon: BellRing },
     { href: "/admin/support",      label: "الدعم",      icon: LifeBuoy },
     { href: "/admin/settings",     label: "الإعدادات",  icon: Settings },
   ];

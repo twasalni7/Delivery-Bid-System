@@ -31,6 +31,7 @@ function swStatusLabel(s: SwStatus): string {
     case "registered": return "مسجّل ✓";
     case "not_registered": return "غير مسجّل";
     case "error": return "خطأ في الفحص";
+    default: return s;
   }
 }
 

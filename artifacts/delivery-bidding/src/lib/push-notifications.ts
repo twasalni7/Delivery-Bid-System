@@ -9,7 +9,7 @@ export function clearPushSubscriptionCache(): void {
   console.log(LOG_PREFIX, "subscription cache cleared");
 }
 
-function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
@@ -122,7 +122,7 @@ export async function subscribeToPush(role?: string): Promise<void> {
   try {
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      applicationServerKey: urlBase64ToArrayBuffer(vapidPublicKey),
     });
     console.log(LOG_PREFIX, "push subscription created ✓", subscription.endpoint);
   } catch (err) {
