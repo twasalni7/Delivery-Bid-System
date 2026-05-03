@@ -18,13 +18,13 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
 
 const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string }> = {
-  OPEN:      { bg: "rgba(59,130,246,0.1)",  border: "rgba(59,130,246,0.25)",  text: "#60a5fa" },
-  SELECTED:  { bg: "rgba(222,255,154,0.1)", border: "rgba(222,255,154,0.25)", text: "#deff9a" },
-  ACTIVE:    { bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.25)",  text: "#34d399" },
-  COMPLETED: { bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", text: "rgba(255,255,255,0.4)" },
-  CANCELLED: { bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.2)",   text: "#f87171" },
-  EXPIRED:   { bg: "rgba(156,163,175,0.08)", border: "rgba(156,163,175,0.15)", text: "rgba(255,255,255,0.35)" },
-  FROZEN:    { bg: "rgba(59,130,246,0.08)",  border: "rgba(59,130,246,0.2)",  text: "#60a5fa" },
+  OPEN:      { bg: "var(--status-open-bg)",      border: "var(--status-open-border)",      text: "var(--status-open-text)" },
+  SELECTED:  { bg: "var(--status-selected-bg)",  border: "var(--status-selected-border)",  text: "var(--status-selected-text)" },
+  ACTIVE:    { bg: "var(--status-active-bg)",    border: "var(--status-active-border)",    text: "var(--status-active-text)" },
+  COMPLETED: { bg: "var(--status-completed-bg)", border: "var(--status-completed-border)", text: "var(--status-completed-text)" },
+  CANCELLED: { bg: "var(--status-cancelled-bg)", border: "var(--status-cancelled-border)", text: "var(--status-cancelled-text)" },
+  EXPIRED:   { bg: "var(--status-expired-bg)",   border: "var(--status-expired-border)",   text: "var(--status-expired-text)" },
+  FROZEN:    { bg: "var(--status-frozen-bg)",    border: "var(--status-frozen-border)",    text: "var(--status-frozen-text)" },
 };
 
 export default function RequestDetails() {
@@ -108,7 +108,7 @@ export default function RequestDetails() {
   };
 
   if (loadingReq) {
-    return <Layout role="client"><div className="text-center py-20 font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div></Layout>;
+    return <Layout role="client"><div className="text-center py-20 font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div></Layout>;
   }
 
   if (!request) {
@@ -118,7 +118,7 @@ export default function RequestDetails() {
           <p className="text-5xl mb-3">😕</p>
           <p className="font-bold text-lg text-white">الطلب غير موجود</p>
           <Link href="/client">
-            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>العودة</div>
+            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>العودة</div>
           </Link>
         </div>
       </Layout>
@@ -135,32 +135,32 @@ export default function RequestDetails() {
     <Layout role="client">
       <div dir="rtl" className="pb-6">
         <Link href="/client" className="inline-flex items-center gap-1 text-sm font-bold transition-colors mb-5"
-          style={{ color: "rgba(255,255,255,0.45)" }}>
+          style={{ color: "var(--text-muted)" }}>
           <ArrowRight size={14} /> العودة
         </Link>
 
         {/* Request Summary Card */}
-        <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "#111111", border: `1px solid ${statusStyle.border}` }}>
+        <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "var(--surface)", border: `1px solid ${statusStyle.border}` }}>
           <div className="p-5" style={{ backgroundColor: statusStyle.bg, borderBottom: `1px solid ${statusStyle.border}` }}>
             <div className="flex items-start justify-between mb-4">
               <span className="text-xs font-black px-3 py-1 rounded-full"
                 style={{ backgroundColor: statusStyle.border, color: statusStyle.text }}>
                 {getStatusLabel(request.status)}
               </span>
-              <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>طلب #{request.id}</span>
+              <span className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>طلب #{request.id}</span>
             </div>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "#deff9a" }} />
+                <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
                 <div>
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>من</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>من</p>
                   <p className="text-white font-black text-sm">{request.homeLocation}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "#f87171" }} />
                 <div>
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>إلى</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>إلى</p>
                   <p className="text-white font-black text-sm">{request.workLocation}</p>
                 </div>
               </div>
@@ -185,14 +185,14 @@ export default function RequestDetails() {
                 <div className="mt-2 space-y-1">
                   {additionalLocations.map((loc, idx) => (
                     <div key={idx} className="flex items-start gap-2">
-                      <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }} />
+                      <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: "var(--text-hint)" }} />
                       <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}: {loc.address}</p>
                     </div>
                   ))}
                 </div>
               )}
               {notes && (
-                <p className="text-xs mt-2 font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>📝 {notes}</p>
+                <p className="text-xs mt-2 font-bold" style={{ color: "var(--text-muted)" }}>📝 {notes}</p>
               )}
             </div>
           </div>
@@ -200,19 +200,19 @@ export default function RequestDetails() {
           <div className="px-5 py-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Calendar size={13} style={{ color: "rgba(255,255,255,0.35)" }} />
+                <Calendar size={13} style={{ color: "var(--text-hint)" }} />
                 <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
               </div>
               <div className="text-center">
-                <p className="text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Price per person</p>
-                <p className="text-lg font-black" style={{ color: "#deff9a" }} dir="ltr">
+                <p className="text-xs font-black uppercase tracking-widest" style={{ color: "var(--text-hint)" }}>Price per person</p>
+                <p className="text-lg font-black" style={{ color: "var(--brand)" }} dir="ltr">
                   {request.monthlyPrice != null && request.numberOfPeople > 0
                     ? (request.monthlyPrice / request.numberOfPeople).toFixed(0)
                     : (request.monthlyPrice?.toFixed(0) ?? "—")}{" "}
                   <span className="text-xs font-normal" style={{ color: "rgba(222,255,154,0.5)" }}>SAR</span>
                 </p>
                 {request.numberOfPeople > 1 && request.monthlyPrice != null && (
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                     {request.numberOfPeople} × {(request.monthlyPrice / request.numberOfPeople).toFixed(0)} = {request.monthlyPrice.toFixed(0)} ر.س إجمالي
                   </p>
                 )}
@@ -224,7 +224,7 @@ export default function RequestDetails() {
                 return (
                   <span key={i} className="text-xs px-2 py-0.5 rounded-full font-black"
                     style={active
-                      ? { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a", border: "1px solid rgba(222,255,154,0.2)" }
+                      ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
                       : { backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
                     {d}
                   </span>
@@ -235,17 +235,17 @@ export default function RequestDetails() {
         </div>
 
         {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
-          <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "#111111", border: "1px solid rgba(222,255,154,0.2)" }}>
+          <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>
             <div className="p-5" style={{ backgroundColor: "rgba(222,255,154,0.07)", borderBottom: "1px solid rgba(222,255,154,0.15)" }}>
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={16} style={{ color: "#deff9a" }} />
-                <span className="font-bold" style={{ color: "#deff9a" }}>
+                <CheckCircle size={16} style={{ color: "var(--brand)" }} />
+                <span className="font-bold" style={{ color: "var(--brand)" }}>
                   {request.status === "COMPLETED" ? "تمت الاتفاقية" : "تم اختيار السائق"}
                 </span>
               </div>
               <p className="text-2xl font-black text-white">{request.selectedDriver.name}</p>
               {request.selectedDriver.carType && (
-                <p className="text-xs font-bold mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>{request.selectedDriver.carType}</p>
+                <p className="text-xs font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>{request.selectedDriver.carType}</p>
               )}
             </div>
             {request.selectedDriver.mobile && (
@@ -276,25 +276,25 @@ export default function RequestDetails() {
               <button onClick={() => setShowChat(!showChat)}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-colors"
                 style={showChat
-                  ? { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a", border: "1px solid rgba(222,255,154,0.2)" }
-                  : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
+                  : { backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-sub)", border: "1px solid var(--border-subtle)" }}>
                 <MessageCircle size={14} /> {showChat ? "إخفاء" : "المحادثة"}
               </button>
             )}
           </div>
 
           {showChat && canChat && (
-            <div className="mb-6 rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#1a1a1a", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="mb-6 rounded-3xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center gap-2">
-                  <MessageCircle size={15} style={{ color: "#deff9a" }} />
-                  <span className="font-black text-sm" style={{ color: "#deff9a" }}>محادثة مع السائق</span>
+                  <MessageCircle size={15} style={{ color: "var(--brand)" }} />
+                  <span className="font-black text-sm" style={{ color: "var(--brand)" }}>محادثة مع السائق</span>
                 </div>
-                <button onClick={() => setShowChat(false)} style={{ color: "rgba(255,255,255,0.35)" }}><X size={14} /></button>
+                <button onClick={() => setShowChat(false)} style={{ color: "var(--text-hint)" }}><X size={14} /></button>
               </div>
-              <div className="max-h-72 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "#0d0d0d" }} dir="rtl">
+              <div className="max-h-72 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "var(--header-bg)" }} dir="rtl">
                 {(!chatMessages || chatMessages.length === 0) && (
-                  <p className="text-center text-xs py-6 font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
+                  <p className="text-center text-xs py-6 font-bold" style={{ color: "var(--text-hint)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
                 )}
                 {chatMessages?.map((msg) => {
                   const isMe = msg.senderRole === "client";
@@ -302,9 +302,9 @@ export default function RequestDetails() {
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                       <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
                         style={isMe
-                          ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
-                          : { backgroundColor: "#1e1e1e", color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                        {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{msg.senderRole === "admin" ? "الإدارة" : "السائق"}</p>}
+                          ? { backgroundColor: "var(--brand)", color: "var(--bg)" }
+                          : { backgroundColor: "#1e1e1e", color: "rgba(255,255,255,0.8)", border: "1px solid var(--border-subtle)" }}>
+                        {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>{msg.senderRole === "admin" ? "الإدارة" : "السائق"}</p>}
                         <p>{msg.body}</p>
                       </div>
                     </div>
@@ -312,33 +312,33 @@ export default function RequestDetails() {
                 })}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-2 flex gap-2" style={{ backgroundColor: "#111111", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="p-2 flex gap-2" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                 <input
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                   placeholder="اكتب رسالة..."
                   className="flex-1 text-sm px-3 py-2 rounded-xl"
-                  style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }}
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "#fff", outline: "none" }}
                   dir="rtl"
                 />
                 <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
                   disabled={!chatMessage.trim() || sendMessage.isPending}
                   className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-50"
-                  style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
+                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}>
                   <Send size={15} />
                 </button>
               </div>
             </div>
           )}
 
-          {loadingOffers && <div className="text-center py-8 text-sm font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div>}
+          {loadingOffers && <div className="text-center py-8 text-sm font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>}
 
           {!loadingOffers && (!offers || offers.length === 0) && (
-            <div className="text-center py-12 rounded-3xl" style={{ backgroundColor: "#111111", border: "2px dashed rgba(255,255,255,0.08)" }}>
+            <div className="text-center py-12 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
               <p className="text-3xl mb-2">⏳</p>
               <p className="font-black text-white">لا يوجد سائقون قبلوا بعد</p>
-              <p className="text-sm font-bold mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>ستظهر أسماء السائقين هنا عند قبولهم طلبك</p>
+              <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>ستظهر أسماء السائقين هنا عند قبولهم طلبك</p>
             </div>
           )}
 
@@ -347,23 +347,23 @@ export default function RequestDetails() {
               const isSelected = request.selectedDriverId === offer.driverId;
               return (
                 <div key={offer.id} className="rounded-2xl overflow-hidden"
-                  style={{ backgroundColor: "#111111", border: `1px solid ${isSelected ? "rgba(222,255,154,0.25)" : "rgba(255,255,255,0.08)"}` }}>
+                  style={{ backgroundColor: "var(--surface)", border: `1px solid ${isSelected ? "rgba(222,255,154,0.25)" : "var(--border-subtle)"}` }}>
                   {isSelected && (
                     <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "rgba(222,255,154,0.08)", borderBottom: "1px solid rgba(222,255,154,0.15)" }}>
-                      <CheckCircle size={14} style={{ color: "#deff9a" }} />
-                      <span className="text-xs font-bold" style={{ color: "#deff9a" }}>السائق المؤكَّد</span>
+                      <CheckCircle size={14} style={{ color: "var(--brand)" }} />
+                      <span className="text-xs font-bold" style={{ color: "var(--brand)" }}>السائق المؤكَّد</span>
                     </div>
                   )}
                   <div className="p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black"
-                          style={{ backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" }}>
+                          style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
                           {offer.driver?.name?.charAt(0) ?? "س"}
                         </div>
                         <div>
                           <p className="font-black text-white">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                          {offer.driver?.carType && <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{offer.driver.carType}</p>}
+                          {offer.driver?.carType && <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</p>}
                         </div>
                       </div>
                       {isOpen && !request.selectedDriverId && (
@@ -371,7 +371,7 @@ export default function RequestDetails() {
                           onClick={() => handleSelect(offer.id)}
                           disabled={selectOffer.isPending}
                           className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform disabled:opacity-50"
-                          style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+                          style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
                         >
                           تأكيد السائق
                         </button>

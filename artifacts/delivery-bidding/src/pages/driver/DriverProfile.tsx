@@ -63,7 +63,7 @@ export default function DriverProfile() {
   if (!user) return null;
 
   if (isLoading) {
-    return <Layout role="driver"><div className="text-center py-16 font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div></Layout>;
+    return <Layout role="driver"><div className="text-center py-16 font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div></Layout>;
   }
 
   const handleChargeSubmit = async (e: React.FormEvent) => {
@@ -135,11 +135,11 @@ export default function DriverProfile() {
 
         {/* ── Hero Balance Card ── */}
         {driver && (
-          <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: "rgba(222,255,154,0.1)", border: "1px solid rgba(222,255,154,0.2)" }}>🚗</div>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>🚗</div>
                   <div>
                     <p className="text-white font-black text-xl">{driver.name}</p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -164,8 +164,8 @@ export default function DriverProfile() {
 
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>رصيد المحفظة</p>
-                  <p className="font-black" style={{ fontSize: "2.75rem", lineHeight: 1, color: "#deff9a" }} dir="ltr">
+                  <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>رصيد المحفظة</p>
+                  <p className="font-black" style={{ fontSize: "2.75rem", lineHeight: 1, color: "var(--brand)" }} dir="ltr">
                     {driver.balance?.toFixed(2)}
                     <span className="text-xl font-bold mr-2" style={{ color: "rgba(222,255,154,0.5)" }}>ر.س</span>
                   </p>
@@ -173,7 +173,7 @@ export default function DriverProfile() {
                 <button
                   onClick={() => setShowChargeModal(true)}
                   className="flex items-center gap-2 px-5 py-3 rounded-xl font-black text-sm min-h-[44px]"
-                  style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
                 >
                   <Wallet size={16} />
                   شحن المحفظة
@@ -195,18 +195,18 @@ export default function DriverProfile() {
         {driver && (
           <>
             {/* ── Earnings Summary ── */}
-            <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(222,255,154,0.15)" }}>
+            <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid rgba(222,255,154,0.15)" }}>
               <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(222,255,154,0.1)", border: "1px solid rgba(222,255,154,0.2)" }}>
-                  <TrendingUp size={18} style={{ color: "#deff9a" }} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                  <TrendingUp size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>
                   <p className="font-black text-white">الأرباح الشهرية</p>
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>إجمالي الدخل من الاشتراكات</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>إجمالي الدخل من الاشتراكات</p>
                 </div>
               </div>
               <div className="p-5">
-                <p className="text-5xl font-black tracking-tight mb-4" style={{ color: "#deff9a" }} dir="ltr">
+                <p className="text-5xl font-black tracking-tight mb-4" style={{ color: "var(--brand)" }} dir="ltr">
                   {totalEarnings.toFixed(0)} <span className="text-2xl" style={{ color: "rgba(222,255,154,0.5)" }}>ريال</span>
                 </p>
                 <div className="grid grid-cols-3 gap-2">
@@ -217,7 +217,7 @@ export default function DriverProfile() {
                   ].map((s) => (
                     <div key={s.label} className="rounded-2xl p-3 text-center" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <p className="font-black text-white text-base leading-tight">{s.value}</p>
-                      <p className="text-[10px] mt-0.5 leading-tight font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{s.label}</p>
+                      <p className="text-[10px] mt-0.5 leading-tight font-bold" style={{ color: "var(--text-muted)" }}>{s.label}</p>
                     </div>
                   ))}
                 </div>
@@ -226,14 +226,14 @@ export default function DriverProfile() {
 
             {/* ── Bank Accounts for Transfer ── */}
             {bankAccounts.length > 0 && (
-              <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.2)" }}>
                     <Landmark size={18} style={{ color: "#60a5fa" }} />
                   </div>
                   <div>
                     <p className="font-black text-white">حسابات التحويل</p>
-                    <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>حوّل إليها للشحن ثم ارفع الإيصال</p>
+                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>حوّل إليها للشحن ثم ارفع الإيصال</p>
                   </div>
                 </div>
                 <div className="p-4 space-y-3">
@@ -243,9 +243,9 @@ export default function DriverProfile() {
                         <p className="font-black text-white text-sm">{acc.bankName}</p>
                         <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(96,165,250,0.1)", color: "#60a5fa" }}>للتحويل</span>
                       </div>
-                      <p className="text-base font-mono font-bold mb-1" style={{ color: "#deff9a" }} dir="ltr">{acc.iban}</p>
+                      <p className="text-base font-mono font-bold mb-1" style={{ color: "var(--brand)" }} dir="ltr">{acc.iban}</p>
                       <div className="flex items-center gap-1.5">
-                        <User size={12} className="shrink-0" style={{ color: "rgba(255,255,255,0.35)" }} />
+                        <User size={12} className="shrink-0" style={{ color: "var(--text-hint)" }} />
                         <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>{acc.accountHolderName}</p>
                       </div>
                     </div>
@@ -255,7 +255,7 @@ export default function DriverProfile() {
             )}
 
             {/* ── Wallet History ── */}
-            <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)" }}>
@@ -263,13 +263,13 @@ export default function DriverProfile() {
                   </div>
                   <div>
                     <p className="font-black text-white">سجل الشحن</p>
-                    <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>آخر طلبات شحن المحفظة</p>
+                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>آخر طلبات شحن المحفظة</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowChargeModal(true)}
                   className="flex items-center gap-1.5 text-xs font-black px-3 py-2 rounded-xl min-h-[36px]"
-                  style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+                  style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
                 >
                   + شحن جديد
                 </button>
@@ -278,11 +278,11 @@ export default function DriverProfile() {
               {transactions.length === 0 ? (
                 <div className="py-12 text-center">
                   <div className="text-4xl mb-3">💳</div>
-                  <p className="font-bold text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>لا توجد معاملات شحن حتى الآن</p>
+                  <p className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>لا توجد معاملات شحن حتى الآن</p>
                   <button
                     onClick={() => setShowChargeModal(true)}
                     className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold min-h-[40px]"
-                    style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+                    style={{ backgroundColor: "var(--brand)", color: "var(--bg)" }}
                   >
                     <Wallet size={14} />
                     ابدأ بشحن محفظتك
@@ -295,9 +295,9 @@ export default function DriverProfile() {
                       <div>
                         <p className="font-black text-white text-base" dir="ltr">
                           {parseFloat(String(tx.amount)).toFixed(2)}
-                          <span className="text-sm font-bold mr-1" style={{ color: "rgba(255,255,255,0.4)" }}>ر.س</span>
+                          <span className="text-sm font-bold mr-1" style={{ color: "var(--text-muted)" }}>ر.س</span>
                         </p>
-                        <p className="text-xs mt-0.5 font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+                        <p className="text-xs mt-0.5 font-bold" style={{ color: "var(--text-hint)" }}>
                           {new Date(tx.createdAt).toLocaleDateString("ar-SA", { day: "numeric", month: "long" })}
                         </p>
                       </div>
@@ -309,7 +309,7 @@ export default function DriverProfile() {
             </div>
 
             {/* ── Profile Info ── */}
-            <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
                   <User size={18} style={{ color: "rgba(255,255,255,0.5)" }} />
@@ -318,13 +318,13 @@ export default function DriverProfile() {
               </div>
               <div className="p-5 space-y-1">
                 {driver.mobile && (
-                  <ProfileRow icon={<Phone size={15} style={{ color: "rgba(255,255,255,0.35)" }} />} label="رقم الجوال" value={driver.mobile} ltr />
+                  <ProfileRow icon={<Phone size={15} style={{ color: "var(--text-hint)" }} />} label="رقم الجوال" value={driver.mobile} ltr />
                 )}
                 {driver.carType && (
-                  <ProfileRow icon={<Car size={15} style={{ color: "rgba(255,255,255,0.35)" }} />} label="نوع السيارة" value={driver.carType} />
+                  <ProfileRow icon={<Car size={15} style={{ color: "var(--text-hint)" }} />} label="نوع السيارة" value={driver.carType} />
                 )}
                 {driver.nationality && (
-                  <ProfileRow icon={<Globe size={15} style={{ color: "rgba(255,255,255,0.35)" }} />} label="الجنسية" value={driver.nationality} />
+                  <ProfileRow icon={<Globe size={15} style={{ color: "var(--text-hint)" }} />} label="الجنسية" value={driver.nationality} />
                 )}
                 {driver.age && (
                   <ProfileRow icon={<span className="text-sm">🎂</span>} label="العمر" value={`${driver.age} سنة`} />
@@ -340,7 +340,7 @@ export default function DriverProfile() {
               </div>
               <div className="mx-5 mb-5 p-3 rounded-xl flex items-center gap-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <span className="text-base">🔑</span>
-                <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>رمز تسجيل الدخول يُدار بواسطة الإدارة — تواصل معهم لتغييره</p>
+                <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>رمز تسجيل الدخول يُدار بواسطة الإدارة — تواصل معهم لتغييره</p>
               </div>
             </div>
           </>
@@ -350,22 +350,22 @@ export default function DriverProfile() {
       {/* ── Charge Modal ── */}
       {showChargeModal && (
         <div className="fixed inset-0 flex items-end justify-center z-50 p-4" style={{ backgroundColor: "rgba(0,0,0,0.8)" }}>
-          <div className="rounded-3xl w-full max-w-md overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.1)" }} dir="rtl">
+          <div className="rounded-3xl w-full max-w-md overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }} dir="rtl">
             {/* Modal header */}
-            <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(222,255,154,0.1)" }}>
-                  <Wallet size={18} style={{ color: "#deff9a" }} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)" }}>
+                  <Wallet size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>
                   <p className="font-black text-white">طلب شحن المحفظة</p>
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>أرسل الإيصال بعد التحويل</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>أرسل الإيصال بعد التحويل</p>
                 </div>
               </div>
               <button
                 onClick={() => { setShowChargeModal(false); setReceiptFile(null); setAmount(""); }}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-                style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}>
+                style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}>
                 <X size={16} />
               </button>
             </div>
@@ -383,8 +383,8 @@ export default function DriverProfile() {
                       <div className="flex items-center justify-between mb-1">
                         <p className="font-black text-white text-sm">{acc.bankName}</p>
                       </div>
-                      <p className="text-sm font-mono font-bold" style={{ color: "#deff9a" }} dir="ltr">{acc.iban}</p>
-                      <p className="text-xs mt-0.5 font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{acc.accountHolderName}</p>
+                      <p className="text-sm font-mono font-bold" style={{ color: "var(--brand)" }} dir="ltr">{acc.iban}</p>
+                      <p className="text-xs mt-0.5 font-bold" style={{ color: "var(--text-muted)" }}>{acc.accountHolderName}</p>
                     </div>
                   ))}
                 </div>
@@ -392,7 +392,7 @@ export default function DriverProfile() {
 
               <form onSubmit={handleChargeSubmit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>المبلغ المحوّل (ريال)</label>
+                  <label className="text-sm font-bold block mb-2" style={{ color: "var(--text-sub)" }}>المبلغ المحوّل (ريال)</label>
                   <input
                     type="number"
                     min="1"
@@ -406,7 +406,7 @@ export default function DriverProfile() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>إيصال التحويل (صورة)</label>
+                  <label className="text-sm font-bold block mb-2" style={{ color: "var(--text-sub)" }}>إيصال التحويل (صورة)</label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -421,7 +421,7 @@ export default function DriverProfile() {
                         <CheckCircle2 size={18} className="shrink-0" style={{ color: "#34d399" }} />
                         <span className="text-sm font-bold truncate max-w-[180px]" style={{ color: "#34d399" }}>{receiptFile.name}</span>
                       </div>
-                      <button type="button" onClick={() => setReceiptFile(null)} style={{ color: "rgba(255,255,255,0.35)" }}>
+                      <button type="button" onClick={() => setReceiptFile(null)} style={{ color: "var(--text-hint)" }}>
                         <X size={15} />
                       </button>
                     </div>
@@ -430,7 +430,7 @@ export default function DriverProfile() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className="w-full flex items-center justify-center gap-2 p-4 rounded-xl text-sm min-h-[52px] transition-colors"
-                      style={{ border: "2px dashed rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)" }}
+                      style={{ border: "2px dashed rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
                     >
                       <Upload size={18} />
                       اضغط لإرفاق صورة الإيصال
@@ -462,7 +462,7 @@ export default function DriverProfile() {
 function ProfileRow({ icon, label, value, ltr }: { icon: React.ReactNode; label: string; value: string; ltr?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-2 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-      <span className="flex items-center gap-2 text-sm font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>
+      <span className="flex items-center gap-2 text-sm font-bold" style={{ color: "var(--text-muted)" }}>
         {icon}
         {label}
       </span>

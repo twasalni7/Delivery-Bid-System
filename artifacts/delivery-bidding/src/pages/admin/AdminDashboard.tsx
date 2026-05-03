@@ -17,7 +17,7 @@ const ARABIC_MONTHS = [
   "يناير","فبراير","مارس","أبريل","مايو","يونيو",
   "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر",
 ];
-const PIE_COLORS = ["#deff9a", "rgba(222,255,154,0.5)", "rgba(222,255,154,0.3)", "rgba(255,255,255,0.1)"];
+const PIE_COLORS = ["var(--brand)", "var(--brand-subtle)", "var(--status-active-bg)", "var(--surface-3)"];
 const MONTH_OPTIONS = [
   { label: "3 أشهر", value: 3 as const },
   { label: "6 أشهر", value: 6 as const },
@@ -63,10 +63,10 @@ type RecentEvent = {
 };
 
 const EVENT_TYPE_CONFIG: Record<RecentEvent["type"], { icon: React.ReactNode; label: string; color: string; style?: React.CSSProperties }> = {
-  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "rgba(222,255,154,0.15)", color: "#deff9a" } },
+  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "rgba(222,255,154,0.15)", color: "var(--brand)" } },
   support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "", style: { backgroundColor: "rgba(251,191,36,0.15)", color: "#fbbf24" } },
   request: { icon: <FileText size={14} />, label: "طلب جديد", color: "", style: { backgroundColor: "rgba(99,102,241,0.15)", color: "#a5b4fc" } },
-  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "", style: { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" } },
+  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "", style: { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } },
 };
 
 export default function AdminDashboard() {
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-2xl font-black text-white">لوحة الإدارة</h1>
-            <p className="font-bold text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>نظرة عامة على المنصة والإحصائيات</p>
+            <p className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>نظرة عامة على المنصة والإحصائيات</p>
           </div>
           {analytics && (
             <button
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {isLoading && <div className="text-center py-16 font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>جاري التحميل...</div>}
+        {isLoading && <div className="text-center py-16 font-bold" style={{ color: "var(--text-muted)" }}>جاري التحميل...</div>}
 
         {/* Push notifications opt-in */}
         <div className="mb-5">
@@ -168,23 +168,23 @@ export default function AdminDashboard() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               {STAT_CARDS.map((s) => (
-                <div key={s.key} className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>{s.label}</p>
-                  <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{stats[s.key]}</p>
+                <div key={s.key} className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>{s.label}</p>
+                  <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{stats[s.key]}</p>
                 </div>
               ))}
             </div>
             <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>مكتمل</p>
-                <p className="text-2xl font-black" style={{ color: "#deff9a" }}>{stats.completedRequests}</p>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>مكتمل</p>
+                <p className="text-2xl font-black" style={{ color: "var(--brand)" }}>{stats.completedRequests}</p>
               </div>
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>السائقون</p>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>السائقون</p>
                 <p className="text-2xl font-black text-white">{stats.totalDrivers}</p>
               </div>
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>العروض</p>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>العروض</p>
                 <p className="text-2xl font-black text-white">{stats.totalOffers}</p>
               </div>
             </div>
@@ -197,30 +197,30 @@ export default function AdminDashboard() {
               <Banknote size={16} /> الإحصائيات المالية
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "rgba(255,255,255,0.45)" }}>
+              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                   <Banknote size={12} /> إجمالي الرسوم المحصّلة
                 </p>
-                <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{financial.totalFeesCollected.toLocaleString("ar-SA")} ريال</p>
-                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>{financial.acceptedContractsCount} عقد × 50 ريال</p>
+                <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalFeesCollected.toLocaleString("ar-SA")} ريال</p>
+                <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>{financial.acceptedContractsCount} عقد × 50 ريال</p>
               </div>
-              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "rgba(255,255,255,0.45)" }}>
+              <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                   <Wallet size={12} /> إجمالي أرصدة السائقين
                 </p>
-                <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{financial.totalDriversBalance.toLocaleString("ar-SA")} ريال</p>
-                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>مجموع أرصدة {financial.driverBalances.length} سائق</p>
+                <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalDriversBalance.toLocaleString("ar-SA")} ريال</p>
+                <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>مجموع أرصدة {financial.driverBalances.length} سائق</p>
               </div>
               {financial.totalTransactionsAmount > 0 && (
-                <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <p className="text-xs font-bold mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>إجمالي المعاملات المالية</p>
-                  <p className="text-3xl font-black" style={{ color: "#deff9a" }}>{financial.totalTransactionsAmount.toLocaleString("ar-SA")} ريال</p>
-                  <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>من جدول المعاملات</p>
+                <div className="rounded-2xl p-4 text-white" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>إجمالي المعاملات المالية</p>
+                  <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalTransactionsAmount.toLocaleString("ar-SA")} ريال</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>من جدول المعاملات</p>
                 </div>
               )}
             </div>
             {financial.driverBalances.length > 0 && (
-              <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-sm font-black text-white mb-3 flex items-center gap-2">
                   <Wallet size={14} /> توزيع أرصدة السائقين
                 </p>
@@ -228,19 +228,19 @@ export default function AdminDashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>#</th>
-                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>السائق</th>
-                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>الرصيد (ريال)</th>
+                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>#</th>
+                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>السائق</th>
+                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>الرصيد (ريال)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {financial.driverBalances.map((driver, index) => (
                         <tr key={driver.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                          <td className="py-2 px-2 font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>{index + 1}</td>
+                          <td className="py-2 px-2 font-bold" style={{ color: "var(--text-muted)" }}>{index + 1}</td>
                           <td className="py-2 px-2 font-bold text-white">{driver.name}</td>
                           <td className="py-2 px-2">
                             <span className={`font-black ${driver.balance > 0 ? "text-emerald-400" : driver.balance < 0 ? "text-red-400" : ""}`}
-                              style={driver.balance === 0 ? { color: "rgba(255,255,255,0.3)" } : {}}>
+                              style={driver.balance === 0 ? { color: "var(--text-hint)" } : {}}>
                               {driver.balance.toLocaleString("ar-SA")}
                             </span>
                           </td>
@@ -268,7 +268,7 @@ export default function AdminDashboard() {
                       ? "text-black"
                       : "text-white"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  style={selectedMonths === opt.value && !appliedRange ? { backgroundColor: "#deff9a" } : { color: "rgba(255,255,255,0.45)" }}
+                  style={selectedMonths === opt.value && !appliedRange ? { backgroundColor: "var(--brand)" } : { color: "var(--text-muted)" }}
                 >
                   {opt.label}
                 </button>
@@ -276,28 +276,28 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 rounded-xl p-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <span className="text-xs font-bold shrink-0" style={{ color: "rgba(255,255,255,0.45)" }}>نطاق مخصص:</span>
+            <span className="text-xs font-bold shrink-0" style={{ color: "var(--text-muted)" }}>نطاق مخصص:</span>
             <input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
               className={`input-dark text-xs rounded-lg px-2 py-1 focus:outline-none transition-colors`}
-              style={appliedRange ? { borderColor: "#deff9a" } : {}}
+              style={appliedRange ? { borderColor: "var(--brand)" } : {}}
             />
-            <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>—</span>
+            <span className="text-xs" style={{ color: "var(--text-hint)" }}>—</span>
             <input
               type="date"
               value={toDate}
               min={fromDate || undefined}
               onChange={(e) => setToDate(e.target.value)}
               className={`input-dark text-xs rounded-lg px-2 py-1 focus:outline-none transition-colors`}
-              style={appliedRange ? { borderColor: "#deff9a" } : {}}
+              style={appliedRange ? { borderColor: "var(--brand)" } : {}}
             />
             <button
               onClick={handleApplyCustomRange}
               disabled={!fromDate || !toDate}
               className="text-xs font-bold px-3 py-1 rounded-lg text-black disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ backgroundColor: "#deff9a" }}
+              style={{ backgroundColor: "var(--brand)" }}
             >
               تطبيق
             </button>
@@ -316,44 +316,44 @@ export default function AdminDashboard() {
           <div className="relative">
             {analyticsFetching && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl gap-3" style={{ backgroundColor: "rgba(0,0,0,0.7)" }}>
-                <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: "rgba(222,255,154,0.3)", borderTopColor: "#deff9a" }} />
-                <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>جاري التحميل...</span>
+                <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: "rgba(222,255,154,0.3)", borderTopColor: "var(--brand)" }} />
+                <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>جاري التحميل...</span>
               </div>
             )}
           <div className={analyticsFetching ? "opacity-40 pointer-events-none select-none" : ""}>
           <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
-              <div className="rounded-2xl p-4 lg:col-span-2" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl p-4 lg:col-span-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-sm font-black text-white mb-3">حجم الطلبات الشهري</p>
                 {monthlyChartData.length === 0
-                  ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>لا توجد بيانات</div>
+                  ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "var(--text-hint)" }}>لا توجد بيانات</div>
                   : <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={monthlyChartData} margin={{ top: 4, right: 8, left: -16, bottom: 40 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.4)" }} angle={-40} textAnchor="end" interval={0} />
-                        <YAxis tick={{ fontSize: 11, fill: "rgba(255,255,255,0.4)" }} allowDecimals={false} />
-                        <Tooltip formatter={(value: number) => [value, "طلب"]} contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
-                        <Bar dataKey="count" fill="#deff9a" radius={[4, 4, 0, 0]} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--text-muted)" }} angle={-40} textAnchor="end" interval={0} />
+                        <YAxis tick={{ fontSize: 11, fill: "var(--text-muted)" }} allowDecimals={false} />
+                        <Tooltip formatter={(value: number) => [value, "طلب"]} contentStyle={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "#fff" }} />
+                        <Bar dataKey="count" fill="var(--brand)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                 }
               </div>
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-sm font-black text-white mb-2">توزيع الحالات</p>
                 {totalRequests === 0
-                  ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>لا توجد بيانات</div>
+                  ? <div className="h-48 flex items-center justify-center text-sm" style={{ color: "var(--text-hint)" }}>لا توجد بيانات</div>
                   : <>
                       <ResponsiveContainer width="100%" height={160}>
                         <PieChart>
                           <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={2}>
                             {pieData.map((_e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                           </Pie>
-                          <Legend formatter={(v) => <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>{v}</span>} />
-                          <Tooltip formatter={(v: number) => [v, "طلب"]} contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                          <Legend formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-sub)" }}>{v}</span>} />
+                          <Tooltip formatter={(v: number) => [v, "طلب"]} contentStyle={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "#fff" }} />
                         </PieChart>
                       </ResponsiveContainer>
-                      <p className="text-center text-xs mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
-                        نسبة الاختيار: <span className="font-black" style={{ color: "#deff9a" }}>{selectionRate}%</span>
+                      <p className="text-center text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                        نسبة الاختيار: <span className="font-black" style={{ color: "var(--brand)" }}>{selectionRate}%</span>
                       </p>
                     </>
                 }
@@ -361,14 +361,14 @@ export default function AdminDashboard() {
             </div>
 
             {(analytics?.topDrivers.length ?? 0) > 0 && (
-              <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-sm font-black text-white mb-3">🏆 أفضل السائقين</p>
                 <div className="space-y-2">
                   {analytics?.topDrivers.map((d, i) => (
                     <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
-                      <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 text-black" style={{ backgroundColor: "#deff9a" }}>{i + 1}</span>
+                      <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 text-black" style={{ backgroundColor: "var(--brand)" }}>{i + 1}</span>
                       <span className="flex-1 font-bold text-sm text-white">{d.name}</span>
-                      <span className="text-sm font-black" style={{ color: "#deff9a" }}>{d.acceptedBids} عقد</span>
+                      <span className="text-sm font-black" style={{ color: "var(--brand)" }}>{d.acceptedBids} عقد</span>
                     </div>
                   ))}
                 </div>
@@ -392,7 +392,7 @@ export default function AdminDashboard() {
               key={item.href}
               href={item.href}
               className="rounded-2xl p-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
-              style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
+              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}
             >
               <span className="text-2xl">{item.emoji}</span>
               <span className="text-sm font-black text-white">{item.label}</span>
@@ -401,19 +401,19 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── Recent Events ── */}
-        <div className="rounded-2xl overflow-hidden mb-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-2xl overflow-hidden mb-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <h2 className="text-base font-black text-white flex items-center gap-2">
-              <Clock size={16} style={{ color: "#deff9a" }} />
+              <Clock size={16} style={{ color: "var(--brand)" }} />
               الأحداث الأخيرة
             </h2>
-            <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ color: "rgba(255,255,255,0.3)", backgroundColor: "rgba(255,255,255,0.04)" }}>يُحدَّث كل 30 ث</span>
+            <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ color: "var(--text-hint)", backgroundColor: "rgba(255,255,255,0.04)" }}>يُحدَّث كل 30 ث</span>
           </div>
           {recentEvents.length === 0 ? (
             <div className="py-12 text-center">
               <div className="text-3xl mb-2">📭</div>
-              <p className="font-bold text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>لا توجد أحداث حديثاً</p>
-              <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>ستظهر هنا الأحداث الجديدة تلقائياً</p>
+              <p className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>لا توجد أحداث حديثاً</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>ستظهر هنا الأحداث الجديدة تلقائياً</p>
             </div>
           ) : (
             <div>
@@ -433,12 +433,12 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-white truncate">{event.description}</p>
                       {event.userName && (
-                        <p className="text-xs truncate mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>{event.userName}</p>
+                        <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-muted)" }}>{event.userName}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{timeAgo(event.createdAt)}</span>
-                      <ChevronLeft size={14} style={{ color: "rgba(255,255,255,0.3)" }} aria-hidden="true" />
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>{timeAgo(event.createdAt)}</span>
+                      <ChevronLeft size={14} style={{ color: "var(--text-hint)" }} aria-hidden="true" />
                     </div>
                   </button>
                 );

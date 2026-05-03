@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/react";
 import App from "./App";
 import "./index.css";
 import { API_ORIGIN } from "@/lib/api-config";
+import { ThemeProvider } from "@/contexts/theme-context";
 
 // ─── Sentry Error Monitoring ─────────────────────────────────────────────────
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
@@ -36,7 +37,8 @@ setAuthTokenGetter(() => {
 });
 
 createRoot(document.getElementById("root")!).render(
-  <Sentry.ErrorBoundary
+  <ThemeProvider>
+    <Sentry.ErrorBoundary
     fallback={
       <div
         dir="rtl"
@@ -47,9 +49,9 @@ createRoot(document.getElementById("root")!).render(
           alignItems: "center",
           justifyContent: "center",
           padding: "2rem",
-          background: "#000",
-          color: "#fff",
-          fontFamily: "Cairo, sans-serif",
+          background: "var(--bg)",
+          color: "var(--text)",
+          fontFamily: "var(--font-arabic)",
         }}
       >
         <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⚠️</div>
@@ -62,9 +64,9 @@ createRoot(document.getElementById("root")!).render(
         <button
           onClick={() => window.location.reload()}
           style={{
-            background: "#deff9a",
-            color: "#000",
-            fontWeight: 900,
+            background: "var(--brand)",
+            color: "var(--brand-fg)",
+            fontWeight: 700,
             padding: "0.75rem 2rem",
             borderRadius: "0.75rem",
             border: "none",
@@ -78,6 +80,7 @@ createRoot(document.getElementById("root")!).render(
   >
     <App />
   </Sentry.ErrorBoundary>
+  </ThemeProvider>
 );
 
 // ─── Register Service Worker ──────────────────────────────────────────────
