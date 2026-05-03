@@ -14,6 +14,7 @@ import messagesRouter from "./messages";
 import pricingRouter from "./pricing";
 import activityLogsRouter from "./activity-logs";
 import serviceAreasRouter from "./service-areas";
+import operationsRouter from "./operations";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use("/messages", messagesRouter);
 router.use("/pricing", pricingRouter);
 router.use("/activity-logs", activityLogsRouter);
 router.use("/service-areas", serviceAreasRouter);
+router.use("/admin", operationsRouter);
 
 export default router;

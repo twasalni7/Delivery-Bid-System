@@ -9,7 +9,7 @@ import {
   type SharingDiscount,
   ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db/utils/pricing";
-import { eq, and, lte, gt } from "drizzle-orm";
+import { eq, and, lte, gt, gte } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
 
@@ -85,10 +85,38 @@ export async function getPriceFromMatrix(
     return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
   }
 
-  // Fetch the base-price row (num_passengers=1) which stores price_sar —
-  // the total route cost for a single occupant. Dividing by the actual
-  // passenger count gives each person's dynamic share.
-  const rows = await db
+  const passengers = Math.max(1, Math.round(numPassengers));
+
+  // First: try to find a specific row for this passenger count range
+  const specificRows = await db
+    .select()
+    .from(pricingMatrixTable)
+    .where(
+      and(
+        lte(pricingMatrixTable.distanceMinKm, distanceKm),
+        gt(pricingMatrixTable.distanceMaxKm, distanceKm),
+        lte(pricingMatrixTable.passengersMin, passengers),
+        gte(pricingMatrixTable.passengersMax ?? 4, passengers),
+      )
+    )
+    .limit(1);
+
+  if (specificRows.length > 0) {
+    const row = specificRows[0]!;
+    const priceSar = row.priceSar ?? row.pricePerPerson;
+    if (priceSar != null && priceSar > 0) {
+      return {
+        pricePerPerson: priceSar / passengers,
+        price: priceSar,
+        needsAdminReview: false,
+        distanceKm,
+        numberOfPeople: passengers,
+      };
+    }
+  }
+
+  // Fallback: get base row (passengersMin=1) and divide by passenger count
+  const baseRows = await db
     .select({
       priceSar: pricingMatrixTable.priceSar,
       passengersMax: pricingMatrixTable.passengersMax,
@@ -104,21 +132,18 @@ export async function getPriceFromMatrix(
     )
     .limit(1);
 
-  if (rows.length === 0) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
+  if (baseRows.length === 0) {
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers };
   }
 
-  const row = rows[0];
-
-  // Use price_sar when available (dynamic: reflects any changes made in the
-  // dashboard). Fall back to the stored price_per_person for 1 passenger.
+  const row = baseRows[0]!;
   const priceSar = row.priceSar ?? row.pricePerPerson;
-  if (priceSar == null) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
+  if (priceSar == null || priceSar <= 0) {
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers };
   }
 
   const passengersMax = row.passengersMax ?? 4;
-  const effectivePassengers = Math.min(Math.max(numPassengers, 1), passengersMax);
+  const effectivePassengers = Math.min(passengers, passengersMax);
   const pricePerPerson = priceSar / effectivePassengers;
 
   return {

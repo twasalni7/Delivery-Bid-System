@@ -5,6 +5,7 @@ import {
   driversTable,
   offersTable,
   transactionsTable,
+  requestStopsTable,
 } from "@workspace/db";
 import { haversineKm, calculateMonthlyPrice } from "@workspace/db";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
@@ -251,6 +252,21 @@ router.post("/", requireAuth("client"), async (req, res) => {
       })
       .returning();
 
+    // Insert multi-stop waypoints if provided
+    const stops = (req.body as { stops?: unknown }).stops;
+    if (Array.isArray(stops) && stops.length > 0) {
+      await db.insert(requestStopsTable).values(
+        (stops as Array<{ stopOrder: number; lat: number; lng: number; address: string; stopType?: string }>).map(s => ({
+          requestId: created.id,
+          stopOrder: s.stopOrder,
+          lat: s.lat,
+          lng: s.lng,
+          address: s.address,
+          stopType: s.stopType ?? "waypoint",
+        }))
+      );
+    }
+
     await logActivity({
       actorId:   clientId,
       actorRole: "client",
@@ -264,6 +280,20 @@ router.post("/", requireAuth("client"), async (req, res) => {
     res.status(201).json(formatRequest(req, created, null));
   } catch (err) {
     logger.error({ err }, "requests POST / error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
+});
+
+router.get("/:id/stops", requireAuth(), async (req, res) => {
+  const id = parseInt(req.params["id"]!, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
+  try {
+    const stops = await db.select().from(requestStopsTable)
+      .where(eq(requestStopsTable.requestId, id))
+      .orderBy(requestStopsTable.stopOrder);
+    res.json(stops);
+  } catch (err) {
+    logger.error({ err }, "GET request stops error");
     res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });

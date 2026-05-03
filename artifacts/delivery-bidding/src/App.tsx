@@ -39,6 +39,9 @@ import AdminPricing from "@/pages/admin/AdminPricing";
 import AdminActivityLogs from "@/pages/admin/AdminActivityLogs";
 import AdminServiceAreas from "@/pages/admin/AdminServiceAreas";
 import AdminPushDebug from "@/pages/admin/AdminPushDebug";
+import AdminOperations from "@/pages/admin/AdminOperations";
+import AdminNotificationsMonitor from "@/pages/admin/AdminNotificationsMonitor";
+import AdminDatabaseMonitor from "@/pages/admin/AdminDatabaseMonitor";
 
 // ─── PWA helpers ─────────────────────────────────────────────────────────────
 
@@ -311,6 +314,15 @@ function Router() {
         </Route>
         <Route path="/admin/push-debug">
           <AdminGuard><AdminPushDebug /></AdminGuard>
+        </Route>
+        <Route path="/admin/operations">
+          <AdminGuard><AdminOperations /></AdminGuard>
+        </Route>
+        <Route path="/admin/notifications-monitor">
+          <AdminGuard><AdminNotificationsMonitor /></AdminGuard>
+        </Route>
+        <Route path="/admin/database-monitor">
+          <AdminGuard><AdminDatabaseMonitor /></AdminGuard>
         </Route>
 
         <Route component={NotFound} />
