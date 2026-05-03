@@ -19,6 +19,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
+import { getBidFee } from "./pricing";
 
 const router = Router();
 
@@ -411,6 +412,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         throw Object.assign(new Error("لا يمكن تأكيد سائق بعد اختيار سائق آخر"), { status: 400 });
       }
 
+      const bidFee = await getBidFee();
       const offer = await tx.query.offersTable.findFirst({
         where: and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)),
       });
@@ -425,14 +427,14 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         throw Object.assign(new Error("السائق غير موجود"), { status: 404 });
       }
 
-      if (driver.balance < 50) {
-        throw Object.assign(new Error("رصيد السائق غير كافٍ (الحد الأدنى 50 ريال)"), { status: 400 });
+      if (driver.balance < bidFee) {
+        throw Object.assign(new Error("رصيد السائق غير كافٍ للقبول على هذا الطلب"), { status: 400 });
       }
 
       const [updatedDriver] = await tx
         .update(driversTable)
-        .set({ balance: sql`${driversTable.balance} - 50` })
-        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= 50`))
+        .set({ balance: sql`${driversTable.balance} - ${bidFee}` })
+        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}`))
         .returning();
 
       if (!updatedDriver) {
@@ -468,7 +470,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       try {
         await tx.insert(transactionsTable).values({
           driverId: driver.id,
-          amount: -50,
+          amount: -bidFee,
           type: "fee",
         });
       } catch (err) {

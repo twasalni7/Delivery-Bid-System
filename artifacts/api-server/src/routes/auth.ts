@@ -78,7 +78,6 @@ router.post("/register-client", async (req, res) => {
       .values({ name, mobile, passwordHash })
       .returning();
     await regenerateSession(req);
-    req.session.user = { id: client.id, role: "client", name: client.name };
     const token = await createAuthToken(client.id, "client", client.name);
     await logActivity({ actorId: client.id, actorRole: "client", action: "client.registered", entity: "clients", entityId: client.id, req });
     res.status(201).json({
@@ -114,7 +113,6 @@ router.post("/login-client", async (req, res) => {
       return;
     }
     await regenerateSession(req);
-    req.session.user = { id: client.id, role: "client", name: client.name };
     const token = await createAuthToken(client.id, "client", client.name);
     await logActivity({ actorId: client.id, actorRole: "client", action: "auth.login", entity: "clients", entityId: client.id, req });
     res.json({
@@ -155,7 +153,6 @@ router.post("/login-driver", async (req, res) => {
       return;
     }
     await regenerateSession(req);
-    req.session.user = { id: driver.id, role: "driver", name: driver.name };
     const token = await createAuthToken(driver.id, "driver", driver.name);
     await logActivity({ actorId: driver.id, actorRole: "driver", action: "auth.login", entity: "drivers", entityId: driver.id, req });
     res.json({
@@ -188,7 +185,6 @@ router.post("/login-admin", async (req, res) => {
       return;
     }
     await regenerateSession(req);
-    req.session.user = { id: admin.id, role: "admin", name: admin.name };
     const token = await createAuthToken(admin.id, "admin", admin.name);
     await logActivity({ actorId: admin.id, actorRole: "admin", action: "auth.login", entity: "admins", entityId: admin.id, req });
     res.json({
@@ -252,7 +248,6 @@ router.patch("/me/client", async (req, res) => {
       res.status(404).json({ error: "العميل غير موجود" });
       return;
     }
-    req.session.user = { ...user, name: updated.name };
     res.json({ id: updated.id, name: updated.name, mobile: updated.mobile });
   } catch (err) {
     logger.error({ err }, "me/client error");

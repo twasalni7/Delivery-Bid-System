@@ -8,6 +8,7 @@ import { getSessionUser } from "../lib/session";
 import { notify } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
+import { getBidFee } from "./pricing";
 
 const router = Router();
 
@@ -249,9 +250,10 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       return;
     }
 
-    if (driver.balance < 50) {
+    const bidFee = await getBidFee();
+    if (driver.balance < bidFee) {
       res.status(400).json({
-        error: "رصيد السائق غير كافٍ. الحد الأدنى 50 ريال للقبول على طلب.",
+        error: "رصيد السائق غير كافٍ. الحد الأدنى للقبول على طلب.",
       });
       return;
     }
