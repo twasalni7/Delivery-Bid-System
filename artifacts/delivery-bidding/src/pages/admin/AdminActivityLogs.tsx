@@ -25,18 +25,18 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  "auth.login":             "#60a5fa",
-  "client.registered":      "#34d399",
-  "request.created":        "#a78bfa",
-  "request.status_changed": "#f59e0b",
-  "offer.created":          "#fb923c",
-  "service_area.created":   "#34d399",
-  "service_area.updated":   "#f59e0b",
-  "service_area.deleted":   "#f87171",
+  "auth.login":             "var(--status-frozen-text)",
+  "client.registered":      "var(--status-active-text)",
+  "request.created":        "var(--brand)",
+  "request.status_changed": "var(--status-open-text)",
+  "offer.created":          "var(--status-open-text)",
+  "service_area.created":   "var(--status-active-text)",
+  "service_area.updated":   "var(--status-open-text)",
+  "service_area.deleted":   "var(--status-cancelled-text)",
 };
 
 function actionColor(action: string): string {
-  return ACTION_COLORS[action] ?? "rgba(255,255,255,0.6)";
+  return ACTION_COLORS[action] ?? "var(--text-sub)";
 }
 
 export default function AdminActivityLogs() {
@@ -98,18 +98,18 @@ export default function AdminActivityLogs() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(96,165,250,0.15)" }}>
-              <Activity size={20} style={{ color: "#60a5fa" }} />
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--status-frozen-bg)" }}>
+              <Activity size={20} style={{ color: "var(--status-frozen-text)" }} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white">سجل النشاط</h1>
-              <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>كل العمليات المُسجَّلة في النظام</p>
+              <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>سجل النشاط</h1>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>كل العمليات المُسجَّلة في النظام</p>
             </div>
           </div>
           <button
             onClick={() => fetchLogs(page)}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold"
-            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}
+            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             تحديث
@@ -117,13 +117,13 @@ export default function AdminActivityLogs() {
         </div>
 
         {/* Filters */}
-        <div className="p-4 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-sm font-bold text-white/60">فلترة السجلات</p>
+        <div className="p-4 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>فلترة السجلات</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none"
+              className="input-field"
               dir="rtl"
             >
               <option value="">كل الأدوار</option>
@@ -137,43 +137,43 @@ export default function AdminActivityLogs() {
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
               placeholder="العملية (مثال: auth.login)"
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none placeholder:text-white/30"
+              className="input-field"
               dir="ltr"
             />
             <input
               type="date"
               value={filterFrom}
               onChange={(e) => setFilterFrom(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none"
+              className="input-field"
             />
             <input
               type="date"
               value={filterTo}
               onChange={(e) => setFilterTo(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm text-white bg-transparent border border-white/10 outline-none"
+              className="input-field"
             />
           </div>
           <div className="flex gap-2">
-            <button onClick={applyFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "#deff9a", color: "#000" }}>
+            <button onClick={applyFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
               تطبيق
             </button>
-            <button onClick={clearFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
+            <button onClick={clearFilters} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}>
               مسح
             </button>
           </div>
         </div>
 
         {/* Table */}
-        <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
           {loading ? (
-            <div className="p-12 text-center text-white/40 text-sm">جاري التحميل...</div>
+            <div className="p-12 text-center text-sm" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
           ) : logs.length === 0 ? (
-            <div className="p-12 text-center text-white/40 text-sm">لا توجد سجلات</div>
+            <div className="p-12 text-center text-sm" style={{ color: "var(--text-hint)" }}>لا توجد سجلات</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm" dir="rtl">
                 <thead>
-                  <tr style={{ backgroundColor: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <tr style={{ backgroundColor: "var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
                     {["#", "الوقت", "الدور", "الهوية", "العملية", "الجدول", "المعرف", "IP"].map((h) => (
                       <th key={h} className="px-4 py-3 text-right font-bold text-white/50 whitespace-nowrap">{h}</th>
                     ))}
@@ -183,13 +183,13 @@ export default function AdminActivityLogs() {
                   {logs.map((log, i) => (
                     <tr
                       key={log.id}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                      style={{ borderBottom: "1px solid var(--border-subtle)" }}
                       className="hover:bg-white/[0.02] transition-colors"
                     >
                       <td className="px-4 py-3 text-white/30 font-mono text-xs">{(page - 1) * pageSize + i + 1}</td>
                       <td className="px-4 py-3 text-white/60 whitespace-nowrap font-mono text-xs">{formatDate(log.createdAt)}</td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}>
                           {ROLE_LABELS[log.actorRole] ?? log.actorRole}
                         </span>
                       </td>
@@ -214,7 +214,7 @@ export default function AdminActivityLogs() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1 || loading}
             className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
-            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}
+            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             <ChevronRight size={16} /> السابق
           </button>
@@ -223,7 +223,7 @@ export default function AdminActivityLogs() {
             onClick={() => setPage((p) => p + 1)}
             disabled={!hasMore || loading}
             className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
-            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}
+            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             التالي <ChevronLeft size={16} />
           </button>

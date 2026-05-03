@@ -45,32 +45,32 @@ export default function ClientRegister() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#000000" }} dir="rtl">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--bg)" }} dir="rtl">
       {/* Hero header */}
       <div className="px-6 pt-10 pb-12">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-8" style={{ color: "var(--text-muted)" }}>
           ← العودة
         </Link>
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg" style={{ backgroundColor: "#deff9a" }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg" style={{ backgroundColor: "var(--brand)" }}>
             📦
           </div>
           <div>
-            <h1 className="text-2xl font-black" style={{ color: "#deff9a" }}>توصّلني</h1>
-            <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>تسجيل عميل جديد</p>
+            <h1 className="text-2xl font-black" style={{ color: "var(--brand)" }}>توصّلني</h1>
+            <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>تسجيل عميل جديد</p>
           </div>
         </div>
       </div>
 
       {/* Card */}
       <div className="flex-1 px-5 -mt-2 pb-8">
-        <div className="rounded-3xl p-7" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <h2 className="text-xl font-black text-white mb-1">إنشاء حساب</h2>
-          <p className="text-sm font-bold mb-7" style={{ color: "rgba(255,255,255,0.4)" }}>أدخل بياناتك لإنشاء حساب عميل</p>
+        <div className="rounded-3xl p-7" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <h2 className="text-xl font-black mb-1" style={{ color: "var(--text)" }}>إنشاء حساب</h2>
+          <p className="text-sm font-bold mb-7" style={{ color: "var(--text-muted)" }}>أدخل بياناتك لإنشاء حساب عميل</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className="text-sm font-bold block" style={{ color: "rgba(255,255,255,0.6)" }}>الاسم الكامل</label>
+              <label className="text-sm font-bold block" style={{ color: "var(--text-sub)" }}>الاسم الكامل</label>
               <input
                 placeholder="مثال: محمد العتيبي"
                 value={name}
@@ -81,7 +81,7 @@ export default function ClientRegister() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold block" style={{ color: "rgba(255,255,255,0.6)" }}>رقم الجوال</label>
+              <label className="text-sm font-bold block" style={{ color: "var(--text-sub)" }}>رقم الجوال</label>
               <input
                 type="tel"
                 placeholder="05xxxxxxxx"
@@ -93,7 +93,7 @@ export default function ClientRegister() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold block" htmlFor="password-field" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <label className="text-sm font-bold block" htmlFor="password-field" style={{ color: "var(--text-sub)" }}>
                 كلمة المرور
               </label>
               <div className="relative">
@@ -110,7 +110,7 @@ export default function ClientRegister() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute left-3 top-1/2 -translate-y-1/2"
-                  style={{ color: "rgba(255,255,255,0.35)" }}
+                  style={{ color: "var(--text-hint)" }}
                   tabIndex={-1}
                   aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                 >
@@ -127,7 +127,7 @@ export default function ClientRegister() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold block" htmlFor="confirm-field" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <label className="text-sm font-bold block" htmlFor="confirm-field" style={{ color: "var(--text-sub)" }}>
                 تأكيد كلمة المرور
               </label>
               <div className="relative">
@@ -146,7 +146,7 @@ export default function ClientRegister() {
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
                   className="absolute left-3 top-1/2 -translate-y-1/2"
-                  style={{ color: "rgba(255,255,255,0.35)" }}
+                  style={{ color: "var(--text-hint)" }}
                   tabIndex={-1}
                   aria-label={showConfirm ? "إخفاء تأكيد كلمة المرور" : "إظهار تأكيد كلمة المرور"}
                 >
@@ -174,9 +174,9 @@ export default function ClientRegister() {
             </button>
           </form>
 
-          <p className="text-center text-sm mt-6" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <p className="text-center text-sm mt-6" style={{ color: "var(--text-hint)" }}>
             لديك حساب بالفعل؟{" "}
-            <Link href="/client/login" className="font-bold" style={{ color: "#deff9a" }}>سجّل دخولك</Link>
+            <Link href="/client/login" className="font-bold" style={{ color: "var(--brand)" }}>سجّل دخولك</Link>
           </p>
         </div>
       </div>

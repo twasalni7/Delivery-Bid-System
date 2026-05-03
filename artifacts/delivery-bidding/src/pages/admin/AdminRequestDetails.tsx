@@ -15,14 +15,14 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
 
-const STATUS_GRADIENT: Record<string, string> = {
-  OPEN:      "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
-  SELECTED:  "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-  ACTIVE:    "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-  COMPLETED: "linear-gradient(135deg, #6B7280 0%, #4B5563 100%)",
-  CANCELLED: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
-  EXPIRED:   "linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)",
-  FROZEN:    "linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)",
+const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string }> = {
+  OPEN:      { bg: "var(--status-open-bg)",      border: "var(--status-open-border)",      text: "var(--status-open-text)" },
+  SELECTED:  { bg: "var(--status-selected-bg)",  border: "var(--status-selected-border)",  text: "var(--status-selected-text)" },
+  ACTIVE:    { bg: "var(--status-active-bg)",    border: "var(--status-active-border)",    text: "var(--status-active-text)" },
+  COMPLETED: { bg: "var(--status-completed-bg)", border: "var(--status-completed-border)", text: "var(--status-completed-text)" },
+  CANCELLED: { bg: "var(--status-cancelled-bg)", border: "var(--status-cancelled-border)", text: "var(--status-cancelled-text)" },
+  EXPIRED:   { bg: "var(--status-expired-bg)",   border: "var(--status-expired-border)",   text: "var(--status-expired-text)" },
+  FROZEN:    { bg: "var(--status-frozen-bg)",    border: "var(--status-frozen-border)",    text: "var(--status-frozen-text)" },
 };
 
 export default function AdminRequestDetails() {
@@ -110,7 +110,7 @@ export default function AdminRequestDetails() {
   }, [chatMessages]);
 
   if (loadingReq) {
-    return <Layout role="admin"><div className="text-center py-20" style={{ color: "rgba(255,255,255,0.4)" }}>جاري التحميل...</div></Layout>;
+    return <Layout role="admin"><div className="text-center py-20" style={{ color: "var(--text-muted)" }}>جاري التحميل...</div></Layout>;
   }
 
   if (!request) {
@@ -118,9 +118,9 @@ export default function AdminRequestDetails() {
       <Layout role="admin">
         <div className="text-center py-20">
           <p className="text-5xl mb-3">😕</p>
-          <p className="font-bold text-lg text-white">الطلب غير موجود</p>
+          <p className="font-bold text-lg" style={{ color: "var(--text)" }}>الطلب غير موجود</p>
           <Link href="/admin/requests">
-            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>العودة</div>
+            <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>العودة</div>
           </Link>
         </div>
       </Layout>
@@ -136,13 +136,13 @@ export default function AdminRequestDetails() {
   return (
     <Layout role="admin">
       <div dir="rtl" className="pb-6">
-        <Link href="/admin/requests" className="inline-flex items-center gap-1 text-sm transition-colors mb-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+        <Link href="/admin/requests" className="inline-flex items-center gap-1 text-sm transition-colors mb-4" style={{ color: "var(--text-muted)" }}>
           <ArrowRight size={14} /> العودة للطلبات
         </Link>
 
         {/* Badge for admin-created requests */}
         {(request as any).createdBy === "admin" && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black mb-3" style={{ backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" }}>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black mb-3" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
             🛡️ طلب منشأ من الإدارة
           </div>
         )}
@@ -203,24 +203,24 @@ export default function AdminRequestDetails() {
             </div>
           </div>
 
-          <div className="px-4 py-3" style={{ backgroundColor: "#111111", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-4 py-3" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Calendar size={13} style={{ color: "rgba(255,255,255,0.35)" }} />
-                <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
+                <Calendar size={13} style={{ color: "var(--text-hint)" }} />
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{request.workingDaysPerWeek} أيام/أسبوع</span>
               </div>
               <div className="text-center">
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>السعر الشهري</p>
-                <p className="text-lg font-black" dir="ltr" style={{ color: "#deff9a" }}>
-                  {request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-xs font-normal" style={{ color: "rgba(255,255,255,0.35)" }}>ر.س</span>
+                <p className="text-xs" style={{ color: "var(--text-hint)" }}>السعر الشهري</p>
+                <p className="text-lg font-black" dir="ltr" style={{ color: "var(--brand)" }}>
+                  {request.monthlyPrice?.toFixed(0) ?? "—"} <span className="text-xs font-normal" style={{ color: "var(--text-hint)" }}>ر.س</span>
                 </p>
               </div>
             </div>
             {/* Full phone always shown for admin */}
             {request.phone && (
               <div className="flex items-center gap-2 mb-2">
-                <Phone size={13} style={{ color: "rgba(255,255,255,0.35)" }} />
-                <a href={`tel:${request.phone}`} className="text-sm font-bold text-white" dir="ltr">{request.phone}</a>
+                <Phone size={13} style={{ color: "var(--text-hint)" }} />
+                <a href={`tel:${request.phone}`} className="text-sm font-bold" style={{ color: "var(--text)" }} dir="ltr">{request.phone}</a>
               </div>
             )}
             <div className="flex gap-1.5 flex-wrap">
@@ -230,7 +230,7 @@ export default function AdminRequestDetails() {
                   <span
                     key={i}
                     className="text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={active ? { backgroundColor: "rgba(222,255,154,0.12)", color: "#deff9a" } : { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)" }}
+                    style={active ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}
                   >
                     {d}
                   </span>
@@ -255,15 +255,16 @@ export default function AdminRequestDetails() {
               )}
             </div>
             {request.selectedDriver.mobile && (
-              <div className="px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "#111111", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
                 <Phone size={14} className="text-green-600" />
-                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-white" dir="ltr">
+                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold" style={{ color: "var(--text)" }} dir="ltr">
                   {request.selectedDriver.mobile}
                 </a>
                 <a
                   href={`https://wa.me/${request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966")}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="mr-auto bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                  className="mr-auto text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                  style={{ backgroundColor: "#25D366", color: "#fff" }}
                 >
                   <MessageCircle size={11} /> واتساب
                 </a>
@@ -274,30 +275,30 @@ export default function AdminRequestDetails() {
 
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-black text-white">
+            <h2 className="text-lg font-black" style={{ color: "var(--text)" }}>
               السائقون المقبِلون {offers ? `(${offers.length})` : ""}
             </h2>
             {canChat && (
               <button onClick={() => setShowChat(!showChat)}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-colors"
-                style={{ color: "#deff9a", backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.16)" }}>
+                style={{ color: "var(--brand)", backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                 <MessageCircle size={14} /> {showChat ? "إخفاء" : "المحادثة"}
               </button>
             )}
           </div>
 
           {showChat && canChat && (
-            <div className="mb-5 rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#161616", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="mb-5 rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid var(--border-subtle)" }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-2">
-                  <MessageCircle size={15} style={{ color: "#deff9a" }} />
-                  <span className="text-white font-black text-sm">محادثة مع السائق</span>
+                  <MessageCircle size={15} style={{ color: "var(--brand)" }} />
+                  <span className="font-black text-sm" style={{ color: "var(--text)" }}>محادثة مع السائق</span>
                 </div>
-                <button onClick={() => setShowChat(false)} className="text-white/70 hover:text-white"><X size={14} /></button>
+                <button onClick={() => setShowChat(false)} style={{ color: "var(--text-muted)" }}><X size={14} /></button>
               </div>
-              <div className="max-h-72 overflow-y-auto p-3 space-y-2" dir="rtl" style={{ backgroundColor: "#0d0d0d" }}>
+              <div className="max-h-72 overflow-y-auto p-3 space-y-2" dir="rtl" style={{ backgroundColor: "var(--header-bg)" }}>
                 {(!chatMessages || chatMessages.length === 0) && (
-                  <p className="text-center text-xs py-6" style={{ color: "rgba(255,255,255,0.4)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
+                  <p className="text-center text-xs py-6" style={{ color: "var(--text-muted)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
                 )}
                 {chatMessages?.map((msg) => {
                   const isMe = msg.senderRole === "admin";
@@ -305,9 +306,9 @@ export default function AdminRequestDetails() {
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                       <div
                         className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
-                        style={isMe ? { color: "#0a0a0a", backgroundColor: "#deff9a" } : { backgroundColor: "#161616", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff" }}
+                        style={isMe ? { color: "var(--brand-fg)", backgroundColor: "var(--brand)" } : { backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "var(--text)" }}
                       >
-                        {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{msg.senderRole === "client" ? "العميل" : "السائق"}</p>}
+                        {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>{msg.senderRole === "client" ? "العميل" : "السائق"}</p>}
                         <p>{msg.body}</p>
                       </div>
                     </div>
@@ -315,21 +316,21 @@ export default function AdminRequestDetails() {
                 })}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-2 flex gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", backgroundColor: "#111111" }}>
+              <div className="p-2 flex gap-2" style={{ borderTop: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
                 <input
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                   placeholder="اكتب رسالة..."
                   className="flex-1 text-sm px-3 py-2 rounded-xl focus:outline-none"
-                  style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616", color: "#ffffff" }}
+                  style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
                   dir="rtl"
                 />
                 <button
                   onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
                   disabled={!chatMessage.trim() || sendMessage.isPending}
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white disabled:opacity-50"
-                  style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
                   <Send size={15} />
                 </button>
@@ -337,13 +338,13 @@ export default function AdminRequestDetails() {
             </div>
           )}
 
-          {loadingOffers && <div className="text-center py-8 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>جاري التحميل...</div>}
+          {loadingOffers && <div className="text-center py-8 text-sm" style={{ color: "var(--text-muted)" }}>جاري التحميل...</div>}
 
           {!loadingOffers && (!offers || offers.length === 0) && (
-            <div className="text-center py-12 border-2 border-dashed rounded-2xl" style={{ borderColor: "rgba(255,255,255,0.12)", backgroundColor: "#111111" }}>
+            <div className="text-center py-12 border-2 border-dashed rounded-2xl" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
               <p className="text-3xl mb-2">⏳</p>
-              <p className="font-bold text-white">لا يوجد سائقون قبلوا بعد</p>
-              <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>ستظهر أسماء السائقين هنا عند قبولهم الطلب</p>
+              <p className="font-bold" style={{ color: "var(--text)" }}>لا يوجد سائقون قبلوا بعد</p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>ستظهر أسماء السائقين هنا عند قبولهم الطلب</p>
             </div>
           )}
 
@@ -358,18 +359,18 @@ export default function AdminRequestDetails() {
                       <span className="text-white text-xs font-bold">السائق المؤكَّد</span>
                     </div>
                   )}
-                  <div className="p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black" style={{ backgroundColor: "rgba(222,255,154,0.12)", color: "#deff9a" }}>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
                           {offer.driver?.name?.charAt(0) ?? "س"}
                         </div>
                         <div>
-                          <p className="font-bold text-white">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                          {offer.driver?.carType && <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{offer.driver.carType}</p>}
+                          <p className="font-bold" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                          {offer.driver?.carType && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</p>}
                           {/* Admin always sees driver mobile */}
                           {(offer.driver as any)?.mobile && (
-                            <a href={`tel:${(offer.driver as any).mobile}`} className="text-xs font-medium" dir="ltr" style={{ color: "#deff9a" }}>
+                            <a href={`tel:${(offer.driver as any).mobile}`} className="text-xs font-medium" dir="ltr" style={{ color: "var(--brand)" }}>
                               {(offer.driver as any).mobile}
                             </a>
                           )}

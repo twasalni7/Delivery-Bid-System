@@ -49,6 +49,23 @@ export async function loadPricingConfig(): Promise<PricingConfig> {
   }
 }
 
+const DEFAULT_BID_FEE = 50;
+
+/** Reads the bid fee from app_config table. Returns DEFAULT_BID_FEE on any error. */
+export async function getBidFee(): Promise<number> {
+  try {
+    const row = await db.query.appConfigTable.findFirst({
+      where: eq(appConfigTable.key, "bid_fee"),
+    });
+    if (!row) return DEFAULT_BID_FEE;
+    const val = parseFloat(row.value);
+    return isNaN(val) || val <= 0 ? DEFAULT_BID_FEE : val;
+  } catch (err) {
+    logger.error({ err }, "getBidFee: DB read failed, using default");
+    return DEFAULT_BID_FEE;
+  }
+}
+
 // ─── Helper: query price_per_person from pricing_matrix ───────────────────────
 
 export interface MatrixPricingResult {

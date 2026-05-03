@@ -81,8 +81,8 @@ export default function DriverSupport() {
         {/* Header */}
         <div className="flex items-center justify-between mb-7">
           <div>
-            <h1 className="text-2xl font-black text-white">الدعم والمساعدة</h1>
-            <p className="text-sm font-bold mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>الدعم والمساعدة</h1>
+            <p className="text-sm font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>
               {tickets.length > 0
                 ? `${tickets.length} تذكرة${unrepliedCount > 0 ? ` — ${unrepliedCount} بانتظار الرد` : ""}`
                 : "تواصل معنا عند أي مشكلة"}
@@ -91,7 +91,7 @@ export default function DriverSupport() {
           <button
             onClick={() => setShowForm(!showForm)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm"
-            style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
           >
             <Plus size={16} />
             تذكرة جديدة
@@ -100,11 +100,11 @@ export default function DriverSupport() {
 
         {/* New ticket form */}
         {showForm && (
-          <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <p className="font-black text-white mb-5">إرسال تذكرة دعم جديدة</p>
+          <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <p className="font-black mb-5" style={{ color: "var(--text)" }}>إرسال تذكرة دعم جديدة</p>
             <div className="space-y-5">
               <div>
-                <label className="text-sm font-bold block mb-2.5" style={{ color: "rgba(255,255,255,0.6)" }}>نوع المشكلة</label>
+                <label className="text-sm font-bold block mb-2.5" style={{ color: "var(--text-sub)" }}>نوع المشكلة</label>
                 <div className="flex gap-2 flex-wrap">
                   {TICKET_TYPES.map((t) => (
                     <button
@@ -112,8 +112,8 @@ export default function DriverSupport() {
                       onClick={() => setType(t)}
                       className="px-3 py-1.5 rounded-full text-sm font-bold transition-colors"
                       style={type === t
-                        ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
-                        : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}
+                        ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                        : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
                     >
                       {t}
                     </button>
@@ -122,7 +122,7 @@ export default function DriverSupport() {
               </div>
 
               <div>
-                <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                <label className="text-sm font-bold block mb-2" style={{ color: "var(--text-sub)" }}>
                   رقم الطلب (اختياري)
                 </label>
                 <input
@@ -135,7 +135,7 @@ export default function DriverSupport() {
               </div>
 
               <div>
-                <label className="text-sm font-bold block mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                <label className="text-sm font-bold block mb-2" style={{ color: "var(--text-sub)" }}>
                   تفاصيل المشكلة
                 </label>
                 <textarea
@@ -168,12 +168,12 @@ export default function DriverSupport() {
 
         {/* Tickets list */}
         {isLoading ? (
-          <div className="text-center py-16 font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div>
+          <div className="text-center py-16 font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
         ) : tickets.length === 0 ? (
-          <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "#111111", border: "2px dashed rgba(255,255,255,0.08)" }}>
-            <MessageSquare size={40} className="mx-auto mb-4" style={{ color: "rgba(255,255,255,0.2)" }} />
-            <p className="text-xl font-black text-white">لا توجد تذاكر</p>
-            <p className="text-sm font-bold mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>أرسل تذكرة إذا واجهت أي مشكلة</p>
+          <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
+            <MessageSquare size={40} className="mx-auto mb-4" style={{ color: "var(--text-hint)" }} />
+            <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد تذاكر</p>
+            <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>أرسل تذكرة إذا واجهت أي مشكلة</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -183,19 +183,19 @@ export default function DriverSupport() {
                 <div
                   key={t.id}
                   className="rounded-3xl overflow-hidden"
-                  style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}
                 >
                   <div
                     className="px-5 py-4 flex items-start justify-between gap-3 cursor-pointer transition-colors"
-                    style={{ backgroundColor: isOpen ? "#1a1a1a" : undefined }}
+                    style={{ backgroundColor: isOpen ? "var(--surface-2)" : undefined }}
                     onClick={() => setExpanded(isOpen ? null : t.id)}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="font-black text-white text-sm">{t.type}</span>
+                        <span className="font-black text-sm" style={{ color: "var(--text)" }}>{t.type}</span>
                         {t.requestId && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                            style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                            style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                             طلب #{t.requestId}
                           </span>
                         )}
@@ -204,37 +204,37 @@ export default function DriverSupport() {
                         </span>
                         {t.adminReply && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                            style={{ backgroundColor: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }}>
+                            style={{ backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)", border: "1px solid var(--status-active-border)" }}>
                             رُدّ عليها
                           </span>
                         )}
                       </div>
-                      <p className="text-xs line-clamp-2 font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>{t.message}</p>
+                      <p className="text-xs line-clamp-2 font-bold" style={{ color: "var(--text-muted)" }}>{t.message}</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    <div className="flex items-center gap-2 shrink-0" style={{ color: "var(--text-hint)" }}>
                       <span className="text-xs font-mono">#{t.id}</span>
                       {isOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                     </div>
                   </div>
 
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-4 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
-                        <p className="text-xs font-bold mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>رسالتك:</p>
-                        <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>{t.message}</p>
+                    <div className="px-5 pb-5 pt-4 space-y-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                      <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--border-subtle)" }}>
+                        <p className="text-xs font-bold mb-1.5" style={{ color: "var(--text-hint)" }}>رسالتك:</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{t.message}</p>
                       </div>
                       {t.adminReply && (
-                        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                          <p className="text-xs font-black mb-1.5" style={{ color: "#34d399" }}>رد الإدارة:</p>
-                          <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>{t.adminReply}</p>
+                        <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)" }}>
+                          <p className="text-xs font-black mb-1.5" style={{ color: "var(--status-active-text)" }}>رد الإدارة:</p>
+                          <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{t.adminReply}</p>
                         </div>
                       )}
                       {!t.adminReply && (
-                        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)" }}>
-                          <p className="text-xs font-black" style={{ color: "#fbbf24" }}>⏳ في انتظار رد الإدارة...</p>
+                        <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
+                          <p className="text-xs font-black" style={{ color: "var(--status-open-text)" }}>⏳ في انتظار رد الإدارة...</p>
                         </div>
                       )}
-                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>
+                      <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                         أُرسلت في {new Date(t.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
                     </div>

@@ -1,0 +1,310 @@
+/*
+ * ═══════════════════════════════════════════════════
+ *  توصّلني — Design Tokens
+ *  Brand: #C8102E · Font: IBM Plex Sans Arabic
+ *  Themes: light (default) | dark | creamy
+ * ═══════════════════════════════════════════════════
+ */
+
+/* ─── Brand (constant across all themes) ─── */
+:root {
+  --brand:              #C8102E;
+  --brand-hover:        #A50D26;
+  --brand-active:       #8B0B1F;
+  --brand-fg:           #FFFFFF;
+  --brand-subtle:       rgba(200, 16, 46, 0.08);
+  --brand-subtle-hover: rgba(200, 16, 46, 0.13);
+  --brand-border:       rgba(200, 16, 46, 0.2);
+  --brand-shadow:       0 4px 24px rgba(200, 16, 46, 0.25);
+
+  /* Typography */
+  --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+  --font-mono:   'IBM Plex Mono', monospace;
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 28px;
+
+  /* Spacing */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* Sidebar */
+  --sidebar-width: 220px;
+
+  /* Transition */
+  --transition: 150ms ease;
+}
+
+/* ═══════════════════════════════════════════
+   LIGHT THEME  (default)
+   ═══════════════════════════════════════════ */
+:root,
+html.light {
+  color-scheme: light;
+
+  /* Page & surfaces */
+  --bg:          #F4F4F5;
+  --bg-page:     #F4F4F5;
+  --surface:     #FFFFFF;
+  --surface-2:   #FAFAFA;
+  --surface-3:   #F4F4F5;
+  --surface-4:   #EBEBEB;
+
+  /* Text */
+  --text:        #111827;
+  --text-sub:    #374151;
+  --text-muted:  #6B7280;
+  --text-hint:   #9CA3AF;
+
+  /* Borders */
+  --border:        #E5E7EB;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  /* Header */
+  --header-bg:     #FFFFFF;
+  --header-border: #E5E7EB;
+  --header-height: 64px;
+
+  /* Sidebar */
+  --sidebar-bg:          #FFFFFF;
+  --sidebar-border:      #E5E7EB;
+  --sidebar-text:        #6B7280;
+  --sidebar-text-hover:  #374151;
+  --sidebar-active-bg:   rgba(200, 16, 46, 0.07);
+  --sidebar-active-text: #C8102E;
+  --sidebar-hover-bg:    #F4F4F5;
+  --sidebar-icon-color:  #9CA3AF;
+
+  /* Inputs */
+  --input-bg:        #FFFFFF;
+  --input-border:    #D1D5DB;
+  --input-border-focus: #C8102E;
+  --input-text:      #111827;
+  --input-placeholder: #9CA3AF;
+  --input-ring:      rgba(200, 16, 46, 0.15);
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg:  0 12px 32px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.05);
+  --shadow-xl:  0 24px 48px rgba(0,0,0,0.12);
+
+  /* ── Status tokens ── */
+  --status-open-bg:      rgba(234, 88, 12, 0.08);
+  --status-open-border:  rgba(234, 88, 12, 0.2);
+  --status-open-text:    #C2410C;
+  --status-open-dot:     #EA580C;
+
+  --status-selected-bg:     rgba(200, 16, 46, 0.08);
+  --status-selected-border: rgba(200, 16, 46, 0.2);
+  --status-selected-text:   #C8102E;
+  --status-selected-dot:    #C8102E;
+
+  --status-active-bg:     rgba(5, 150, 105, 0.08);
+  --status-active-border: rgba(5, 150, 105, 0.2);
+  --status-active-text:   #047857;
+  --status-active-dot:    #059669;
+
+  --status-completed-bg:     rgba(107, 114, 128, 0.08);
+  --status-completed-border: rgba(107, 114, 128, 0.2);
+  --status-completed-text:   #6B7280;
+  --status-completed-dot:    #9CA3AF;
+
+  --status-cancelled-bg:     rgba(220, 38, 38, 0.08);
+  --status-cancelled-border: rgba(220, 38, 38, 0.2);
+  --status-cancelled-text:   #DC2626;
+  --status-cancelled-dot:    #EF4444;
+
+  --status-expired-bg:     rgba(107, 114, 128, 0.06);
+  --status-expired-border: rgba(107, 114, 128, 0.15);
+  --status-expired-text:   #9CA3AF;
+  --status-expired-dot:    #D1D5DB;
+
+  --status-frozen-bg:     rgba(59, 130, 246, 0.08);
+  --status-frozen-border: rgba(59, 130, 246, 0.2);
+  --status-frozen-text:   #2563EB;
+  --status-frozen-dot:    #3B82F6;
+
+  /* Avatar palette */
+  --avatar-1: #C8102E; --avatar-1-fg: #fff;
+  --avatar-2: #2563EB; --avatar-2-fg: #fff;
+  --avatar-3: #059669; --avatar-3-fg: #fff;
+  --avatar-4: #D97706; --avatar-4-fg: #fff;
+  --avatar-5: #7C3AED; --avatar-5-fg: #fff;
+  --avatar-6: #0891B2; --avatar-6-fg: #fff;
+}
+
+/* ═══════════════════════════════════════════
+   DARK THEME
+   ═══════════════════════════════════════════ */
+html.dark {
+  color-scheme: dark;
+
+  --bg:        #0A0A0A;
+  --bg-page:   #0A0A0A;
+  --surface:   #141414;
+  --surface-2: #1C1C1C;
+  --surface-3: #242424;
+  --surface-4: #2C2C2C;
+
+  --text:       #F9FAFB;
+  --text-sub:   rgba(255, 255, 255, 0.72);
+  --text-muted: rgba(255, 255, 255, 0.42);
+  --text-hint:  rgba(255, 255, 255, 0.28);
+
+  --border:        rgba(255, 255, 255, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --header-bg:     #0F0F0F;
+  --header-border: rgba(255, 255, 255, 0.07);
+
+  --sidebar-bg:          #0F0F0F;
+  --sidebar-border:      rgba(255, 255, 255, 0.07);
+  --sidebar-text:        rgba(255, 255, 255, 0.45);
+  --sidebar-text-hover:  rgba(255, 255, 255, 0.85);
+  --sidebar-active-bg:   rgba(200, 16, 46, 0.18);
+  --sidebar-active-text: #FF4D6A;
+  --sidebar-hover-bg:    rgba(255, 255, 255, 0.05);
+  --sidebar-icon-color:  rgba(255, 255, 255, 0.35);
+
+  --input-bg:           #1C1C1C;
+  --input-border:       rgba(255, 255, 255, 0.12);
+  --input-border-focus: #FF4D6A;
+  --input-text:         #F9FAFB;
+  --input-placeholder:  rgba(255, 255, 255, 0.3);
+  --input-ring:         rgba(200, 16, 46, 0.2);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.6);
+  --shadow-xl: 0 24px 48px rgba(0,0,0,0.7);
+
+  --status-open-bg:      rgba(234, 88, 12, 0.12);
+  --status-open-border:  rgba(234, 88, 12, 0.25);
+  --status-open-text:    #FB923C;
+  --status-open-dot:     #F97316;
+
+  --status-selected-bg:     rgba(200, 16, 46, 0.15);
+  --status-selected-border: rgba(200, 16, 46, 0.3);
+  --status-selected-text:   #FF4D6A;
+  --status-selected-dot:    #FF4D6A;
+
+  --status-active-bg:     rgba(16, 185, 129, 0.12);
+  --status-active-border: rgba(16, 185, 129, 0.25);
+  --status-active-text:   #34D399;
+  --status-active-dot:    #10B981;
+
+  --status-completed-bg:     rgba(255, 255, 255, 0.05);
+  --status-completed-border: rgba(255, 255, 255, 0.1);
+  --status-completed-text:   rgba(255, 255, 255, 0.4);
+  --status-completed-dot:    rgba(255, 255, 255, 0.25);
+
+  --status-cancelled-bg:     rgba(239, 68, 68, 0.12);
+  --status-cancelled-border: rgba(239, 68, 68, 0.25);
+  --status-cancelled-text:   #F87171;
+  --status-cancelled-dot:    #EF4444;
+
+  --status-expired-bg:     rgba(107, 114, 128, 0.08);
+  --status-expired-border: rgba(107, 114, 128, 0.15);
+  --status-expired-text:   rgba(255, 255, 255, 0.35);
+  --status-expired-dot:    rgba(255, 255, 255, 0.2);
+
+  --status-frozen-bg:     rgba(59, 130, 246, 0.12);
+  --status-frozen-border: rgba(59, 130, 246, 0.25);
+  --status-frozen-text:   #60A5FA;
+  --status-frozen-dot:    #3B82F6;
+}
+
+/* ═══════════════════════════════════════════
+   CREAMY DARK THEME
+   ═══════════════════════════════════════════ */
+html.creamy {
+  color-scheme: dark;
+
+  --bg:        #1A1710;
+  --bg-page:   #1A1710;
+  --surface:   #222018;
+  --surface-2: #2A2720;
+  --surface-3: #322F27;
+  --surface-4: #3A3730;
+
+  --text:       #F5EDD8;
+  --text-sub:   rgba(245, 237, 216, 0.72);
+  --text-muted: rgba(245, 237, 216, 0.42);
+  --text-hint:  rgba(245, 237, 216, 0.28);
+
+  --border:        rgba(245, 237, 216, 0.10);
+  --border-subtle: rgba(245, 237, 216, 0.06);
+  --border-strong: rgba(245, 237, 216, 0.18);
+
+  --header-bg:     #1E1B12;
+  --header-border: rgba(245, 237, 216, 0.07);
+
+  --sidebar-bg:          #1E1B12;
+  --sidebar-border:      rgba(245, 237, 216, 0.07);
+  --sidebar-text:        rgba(245, 237, 216, 0.45);
+  --sidebar-text-hover:  rgba(245, 237, 216, 0.85);
+  --sidebar-active-bg:   rgba(200, 16, 46, 0.2);
+  --sidebar-active-text: #FF6B83;
+  --sidebar-hover-bg:    rgba(245, 237, 216, 0.05);
+  --sidebar-icon-color:  rgba(245, 237, 216, 0.35);
+
+  --input-bg:           #2A2720;
+  --input-border:       rgba(245, 237, 216, 0.12);
+  --input-border-focus: #FF6B83;
+  --input-text:         #F5EDD8;
+  --input-placeholder:  rgba(245, 237, 216, 0.3);
+  --input-ring:         rgba(200, 16, 46, 0.2);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.55);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.65);
+  --shadow-xl: 0 24px 48px rgba(0,0,0,0.75);
+
+  --status-open-bg:      rgba(234, 88, 12, 0.14);
+  --status-open-border:  rgba(234, 88, 12, 0.3);
+  --status-open-text:    #FDBA74;
+  --status-open-dot:     #F97316;
+
+  --status-selected-bg:     rgba(200, 16, 46, 0.18);
+  --status-selected-border: rgba(200, 16, 46, 0.35);
+  --status-selected-text:   #FF6B83;
+  --status-selected-dot:    #FF6B83;
+
+  --status-active-bg:     rgba(16, 185, 129, 0.14);
+  --status-active-border: rgba(16, 185, 129, 0.3);
+  --status-active-text:   #6EE7B7;
+  --status-active-dot:    #10B981;
+
+  --status-completed-bg:     rgba(245, 237, 216, 0.05);
+  --status-completed-border: rgba(245, 237, 216, 0.1);
+  --status-completed-text:   rgba(245, 237, 216, 0.4);
+  --status-completed-dot:    rgba(245, 237, 216, 0.25);
+
+  --status-cancelled-bg:     rgba(239, 68, 68, 0.14);
+  --status-cancelled-border: rgba(239, 68, 68, 0.3);
+  --status-cancelled-text:   #FCA5A5;
+  --status-cancelled-dot:    #EF4444;
+
+  --status-expired-bg:     rgba(107, 114, 128, 0.08);
+  --status-expired-border: rgba(107, 114, 128, 0.15);
+  --status-expired-text:   rgba(245, 237, 216, 0.35);
+  --status-expired-dot:    rgba(245, 237, 216, 0.2);
+
+  --status-frozen-bg:     rgba(59, 130, 246, 0.14);
+  --status-frozen-border: rgba(59, 130, 246, 0.3);
+  --status-frozen-text:   #93C5FD;
+  --status-frozen-dot:    #3B82F6;
+}

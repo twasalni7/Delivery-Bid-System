@@ -50,9 +50,10 @@ export function EnablePushButton() {
   // Already subscribed
   if (!showNotificationButton) {
     return (
-      <div className="flex items-center gap-2.5 rounded-2xl px-4 py-3" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", color: "#34d399" }}>
+      <div className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+        style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)", color: "var(--status-active-text)" }}>
         <BellRing size={16} className="shrink-0" />
-        <p className="text-sm font-bold">الإشعارات الفورية مفعّلة ✓</p>
+        <p className="text-sm font-semibold">الإشعارات الفورية مفعّلة ✓</p>
       </div>
     );
   }
@@ -60,9 +61,10 @@ export function EnablePushButton() {
   // Denied by user
   if (permission === "denied") {
     return (
-      <div className="flex items-start gap-2.5 rounded-2xl px-4 py-3" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", color: "#fbbf24" }}>
+      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3"
+        style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)", color: "var(--status-open-text)" }}>
         <BellOff size={16} className="shrink-0 mt-0.5" />
-        <p className="text-sm font-bold leading-relaxed">
+        <p className="text-sm font-semibold leading-relaxed">
           الإشعارات محجوبة. افتح إعدادات المتصفح ← الإشعارات وأعِد السماح لهذا الموقع.
         </p>
       </div>
@@ -74,13 +76,12 @@ export function EnablePushButton() {
     <button
       onClick={handleEnable}
       disabled={loading}
-      className="w-full flex items-center justify-center gap-2.5 disabled:opacity-60 font-black text-sm rounded-2xl px-4 py-3 transition-all"
-      style={{ backgroundColor: "#deff9a", color: "#0a0a0a", boxShadow: "0 12px 28px rgba(222,255,154,0.2)" }}
+      className="w-full btn-ghost flex items-center justify-center gap-2.5 disabled:opacity-60 text-sm"
     >
       {loading ? (
         <Loader2 size={16} className="animate-spin" />
       ) : (
-        <Bell size={16} />
+        <Bell size={16} style={{ color: "var(--brand)" }} />
       )}
       {loading ? "جارٍ التفعيل..." : "تفعيل الإشعارات الفورية"}
     </button>

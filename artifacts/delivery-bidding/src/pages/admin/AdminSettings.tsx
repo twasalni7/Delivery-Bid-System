@@ -148,24 +148,24 @@ export default function AdminSettings() {
         {/* ── Page Header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-white">إعدادات الإدارة</h1>
-            <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>إدارة الحسابات البنكية وطلبات الشحن ورمز الدخول</p>
+            <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>إعدادات الإدارة</h1>
+            <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>إدارة الحسابات البنكية وطلبات الشحن ورمز الدخول</p>
           </div>
         </div>
 
         {/* ── Pending Alert Banner ── */}
         {pendingTxs.length > 0 && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(245,158,11,0.12)" }}>
-              <AlertCircle size={20} style={{ color: "#fbbf24" }} />
+          <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--status-open-bg)" }}>
+              <AlertCircle size={20} style={{ color: "var(--status-open-text)" }} />
             </div>
             <div className="flex-1">
-              <p className="font-black text-sm" style={{ color: "#fbbf24" }}>
+              <p className="font-black text-sm" style={{ color: "var(--status-open-text)" }}>
                 يوجد {pendingTxs.length} {pendingTxs.length === 1 ? "طلب شحن معلّق" : "طلبات شحن معلّقة"} تنتظر مراجعتك
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(251,191,36,0.82)" }}>راجع قسم طلبات الشحن أدناه وقم بالقبول أو الرفض</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--status-open-text)" }}>راجع قسم طلبات الشحن أدناه وقم بالقبول أو الرفض</p>
             </div>
-            <span className="text-3xl font-black shrink-0" style={{ color: "#fbbf24" }}>{pendingTxs.length}</span>
+            <span className="text-3xl font-black shrink-0" style={{ color: "var(--status-open-text)" }}>{pendingTxs.length}</span>
           </div>
         )}
 
@@ -174,8 +174,8 @@ export default function AdminSettings() {
 
           {/* ── LEFT COLUMN: Wallet Transactions (3/5) ── */}
           <div className="w-full lg:w-3/5">
-            <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <div className="flex items-center justify-between p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                     style={{ background: "linear-gradient(135deg, #064E3B, #065F46)" }}>
@@ -183,12 +183,12 @@ export default function AdminSettings() {
                   </div>
                   <div>
                     <p className="font-black text-white">طلبات شحن المحافظ</p>
-                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{walletTxs.length} طلب إجمالي</p>
+                    <p className="text-xs" style={{ color: "var(--text-hint)" }}>{walletTxs.length} طلب إجمالي</p>
                   </div>
                 </div>
                 {pendingTxs.length > 0 && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black" style={{ backgroundColor: "rgba(245,158,11,0.12)", color: "#fbbf24" }}>
-                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "#fbbf24" }} />
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black" style={{ backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" }}>
+                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-open-text)" }} />
                     {pendingTxs.length} معلّق
                   </span>
                 )}
@@ -197,44 +197,44 @@ export default function AdminSettings() {
               {walletTxs.length === 0 ? (
                 <div className="py-16 text-center">
                   <div className="text-4xl mb-3">💳</div>
-                  <p className="font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>لا توجد طلبات شحن حتى الآن</p>
+                  <p className="font-bold" style={{ color: "var(--text-muted)" }}>لا توجد طلبات شحن حتى الآن</p>
                 </div>
               ) : (
-                <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
                   {walletTxs.map((tx) => {
                     const driverInitial = (tx.driverName ?? `س${tx.driverId}`).charAt(0);
                     const isPending = tx.status === "pending";
                     return (
-                      <div key={tx.intId} className="p-5 transition-colors" style={{ backgroundColor: isPending ? "rgba(245,158,11,0.04)" : "transparent" }}>
+                      <div key={tx.intId} className="p-5 transition-colors" style={{ backgroundColor: isPending ? "var(--status-open-bg)" : "transparent" }}>
                         {/* Driver + amount row */}
                         <div className="flex items-start gap-3 mb-3">
                           <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg shrink-0"
-                            style={{ background: "linear-gradient(135deg, #312E81, #4338CA)" }}>
+                            style={{ background: "linear-gradient(135deg, var(--brand-hover), var(--brand))" }}>
                             {driverInitial}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-black text-white text-base truncate">
+                            <p className="font-bold text-base truncate" style={{ color: "var(--text)" }}>
                               {tx.driverName ?? `سائق #${tx.driverId}`}
                             </p>
-                            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                            <p className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>
                               {new Date(tx.createdAt).toLocaleDateString("ar-SA", { day: "numeric", month: "long", year: "numeric" })}
                             </p>
                           </div>
                           <div className="text-left shrink-0">
-                            <p className="font-black text-2xl text-white" dir="ltr">
+                            <p className="font-black text-2xl" style={{ color: "var(--text)" }} dir="ltr">
                               {parseFloat(String(tx.amount)).toFixed(0)}
-                              <span className="text-sm font-bold mr-1" style={{ color: "rgba(255,255,255,0.35)" }}>ر.س</span>
+                              <span className="text-sm font-bold mr-1" style={{ color: "var(--text-hint)" }}>ر.س</span>
                             </p>
                             {isPending ? (
-                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(245,158,11,0.12)", color: "#fbbf24" }}>
-                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#fbbf24" }} />معلّق
+                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--status-open-text)" }} />معلّق
                               </span>
                             ) : tx.status === "approved" ? (
-                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(16,185,129,0.12)", color: "#34d399" }}>
+                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)" }}>
                                 <CheckCircle2 size={11} />مقبول
                               </span>
                             ) : (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171" }}>مرفوض</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>مرفوض</span>
                             )}
                           </div>
                         </div>
@@ -246,7 +246,7 @@ export default function AdminSettings() {
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 mb-3 px-3 py-2 rounded-xl text-xs font-bold transition-colors min-h-[36px]"
-                            style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.16)", color: "#deff9a" }}
+                            style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", color: "var(--brand)" }}
                           >
                             <Eye size={14} />
                             عرض صورة الإيصال
@@ -269,7 +269,7 @@ export default function AdminSettings() {
                               onClick={() => handleWalletAction(tx.intId, "reject")}
                               disabled={processingId === tx.intId}
                               className="px-5 py-3 rounded-xl font-black text-sm disabled:opacity-50 min-h-[44px] transition-colors"
-                              style={{ backgroundColor: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}>
+                              style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)" }}>
                               رفض
                             </button>
                           </div>
@@ -286,14 +286,14 @@ export default function AdminSettings() {
           <div className="w-full lg:w-2/5 space-y-5">
 
             {/* Bank Accounts Card */}
-            <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.16)" }}>
-                  <Landmark size={18} style={{ color: "#deff9a" }} />
+            <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                  <Landmark size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>
-                  <p className="font-black text-white">الحسابات البنكية</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>للتحويل من قِبل السائقين</p>
+                  <p className="font-black" style={{ color: "var(--text)" }}>الحسابات البنكية</p>
+                  <p className="text-xs" style={{ color: "var(--text-hint)" }}>للتحويل من قِبل السائقين</p>
                 </div>
               </div>
 
@@ -301,20 +301,20 @@ export default function AdminSettings() {
                 {accounts.length > 0 ? (
                   <div className="space-y-3 mb-5">
                     {accounts.map((acc) => (
-                      <div key={acc.intId} className="relative p-4 rounded-xl" style={{ backgroundColor: "#161616", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div key={acc.intId} className="relative p-4 rounded-xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-black text-white text-sm">{acc.bankName}</p>
-                            <p className="text-sm font-mono mt-1 break-all" dir="ltr" style={{ color: "rgba(255,255,255,0.65)" }}>{acc.iban}</p>
+                            <p className="font-black text-sm" style={{ color: "var(--text)" }}>{acc.bankName}</p>
+                            <p className="text-sm font-mono mt-1 break-all" dir="ltr" style={{ color: "var(--text-sub)" }}>{acc.iban}</p>
                             <div className="flex items-center gap-1.5 mt-1.5">
-                              <User size={12} className="shrink-0" style={{ color: "rgba(255,255,255,0.35)" }} />
-                              <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.45)" }}>{acc.accountHolderName}</p>
+                              <User size={12} className="shrink-0" style={{ color: "var(--text-hint)" }} />
+                              <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{acc.accountHolderName}</p>
                             </div>
                           </div>
                           <button
                             onClick={() => handleDeleteBank(acc.intId)}
                             className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 min-h-[32px]"
-                            style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
+                            style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}>
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -323,14 +323,14 @@ export default function AdminSettings() {
                   </div>
                 ) : (
                   <div className="text-center py-6 mb-4">
-                    <Landmark size={28} className="mx-auto mb-2" style={{ color: "rgba(255,255,255,0.18)" }} />
-                    <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>لا توجد حسابات بنكية مضافة</p>
+                    <Landmark size={28} className="mx-auto mb-2" style={{ color: "var(--border)" }} />
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>لا توجد حسابات بنكية مضافة</p>
                   </div>
                 )}
 
                 {/* Add Bank Form */}
-                <form onSubmit={handleAddBank} className="space-y-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  <p className="text-xs font-black flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                <form onSubmit={handleAddBank} className="space-y-3 pt-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                  <p className="text-xs font-black flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
                     <Plus size={13} />
                     إضافة حساب جديد
                   </p>
@@ -366,26 +366,26 @@ export default function AdminSettings() {
             </div>
 
             {/* Login Code Card */}
-            <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.16)" }}>
-                  <KeyRound size={18} style={{ color: "#deff9a" }} />
+            <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                  <KeyRound size={18} style={{ color: "var(--brand)" }} />
                 </div>
                 <div>
-                  <p className="font-black text-white">رمز الدخول السري</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>تغيير رمز تسجيل دخول المشرف</p>
+                  <p className="font-black" style={{ color: "var(--text)" }}>رمز الدخول السري</p>
+                  <p className="text-xs" style={{ color: "var(--text-hint)" }}>تغيير رمز تسجيل دخول المشرف</p>
                 </div>
               </div>
 
               <div className="p-5">
-                <div className="flex items-start gap-2 p-3 rounded-xl mb-4" style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
-                  <ShieldCheck size={15} className="mt-0.5 shrink-0" style={{ color: "#fbbf24" }} />
-                  <p className="text-xs" style={{ color: "rgba(251,191,36,0.9)" }}>احتفظ بالرمز الجديد في مكان آمن. ستحتاجه لتسجيل الدخول لاحقاً.</p>
+                <div className="flex items-start gap-2 p-3 rounded-xl mb-4" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
+                  <ShieldCheck size={15} className="mt-0.5 shrink-0" style={{ color: "var(--status-open-text)" }} />
+                  <p className="text-xs" style={{ color: "var(--status-open-text)" }}>احتفظ بالرمز الجديد في مكان آمن. ستحتاجه لتسجيل الدخول لاحقاً.</p>
                 </div>
 
                 <form onSubmit={handleChangeCode} className="space-y-3">
                   <div>
-                    <label className="text-xs font-bold mb-1.5 block" style={{ color: "rgba(255,255,255,0.45)" }}>الرمز الجديد (6 أحرف على الأقل)</label>
+                    <label className="text-xs font-bold mb-1.5 block" style={{ color: "var(--text-muted)" }}>الرمز الجديد (6 أحرف على الأقل)</label>
                     <Input
                       value={newCode}
                       onChange={(e) => setNewCode(e.target.value)}
@@ -396,7 +396,7 @@ export default function AdminSettings() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold mb-1.5 block" style={{ color: "rgba(255,255,255,0.45)" }}>تأكيد الرمز الجديد</label>
+                    <label className="text-xs font-bold mb-1.5 block" style={{ color: "var(--text-muted)" }}>تأكيد الرمز الجديد</label>
                     <Input
                       value={confirmCode}
                       onChange={(e) => setConfirmCode(e.target.value)}

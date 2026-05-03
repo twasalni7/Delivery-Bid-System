@@ -28,34 +28,34 @@ export default function DriverLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#000000" }} dir="rtl">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--bg)" }} dir="rtl">
       {/* Hero header */}
       <div className="px-6 pt-10 pb-12">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-8" style={{ color: "var(--text-muted)" }}>
           ← العودة
         </Link>
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg" style={{ backgroundColor: "#deff9a" }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg" style={{ backgroundColor: "var(--brand)" }}>
             🚗
           </div>
           <div>
-            <h1 className="text-2xl font-black" style={{ color: "#deff9a" }}>توصّلني</h1>
-            <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>بوابة السائق</p>
+            <h1 className="text-2xl font-black" style={{ color: "var(--brand)" }}>توصّلني</h1>
+            <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>بوابة السائق</p>
           </div>
         </div>
       </div>
 
       {/* Card */}
       <div className="flex-1 px-5 -mt-2">
-        <div className="rounded-3xl p-7" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <h2 className="text-xl font-black text-white mb-1">دخول السائق</h2>
-          <p className="text-sm font-bold mb-7" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <div className="rounded-3xl p-7" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <h2 className="text-xl font-black mb-1" style={{ color: "var(--text)" }}>دخول السائق</h2>
+          <p className="text-sm font-bold mb-7" style={{ color: "var(--text-muted)" }}>
             يُسجَّل السائقون عبر الإدارة ويحصلون على رمز دخول
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className="text-sm font-bold block" style={{ color: "rgba(255,255,255,0.6)" }}>رقم الجوال</label>
+              <label className="text-sm font-bold block" style={{ color: "var(--text-sub)" }}>رقم الجوال</label>
               <input
                 type="tel"
                 placeholder="05xxxxxxxx"
@@ -68,7 +68,7 @@ export default function DriverLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold block" style={{ color: "rgba(255,255,255,0.6)" }}>رمز الدخول</label>
+              <label className="text-sm font-bold block" style={{ color: "var(--text-sub)" }}>رمز الدخول</label>
               <input
                 placeholder="الرمز المعطى من الإدارة"
                 value={loginCode}

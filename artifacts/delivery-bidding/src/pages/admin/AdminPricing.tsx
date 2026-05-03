@@ -126,8 +126,8 @@ export default function AdminPricing() {
       <Layout role="admin">
         <div className="flex items-center justify-center py-20">
           <div className="text-center space-y-3">
-            <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mx-auto" style={{ borderColor: "rgba(222,255,154,0.3)", borderTopColor: "#deff9a" }} />
-            <p className="font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>جاري تحميل إعدادات التسعير...</p>
+            <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mx-auto" style={{ borderColor: "var(--brand-border)", borderTopColor: "var(--brand)" }} />
+            <p className="font-bold" style={{ color: "var(--text-muted)" }}>جاري تحميل إعدادات التسعير...</p>
           </div>
         </div>
       </Layout>
@@ -141,8 +141,8 @@ export default function AdminPricing() {
         {/* ── Header ── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-black text-white">إدارة نظام التسعير</h1>
-            <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>إدارة نظام التسعير</h1>
+            <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
               تعديل نطاقات المسافة، خصومات المشاركة، ومعايير القرب
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function AdminPricing() {
             onClick={handleSave}
             disabled={saving}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-sm disabled:opacity-50 transition-all active:scale-95"
-            style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
           >
             {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
             {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
@@ -160,21 +160,21 @@ export default function AdminPricing() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           {/* ── Distance Tiers ── */}
-          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.16)" }}>
-                <MapPin size={18} style={{ color: "#deff9a" }} />
+          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                <MapPin size={18} style={{ color: "var(--brand)" }} />
               </div>
               <div>
-                <p className="font-black text-white">نطاقات المسافة والأسعار</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>السعر الشهري الأساسي (ريال) لكل نطاق</p>
+                <p className="font-black" style={{ color: "var(--text)" }}>نطاقات المسافة والأسعار</p>
+                <p className="text-xs" style={{ color: "var(--text-hint)" }}>السعر الشهري الأساسي (ريال) لكل نطاق</p>
               </div>
             </div>
 
             <div className="p-5 space-y-3">
               <div className="grid grid-cols-3 gap-2 mb-2">
-                <p className="text-xs font-black" style={{ color: "rgba(255,255,255,0.4)" }}>الحد الأعلى (كم)</p>
-                <p className="text-xs font-black" style={{ color: "rgba(255,255,255,0.4)" }}>السعر الأساسي (ريال)</p>
+                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>الحد الأعلى (كم)</p>
+                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>السعر الأساسي (ريال)</p>
                 <p />
               </div>
               {tiers.map((tier, idx) => (
@@ -183,22 +183,22 @@ export default function AdminPricing() {
                     type="number"
                     value={tier.max}
                     onChange={(e) => updateTier(idx, "max", e.target.value)}
-                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
-                    style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
+                    style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                     min="0"
                   />
                   <input
                     type="number"
                     value={tier.base}
                     onChange={(e) => updateTier(idx, "base", e.target.value)}
-                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
-                    style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
+                    style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                     min="0"
                   />
                   <button
                     onClick={() => removeTier(idx)}
                     className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
-                    style={{ backgroundColor: "rgba(239,68,68,0.08)", color: "#f87171" }}
+                    style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -207,7 +207,7 @@ export default function AdminPricing() {
               <button
                 onClick={addTier}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black border-2 border-dashed transition-colors"
-                style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}
+                style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
               >
                 <Plus size={14} /> إضافة نطاق
               </button>
@@ -215,21 +215,21 @@ export default function AdminPricing() {
           </div>
 
           {/* ── Sharing Discounts ── */}
-          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}>
-                <Users size={18} style={{ color: "#a5b4fc" }} />
+          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-frozen-bg)", border: "1px solid var(--status-frozen-border)" }}>
+                <Users size={18} style={{ color: "var(--status-frozen-text)" }} />
               </div>
               <div>
-                <p className="font-black text-white">خصومات الاشتراك المشترك</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>نسبة السعر لكل شخص (1.0 = 100%)</p>
+                <p className="font-black" style={{ color: "var(--text)" }}>خصومات الاشتراك المشترك</p>
+                <p className="text-xs" style={{ color: "var(--text-hint)" }}>نسبة السعر لكل شخص (1.0 = 100%)</p>
               </div>
             </div>
 
             <div className="p-5 space-y-3">
               <div className="grid grid-cols-3 gap-2 mb-2">
-                <p className="text-xs font-black" style={{ color: "rgba(255,255,255,0.4)" }}>عدد الأشخاص</p>
-                <p className="text-xs font-black" style={{ color: "rgba(255,255,255,0.4)" }}>معامل الخصم</p>
+                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>عدد الأشخاص</p>
+                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>معامل الخصم</p>
                 <p />
               </div>
               {discounts.map((d, idx) => (
@@ -238,8 +238,8 @@ export default function AdminPricing() {
                     type="number"
                     value={d.people}
                     onChange={(e) => updateDiscount(idx, "people", e.target.value)}
-                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
-                    style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
+                    style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                     min="1"
                   />
                   <div className="relative">
@@ -247,18 +247,18 @@ export default function AdminPricing() {
                       type="number"
                       value={d.factor}
                       onChange={(e) => updateDiscount(idx, "factor", e.target.value)}
-                      className="w-full rounded-xl px-3 py-2.5 text-sm font-bold text-white text-center focus:outline-none"
-                      style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                      className="w-full rounded-xl px-3 py-2.5 text-sm font-bold text-center focus:outline-none"
+                      style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                       min="0" max="1" step="0.01"
                     />
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                       ({Math.round(d.factor * 100)}%)
                     </span>
                   </div>
                   <button
                     onClick={() => removeDiscount(idx)}
                     className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
-                    style={{ backgroundColor: "rgba(239,68,68,0.08)", color: "#f87171" }}
+                    style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -267,7 +267,7 @@ export default function AdminPricing() {
               <button
                 onClick={addDiscount}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black border-2 border-dashed transition-colors"
-                style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}
+                style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
               >
                 <Plus size={14} /> إضافة مستوى خصم
               </button>
@@ -275,54 +275,54 @@ export default function AdminPricing() {
           </div>
 
           {/* ── Proximity Settings ── */}
-          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)" }}>
-                <Settings2 size={18} style={{ color: "#fbbf24" }} />
+          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
+                <Settings2 size={18} style={{ color: "var(--status-open-text)" }} />
               </div>
               <div>
-                <p className="font-black text-white">معايير القرب للاشتراك المشترك</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>الحد الأقصى للمسافة/الوقت للتصنيف كـ"قريبين"</p>
+                <p className="font-black" style={{ color: "var(--text)" }}>معايير القرب للاشتراك المشترك</p>
+                <p className="text-xs" style={{ color: "var(--text-hint)" }}>الحد الأقصى للمسافة/الوقت للتصنيف كـ"قريبين"</p>
               </div>
             </div>
 
             <div className="p-5 space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
                   المسافة بين المنازل (كم)
                 </label>
                 <input
                   type="number"
                   value={proximityHomeKm}
                   onChange={(e) => setProximityHomeKm(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
-                  style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                   min="0.1" step="0.5"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
                   المسافة بين جهات العمل (كم)
                 </label>
                 <input
                   type="number"
                   value={proximityWorkKm}
                   onChange={(e) => setProximityWorkKm(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
-                  style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                   min="0.1" step="0.5"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
                   فارق وقت الدوام (دقيقة)
                 </label>
                 <input
                   type="number"
                   value={proximityTimeMinutes}
                   onChange={(e) => setProximityTimeMinutes(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
-                  style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                   min="1" step="5"
                 />
               </div>
@@ -331,24 +331,24 @@ export default function AdminPricing() {
 
           {/* ── Pricing Preview ── */}
           {config && (
-            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                  <Clock size={18} style={{ color: "#34d399" }} />
+            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)" }}>
+                  <Clock size={18} style={{ color: "var(--status-active-text)" }} />
                 </div>
                 <div>
-                  <p className="font-black text-white">مثال على التسعير الحالي</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>ذهاب فقط، 5 أيام/أسبوع</p>
+                  <p className="font-black" style={{ color: "var(--text)" }}>مثال على التسعير الحالي</p>
+                  <p className="text-xs" style={{ color: "var(--text-hint)" }}>ذهاب فقط، 5 أيام/أسبوع</p>
                 </div>
               </div>
               <div className="p-5">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                        <th className="pb-2 font-black text-right" style={{ color: "rgba(255,255,255,0.4)" }}>النطاق (كم)</th>
+                      <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                        <th className="pb-2 font-black text-right" style={{ color: "var(--text-muted)" }}>النطاق (كم)</th>
                         {[1, 2, 3, 4].map((p) => (
-                          <th key={p} className="pb-2 font-black text-center" style={{ color: "rgba(255,255,255,0.4)" }}>{p} شخص</th>
+                          <th key={p} className="pb-2 font-black text-center" style={{ color: "var(--text-muted)" }}>{p} شخص</th>
                         ))}
                       </tr>
                     </thead>
@@ -356,15 +356,15 @@ export default function AdminPricing() {
                       {tiers.sort((a, b) => a.max - b.max).map((tier, i) => {
                         const prevMax = i === 0 ? 0 : (tiers.sort((a, b) => a.max - b.max)[i - 1]?.max ?? 0);
                         return (
-                          <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                            <td className="py-2 font-bold text-white">{prevMax}–{tier.max}</td>
+                          <tr key={i} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                            <td className="py-2 font-bold">{prevMax}–{tier.max}</td>
                             {[1, 2, 3, 4].map((people) => {
                               const factor = discounts
                                 .sort((a, b) => a.people - b.people)
                                 .reduce((f, d) => people >= d.people ? d.factor : f, 1.0);
                               const price = Math.round(tier.base * 1.0 * 1.0 * factor);
                               return (
-                                <td key={people} className="py-2 text-center font-bold" style={{ color: "#deff9a" }}>
+                                <td key={people} className="py-2 text-center font-bold" style={{ color: "var(--brand)" }}>
                                   {price.toLocaleString("ar-SA")}
                                 </td>
                               );
@@ -381,17 +381,17 @@ export default function AdminPricing() {
         </div>
 
         {/* ── Admin Review Requests ── */}
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <AlertTriangle size={18} style={{ color: "#f87171" }} />
+        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
+              <AlertTriangle size={18} style={{ color: "var(--status-cancelled-text)" }} />
             </div>
             <div className="flex-1">
-              <p className="font-black text-white">طلبات تحتاج مراجعة الإدارة</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>طلبات تتجاوز المسافة 40 كم — يجب تحديد السعر يدوياً</p>
+              <p className="font-black" style={{ color: "var(--text)" }}>طلبات تحتاج مراجعة الإدارة</p>
+              <p className="text-xs" style={{ color: "var(--text-hint)" }}>طلبات تتجاوز المسافة 40 كم — يجب تحديد السعر يدوياً</p>
             </div>
             {reviewRequests.length > 0 && (
-              <span className="px-3 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171" }}>
+              <span className="px-3 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>
                 {reviewRequests.length} طلب
               </span>
             )}
@@ -399,30 +399,30 @@ export default function AdminPricing() {
 
           {loadingReview ? (
             <div className="py-12 text-center">
-              <div className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin mx-auto" style={{ borderColor: "rgba(255,255,255,0.1)", borderTopColor: "#deff9a" }} />
+              <div className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin mx-auto" style={{ borderColor: "var(--border)", borderTopColor: "var(--brand)" }} />
             </div>
           ) : reviewRequests.length === 0 ? (
             <div className="py-12 text-center">
               <p className="text-3xl mb-2">✅</p>
-              <p className="font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>لا توجد طلبات تحتاج مراجعة</p>
+              <p className="font-bold" style={{ color: "var(--text-muted)" }}>لا توجد طلبات تحتاج مراجعة</p>
             </div>
           ) : (
-            <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+            <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
               {reviewRequests.map((r) => (
                 <div key={r.id} className="p-5 space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171" }}>
+                        <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>
                           طلب #{r.id}
                         </span>
-                        <span className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
                           {r.distanceKm ? `${r.distanceKm.toFixed(1)} كم` : "—"} · {r.numberOfPeople} أشخاص
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-white truncate">من: {r.homeLocation}</p>
-                      <p className="text-sm font-bold text-white truncate">إلى: {r.workLocation}</p>
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>من: {r.homeLocation}</p>
+                      <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>إلى: {r.workLocation}</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         وقت الذهاب: {r.morningTime}
                       </p>
                     </div>
@@ -433,15 +433,15 @@ export default function AdminPricing() {
                       placeholder="السعر الشهري (ريال)"
                       value={customPrices[r.id] ?? ""}
                       onChange={(e) => setCustomPrices((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                      className="flex-1 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none"
-                      style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                      className="flex-1 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
+                      style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
                       min="0"
                     />
                     <button
                       onClick={() => handleSetReviewPrice(r.id)}
                       disabled={settingPrice === r.id}
                       className="px-4 py-3 rounded-xl font-black text-sm disabled:opacity-50 active:scale-95 transition-transform"
-                      style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}
+                      style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                     >
                       {settingPrice === r.id ? "..." : "تحديد السعر"}
                     </button>

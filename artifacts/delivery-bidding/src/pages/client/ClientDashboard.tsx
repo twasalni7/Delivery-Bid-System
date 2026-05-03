@@ -14,13 +14,13 @@ const CLIENT_TYPE_EMOJI: Record<string, string> = {
 };
 
 const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string }> = {
-  OPEN:      { bg: "rgba(59,130,246,0.1)",  border: "rgba(59,130,246,0.25)",  text: "#60a5fa" },
-  SELECTED:  { bg: "rgba(222,255,154,0.1)", border: "rgba(222,255,154,0.25)", text: "#deff9a" },
-  ACTIVE:    { bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.25)",  text: "#34d399" },
-  COMPLETED: { bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", text: "rgba(255,255,255,0.4)" },
-  CANCELLED: { bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.2)",   text: "#f87171" },
-  EXPIRED:   { bg: "rgba(156,163,175,0.08)", border: "rgba(156,163,175,0.15)", text: "rgba(255,255,255,0.35)" },
-  FROZEN:    { bg: "rgba(59,130,246,0.08)",  border: "rgba(59,130,246,0.2)",  text: "#60a5fa" },
+  OPEN:      { bg: "var(--status-open-bg)",      border: "var(--status-open-border)",      text: "var(--status-open-text)" },
+  SELECTED:  { bg: "var(--status-selected-bg)",  border: "var(--status-selected-border)",  text: "var(--status-selected-text)" },
+  ACTIVE:    { bg: "var(--status-active-bg)",    border: "var(--status-active-border)",    text: "var(--status-active-text)" },
+  COMPLETED: { bg: "var(--status-completed-bg)", border: "var(--status-completed-border)", text: "var(--status-completed-text)" },
+  CANCELLED: { bg: "var(--status-cancelled-bg)", border: "var(--status-cancelled-border)", text: "var(--status-cancelled-text)" },
+  EXPIRED:   { bg: "var(--status-expired-bg)",   border: "var(--status-expired-border)",   text: "var(--status-expired-text)" },
+  FROZEN:    { bg: "var(--status-frozen-bg)",    border: "var(--status-frozen-border)",    text: "var(--status-frozen-text)" },
 };
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
@@ -54,15 +54,15 @@ export default function ClientDashboard() {
         <div className="flex items-center justify-between mb-7">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-[1.9rem] font-black text-white tracking-tight">اشتراكاتي</h1>
+              <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكاتي</h1>
               {totalUnread > 0 && (
                 <span className="inline-flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                   <Bell size={12} /> {totalUnread}
                 </span>
               )}
             </div>
-            <p className="font-bold text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>اشتراكات التوصيل الشهري</p>
+            <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>اشتراكات التوصيل الشهري</p>
           </div>
         </div>
 
@@ -80,14 +80,14 @@ export default function ClientDashboard() {
         </div>
 
         {isLoading && (
-          <div className="text-center py-20 font-bold text-base" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div>
+          <div className="text-center py-20 font-bold text-base" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
         )}
 
         {!isLoading && (!requests || requests.length === 0) && (
-          <div className="text-center py-24 rounded-3xl" style={{ backgroundColor: "#111111", border: "2px dashed rgba(255,255,255,0.08)" }}>
+          <div className="text-center py-24 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-5xl mb-4">📦</p>
-            <p className="text-xl font-black text-white">لا توجد اشتراكات بعد</p>
-            <p className="font-bold text-sm mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>أضف أول طلب دوام شهري للحصول على عروض السائقين</p>
+            <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد اشتراكات بعد</p>
+            <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>أضف أول طلب دوام شهري للحصول على عروض السائقين</p>
           </div>
         )}
 
@@ -103,7 +103,7 @@ export default function ClientDashboard() {
               return (
                 <Link key={req.id} href={`/client/request/${req.id}`}>
                   <div className="rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
-                    style={{ backgroundColor: "#111111", border: `1px solid ${unread > 0 ? "rgba(222,255,154,0.3)" : "rgba(255,255,255,0.08)"}` }}>
+                    style={{ backgroundColor: "var(--surface)", border: `1px solid ${unread > 0 ? "var(--brand-border)" : "var(--border-subtle)"}` }}>
                     {/* Status header */}
                     <div className="p-5" style={{ backgroundColor: statusStyle.bg, borderBottom: `1px solid ${statusStyle.border}` }}>
                       <div className="flex items-start justify-between">
@@ -114,7 +114,7 @@ export default function ClientDashboard() {
                           </span>
                           {unread > 0 && (
                             <span className="text-xs font-black px-2.5 py-0.5 rounded-full flex items-center gap-1"
-                              style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
+                              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                               <Bell size={11} /> {unread} جديد
                             </span>
                           )}
@@ -126,8 +126,8 @@ export default function ClientDashboard() {
                       <div className="flex items-center gap-3 mt-4">
                         <span className="text-4xl">{emoji}</span>
                         <div>
-                          {clientTypeLabel && <p className="text-white font-black text-xl tracking-tight">{clientTypeLabel}</p>}
-                          <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>طلب #{req.id}</p>
+                          {clientTypeLabel && <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{clientTypeLabel}</p>}
+                          <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>طلب #{req.id}</p>
                         </div>
                       </div>
                     </div>
@@ -135,38 +135,38 @@ export default function ClientDashboard() {
                     {/* Card body */}
                     <div className="px-5 py-4 space-y-3">
                       <div className="flex items-start gap-3">
-                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#deff9a" }} />
+                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
                         <div className="flex-1">
-                          <p className="text-xs font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>من (الانطلاق)</p>
-                          <p className="text-sm text-white font-black">{req.homeLocation}</p>
+                          <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>من (الانطلاق)</p>
+                          <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.homeLocation}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
-                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#f87171" }} />
+                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
                         <div className="flex-1">
-                          <p className="text-xs font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>إلى (الوصول)</p>
-                          <p className="text-sm text-white font-black">{req.workLocation}</p>
+                          <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
+                          <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workLocation}</p>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         <div className="flex items-center gap-1.5">
-                          <Clock size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
-                          <span className="text-sm text-white font-black" dir="ltr">{formatTime12h(req.morningTime)}</span>
+                          <Clock size={14} style={{ color: "var(--text-hint)" }} />
+                          <span className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.morningTime)}</span>
                         </div>
                         {req.eveningTime && (
                           <div className="flex items-center gap-1.5">
-                            <Clock size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
-                            <span className="text-sm text-white font-black" dir="ltr">{formatTime12h(req.eveningTime)}</span>
+                            <Clock size={14} style={{ color: "var(--text-hint)" }} />
+                            <span className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.eveningTime)}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-1.5">
-                          <Users size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
-                          <span className="text-sm text-white font-black">{req.numberOfPeople} ركاب</span>
+                          <Users size={14} style={{ color: "var(--text-hint)" }} />
+                          <span className="text-sm font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople} ركاب</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Calendar size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
-                          <span className="text-sm text-white font-black">{req.workingDaysPerWeek} أيام/أسبوع</span>
+                          <Calendar size={14} style={{ color: "var(--text-hint)" }} />
+                          <span className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workingDaysPerWeek} أيام/أسبوع</span>
                         </div>
                       </div>
 
@@ -176,8 +176,8 @@ export default function ClientDashboard() {
                           return (
                             <span key={i} className="text-xs px-2.5 py-1 rounded-full font-black"
                               style={active
-                                ? { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a", border: "1px solid rgba(222,255,154,0.2)" }
-                                : { backgroundColor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
+                                ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
+                                : { backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}>
                               {d}
                             </span>
                           );
@@ -185,14 +185,14 @@ export default function ClientDashboard() {
                       </div>
 
                       {req.selectedDriver && (
-                        <div className="flex items-center gap-2.5 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div className="flex items-center gap-2.5 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                           <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black"
-                            style={{ backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a" }}>
+                            style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
                             {req.selectedDriver.name?.charAt(0) ?? "س"}
                           </div>
                           <div className="flex-1">
-                            <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>السائق</p>
-                            <p className="text-sm font-black text-white">{req.selectedDriver.name}</p>
+                            <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>السائق</p>
+                            <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.selectedDriver.name}</p>
                           </div>
                           {req.selectedDriver.mobile && (
                             <a href={`tel:${req.selectedDriver.mobile}`}
@@ -204,8 +204,8 @@ export default function ClientDashboard() {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                        <span className="text-sm font-black" style={{ color: "#deff9a" }}>
+                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                        <span className="text-sm font-black" style={{ color: "var(--brand)" }}>
                           {req.status === "SELECTED" || req.status === "ACTIVE"
                             ? "عرض تفاصيل الرحلات اليومية ‹"
                             : "عرض تفاصيل العروض ‹"}

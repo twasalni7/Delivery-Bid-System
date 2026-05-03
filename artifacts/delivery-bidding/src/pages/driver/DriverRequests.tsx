@@ -96,8 +96,8 @@ export default function DriverRequests() {
     <Layout role="driver">
       <div dir="rtl">
         <div className="mb-7">
-          <h1 className="text-[1.9rem] font-black text-white tracking-tight">قائمة الاتفاقات</h1>
-          <p className="font-bold text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>الطلبات التي تم اختيارك فيها</p>
+          <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>قائمة الاتفاقات</h1>
+          <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>الطلبات التي تم اختيارك فيها</p>
         </div>
 
         <div className="flex gap-2 mb-6">
@@ -105,25 +105,25 @@ export default function DriverRequests() {
             <button key={f} onClick={() => setFilter(f)}
               className="px-5 py-2.5 rounded-full text-sm font-black transition-all"
               style={filter === f
-                ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
-                : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
               {label}
             </button>
           ))}
         </div>
 
         {isLoading && (
-          <div className="text-center py-16 font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>جاري التحميل...</div>
+          <div className="text-center py-16 font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
         )}
 
         {!isLoading && filtered.length === 0 && (
-          <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "#111111", border: "2px dashed rgba(255,255,255,0.08)" }}>
+          <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-4xl mb-3">🤝</p>
-            <p className="font-black text-white">لا توجد اتفاقيات</p>
-            <p className="text-sm font-bold mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>لم يتم اختيارك في أي طلب بعد</p>
+            <p className="font-black" style={{ color: "var(--text)" }}>لا توجد اتفاقيات</p>
+            <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>لم يتم اختيارك في أي طلب بعد</p>
             <Link href="/driver/dashboard"
               className="mt-5 inline-block px-5 py-2.5 rounded-full text-sm font-black"
-              style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.12)" }}>
+              style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}>
               العودة للوحة السائق
             </Link>
           </div>
@@ -131,11 +131,11 @@ export default function DriverRequests() {
 
         <div className="space-y-5">
           {filtered.map((r) => (
-            <div key={r.id} className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div key={r.id} className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
               {/* Card header */}
               <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-2"
-                style={{ backgroundColor: "#1a1a1a", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <span className="text-xs font-black" style={{ color: "rgba(255,255,255,0.4)" }}>طلب #{r.id}</span>
+                style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+                <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>طلب #{r.id}</span>
                 <span className={`text-xs px-3 py-1 rounded-full font-black ${STATUS_PILL[r.status] ?? "pill-completed"}`}>
                   {STATUS_LABELS[r.status] ?? r.status}
                 </span>
@@ -144,24 +144,24 @@ export default function DriverRequests() {
               {/* Route */}
               <div className="px-5 py-5 space-y-4">
                 <div className="space-y-3 relative pr-3">
-                  <div className="absolute right-[5px] top-4 bottom-4 w-[2px] rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+                  <div className="absolute right-[5px] top-4 bottom-4 w-[2px] rounded-full" style={{ backgroundColor: "var(--border-subtle)" }} />
                   <div className="flex items-start gap-4 relative z-10">
-                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#deff9a", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
+                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
                     <div>
-                      <p className="text-[10px] font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>الانطلاق</p>
-                      <p className="text-sm text-white font-black">{r.homeLocation}</p>
+                      <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الانطلاق</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{r.homeLocation}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 relative z-10">
-                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#f87171", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
+                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
                     <div>
-                      <p className="text-[10px] font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>الوصول</p>
-                      <p className="text-sm text-white font-black">{r.workLocation}</p>
+                      <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الوصول</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{r.workLocation}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 text-xs font-black" style={{ color: "rgba(255,255,255,0.45)" }} dir="ltr">
+                <div className="flex flex-wrap gap-3 text-xs font-black" style={{ color: "var(--text-muted)" }} dir="ltr">
                   {r.shifts && r.shifts.length > 0 ? (
                     <span>⏰ {r.shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
                   ) : (
@@ -170,16 +170,16 @@ export default function DriverRequests() {
                   <span>👥 {r.numberOfPeople} أشخاص · {r.workingDaysPerWeek} أيام/أسبوع</span>
                 </div>
 
-                <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.2)" }}>
+                <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                   {new Date(r.createdAt).toLocaleDateString("ar-SA")}
                 </p>
               </div>
 
               {/* Actions */}
-              <div className="px-5 pb-5 pt-3 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="px-5 pb-5 pt-3 space-y-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                 {r.phone && (
                   <div className="flex items-center justify-between gap-3">
-                    <a href={`tel:${r.phone}`} className="font-black text-sm" style={{ color: "rgba(255,255,255,0.6)" }} dir="ltr">{r.phone}</a>
+                    <a href={`tel:${r.phone}`} className="font-black text-sm" style={{ color: "var(--text-sub)" }} dir="ltr">{r.phone}</a>
                     <a href={`https://wa.me/${r.phone.replace(/\D/g, "").replace(/^0/, "966")}`}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-black"
@@ -192,20 +192,20 @@ export default function DriverRequests() {
                   <button onClick={() => setOpenChatId(openChatId === r.id ? null : r.id)}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-colors"
                     style={openChatId === r.id
-                      ? { backgroundColor: "rgba(222,255,154,0.1)", color: "#deff9a", border: "1px solid rgba(222,255,154,0.2)" }
-                      : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
+                      : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border-subtle)" }}>
                     <MessageCircle size={15} /> {openChatId === r.id ? "إخفاء المحادثة" : "فتح المحادثة"}
                   </button>
                 )}
                 {openChatId === r.id && (
-                  <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: "#1a1a1a", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                      <span className="text-xs font-black" style={{ color: "rgba(255,255,255,0.5)" }}>محادثة الطلب #{r.id}</span>
-                      <button onClick={() => setOpenChatId(null)} style={{ color: "rgba(255,255,255,0.35)" }}><X size={14} /></button>
+                  <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
+                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+                      <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>محادثة الطلب #{r.id}</span>
+                      <button onClick={() => setOpenChatId(null)} style={{ color: "var(--text-hint)" }}><X size={14} /></button>
                     </div>
-                    <div className="max-h-64 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "#0d0d0d" }}>
+                    <div className="max-h-64 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "var(--header-bg)" }}>
                       {(!chatMessages || chatMessages.length === 0) && (
-                        <p className="text-center text-xs py-4" style={{ color: "rgba(255,255,255,0.3)" }}>لا توجد رسائل بعد</p>
+                        <p className="text-center text-xs py-4" style={{ color: "var(--text-hint)" }}>لا توجد رسائل بعد</p>
                       )}
                       {chatMessages?.map((msg) => {
                         const isMe = msg.senderRole === "driver";
@@ -213,9 +213,9 @@ export default function DriverRequests() {
                           <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                             <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
                               style={isMe
-                                ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
-                                : { backgroundColor: "#1e1e1e", color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                              {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{msg.senderRole === "admin" ? "الإدارة" : "العميل"}</p>}
+                                ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                                : { backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
+                              {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>{msg.senderRole === "admin" ? "الإدارة" : "العميل"}</p>}
                               <p>{msg.body}</p>
                             </div>
                           </div>
@@ -223,20 +223,20 @@ export default function DriverRequests() {
                       })}
                       <div ref={chatEndRef} />
                     </div>
-                    <div className="p-2 flex gap-2" style={{ backgroundColor: "#111111", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="p-2 flex gap-2" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
                       <input
                         value={chatMessage}
                         onChange={(e) => setChatMessage(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                         placeholder="اكتب رسالة..."
                         className="flex-1 text-sm px-3 py-2 rounded-xl"
-                        style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }}
+                        style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }}
                         dir="rtl"
                       />
                       <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
                         disabled={!chatMessage.trim() || sendMessage.isPending}
                         className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-50"
-                        style={{ backgroundColor: "#deff9a", color: "#0a0a0a" }}>
+                        style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
                         <Send size={15} />
                       </button>
                     </div>

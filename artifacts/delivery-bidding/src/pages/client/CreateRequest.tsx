@@ -41,16 +41,16 @@ type AdditionalLocation = { type: "pickup" | "dropoff"; address: string };
 function ProgressSteps({ currentStep }: { currentStep: number }) {
   return (
     <div className="flex justify-between items-center px-8 mb-8 relative">
-      <div className="absolute left-8 right-8 h-1 top-1/2 -translate-y-1/2 -z-10 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+      <div className="absolute left-8 right-8 h-1 top-1/2 -translate-y-1/2 -z-10 rounded-full" style={{ backgroundColor: "var(--border-subtle)" }} />
       <div
         className="absolute right-8 h-1 top-1/2 -translate-y-1/2 -z-10 transition-all duration-700 rounded-full"
-        style={{ backgroundColor: "#deff9a", left: "2rem", width: `${((currentStep - 1) / 3) * 100}%` }}
+        style={{ backgroundColor: "var(--brand)", left: "2rem", width: `${((currentStep - 1) / 3) * 100}%` }}
       />
       {[1, 2, 3, 4].map((s) => (
         <div
           key={s}
           className="w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10"
-          style={s <= currentStep ? { backgroundColor: "#deff9a", borderColor: "#deff9a" } : { backgroundColor: "#111111", borderColor: "rgba(255,255,255,0.12)" }}
+          style={s <= currentStep ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" } : { backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
         />
       ))}
     </div>
@@ -220,16 +220,16 @@ export default function CreateRequest() {
   return (
     <Layout role="client">
       <div dir="rtl" className="pb-8">
-        <Link href="/client" className="inline-flex items-center gap-1.5 text-sm font-bold transition-colors mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <Link href="/client" className="inline-flex items-center gap-1.5 text-sm font-bold transition-colors mb-6" style={{ color: "var(--text-muted)" }}>
           <ArrowRight size={15} /> العودة لاشتراكاتي
         </Link>
 
         <ProgressSteps currentStep={step} />
 
-        <div className="rounded-[2.5rem] overflow-hidden" style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 24px 56px rgba(0,0,0,0.4)" }}>
+        <div className="rounded-[2.5rem] overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 24px 56px rgba(0,0,0,0.4)" }}>
           {/* Step header */}
-          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>المرحلة {step} من 4</p>
+          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+            <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 4</p>
             <h2 className="text-[1.8rem] font-black tracking-tight leading-none text-white">{STEP_TITLES[step - 1]}</h2>
           </div>
 
@@ -242,12 +242,12 @@ export default function CreateRequest() {
                     key={t.value}
                     onClick={() => setClientType(t.value)}
                     className="flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all active:scale-[0.98]"
-                    style={clientType === t.value ? { borderColor: "rgba(222,255,154,0.3)", backgroundColor: "rgba(222,255,154,0.06)" } : { borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#161616" }}
+                    style={clientType === t.value ? { borderColor: "var(--brand-border)", backgroundColor: "var(--brand-subtle)" } : { borderColor: "var(--border-subtle)", backgroundColor: "var(--surface)" }}
                     >
                       <div className="flex items-center gap-4">
                         <div
                           className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
-                          style={clientType === t.value ? { backgroundColor: "#deff9a", color: "#0a0a0a" } : { backgroundColor: "rgba(255,255,255,0.06)" }}
+                          style={clientType === t.value ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "var(--border-subtle)" }}
                         >
                           {clientType === t.value ? (
                           <Users size={22} />
@@ -259,7 +259,7 @@ export default function CreateRequest() {
                       </div>
                       <div
                         className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                        style={clientType === t.value ? { borderColor: "#deff9a", backgroundColor: "#deff9a", color: "#0a0a0a" } : { borderColor: "rgba(255,255,255,0.12)" }}
+                        style={clientType === t.value ? { borderColor: "var(--brand)", backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { borderColor: "var(--border)" }}
                       >
                         {clientType === t.value && <Check size={12} strokeWidth={4} />}
                       </div>
@@ -272,8 +272,8 @@ export default function CreateRequest() {
             {step === 2 && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>
-                    <Home className="inline-block ml-1" size={16} style={{ color: "#deff9a" }} />
+                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
+                    <Home className="inline-block ml-1" size={16} style={{ color: "var(--brand)" }} />
                     موقع الانطلاق (المنزل)
                   </label>
                   <MapPicker
@@ -283,10 +283,10 @@ export default function CreateRequest() {
                       setHomeLocation(coords.address);
                     }}
                     placeholder="اضغط على الخريطة لتحديد موقع المنزل"
-                    color="#deff9a"
+                    color="var(--brand)"
                   />
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
-                    <Home className="shrink-0" size={22} style={{ color: "#deff9a" }} />
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
+                    <Home className="shrink-0" size={22} style={{ color: "var(--brand)" }} />
                     <Input
                       type="text"
                       placeholder="أو اكتب العنوان يدوياً: حي الروضة، شارع التحلية..."
@@ -305,7 +305,7 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
                     <Briefcase className="inline-block ml-1 text-rose-500" size={16} />
                     موقع الوصول (الدوام)
                   </label>
@@ -316,10 +316,10 @@ export default function CreateRequest() {
                       setWorkLocation(coords.address);
                     }}
                     placeholder="اضغط على الخريطة لتحديد موقع العمل"
-                    color="#fb7185"
+                    color="var(--brand)"
                     initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
                   />
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616" }}>
+                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
                     <Briefcase className="text-rose-500 shrink-0" size={22} />
                     <Input
                       type="text"
@@ -340,8 +340,8 @@ export default function CreateRequest() {
 
                 {/* Distance indicator */}
                 {homeCoords && workCoords && (
-                  <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.2)" }}>
-                    <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                    <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       المسافة المقدرة:{" "}
                       <span className="text-white">
                         {haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng).toFixed(1)}{" "}
@@ -359,7 +359,7 @@ export default function CreateRequest() {
                           value={loc.type}
                           onChange={(e) => updateLocation(idx, "type", e.target.value)}
                           className="rounded-2xl px-3 py-2.5 text-sm font-bold focus:outline-none"
-                          style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#161616", color: "#ffffff" }}
+                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
                         >
                           <option value="pickup">استلام</option>
                           <option value="dropoff">توصيل</option>
@@ -375,7 +375,7 @@ export default function CreateRequest() {
                     <button
                       onClick={() => removeLocation(idx)}
                       className="mt-2.5 p-2 rounded-xl transition-colors"
-                      style={{ color: "#f87171", backgroundColor: "rgba(239,68,68,0.08)" }}
+                      style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
                     >
                       <X size={16} />
                     </button>
@@ -385,7 +385,7 @@ export default function CreateRequest() {
                 <button
                   onClick={addLocation}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-[1.5rem] border-2 border-dashed text-sm font-black transition-colors"
-                  style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)" }}
+                  style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
                 >
                   <Plus size={16} /> إضافة موقع آخر
                 </button>
@@ -397,7 +397,7 @@ export default function CreateRequest() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت الذهاب</label>
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت الذهاب</label>
                     <Input
                       type="time"
                       value={morningTime}
@@ -405,10 +405,10 @@ export default function CreateRequest() {
                       className="rounded-2xl font-bold text-base input-dark"
                       dir="ltr"
                     />
-                    {morningTime && <p className="text-xs font-bold" style={{ color: "#deff9a" }}>{formatTime12h(morningTime)}</p>}
+                    {morningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(morningTime)}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>⏰ وقت العودة</label>
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت العودة</label>
                     <Input
                       type="time"
                       value={eveningTime}
@@ -416,46 +416,46 @@ export default function CreateRequest() {
                       className="rounded-2xl font-bold text-base input-dark"
                       dir="ltr"
                     />
-                    {eveningTime && <p className="text-xs font-bold" style={{ color: "#deff9a" }}>{formatTime12h(eveningTime)}</p>}
+                    {eveningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(eveningTime)}</p>}
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>أيام العمل</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>أيام العمل</label>
                   <div className="flex gap-2 flex-wrap">
                     {DAYS.map((d) => (
                       <button
                         key={d.key}
                         onClick={() => toggleDay(d.key)}
                         className="w-10 h-10 rounded-full text-sm font-black transition-all active:scale-90"
-                        style={selectedDays.includes(d.key) ? { backgroundColor: "#deff9a", color: "#0a0a0a" } : { backgroundColor: "#1a1a1a", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}
+                        style={selectedDays.includes(d.key) ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "var(--surface-2)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}
                       >
                         {d.label}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{selectedDays.length} أيام في الأسبوع</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{selectedDays.length} أيام في الأسبوع</p>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>👥 عدد الأشخاص</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>👥 عدد الأشخاص</label>
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.max(1, parseInt(p) - 1)))}
                        className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "#1a1a1a", color: "#ffffff", border: "1px solid rgba(255,255,255,0.08)" }}
+                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                      >−</button>
-                    <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "#deff9a" }}>{numberOfPeople}</span>
+                    <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "var(--brand)" }}>{numberOfPeople}</span>
                     <button
                       onClick={() => setNumberOfPeople((p) => String(Math.min(20, parseInt(p) + 1)))}
                        className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "#1a1a1a", color: "#ffffff", border: "1px solid rgba(255,255,255,0.08)" }}
+                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                      >+</button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>ملاحظات للسائقين (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>ملاحظات للسائقين (اختياري)</label>
                   <Textarea
                     placeholder="مثال: يفضل سائقة، باص كبير..."
                     value={notes}
@@ -472,15 +472,15 @@ export default function CreateRequest() {
               <div className="space-y-5">
                 {/* Shared Subscription Suggestion */}
                 {sharedSuggestions && sharedSuggestions.count > 0 && (
-                  <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(99,102,241,0.3)", backgroundColor: "rgba(99,102,241,0.06)" }}>
+                  <div className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid var(--status-frozen-border)", backgroundColor: "var(--status-frozen-bg)" }}>
                     <div className="p-4 space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(99,102,241,0.15)" }}>
-                          <Share2 size={18} style={{ color: "#a5b4fc" }} />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--status-frozen-bg)" }}>
+                          <Share2 size={18} style={{ color: "var(--status-frozen-text)" }} />
                         </div>
                         <div>
-                          <p className="font-black text-white text-sm">اشتراك مشترك متاح!</p>
-                          <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                          <p className="font-black text-sm" style={{ color: "var(--text)" }}>اشتراك مشترك متاح!</p>
+                          <p className="text-xs" style={{ color: "var(--text-sub)" }}>
                             وُجد {sharedSuggestions.count} {sharedSuggestions.count === 1 ? "شخص" : "أشخاص"} قريبين منك — يمكنكم المشاركة بسعر مخفّض
                           </p>
                         </div>
@@ -490,8 +490,8 @@ export default function CreateRequest() {
                           onClick={() => setSubscriptionType("shared")}
                           className="flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all"
                           style={subscriptionType === "shared"
-                            ? { backgroundColor: "#a5b4fc", color: "#1e1b4b" }
-                            : { backgroundColor: "rgba(99,102,241,0.1)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.2)" }}
+                            ? { backgroundColor: "var(--status-frozen-text)", color: "var(--brand-fg)" }
+                            : { backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)", border: "1px solid var(--status-frozen-border)" }}
                         >
                           <Share2 size={15} /> مشترك (أرخص)
                         </button>
@@ -499,8 +499,8 @@ export default function CreateRequest() {
                           onClick={() => setSubscriptionType("private")}
                           className="flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all"
                           style={subscriptionType === "private"
-                            ? { backgroundColor: "#deff9a", color: "#0a0a0a" }
-                            : { backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}
+                            ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                            : { backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
                         >
                           <Lock size={15} /> خاص
                         </button>
@@ -511,58 +511,58 @@ export default function CreateRequest() {
 
                 {/* Auto-calculated price display */}
                 {pricingResult && !pricingResult.needsAdminReview ? (
-                  <div className="p-5 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "rgba(222,255,154,0.06)", border: "1px solid rgba(222,255,154,0.25)" }}>
+                  <div className="p-5 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                      <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                         <Lock size={10} /> محمي
                       </div>
                     </div>
 
                     {/* Per-person price — always displayed */}
                     <div className="space-y-1">
-                      <p className="text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      <p className="text-xs font-black uppercase tracking-widest" style={{ color: "var(--text-hint)" }}>
                         Price per person
                       </p>
                       <div className="flex items-baseline gap-2">
-                        <p className="text-[2.5rem] font-black leading-none" style={{ color: "#deff9a" }}>
+                        <p className="text-[2.5rem] font-black leading-none" style={{ color: "var(--brand)" }}>
                           {pricingResult.pricePerPerson.toLocaleString("ar-SA")}
                         </p>
-                        <p className="text-base font-black" style={{ color: "rgba(255,255,255,0.45)" }}>SAR / شخص / شهر</p>
+                        <p className="text-base font-black" style={{ color: "var(--text-muted)" }}>SAR / شخص / شهر</p>
                       </div>
                       {sharingCount > 1 && (
-                        <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>
+                        <p className="text-sm font-bold" style={{ color: "var(--text-hint)" }}>
                           ({sharingCount} أشخاص × {pricingResult.pricePerPerson.toLocaleString("ar-SA")} = {pricingResult.price.toLocaleString("ar-SA")} ر.س إجمالي)
                         </p>
                       )}
                     </div>
 
                     {/* Pricing breakdown */}
-                    <div className="pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    <div className="pt-2 space-y-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                      <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                         المسافة: {distanceKm?.toFixed(1)} كم
                       </p>
                     </div>
                   </div>
                 ) : pricingResult?.needsAdminReview ? (
-                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "rgba(251,113,133,0.06)", border: "1px solid rgba(251,113,133,0.25)" }}>
-                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري</p>
-                    <p className="text-base font-black" style={{ color: "#fb7185" }}>يتطلب مراجعة الإدارة</p>
-                    <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
+                    <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
+                    <p className="text-base font-black" style={{ color: "var(--brand)" }}>يتطلب مراجعة الإدارة</p>
+                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
                       المسافة ({distanceKm?.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
                     </p>
                   </div>
                 ) : (
-                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <p className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>💰 السعر الشهري</p>
-                    <p className="text-base font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
+                    <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                       يرجى تحديد الموقعين على الخريطة في الخطوة الثانية لحساب السعر تلقائياً
                     </p>
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>الاسم الكامل (اختياري)</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>الاسم الكامل (اختياري)</label>
                   <Input
                     placeholder="مثال: سارة أحمد"
                     value={name}
@@ -572,7 +572,7 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "rgba(255,255,255,0.55)" }}>رقم الجوال *</label>
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>رقم الجوال *</label>
                   <Input
                     type="tel"
                     placeholder="05xxxxxxxx"
@@ -581,49 +581,49 @@ export default function CreateRequest() {
                     className="rounded-2xl font-bold h-12 input-dark"
                     dir="ltr"
                   />
-                  <p className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>يُخفى عن السائقين حتى يتم اختيار أحدهم</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>يُخفى عن السائقين حتى يتم اختيار أحدهم</p>
                 </div>
 
                 {/* Summary */}
-                <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "#161616", border: "1px solid rgba(222,255,154,0.16)" }}>
-                  <h3 className="font-black text-sm mb-3" style={{ color: "#deff9a" }}>ملخص الطلب</h3>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>
+                  <h3 className="font-black text-sm mb-3" style={{ color: "var(--brand)" }}>ملخص الطلب</h3>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>نوع الاشتراك</span><span className="font-black">{clientType}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>من</span><span className="font-black text-left text-xs max-w-[55%] text-right">{homeLocation || "—"}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>إلى</span><span className="font-black text-left text-xs max-w-[55%] text-right">{workLocation || "—"}</span>
                   </div>
                   {additionalLocations.filter((l) => l.address.trim()).map((loc, idx) => (
-                    <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}</span>
                       <span className="font-black text-xs max-w-[55%] text-right">{loc.address}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>أيام العمل</span><span className="font-black">{selectedDays.length} أيام</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>الركاب</span><span className="font-black">{sharingCount} أشخاص</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                     <span>نوع الاشتراك</span>
-                    <span className="font-black" style={{ color: subscriptionType === "shared" ? "#a5b4fc" : "#deff9a" }}>
+                    <span className="font-black" style={{ color: subscriptionType === "shared" ? "var(--status-frozen-text)" : "var(--brand)" }}>
                       {subscriptionType === "shared" ? "مشترك" : "خاص"}
                     </span>
                   </div>
                   {pricingResult && !pricingResult.needsAdminReview && (
-                    <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>السعر / شخص</span>
-                      <span className="font-black" style={{ color: "#deff9a" }}>
+                      <span className="font-black" style={{ color: "var(--brand)" }}>
                         {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
                       </span>
                     </div>
                   )}
                   {notes.trim() && (
-                    <div className="flex justify-between text-sm font-bold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>ملاحظات</span><span className="font-black text-xs max-w-[55%] text-right">{notes.trim()}</span>
                     </div>
                   )}
@@ -638,7 +638,7 @@ export default function CreateRequest() {
               <button
                 onClick={() => setStep(step - 1)}
                 className="px-6 py-4 rounded-[1.5rem] font-black transition-colors"
-                style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", backgroundColor: "#161616" }}
+                style={{ border: "1px solid var(--border)", color: "var(--text-sub)", backgroundColor: "var(--surface)" }}
               >
                 رجوع
               </button>
@@ -661,7 +661,7 @@ export default function CreateRequest() {
               }}
               disabled={createRequest.isPending}
               className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "#deff9a", color: "#0a0a0a", boxShadow: "0 18px 36px rgba(222,255,154,0.18)" }}
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
             >
               {step === 4 ? (
                 createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>

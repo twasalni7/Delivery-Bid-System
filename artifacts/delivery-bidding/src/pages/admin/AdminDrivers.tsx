@@ -19,11 +19,11 @@ import { API_ORIGIN as API } from "@/lib/api-config";
 
 type DialogMode = "create" | "edit" | "balance" | "import" | null;
 
-const STATUS_PILL: Record<string, string> = {
-  ACTIVE:  "bg-green-100 text-green-700",
-  BLOCKED: "bg-red-100 text-red-700",
-  DELETED: "bg-gray-100 text-gray-500",
-};
+function getStatusStyle(status: string): React.CSSProperties {
+  if (status === "ACTIVE") return { backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)", border: "1px solid var(--status-active-border)" };
+  if (status === "BLOCKED") return { backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)" };
+  return { backgroundColor: "var(--surface-3, var(--surface-2))", color: "var(--text-hint)", border: "1px solid var(--border)" };
+}
 const STATUS_LABEL: Record<string, string> = { ACTIVE: "نشط", BLOCKED: "محظور", DELETED: "محذوف" };
 
 type ParsedRow = {
@@ -174,7 +174,7 @@ function ImportDriversDialog({ open, onClose, onImported }: {
       <DialogContent dir="rtl" className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-black flex items-center gap-2">
-            <FileSpreadsheet size={20} className="text-violet-600" />
+            <FileSpreadsheet size={20} />
             {step === "upload" && "استيراد سائقين من ملف"}
             {step === "preview" && `معاينة البيانات (${rows.length} صف)`}
             {step === "result" && "نتيجة الاستيراد"}
@@ -185,15 +185,15 @@ function ImportDriversDialog({ open, onClose, onImported }: {
         {step === "upload" && (
           <div className="flex-1 space-y-5 py-2">
             <div
-              className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${dragging ? "border-violet-500 bg-violet-50" : "border-gray-300 hover:border-violet-400 hover:bg-gray-50"}`}
+              className="border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors" style={{ borderColor: dragging ? "var(--brand)" : "var(--border)", backgroundColor: dragging ? "var(--brand-subtle)" : "var(--surface)" }}
               onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
               onDragLeave={() => setDragging(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload size={40} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-lg font-black text-gray-700">اسحب الملف هنا أو انقر للاختيار</p>
-              <p className="text-base text-gray-400 mt-1">يُقبل: CSV • XLSX • XLS</p>
+              <Upload size={40} className="mx-auto mb-3" style={{ color: "var(--text-hint)" }} />
+              <p className="text-lg font-black" style={{ color: "var(--text-muted)" }}>اسحب الملف هنا أو انقر للاختيار</p>
+              <p className="text-base mt-1" style={{ color: "var(--text-hint)" }}>يُقبل: CSV • XLSX • XLS</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -204,7 +204,7 @@ function ImportDriversDialog({ open, onClose, onImported }: {
             </div>
 
             {parseError && (
-              <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-base text-red-700 font-bold">
+              <div className="flex items-start gap-2 rounded-xl px-4 py-3 text-base font-bold" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}>
                 <XCircle size={18} className="shrink-0 mt-0.5" /> {parseError}
               </div>
             )}
@@ -222,9 +222,9 @@ function ImportDriversDialog({ open, onClose, onImported }: {
                   ["age", "العمر"],
                   ["national_id", "رقم الهوية"],
                 ].map(([col, label]) => (
-                  <div key={col} className="bg-white rounded-xl border border-blue-100 px-3 py-2">
+                  <div key={col} className="rounded-xl px-3 py-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                     <p className="text-xs font-mono text-blue-600 font-bold">{col}</p>
-                    <p className="text-sm text-gray-600">{label}</p>
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>{label}</p>
                   </div>
                 ))}
               </div>
@@ -232,7 +232,7 @@ function ImportDriversDialog({ open, onClose, onImported }: {
             </div>
 
             <div className="flex justify-end">
-              <button onClick={handleClose} className="px-5 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-600 text-base">إلغاء</button>
+              <button onClick={handleClose} className="px-5 py-2.5 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-muted)" }}>إلغاء</button>
             </div>
           </div>
         )}
@@ -247,49 +247,49 @@ function ImportDriversDialog({ open, onClose, onImported }: {
                 <span className="text-base font-black text-green-700">{validRows.length} صف صحيح</span>
               </div>
               {invalidRows.length > 0 && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
-                  <XCircle size={16} className="text-red-500" />
-                  <span className="text-base font-black text-red-600">{invalidRows.length} صف ناقص (سيُتخطى)</span>
+                <div className="flex items-center gap-2 rounded-xl px-4 py-2" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
+                  <XCircle size={16} style={{ color: "var(--status-cancelled-text)" }} />
+                  <span className="text-base font-black" style={{ color: "var(--status-cancelled-text)" }}>{invalidRows.length} صف ناقص (سيُتخطى)</span>
                 </div>
               )}
             </div>
 
             {parseError && (
-              <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-base text-red-700 font-bold">
+              <div className="flex items-start gap-2 rounded-xl px-4 py-3 text-base font-bold" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}>
                 <XCircle size={18} className="shrink-0 mt-0.5" /> {parseError}
               </div>
             )}
 
             {/* Preview table */}
-            <div className="flex-1 overflow-auto border border-gray-200 rounded-2xl min-h-0">
+            <div className="flex-1 overflow-auto rounded-2xl min-h-0" style={{ border: "1px solid var(--border)" }}>
               <table className="w-full text-sm" dir="rtl">
-                <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                <thead className="sticky top-0 border-b" style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
                   <tr>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">#</th>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">الحالة</th>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">الاسم</th>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">الجوال</th>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">الجنسية</th>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">المركبة</th>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">السنة</th>
-                    <th className="text-right px-4 py-3 font-black text-gray-600 whitespace-nowrap">الرمز</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>#</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>الحالة</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>الاسم</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>الجوال</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>الجنسية</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>المركبة</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>السنة</th>
+                    <th className="text-right px-4 py-3 font-black whitespace-nowrap" style={{ color: "var(--text-muted)" }}>الرمز</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row, i) => (
-                    <tr key={i} className={`border-b border-gray-100 ${row._valid ? "hover:bg-gray-50" : "bg-red-50/60"}`}>
-                      <td className="px-4 py-3 text-gray-400 font-mono">{i + 1}</td>
+                    <tr key={i} className="border-b" style={{ borderColor: "var(--border)", backgroundColor: !row._valid ? "var(--status-cancelled-bg)" : undefined }}>
+                      <td className="px-4 py-3 font-mono" style={{ color: "var(--text-hint)" }}>{i + 1}</td>
                       <td className="px-4 py-3">
                         {row._valid
                           ? <span className="inline-flex items-center gap-1 text-green-700 font-bold"><CheckCircle2 size={13} /> صحيح</span>
-                          : <span className="inline-flex items-center gap-1 text-red-600 font-bold"><XCircle size={13} /> ناقص</span>}
+                          : <span className="inline-flex items-center gap-1 font-bold" style={{ color: "var(--status-cancelled-text)" }}><XCircle size={13} /> ناقص</span>}
                       </td>
-                      <td className={`px-4 py-3 font-bold ${!row.name ? "text-red-500 italic" : "text-gray-900"}`}>{row.name || "—"}</td>
-                      <td className={`px-4 py-3 font-medium ${!row.mobile ? "text-red-500 italic" : "text-gray-700"}`} dir="ltr">{row.mobile || "—"}</td>
-                      <td className="px-4 py-3 text-gray-600">{row.nationality || "—"}</td>
-                      <td className="px-4 py-3 text-gray-600">{row.carType || "—"}</td>
-                      <td className="px-4 py-3 text-gray-600">{row.carYear || "—"}</td>
-                      <td className="px-4 py-3 font-mono text-gray-500">{row.loginCode || <span className="text-gray-300 italic text-xs">يُولَّد تلقائياً</span>}</td>
+                      <td className="px-4 py-3 font-bold" style={{ color: !row.name ? "var(--status-cancelled-text)" : "var(--text)" }}>{row.name || "—"}</td>
+                      <td className="px-4 py-3 font-medium" dir="ltr" style={{ color: !row.mobile ? "var(--status-cancelled-text)" : "var(--text-muted)" }}>{row.mobile || "—"}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{row.nationality || "—"}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{row.carType || "—"}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{row.carYear || "—"}</td>
+                      <td className="px-4 py-3 font-mono" style={{ color: "var(--text-hint)" }}>{row.loginCode || <span className="italic text-xs" style={{ color: "var(--text-hint)" }}>يُولَّد تلقائياً</span>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -297,14 +297,14 @@ function ImportDriversDialog({ open, onClose, onImported }: {
             </div>
 
             <div className="flex gap-3 justify-between">
-              <button onClick={reset} className="px-5 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-600 text-base hover:bg-gray-50">
+              <button onClick={reset} className="px-5 py-2.5 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 ‹ تغيير الملف
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={validRows.length === 0 || importing}
                 className="px-8 py-2.5 rounded-xl text-white font-black text-base disabled:opacity-50 flex items-center gap-2"
-                style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}
+                style={{ backgroundColor: "var(--brand)" }}
               >
                 {importing ? (
                   <><RefreshCw size={16} className="animate-spin" /> جاري الاستيراد...</>
@@ -339,19 +339,19 @@ function ImportDriversDialog({ open, onClose, onImported }: {
                 </div>
                 <div className="max-h-52 overflow-auto">
                   <table className="w-full text-sm" dir="rtl">
-                    <thead className="bg-gray-50">
+                    <thead style={{ backgroundColor: "var(--surface-2)" }}>
                       <tr>
-                        <th className="text-right px-4 py-2 text-xs font-black text-gray-500">الاسم</th>
-                        <th className="text-right px-4 py-2 text-xs font-black text-gray-500">الجوال</th>
-                        <th className="text-right px-4 py-2 text-xs font-black text-gray-500">رمز الدخول</th>
+                        <th className="text-right px-4 py-2 text-xs font-black" style={{ color: "var(--text-muted)" }}>الاسم</th>
+                        <th className="text-right px-4 py-2 text-xs font-black" style={{ color: "var(--text-muted)" }}>الجوال</th>
+                        <th className="text-right px-4 py-2 text-xs font-black" style={{ color: "var(--text-muted)" }}>رمز الدخول</th>
                       </tr>
                     </thead>
                     <tbody>
                       {result.created.map((d, i) => (
-                        <tr key={i} className="border-t border-gray-100">
-                          <td className="px-4 py-2 font-bold text-gray-900">{d.name}</td>
-                          <td className="px-4 py-2 text-gray-600" dir="ltr">{d.mobile}</td>
-                          <td className="px-4 py-2 font-mono font-bold text-violet-700">{d.loginCode}</td>
+                        <tr key={i} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          <td className="px-4 py-2 font-bold" style={{ color: "var(--text)" }}>{d.name}</td>
+                          <td className="px-4 py-2" dir="ltr" style={{ color: "var(--text-muted)" }}>{d.mobile}</td>
+                          <td className="px-4 py-2 font-mono font-bold" style={{ color: "var(--brand)" }}>{d.loginCode}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -367,18 +367,18 @@ function ImportDriversDialog({ open, onClose, onImported }: {
                 </div>
                 <div className="max-h-44 overflow-auto">
                   <table className="w-full text-sm" dir="rtl">
-                    <thead className="bg-gray-50">
+                    <thead style={{ backgroundColor: "var(--surface-2)" }}>
                       <tr>
-                        <th className="text-right px-4 py-2 text-xs font-black text-gray-500">الاسم</th>
-                        <th className="text-right px-4 py-2 text-xs font-black text-gray-500">الجوال</th>
-                        <th className="text-right px-4 py-2 text-xs font-black text-gray-500">السبب</th>
+                        <th className="text-right px-4 py-2 text-xs font-black" style={{ color: "var(--text-muted)" }}>الاسم</th>
+                        <th className="text-right px-4 py-2 text-xs font-black" style={{ color: "var(--text-muted)" }}>الجوال</th>
+                        <th className="text-right px-4 py-2 text-xs font-black" style={{ color: "var(--text-muted)" }}>السبب</th>
                       </tr>
                     </thead>
                     <tbody>
                       {result.skipped.map((d, i) => (
-                        <tr key={i} className="border-t border-gray-100">
-                          <td className="px-4 py-2 text-gray-600">{d.name}</td>
-                          <td className="px-4 py-2 text-gray-500" dir="ltr">{d.mobile}</td>
+                        <tr key={i} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          <td className="px-4 py-2" style={{ color: "var(--text-muted)" }}>{d.name}</td>
+                          <td className="px-4 py-2" dir="ltr" style={{ color: "var(--text-hint)" }}>{d.mobile}</td>
                           <td className="px-4 py-2 text-amber-700 font-bold">{d.reason}</td>
                         </tr>
                       ))}
@@ -390,13 +390,13 @@ function ImportDriversDialog({ open, onClose, onImported }: {
 
             <div className="flex gap-3 justify-end">
               {result.skipped.length > 0 && result.created.length < rows.length && (
-                <button onClick={reset} className="px-5 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-600 text-base hover:bg-gray-50">
+                <button onClick={reset} className="px-5 py-2.5 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                   استيراد ملف آخر
                 </button>
               )}
               <button onClick={handleClose}
                 className="px-8 py-2.5 rounded-xl text-white font-black text-base"
-                style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
+                style={{ backgroundColor: "var(--brand)" }}>
                 إغلاق
               </button>
             </div>
@@ -523,19 +523,19 @@ export default function AdminDrivers() {
         {/* Header */}
         <div className="flex flex-wrap items-center gap-3 mb-5">
           <div className="flex-1">
-            <h1 className="text-3xl font-black text-gray-900">السائقون</h1>
-            <p className="text-gray-500 text-base mt-0.5">
+            <h1 className="text-3xl font-black" style={{ color: "var(--text)" }}>السائقون</h1>
+            <p className="text-base mt-0.5" style={{ color: "var(--text-hint)" }}>
               {drivers ? `${filteredDrivers.length} من ${drivers.length} سائق` : "إدارة حسابات السائقين"}
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setDialogMode("import")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-base border border-violet-300 text-violet-700 bg-violet-50 hover:bg-violet-100 transition-colors">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-base transition-colors" style={{ border: "1px solid var(--brand-border)", color: "var(--brand)", backgroundColor: "var(--brand-subtle)" }}>
               <Upload size={17} /> استيراد ملف
             </button>
             <button onClick={openCreate}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-black text-base shadow-md"
-              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
+              style={{ backgroundColor: "var(--brand)" }}>
               <PlusCircle size={18} /> إضافة سائق
             </button>
           </div>
@@ -544,16 +544,16 @@ export default function AdminDrivers() {
         {/* Search + filter */}
         {!isLoading && drivers && drivers.length > 0 && (
           <div className="space-y-3 mb-5">
-            <div className="flex items-center gap-2 bg-white rounded-2xl border border-gray-200 px-4 py-2.5 shadow-sm focus-within:border-violet-400 transition-colors">
-              <Search size={17} className="text-gray-400 shrink-0" />
+            <div className="flex items-center gap-2 rounded-2xl px-4 py-2.5 shadow-sm transition-colors" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <Search size={17} className="shrink-0" style={{ color: "var(--text-hint)" }} />
               <input
                 type="text"
                 placeholder="ابحث بالاسم، الجوال، الجنسية، المركبة، رمز الدخول..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 text-base bg-transparent outline-none text-gray-800 placeholder-gray-400"
+                className="flex-1 text-base bg-transparent outline-none" style={{ color: "var(--text)" }}
               />
-              {search && <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600"><X size={15} /></button>}
+              {search && <button onClick={() => setSearch("")} style={{ color: "var(--text-hint)" }}><X size={15} /></button>}
             </div>
             <div className="flex gap-2 flex-wrap items-center">
               {[
@@ -562,15 +562,15 @@ export default function AdminDrivers() {
                 { val: "BLOCKED", label: "محظور", count: drivers.filter((d) => d.status === "BLOCKED").length },
               ].map((s) => (
                 <button key={s.val} onClick={() => setStatusFilter(s.val)}
-                  className={`h-9 px-3.5 rounded-xl text-sm font-bold border transition-colors flex items-center gap-1.5 ${statusFilter === s.val ? "text-white border-violet-500" : "bg-white border-gray-200 text-gray-500 hover:border-violet-300"}`}
-                  style={statusFilter === s.val ? { background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" } : {}}>
+                  className="h-9 px-3.5 rounded-xl text-sm font-bold border transition-colors flex items-center gap-1.5"
+                  style={statusFilter === s.val ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)", color: "#fff" } : { backgroundColor: "var(--surface)", borderColor: "var(--border)", color: "var(--text-hint)" }}>
                   {s.label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-black ${statusFilter === s.val ? "bg-white/25" : "bg-gray-100 text-gray-600"}`}>{s.count}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={statusFilter === s.val ? { backgroundColor: "rgba(255,255,255,0.25)" } : { backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>{s.count}</span>
                 </button>
               ))}
               {(search || statusFilter !== "ALL") && (
                 <button onClick={() => { setSearch(""); setStatusFilter("ALL"); }}
-                  className="h-9 px-3.5 rounded-xl text-sm font-bold text-red-500 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors flex items-center gap-1.5">
+                  className="h-9 px-3.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5" style={{ color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)", backgroundColor: "var(--status-cancelled-bg)" }}>
                   <X size={13} /> مسح الفلاتر
                 </button>
               )}
@@ -578,70 +578,70 @@ export default function AdminDrivers() {
           </div>
         )}
 
-        {isLoading && <div className="text-center py-20 text-gray-400 text-lg">جاري التحميل...</div>}
+        {isLoading && <div className="text-center py-20 text-lg" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>}
 
         {!isLoading && (!drivers || drivers.length === 0) && (
-          <div className="text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+          <div className="text-center py-24 rounded-2xl border-2 border-dashed" style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
             <p className="text-5xl mb-4">🚗</p>
-            <p className="text-xl font-bold text-gray-600">لا يوجد سائقون</p>
+            <p className="text-xl font-bold" style={{ color: "var(--text-muted)" }}>لا يوجد سائقون</p>
             <div className="flex gap-2 justify-center mt-5">
               <button onClick={() => setDialogMode("import")}
-                className="px-5 py-2.5 rounded-xl font-bold text-base border border-violet-300 text-violet-700 bg-violet-50">
+                className="px-5 py-2.5 rounded-xl font-bold text-base" style={{ border: "1px solid var(--brand-border)", color: "var(--brand)", backgroundColor: "var(--brand-subtle)" }}>
                 <Upload size={15} className="inline ml-1" /> استيراد ملف
               </button>
               <button onClick={openCreate} className="px-5 py-2.5 rounded-xl text-white font-black text-base"
-                style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>إضافة أول سائق</button>
+                style={{ backgroundColor: "var(--brand)" }}>إضافة أول سائق</button>
             </div>
           </div>
         )}
 
         {drivers && drivers.length > 0 && filteredDrivers.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+          <div className="text-center py-20 rounded-2xl border-2 border-dashed" style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
             <p className="text-5xl mb-4">🔍</p>
-            <p className="text-xl font-bold text-gray-600">لا توجد نتائج مطابقة</p>
+            <p className="text-xl font-bold" style={{ color: "var(--text-muted)" }}>لا توجد نتائج مطابقة</p>
             <button onClick={() => { setSearch(""); setStatusFilter("ALL"); }}
-              className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-violet-600 border border-violet-200 hover:bg-violet-50">مسح الفلاتر</button>
+              className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold" style={{ color: "var(--brand)", border: "1px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}>مسح الفلاتر</button>
           </div>
         )}
 
         {filteredDrivers.length > 0 && (
           <>
             {/* Desktop table */}
-            <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="hidden lg:block rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
               <table className="w-full" dir="rtl">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">السائق</th>
-                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">الجوال</th>
-                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">المركبة</th>
-                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">الرصيد</th>
-                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">الحالة</th>
-                    <th className="text-right px-5 py-4 text-sm font-black text-gray-600">رمز الدخول</th>
-                    <th className="text-center px-5 py-4 text-sm font-black text-gray-600">إجراءات</th>
+                  <tr className="border-b" style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
+                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>السائق</th>
+                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الجوال</th>
+                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>المركبة</th>
+                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الرصيد</th>
+                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الحالة</th>
+                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>رمز الدخول</th>
+                    <th className="text-center px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredDrivers.map((d, idx) => (
-                    <tr key={d.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}>
+                    <tr key={d.id} className="border-b transition-colors" style={{ borderColor: "var(--border)" }}>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg shrink-0">🚗</div>
                           <div>
-                            <p className="font-black text-gray-900 text-base">{d.name}</p>
-                            <p className="text-xs text-gray-400">#{d.id}</p>
+                            <p className="font-black text-base" style={{ color: "var(--text)" }}>{d.name}</p>
+                            <p className="text-xs" style={{ color: "var(--text-hint)" }}>#{d.id}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-sm font-medium text-gray-700" dir="ltr">{d.mobile}</td>
-                      <td className="px-5 py-4 text-sm text-gray-600">{d.carType || "—"}</td>
+                      <td className="px-5 py-4 text-sm font-medium" dir="ltr" style={{ color: "var(--text-muted)" }}>{d.mobile}</td>
+                      <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{d.carType || "—"}</td>
                       <td className="px-5 py-4">
-                        <span className={`text-sm font-black ${d.balance >= 50 ? "text-green-700" : "text-red-600"}`} dir="ltr">
+                        <span className="text-sm font-black" style={{ color: d.balance >= 50 ? "var(--status-active-text)" : "var(--status-cancelled-text)" }} dir="ltr">
                           {d.balance.toFixed(2)} ر.س
                         </span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-1">
-                          <span className={`text-sm px-3 py-0.5 rounded-full font-bold w-fit ${STATUS_PILL[d.status] ?? ""}`}>
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit" style={getStatusStyle(d.status ?? "")}>
                             {STATUS_LABEL[d.status] ?? d.status}
                           </span>
                           {d.warningCount > 0 && (
@@ -650,7 +650,7 @@ export default function AdminDrivers() {
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <code className="text-sm font-mono bg-gray-100 px-2.5 py-1 rounded-lg text-gray-700">{d.loginCode}</code>
+                        <code className="text-sm font-mono px-2.5 py-1 rounded-lg" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>{d.loginCode}</code>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-1.5 flex-wrap">
@@ -669,34 +669,34 @@ export default function AdminDrivers() {
                   ))}
                 </tbody>
               </table>
-              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-400">
-                يُعرض <strong className="text-gray-700">{filteredDrivers.length}</strong> من <strong className="text-gray-700">{drivers?.length ?? 0}</strong> سائق
+              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border)", color: "var(--text-hint)" }}>
+                يُعرض <strong style={{ color: "var(--text)" }}>{filteredDrivers.length}</strong> من <strong style={{ color: "var(--text)" }}>{drivers?.length ?? 0}</strong> سائق
               </div>
             </div>
 
             {/* Mobile / tablet cards */}
             <div className="lg:hidden space-y-3">
               {filteredDrivers.map((d) => (
-                <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div key={d.id} className="rounded-2xl shadow-sm p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
                         <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-xl shrink-0">🚗</div>
                         <div>
-                          <p className="font-black text-gray-900 text-base">{d.name}</p>
-                          <p className="text-sm text-gray-400" dir="ltr">{d.mobile}</p>
+                          <p className="font-black text-base" style={{ color: "var(--text)" }}>{d.name}</p>
+                          <p className="text-sm" dir="ltr" style={{ color: "var(--text-hint)" }}>{d.mobile}</p>
                         </div>
-                        <span className={`text-sm px-3 py-0.5 rounded-full font-bold ${STATUS_PILL[d.status] ?? ""}`}>
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={getStatusStyle(d.status ?? "")}>
                           {STATUS_LABEL[d.status] ?? d.status}
                         </span>
                         {d.warningCount > 0 && (
                           <span className="text-sm text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full font-bold">{d.warningCount} تحذير</span>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-500 mr-12">
-                        <span>رصيد: <strong className={d.balance >= 50 ? "text-green-700" : "text-red-600"} dir="ltr">{d.balance.toFixed(2)} ر.س</strong></span>
+                      <div className="flex flex-wrap gap-3 text-sm mr-12" style={{ color: "var(--text-hint)" }}>
+                        <span>رصيد: <strong style={{ color: d.balance >= 50 ? "var(--status-active-text)" : "var(--status-cancelled-text)" }} dir="ltr">{d.balance.toFixed(2)} ر.س</strong></span>
                         {d.carType && <span>{d.carType}</span>}
-                        <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">رمز: {d.loginCode}</span>
+                        <span className="font-mono px-2 py-0.5 rounded" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>رمز: {d.loginCode}</span>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
@@ -720,21 +720,21 @@ export default function AdminDrivers() {
         {/* Deleted drivers toggle */}
         <div className="mt-5">
           <button onClick={() => setShowDeleted((p) => !p)}
-            className="w-full py-3 rounded-xl border border-gray-200 bg-white text-gray-500 text-base font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
+            className="w-full py-3 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-colors" style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)", color: "var(--text-hint)" }}>
             {showDeleted ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             {showDeleted ? "إخفاء السائقين المحذوفين" : "عرض السائقين المحذوفين"}
           </button>
           {showDeleted && (
             <div className="mt-3 space-y-2">
-              {loadingDeleted && <div className="text-center py-6 text-gray-400">جاري التحميل...</div>}
+              {loadingDeleted && <div className="text-center py-6" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>}
               {!loadingDeleted && (!deletedDrivers || deletedDrivers.length === 0) && (
-                <div className="text-center py-8 border border-dashed rounded-xl"><p className="text-base text-gray-400">لا يوجد سائقون محذوفون</p></div>
+                <div className="text-center py-8 border border-dashed rounded-xl" style={{ borderColor: "var(--border)" }}><p className="text-base" style={{ color: "var(--text-hint)" }}>لا يوجد سائقون محذوفون</p></div>
               )}
               {deletedDrivers?.map((d) => (
-                <div key={d.id} className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div key={d.id} className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                   <div className="flex-1">
-                    <p className="font-bold text-base text-gray-400">{d.name}</p>
-                    <span dir="ltr" className="text-sm text-gray-300">{d.mobile}</span>
+                    <p className="font-bold text-base" style={{ color: "var(--text-hint)" }}>{d.name}</p>
+                    <span dir="ltr" className="text-sm" style={{ color: "var(--text-hint)" }}>{d.mobile}</span>
                   </div>
                   <button onClick={() => handleRestore(d)}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 text-sm font-bold border border-blue-200">
@@ -774,10 +774,10 @@ export default function AdminDrivers() {
             <button onClick={dialogMode === "create" ? handleCreate : handleEdit}
               disabled={!formName.trim() || !formMobile.trim() || createDriver.isPending || updateDriver.isPending}
               className="flex-1 py-3 rounded-xl text-white font-black text-base disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>
+              style={{ backgroundColor: "var(--brand)" }}>
               {dialogMode === "create" ? "إضافة" : "حفظ"}
             </button>
-            <button onClick={() => setDialogMode(null)} className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 text-base">إلغاء</button>
+            <button onClick={() => setDialogMode(null)} className="flex-1 py-3 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-muted)" }}>إلغاء</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -788,15 +788,15 @@ export default function AdminDrivers() {
           <DialogHeader>
             <DialogTitle className="text-xl font-black">تعديل رصيد {selectedDriver?.name}</DialogTitle>
           </DialogHeader>
-          <p className="text-base text-gray-500">الرصيد الحالي: <strong dir="ltr" className="text-gray-900">{selectedDriver?.balance.toFixed(2)} ر.س</strong></p>
+          <p className="text-base" style={{ color: "var(--text-hint)" }}>الرصيد الحالي: <strong dir="ltr" style={{ color: "var(--text)" }}>{selectedDriver?.balance.toFixed(2)} ر.س</strong></p>
           <Field label="المبلغ (+ إيداع / − خصم)">
             <Input value={formBalance} onChange={(e) => setFormBalance(e.target.value)} placeholder="مثال: 100 أو -50" type="number" step="0.01" dir="ltr" className="h-11 text-base" />
           </Field>
           <DialogFooter className="gap-2 flex-row-reverse">
             <button onClick={handleBalance} disabled={!formBalance || updateBalance.isPending}
               className="flex-1 py-3 rounded-xl text-white font-black text-base disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}>تأكيد</button>
-            <button onClick={() => setDialogMode(null)} className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 text-base">إلغاء</button>
+              style={{ backgroundColor: "var(--brand)" }}>تأكيد</button>
+            <button onClick={() => setDialogMode(null)} className="flex-1 py-3 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-muted)" }}>إلغاء</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -808,7 +808,7 @@ function Btn({ onClick, title, icon, color }: { onClick: () => void; title: stri
   const cls = color === "red" ? "text-red-500 border-red-200 hover:bg-red-50"
     : color === "amber" ? "text-amber-600 border-amber-200 hover:bg-amber-50"
     : color === "green" ? "text-green-600 border-green-200 hover:bg-green-50"
-    : "text-gray-500 border-gray-200 hover:border-violet-400 hover:bg-violet-50";
+    : "border-[var(--border)]";
   return (
     <button onClick={onClick} title={title}
       className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors ${cls}`}>
@@ -820,7 +820,7 @@ function Btn({ onClick, title, icon, color }: { onClick: () => void; title: stri
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <Label className="font-bold text-sm text-gray-600">{label}</Label>
+      <Label className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>{label}</Label>
       {children}
     </div>
   );
