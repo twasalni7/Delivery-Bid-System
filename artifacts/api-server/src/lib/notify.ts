@@ -12,6 +12,8 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 }
 
+const PUSH_RETRY_DELAY_MS = 2000;
+
 export async function clearExpiredSubscription(userId: number, userRole: "client" | "driver" | "admin") {
   try {
     if (userRole === "client") {
@@ -116,7 +118,7 @@ async function sendWebPush(
 
   if (result === "error") {
     // One retry after a short delay
-    await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+    await new Promise<void>((resolve) => setTimeout(resolve, PUSH_RETRY_DELAY_MS));
     result = await attemptSend(subscription, payload);
 
     if (result === "expired") {
@@ -171,6 +173,9 @@ export async function notify(params: {
       })
       .returning({ id: notificationsTable.id });
     notificationId = inserted?.id;
+    if (notificationId === undefined) {
+      logger.warn({ params }, "notify: insert returned no id — delivered_at tracking will be skipped");
+    }
   } catch (err) {
     logger.error({ err, params }, "notify: failed to insert notification record");
   }

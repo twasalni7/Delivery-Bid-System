@@ -10,7 +10,7 @@ import {
 } from "@workspace/db";
 import { haversineKm } from "@workspace/db";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
-import { notify, notifyAllAdmins } from "../lib/notify";
+import { notify, notifyAllAdmins, notifyAllDrivers } from "../lib/notify";
 import {
   CreateRequestBody,
   UpdateRequestStatusBody,
@@ -368,6 +368,15 @@ router.post("/", requireAuth("client"), async (req, res) => {
       url: `/admin/requests/${created.id}`,
     });
 
+    // Notify all active drivers so they can place an offer
+    void notifyAllDrivers({
+      title: "🚗 طلب نقل جديد متاح",
+      message: `طلب من ${created.homeLocation} إلى ${created.workLocation} — قدّم عرضك الآن`,
+      type: "request",
+      relatedId: created.id,
+      url: `/driver/requests`,
+    });
+
     res.status(201).json(formatRequest(req, created, null));
   } catch (err) {
     logger.error({ err }, "requests POST / error");
@@ -483,6 +492,33 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
           message: msg,
           type: "request",
           relatedId: updated.id,
+          url: `/client/request/${updated.id}`,
+        });
+      }
+    }
+
+    // Notify the driver when trip is started or completed
+    if (updated.selectedDriverId) {
+      const driverStatusMessages: Record<string, { title: string; message: string }> = {
+        ACTIVE: {
+          title: "🚀 بدء الرحلة",
+          message: "تم تفعيل الرحلة — تواصل مع العميل للانطلاق",
+        },
+        COMPLETED: {
+          title: "✅ اكتملت الرحلة",
+          message: "تم إتمام الرحلة بنجاح. شكراً على خدمتك!",
+        },
+      };
+      const driverMsg = driverStatusMessages[parsed.data.status];
+      if (driverMsg) {
+        void notify({
+          userId: updated.selectedDriverId,
+          userRole: "driver",
+          title: driverMsg.title,
+          message: driverMsg.message,
+          type: "request",
+          relatedId: updated.id,
+          url: `/driver/request/${updated.id}`,
         });
       }
     }
@@ -625,6 +661,39 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       relatedId: existingRequest.id,
       url: `/driver/request/${existingRequest.id}`,
     });
+
+    // Notify all other drivers whose offers were not selected (fire-and-forget)
+    void (async () => {
+      try {
+        const rejectedOffers = await db
+          .select({ driverId: offersTable.driverId })
+          .from(offersTable)
+          .where(
+            and(
+              eq(offersTable.requestId, existingRequest.id),
+              eq(offersTable.status, "PENDING"),
+            )
+          );
+        await Promise.all(
+          rejectedOffers
+            .filter((o) => o.driverId !== updatedDriver.id)
+            .map((o) =>
+              notify({
+                userId: o.driverId,
+                userRole: "driver",
+                title: "😔 لم يتم اختيارك",
+                message: `تم اختيار سائق آخر للطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation}`,
+                type: "request",
+                relatedId: existingRequest.id,
+                url: `/driver/requests`,
+              })
+            )
+        );
+      } catch (err) {
+        // Non-critical — log but don't rethrow
+        logger.warn({ err, requestId: existingRequest.id }, "select-offer: failed to notify rejected drivers");
+      }
+    })();
 
     res.json(formatRequest(req, updated, updatedDriver));
   } catch (err: unknown) {

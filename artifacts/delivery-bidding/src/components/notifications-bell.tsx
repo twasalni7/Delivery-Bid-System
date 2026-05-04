@@ -77,7 +77,18 @@ export function NotificationsBell() {
     if (n.url) {
       markClicked.mutate(n.id);
       setOpen(false);
-      window.location.assign(n.url);
+      // Only navigate to relative paths or same-origin URLs to prevent open redirect
+      try {
+        const target = new URL(n.url, window.location.origin);
+        if (target.origin === window.location.origin) {
+          window.location.assign(target.pathname + target.search + target.hash);
+        }
+      } catch {
+        // n.url is a relative path (no origin) — safe to navigate directly
+        if (n.url.startsWith("/")) {
+          window.location.assign(n.url);
+        }
+      }
     } else if (!n.isRead) {
       markRead.mutate(n.id);
     }

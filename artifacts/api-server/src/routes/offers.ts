@@ -5,7 +5,7 @@ import { eq, and, ne, count, inArray } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
-import { notify } from "../lib/notify";
+import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
 import { getBidFee } from "./pricing";
@@ -309,6 +309,15 @@ router.post("/", requireAuth("driver"), async (req, res) => {
         url: `/client/request/${request.id}`,
       });
     }
+
+    // Notify all admins about the new offer
+    void notifyAllAdmins({
+      title: "🤝 عرض جديد من سائق",
+      message: `قدّم السائق ${driver.name} عرضاً على الطلب من ${request.homeLocation} إلى ${request.workLocation}`,
+      type: "offer",
+      relatedId: request.id,
+      url: `/admin/requests/${request.id}`,
+    });
 
     res.status(201).json({
       id: created.id,
