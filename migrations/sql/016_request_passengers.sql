@@ -48,8 +48,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS request_passengers_unique_idx
 ALTER TABLE public.request_passengers ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access (used by the API server)
-CREATE POLICY IF NOT EXISTS "service_role_all" ON public.request_passengers
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- Note: CREATE POLICY does not support IF NOT EXISTS, so we guard via DO block
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'request_passengers'
+      AND policyname = 'service_role_all'
+  ) THEN
+    CREATE POLICY "service_role_all" ON public.request_passengers
+      FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
 
 -- ─────────────────────────────────────────────────────────────────────
