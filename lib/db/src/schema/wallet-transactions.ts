@@ -9,7 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { driversTable } from "./drivers";
 
 export const walletTransactionStatusEnum = pgEnum(

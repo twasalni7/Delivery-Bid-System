@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { walletTransactionsTable, driversTable, transactionsTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
