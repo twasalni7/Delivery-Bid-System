@@ -373,7 +373,8 @@ CREATE INDEX IF NOT EXISTS idx_support_tickets_status   ON support_tickets (stat
 -- 9. USEFUL VIEW
 -- ──────────────────────────────────────────────────────────────
 
-CREATE OR REPLACE VIEW v_pricing_lookup AS
+DROP VIEW IF EXISTS v_pricing_lookup;
+CREATE VIEW v_pricing_lookup AS
 SELECT
   pm.id,
   pm.distance_min_km,
