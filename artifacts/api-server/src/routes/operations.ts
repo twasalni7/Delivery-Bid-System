@@ -37,7 +37,7 @@ router.get("/operations-stats", async (_req, res) => {
       .where(eq(driversTable.status, "ACTIVE"));
     const [clientCountResult] = await db.select({ count: count() }).from(clientsTable);
     const [errorsResult] = await db.select({ count: count() }).from(systemErrorsTable)
-      .where(eq(systemErrorsTable.resolved, "false"));
+      .where(eq(systemErrorsTable.resolved, false));
     const [notifResult] = await db.select({ count: count() }).from(notificationsTable);
 
     res.json({
@@ -124,7 +124,7 @@ router.post("/live-errors", async (req, res) => {
         eq(systemErrorsTable.errorType, errorType),
         eq(systemErrorsTable.message, message),
         gte(systemErrorsTable.createdAt, oneHourAgo),
-        eq(systemErrorsTable.resolved, "false"),
+        eq(systemErrorsTable.resolved, false),
       ))
       .limit(1);
 
@@ -152,7 +152,7 @@ router.patch("/live-errors/:id/resolve", async (req, res) => {
     const id = parseInt(req.params["id"]!, 10);
     if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
     const updated = await db.update(systemErrorsTable)
-      .set({ resolved: "true", updatedAt: new Date() })
+      .set({ resolved: true, updatedAt: new Date() })
       .where(eq(systemErrorsTable.id, id))
       .returning();
     if (!updated.length) { res.status(404).json({ error: "Not found" }); return; }
@@ -167,7 +167,7 @@ router.patch("/live-errors/:id/resolve", async (req, res) => {
 router.get("/operations-alerts", async (_req, res) => {
   try {
     const alerts = await db.select().from(systemAlertsTable)
-      .where(eq(systemAlertsTable.isRead, "false"))
+      .where(eq(systemAlertsTable.isRead, false))
       .orderBy(desc(systemAlertsTable.createdAt))
       .limit(20);
     res.json(alerts);
@@ -183,7 +183,7 @@ router.patch("/operations-alerts/:id/read", async (req, res) => {
     const id = parseInt(req.params["id"]!, 10);
     if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
     const updated = await db.update(systemAlertsTable)
-      .set({ isRead: "true" })
+      .set({ isRead: true })
       .where(eq(systemAlertsTable.id, id))
       .returning();
     if (!updated.length) { res.status(404).json({ error: "Not found" }); return; }

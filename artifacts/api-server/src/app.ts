@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -114,13 +114,16 @@ app.use("/api", router);
 
 // Global error handler — returns JSON instead of the default HTML error page
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: Error, _req: any, res: any, _next: any) => {
+const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   logger.error({ err }, "Unhandled server error");
-  const status = (err as any).status ?? (err as any).statusCode ?? 500;
+  const status = (err as { status?: number; statusCode?: number }).status
+    ?? (err as { status?: number; statusCode?: number }).statusCode
+    ?? 500;
   res.status(status).json({
-    error: err?.message ?? "Internal Server Error",
-    ...(isProduction ? {} : { stack: err?.stack }),
+    error: (err as Error)?.message ?? "Internal Server Error",
+    ...(isProduction ? {} : { stack: (err as Error)?.stack }),
   });
-});
+};
+app.use(globalErrorHandler);
 
 export default app;

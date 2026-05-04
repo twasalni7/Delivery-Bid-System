@@ -7,6 +7,7 @@ import {
   timestamp,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { driversTable } from "./drivers";
@@ -18,7 +19,7 @@ export const walletTransactionStatusEnum = pgEnum(
 
 export const walletTransactionsTable = pgTable("wallet_transactions", {
   id: serial("id").primaryKey(),
-  intId: integer("int_id").notNull().unique(),
+  intId: integer("int_id").notNull().unique().default(sql`nextval('wallet_transactions_int_id_seq')`),
   driverId: integer("driver_id")
     .notNull()
     .references(() => driversTable.id),

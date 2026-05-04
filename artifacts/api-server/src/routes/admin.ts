@@ -135,7 +135,10 @@ router.get("/financial", async (_req, res) => {
       .where(ne(driversTable.status, "DELETED"))
       .orderBy(desc(driversTable.balance));
 
-    const totalDriversBalance = drivers.reduce((acc, d) => acc + (d.balance ?? 0), 0);
+    const totalDriversBalance = drivers.reduce(
+      (acc, d) => acc + parseFloat(d.balance ?? "0"),
+      0,
+    );
 
     res.json({
       totalFeesCollected,
@@ -145,7 +148,7 @@ router.get("/financial", async (_req, res) => {
       driverBalances: drivers.map((d) => ({
         id: d.id,
         name: d.name,
-        balance: d.balance ?? 0,
+        balance: parseFloat(d.balance ?? "0"),
       })),
     });
   } catch (err) {
@@ -590,7 +593,7 @@ router.patch("/drivers/:id/balance", async (req, res) => {
   }
   const [updated] = await db
     .update(driversTable)
-    .set({ balance: sql`${driversTable.balance} + ${amount}` })
+    .set({ balance: sql`${driversTable.balance} + ${amount}::numeric` })
     .where(eq(driversTable.id, id))
     .returning();
   await db.insert(transactionsTable).values({
@@ -968,8 +971,8 @@ router.post("/requests/:id/select-offer", async (req, res) => {
 
     const [deductedDriver] = await db
       .update(driversTable)
-      .set({ balance: sql`${driversTable.balance} - ${bidFee}` })
-      .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}`))
+      .set({ balance: sql`${driversTable.balance} - ${bidFee}::numeric` })
+      .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}::numeric`))
       .returning();
     if (!deductedDriver) {
       res.status(400).json({ error: "رصيد السائق غير كافٍ للقبول على هذا الطلب" });
@@ -978,7 +981,7 @@ router.post("/requests/:id/select-offer", async (req, res) => {
 
     await db.insert(transactionsTable).values({
       driverId: driver.id,
-      amount: -bidFee,
+      amount: String(-bidFee),
       type: "fee",
     });
 
@@ -987,6 +990,23 @@ router.post("/requests/:id/select-offer", async (req, res) => {
       .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
       .where(eq(requestsTable.id, id))
       .returning();
+
+    // Advance offer state machine: selected offer → SELECTED, all others → CANCELLED
+    await db
+      .update(offersTable)
+      .set({ status: "SELECTED" })
+      .where(and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)));
+
+    await db
+      .update(offersTable)
+      .set({ status: "CANCELLED" })
+      .where(
+        and(
+          eq(offersTable.requestId, id),
+          ne(offersTable.id, offerId),
+          eq(offersTable.status, "PENDING"),
+        ),
+      );
 
     // Notify the selected driver
     void notify({

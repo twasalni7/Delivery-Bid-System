@@ -151,7 +151,7 @@ function formatRequest(
   };
 }
 
-router.get("/", async (req, res) => {
+router.get("/", requireAuth(), async (req, res) => {
   try {
     const parsed = ListRequestsQueryParams.safeParse(req.query);
     const status = parsed.success ? parsed.data.status : undefined;
@@ -412,7 +412,7 @@ router.get("/:id/stops", requireAuth(), async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireAuth(), async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
@@ -740,7 +740,7 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
   }
 });
 
-router.get("/:id/offers", async (req, res) => {
+router.get("/:id/offers", requireAuth(), async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });

@@ -20,7 +20,7 @@ function toNum(val: string | number | null | undefined): number {
   return isNaN(n) ? 0 : n;
 }
 
-router.get("/", async (_req, res) => {
+router.get("/", requireAuth("admin"), async (_req, res) => {
   try {
     const drivers = await db
       .select()
@@ -106,7 +106,7 @@ router.get("/me/requests", requireAuth("driver"), async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireAuth("admin"), async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
@@ -200,7 +200,7 @@ router.patch("/:id/balance", requireAuth("admin"), async (req, res) => {
   }
 });
 
-router.get("/:id/transactions", async (req, res) => {
+router.get("/:id/transactions", requireAuth("admin"), async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });

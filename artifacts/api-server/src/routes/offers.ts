@@ -217,6 +217,13 @@ router.delete("/:id", requireAuth("driver"), async (req, res) => {
       return;
     }
 
+    if (offer.status !== "PENDING") {
+      res.status(400).json({
+        error: "لا يمكن سحب العرض — حالته الحالية لا تسمح بذلك",
+      });
+      return;
+    }
+
     const request = await db.query.requestsTable.findFirst({
       where: eq(requestsTable.id, offer.requestId),
     });
@@ -228,8 +235,11 @@ router.delete("/:id", requireAuth("driver"), async (req, res) => {
       return;
     }
 
+    // Soft-delete: set status to CANCELLED instead of deleting the row.
+    // The PENDING guard above already ensures only a PENDING offer reaches here.
     await db
-      .delete(offersTable)
+      .update(offersTable)
+      .set({ status: "CANCELLED" })
       .where(and(eq(offersTable.id, offerId), eq(offersTable.driverId, driverId)));
 
     res.json({ message: "تم سحب القبول بنجاح" });
@@ -280,9 +290,14 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       return;
     }
 
+    // Only block re-bidding if an active (PENDING or SELECTED) offer already exists.
+    // CANCELLED offers (driver withdrew earlier) allow a fresh bid.
     const existingOffer = await db.query.offersTable.findFirst({
-      where: (o, { and }) =>
-        and(eq(o.driverId, driverId), eq(o.requestId, requestId)),
+      where: and(
+        eq(offersTable.driverId, driverId),
+        eq(offersTable.requestId, requestId),
+        inArray(offersTable.status, ["PENDING", "SELECTED"]),
+      ),
     });
 
     if (existingOffer) {
