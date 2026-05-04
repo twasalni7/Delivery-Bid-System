@@ -217,12 +217,12 @@ router.post("/send", requireAuth("admin"), async (req, res) => {
         title,
         message,
         type: "system",
-        url: url as string | undefined,
+        url,
       });
     } else if (target === "all_drivers") {
-      void notifyAllDrivers({ title, message, type: "system", url: url as string | undefined });
+      void notifyAllDrivers({ title, message, type: "system", url });
     } else {
-      void notifyAllAdmins({ title, message, type: "system", url: url as string | undefined });
+      void notifyAllAdmins({ title, message, type: "system", url });
     }
 
     res.json({ message: "تم إرسال الإشعار" });

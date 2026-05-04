@@ -77,8 +77,8 @@ async function sendWebPush(
         title,
         body,
         url: url ?? "/",
-        icon: icon ?? "/icons/icon-192.png",
-        badge: badge ?? "/icons/icon-192.png",
+        icon: icon ?? "/icons/icon-192.svg",
+        badge: badge ?? "/icons/icon-192.svg",
       })
     );
   } catch (err: unknown) {

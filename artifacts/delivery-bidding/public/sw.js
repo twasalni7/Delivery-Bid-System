@@ -85,8 +85,8 @@ self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
   let url = '/';
-  let icon = '/icons/icon-192.png';
-  let badge = '/icons/icon-192.png';
+  let icon = '/icons/icon-192.svg';
+  let badge = '/icons/icon-192.svg';
 
   if (event.data) {
     try {
