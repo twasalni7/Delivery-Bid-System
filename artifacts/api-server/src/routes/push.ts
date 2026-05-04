@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { clientsTable, driversTable, adminsTable } from "@workspace/db";
-import { eq, isNotNull, count } from "drizzle-orm";
+import { clientsTable, driversTable, adminsTable, notificationsTable } from "@workspace/db";
+import { eq, isNotNull, count, isNull } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
@@ -229,6 +229,50 @@ router.post("/send", requireAuth("admin"), async (req, res) => {
   } catch (err) {
     logger.error({ err }, "push/send: failed to dispatch notification");
     res.status(500).json({ error: "فشل إرسال الإشعار" });
+  }
+});
+
+/**
+ * GET /api/push/analytics
+ * Admin-only: returns notification delivery and engagement statistics.
+ */
+router.get("/analytics", requireAuth("admin"), async (_req, res) => {
+  try {
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable);
+
+    const [deliveredResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable)
+      .where(isNotNull(notificationsTable.deliveredAt));
+
+    const [clickedResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable)
+      .where(isNotNull(notificationsTable.clickedAt));
+
+    const [failedResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable)
+      .where(isNull(notificationsTable.deliveredAt));
+
+    const total     = Number(totalResult?.count ?? 0);
+    const delivered = Number(deliveredResult?.count ?? 0);
+    const clicked   = Number(clickedResult?.count ?? 0);
+    const failed    = Number(failedResult?.count ?? 0);
+
+    res.json({
+      total,
+      delivered,
+      failed,
+      clicked,
+      deliveryRate: total > 0 ? `${((delivered / total) * 100).toFixed(1)}%` : "0%",
+      clickRate:    delivered > 0 ? `${((clicked / delivered) * 100).toFixed(1)}%` : "0%",
+    });
+  } catch (err) {
+    logger.error({ err }, "push/analytics: failed to fetch stats");
+    res.status(500).json({ error: "فشل جلب إحصائيات الإشعارات" });
   }
 });
 

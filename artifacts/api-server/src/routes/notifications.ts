@@ -102,4 +102,32 @@ router.patch("/:id/read", requireAuth(), async (req, res) => {
   }
 });
 
+router.patch("/:id/clicked", requireAuth(), async (req, res) => {
+  const id = Number(req.params["id"]);
+  const user = getSessionUser(req)!;
+
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+
+  try {
+    await db
+      .update(notificationsTable)
+      .set({ clickedAt: new Date(), isRead: true })
+      .where(
+        and(
+          eq(notificationsTable.id, id),
+          eq(notificationsTable.userId, user.id),
+          eq(notificationsTable.userRole, user.role)
+        )
+      );
+
+    res.json({ message: "تم تسجيل النقر على الإشعار" });
+  } catch (err) {
+    logger.error({ err }, "notifications PATCH /:id/clicked error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
+});
+
 export default router;

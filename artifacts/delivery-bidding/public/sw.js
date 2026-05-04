@@ -116,7 +116,7 @@ self.addEventListener('push', (event) => {
   );
 });
 
-/* ─── Notification click: focus or open the app ───────────────────────── */
+/* ─── Notification click: navigate to the notification URL ────────────── */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url ?? '/';
@@ -125,11 +125,19 @@ self.addEventListener('notificationclick', (event) => {
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
+        // If a window is already open on the target URL, focus it
         for (const client of clientList) {
-          if (client.url.includes(self.registration.scope) && 'focus' in client) {
+          if (client.url === targetUrl && 'focus' in client) {
             return client.focus();
           }
         }
+        // If any app window is open, navigate it to the target URL
+        for (const client of clientList) {
+          if (client.url.startsWith(self.registration.scope) && 'navigate' in client) {
+            return client.navigate(targetUrl).then((c) => c?.focus());
+          }
+        }
+        // No open window — open a new one
         return self.clients.openWindow(targetUrl);
       })
   );
