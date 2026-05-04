@@ -18,12 +18,13 @@ const CreateWalletTxBody = z.object({
   receiptUrl: z.string().url().optional().nullable(),
 });
 
-/** Wraps callback in a real DB transaction when available, falls back gracefully. */
+/** Wraps callback in a real DB transaction when available, logs a warning and falls back gracefully. */
 async function withTx<T>(cb: (tx: typeof db) => Promise<T>): Promise<T> {
   const dbAny = db as typeof db & { transaction?: (cb: (tx: typeof db) => Promise<T>) => Promise<T> };
   if (typeof dbAny.transaction === "function") {
     return dbAny.transaction(cb);
   }
+  logger.warn("withTx: db.transaction unavailable — running wallet operations without atomicity");
   return cb(db);
 }
 
