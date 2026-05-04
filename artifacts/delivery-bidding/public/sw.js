@@ -85,6 +85,8 @@ self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
   let url = '/';
+  let icon = '/icons/icon-192.svg';
+  let badge = '/icons/icon-192.svg';
 
   if (event.data) {
     try {
@@ -92,6 +94,8 @@ self.addEventListener('push', (event) => {
       if (data.title) title = data.title;
       if (data.body) body = data.body;
       if (data.url) url = data.url;
+      if (data.icon) icon = data.icon;
+      if (data.badge) badge = data.badge;
     } catch {
       body = event.data.text() || body;
     }
@@ -100,8 +104,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: '/icons/icon-192.svg',
-      badge: '/icons/icon-192.svg',
+      icon,
+      badge,
       vibrate: [200, 100, 200, 100, 200],
       dir: 'rtl',
       lang: 'ar',
@@ -112,7 +116,7 @@ self.addEventListener('push', (event) => {
   );
 });
 
-/* ─── Notification click: focus or open the app ───────────────────────── */
+/* ─── Notification click: navigate to the notification URL ────────────── */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url ?? '/';
@@ -121,11 +125,19 @@ self.addEventListener('notificationclick', (event) => {
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
+        // If a window is already open on the target URL, focus it
         for (const client of clientList) {
-          if (client.url.includes(self.registration.scope) && 'focus' in client) {
+          if (client.url === targetUrl && 'focus' in client) {
             return client.focus();
           }
         }
+        // If any app window is open, navigate it to the target URL
+        for (const client of clientList) {
+          if (client.url.startsWith(self.registration.scope) && 'navigate' in client) {
+            return client.navigate(targetUrl).then((c) => c?.focus());
+          }
+        }
+        // No open window — open a new one
         return self.clients.openWindow(targetUrl);
       })
   );

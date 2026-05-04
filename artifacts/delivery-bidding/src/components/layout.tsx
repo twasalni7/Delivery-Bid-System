@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme, Theme } from "@/contexts/theme-context";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { NotificationsBell } from "@/components/notifications-bell";
 
 type NavLink = { href: string; label: string; icon: typeof Home; badge?: number };
@@ -47,13 +47,6 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-
-  useEffect(() => {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async function (OneSignal: OneSignalNamespace) {
-      await OneSignal.init({ appId: "936a2461-9f06-4231-986e-29578e9a56d7" });
-    });
-  }, []);
 
   const navLinks: NavLink[] = [
     { href: "/admin",              label: "الرئيسية",   icon: BarChart2 },
@@ -234,13 +227,6 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
 function MobileLayout({ children, role }: { children: React.ReactNode; role: "client" | "driver" }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-
-  useEffect(() => {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async function (OneSignal: OneSignalNamespace) {
-      await OneSignal.init({ appId: "936a2461-9f06-4231-986e-29578e9a56d7" });
-    });
-  }, []);
 
   const navLinks: NavLink[] =
     role === "client"

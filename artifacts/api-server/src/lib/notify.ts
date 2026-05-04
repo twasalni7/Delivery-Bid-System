@@ -12,7 +12,9 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 }
 
-async function clearExpiredSubscription(userId: number, userRole: "client" | "driver" | "admin") {
+const PUSH_RETRY_DELAY_MS = 2000;
+
+export async function clearExpiredSubscription(userId: number, userRole: "client" | "driver" | "admin") {
   try {
     if (userRole === "client") {
       await db.update(clientsTable).set({ pushSubscription: null }).where(eq(clientsTable.id, userId));
@@ -58,28 +60,88 @@ async function getPushSubscription(
   return null;
 }
 
+type SendResult = "ok" | "expired" | "error";
+
+async function attemptSend(
+  subscription: webpush.PushSubscription,
+  payload: string
+): Promise<SendResult> {
+  try {
+    await webpush.sendNotification(subscription, payload);
+    return "ok";
+  } catch (err: unknown) {
+    const pushErr = err as { statusCode?: number };
+    if (pushErr?.statusCode === 404 || pushErr?.statusCode === 410) {
+      return "expired";
+    }
+    return "error";
+  }
+}
+
 async function sendWebPush(
   userId: number,
   userRole: "client" | "driver" | "admin",
   subscriptionJson: string,
+  notificationId: number | undefined,
   title: string,
   body: string,
-  url?: string
+  url?: string,
+  icon?: string,
+  badge?: string
 ): Promise<void> {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+
+  let subscription: webpush.PushSubscription;
   try {
-    const subscription = JSON.parse(subscriptionJson) as webpush.PushSubscription;
-    await webpush.sendNotification(
-      subscription,
-      JSON.stringify({ title, body, url: url ?? "/" })
-    );
-  } catch (err: unknown) {
-    const pushErr = err as { statusCode?: number };
-    if (pushErr?.statusCode === 404 || pushErr?.statusCode === 410) {
-      logger.info({ userId, userRole }, "notify: removing expired push subscription");
+    subscription = JSON.parse(subscriptionJson) as webpush.PushSubscription;
+  } catch {
+    logger.warn({ userId, userRole }, "notify: invalid push subscription JSON");
+    void clearExpiredSubscription(userId, userRole);
+    return;
+  }
+
+  const payload = JSON.stringify({
+    title,
+    body,
+    url: url ?? "/",
+    icon: icon ?? "/icons/icon-192.svg",
+    badge: badge ?? "/icons/icon-192.svg",
+  });
+
+  let result = await attemptSend(subscription, payload);
+
+  if (result === "expired") {
+    logger.info({ userId, userRole }, "notify: removing expired push subscription");
+    void clearExpiredSubscription(userId, userRole);
+    return;
+  }
+
+  if (result === "error") {
+    // One retry after a short delay
+    await new Promise<void>((resolve) => setTimeout(resolve, PUSH_RETRY_DELAY_MS));
+    result = await attemptSend(subscription, payload);
+
+    if (result === "expired") {
+      logger.info({ userId, userRole }, "notify: removing expired push subscription (retry)");
       void clearExpiredSubscription(userId, userRole);
-    } else {
-      logger.warn({ err, userId, userRole }, "notify: web push delivery failed");
+      return;
+    }
+
+    if (result === "error") {
+      logger.warn({ userId, userRole }, "notify: web push delivery failed after retry");
+      return;
+    }
+  }
+
+  // Successfully delivered — update delivered_at
+  if (notificationId !== undefined) {
+    try {
+      await db
+        .update(notificationsTable)
+        .set({ deliveredAt: new Date() })
+        .where(eq(notificationsTable.id, notificationId));
+    } catch (err) {
+      logger.warn({ err, notificationId }, "notify: failed to update delivered_at");
     }
   }
 }
@@ -92,24 +154,45 @@ export async function notify(params: {
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
   url?: string;
+  icon?: string;
+  badge?: string;
 }) {
+  let notificationId: number | undefined;
   try {
-    await db.insert(notificationsTable).values({
-      userId: params.userId,
-      userRole: params.userRole,
-      title: params.title,
-      message: params.message,
-      type: params.type,
-      relatedId: params.relatedId ?? null,
-      isRead: false,
-    });
+    const [inserted] = await db
+      .insert(notificationsTable)
+      .values({
+        userId: params.userId,
+        userRole: params.userRole,
+        title: params.title,
+        message: params.message,
+        type: params.type,
+        relatedId: params.relatedId ?? null,
+        url: params.url ?? null,
+        isRead: false,
+      })
+      .returning({ id: notificationsTable.id });
+    notificationId = inserted?.id;
+    if (notificationId === undefined) {
+      logger.warn({ params }, "notify: insert returned no id — delivered_at tracking will be skipped");
+    }
   } catch (err) {
     logger.error({ err, params }, "notify: failed to insert notification record");
   }
 
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
-      void sendWebPush(params.userId, params.userRole, sub, params.title, params.message, params.url);
+      void sendWebPush(
+        params.userId,
+        params.userRole,
+        sub,
+        notificationId,
+        params.title,
+        params.message,
+        params.url,
+        params.icon,
+        params.badge
+      );
     }
   });
 }
@@ -120,6 +203,8 @@ export async function notifyAllAdmins(params: {
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
   url?: string;
+  icon?: string;
+  badge?: string;
 }) {
   try {
     const admins = await db.select({ id: adminsTable.id }).from(adminsTable);
@@ -129,4 +214,25 @@ export async function notifyAllAdmins(params: {
   }
 }
 
+export async function notifyAllDrivers(params: {
+  title: string;
+  message: string;
+  type: "offer" | "request" | "system" | "support";
+  relatedId?: number;
+  url?: string;
+  icon?: string;
+  badge?: string;
+}) {
+  try {
+    const drivers = await db
+      .select({ id: driversTable.id })
+      .from(driversTable)
+      .where(eq(driversTable.status, "ACTIVE"));
+    await Promise.all(drivers.map((driver) => notify({ userId: driver.id, userRole: "driver", ...params })));
+  } catch (err) {
+    logger.error({ err }, "notifyAllDrivers: failed to fetch drivers or send notifications");
+  }
+}
+
 export { sendWebPush };
+

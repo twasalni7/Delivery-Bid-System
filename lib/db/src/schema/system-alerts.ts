@@ -1,11 +1,11 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, timestamp } from "drizzle-orm/pg-core";
 
 export const systemAlertsTable = pgTable("system_alerts", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(),
   message: text("message").notNull(),
   severity: text("severity").notNull().default("warning"),
-  isRead: text("is_read").notNull().default("false"),
+  isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

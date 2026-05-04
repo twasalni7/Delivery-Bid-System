@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { clientsTable, driversTable, adminsTable } from "@workspace/db";
-import { eq, isNotNull, count } from "drizzle-orm";
+import { clientsTable, driversTable, adminsTable, notificationsTable } from "@workspace/db";
+import { eq, isNotNull, count, isNull } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
+import { notify, notifyAllDrivers, notifyAllAdmins } from "../lib/notify";
 
 const router = Router();
 
@@ -142,6 +143,135 @@ router.get("/debug", requireAuth("admin"), async (_req, res) => {
     });
   } catch (err) {
     logger.error({ err }, "push/debug: failed to fetch stats");
+    res.status(500).json({ error: "فشل جلب إحصائيات الإشعارات" });
+  }
+});
+
+/**
+ * POST /api/push/unsubscribe
+ * Removes the push subscription for the currently logged-in user.
+ */
+router.post("/unsubscribe", requireAuth(), async (req, res) => {
+  const user = getSessionUser(req)!;
+
+  try {
+    if (user.role === "client") {
+      await db
+        .update(clientsTable)
+        .set({ pushSubscription: null })
+        .where(eq(clientsTable.id, user.id));
+    } else if (user.role === "driver") {
+      await db
+        .update(driversTable)
+        .set({ pushSubscription: null })
+        .where(eq(driversTable.id, user.id));
+    } else if (user.role === "admin") {
+      await db
+        .update(adminsTable)
+        .set({ pushSubscription: null })
+        .where(eq(adminsTable.id, user.id));
+    }
+
+    logger.info({ userId: user.id, role: user.role }, "push: subscription removed");
+    res.json({ message: "تم إلغاء الاشتراك في الإشعارات" });
+  } catch (err) {
+    logger.error({ err, userId: user.id, role: user.role }, "push: failed to remove subscription");
+    res.status(500).json({ error: "فشل إلغاء الاشتراك" });
+  }
+});
+
+/**
+ * POST /api/push/send
+ * Admin-only: sends a push notification to a specific user, all drivers, or all admins.
+ * Body: {
+ *   target: "user" | "all_drivers" | "all_admins",
+ *   userId?: number,
+ *   userRole?: "client" | "driver" | "admin",
+ *   title: string,
+ *   message: string,
+ *   url?: string,
+ * }
+ */
+router.post("/send", requireAuth("admin"), async (req, res) => {
+  const { target, userId, userRole, title, message, url } = req.body ?? {};
+
+  if (!title || typeof title !== "string" || !message || typeof message !== "string") {
+    res.status(400).json({ error: "title و message مطلوبان" });
+    return;
+  }
+
+  if (!["user", "all_drivers", "all_admins"].includes(target)) {
+    res.status(400).json({ error: "target يجب أن يكون: user | all_drivers | all_admins" });
+    return;
+  }
+
+  try {
+    if (target === "user") {
+      if (!userId || !["client", "driver", "admin"].includes(userRole)) {
+        res.status(400).json({ error: "userId و userRole مطلوبان عند target=user" });
+        return;
+      }
+      void notify({
+        userId: Number(userId),
+        userRole: userRole as "client" | "driver" | "admin",
+        title,
+        message,
+        type: "system",
+        url,
+      });
+    } else if (target === "all_drivers") {
+      void notifyAllDrivers({ title, message, type: "system", url });
+    } else {
+      void notifyAllAdmins({ title, message, type: "system", url });
+    }
+
+    res.json({ message: "تم إرسال الإشعار" });
+  } catch (err) {
+    logger.error({ err }, "push/send: failed to dispatch notification");
+    res.status(500).json({ error: "فشل إرسال الإشعار" });
+  }
+});
+
+/**
+ * GET /api/push/analytics
+ * Admin-only: returns notification delivery and engagement statistics.
+ */
+router.get("/analytics", requireAuth("admin"), async (_req, res) => {
+  try {
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable);
+
+    const [deliveredResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable)
+      .where(isNotNull(notificationsTable.deliveredAt));
+
+    const [clickedResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable)
+      .where(isNotNull(notificationsTable.clickedAt));
+
+    const [failedResult] = await db
+      .select({ count: count() })
+      .from(notificationsTable)
+      .where(isNull(notificationsTable.deliveredAt));
+
+    const total     = Number(totalResult?.count ?? 0);
+    const delivered = Number(deliveredResult?.count ?? 0);
+    const clicked   = Number(clickedResult?.count ?? 0);
+    const failed    = Number(failedResult?.count ?? 0);
+
+    res.json({
+      total,
+      delivered,
+      failed,
+      clicked,
+      deliveryRate: total > 0 ? `${((delivered / total) * 100).toFixed(1)}%` : "0%",
+      clickRate:    delivered > 0 ? `${((clicked / delivered) * 100).toFixed(1)}%` : "0%",
+    });
+  } catch (err) {
+    logger.error({ err }, "push/analytics: failed to fetch stats");
     res.status(500).json({ error: "فشل جلب إحصائيات الإشعارات" });
   }
 });

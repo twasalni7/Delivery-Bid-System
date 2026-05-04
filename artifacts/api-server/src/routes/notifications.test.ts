@@ -15,6 +15,7 @@ vi.mock("@workspace/db", () => {
       isRead: "isRead",
       createdAt: "createdAt",
       id: "id",
+      clickedAt: "clickedAt",
     },
     eq: vi.fn(),
     and: vi.fn(),

@@ -9,8 +9,8 @@ import {
   requestPassengersTable,
 } from "@workspace/db";
 import { haversineKm } from "@workspace/db";
-import { eq, and, count, inArray, sql } from "drizzle-orm";
-import { notify } from "../lib/notify";
+import { eq, and, count, inArray, ne, sql } from "drizzle-orm";
+import { notify, notifyAllAdmins, notifyAllDrivers } from "../lib/notify";
 import {
   CreateRequestBody,
   UpdateRequestStatusBody,
@@ -40,6 +40,14 @@ interface PassengerInput {
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
+/** Convert a value that may be a numeric string (Drizzle returns numeric as string) to a JS number. */
+function toNum(val: string | number | null | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  const n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
+}
 
 const ALL_STATUSES = new Set([
   "OPEN",
@@ -89,7 +97,7 @@ function formatDriver(
   return {
     id: d.id,
     name: d.name,
-    balance: d.balance,
+    balance: toNum(d.balance),
     carType: d.carType,
     nationality: d.nationality,
     mobile: showContact ? d.mobile : null,
@@ -127,7 +135,13 @@ function formatRequest(
     morningTime: r.morningTime,
     eveningTime: r.eveningTime,
     notes: r.notes,
-    monthlyPrice: r.monthlyPrice,
+    homeLat: r.homeLat,
+    homeLng: r.homeLng,
+    destLat: r.destLat,
+    destLng: r.destLng,
+    distanceKm: r.distanceKm,
+    needsAdminReview: r.needsAdminReview,
+    monthlyPrice: toNum(r.monthlyPrice),
     status: r.status,
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
@@ -141,7 +155,7 @@ router.get("/", async (req, res) => {
   try {
     const parsed = ListRequestsQueryParams.safeParse(req.query);
     const status = parsed.success ? parsed.data.status : undefined;
-    const sessionUser = req.session?.user;
+    const sessionUser = getSessionUser(req);
     const isClient = sessionUser?.role === "client";
     const isDriver = sessionUser?.role === "driver";
 
@@ -359,6 +373,24 @@ router.post("/", requireAuth("client"), async (req, res) => {
       req,
     });
 
+    // Notify all admins about the new request
+    void notifyAllAdmins({
+      title: "📦 طلب نقل جديد",
+      message: `طلب جديد من ${created.homeLocation} إلى ${created.workLocation}`,
+      type: "request",
+      relatedId: created.id,
+      url: `/admin/requests/${created.id}`,
+    });
+
+    // Notify all active drivers so they can place an offer
+    void notifyAllDrivers({
+      title: "🚗 طلب نقل جديد متاح",
+      message: `طلب من ${created.homeLocation} إلى ${created.workLocation} — قدّم عرضك الآن`,
+      type: "request",
+      relatedId: created.id,
+      url: `/driver/requests`,
+    });
+
     res.status(201).json(formatRequest(req, created, null));
   } catch (err) {
     logger.error({ err }, "requests POST / error");
@@ -474,6 +506,33 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
           message: msg,
           type: "request",
           relatedId: updated.id,
+          url: `/client/request/${updated.id}`,
+        });
+      }
+    }
+
+    // Notify the driver when trip is started or completed
+    if (updated.selectedDriverId) {
+      const driverStatusMessages: Record<string, { title: string; message: string }> = {
+        ACTIVE: {
+          title: "🚀 بدء الرحلة",
+          message: "تم تفعيل الرحلة — تواصل مع العميل للانطلاق",
+        },
+        COMPLETED: {
+          title: "✅ اكتملت الرحلة",
+          message: "تم إتمام الرحلة بنجاح. شكراً على خدمتك!",
+        },
+      };
+      const driverMsg = driverStatusMessages[parsed.data.status];
+      if (driverMsg) {
+        void notify({
+          userId: updated.selectedDriverId,
+          userRole: "driver",
+          title: driverMsg.title,
+          message: driverMsg.message,
+          type: "request",
+          relatedId: updated.id,
+          url: `/driver/request/${updated.id}`,
         });
       }
     }
@@ -539,14 +598,14 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         throw Object.assign(new Error("السائق غير موجود"), { status: 404 });
       }
 
-      if (driver.balance < bidFee) {
+      if (toNum(driver.balance) < bidFee) {
         throw Object.assign(new Error("رصيد السائق غير كافٍ للقبول على هذا الطلب"), { status: 400 });
       }
 
       const [updatedDriver] = await tx
         .update(driversTable)
-        .set({ balance: sql`${driversTable.balance} - ${bidFee}` })
-        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}`))
+        .set({ balance: sql`${driversTable.balance} - ${bidFee}::numeric` })
+        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}::numeric`))
         .returning();
 
       if (!updatedDriver) {
@@ -580,11 +639,29 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       }
 
       try {
+        // Record bid-fee deduction in the ledger
         await tx.insert(transactionsTable).values({
           driverId: driver.id,
-          amount: -bidFee,
+          amount: String(-bidFee),
           type: "fee",
         });
+
+        // Advance offer state machine: selected offer → SELECTED, all others → CANCELLED
+        await tx
+          .update(offersTable)
+          .set({ status: "SELECTED" })
+          .where(and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)));
+
+        await tx
+          .update(offersTable)
+          .set({ status: "CANCELLED" })
+          .where(
+            and(
+              eq(offersTable.requestId, id),
+              ne(offersTable.id, offerId),
+              eq(offersTable.status, "PENDING"),
+            ),
+          );
       } catch (err) {
         if (!meta.hasRealTransaction) {
           await tx
@@ -611,11 +688,45 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       userId: updatedDriver.id,
       userRole: "driver",
       title: "🎉 تم اختيارك!",
-      message: `اختار العميل عرضك على الطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation} بسعر ${existingRequest.monthlyPrice.toFixed(0)} ر.س/شهر`,
+      message: `اختار العميل عرضك على الطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation} بسعر ${toNum(existingRequest.monthlyPrice).toFixed(0)} ر.س/شهر`,
       type: "request",
       relatedId: existingRequest.id,
       url: `/driver/request/${existingRequest.id}`,
     });
+
+    // Notify drivers whose offers were cancelled (fire-and-forget).
+    // Offers were already set to CANCELLED inside the transaction, so querying
+    // for CANCELLED offers (excluding the winner) gives us the correct set.
+    void (async () => {
+      try {
+        const rejectedOffers = await db
+          .select({ driverId: offersTable.driverId })
+          .from(offersTable)
+          .where(
+            and(
+              eq(offersTable.requestId, existingRequest.id),
+              eq(offersTable.status, "CANCELLED"),
+              ne(offersTable.driverId, updatedDriver.id),
+            )
+          );
+        await Promise.all(
+          rejectedOffers.map((o) =>
+            notify({
+              userId: o.driverId,
+              userRole: "driver",
+              title: "😔 لم يتم اختيارك",
+              message: `تم اختيار سائق آخر للطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation}`,
+              type: "request",
+              relatedId: existingRequest.id,
+              url: `/driver/requests`,
+            })
+          )
+        );
+      } catch (err) {
+        // Non-critical — log but don't rethrow
+        logger.warn({ err, requestId: existingRequest.id }, "select-offer: failed to notify rejected drivers");
+      }
+    })();
 
     res.json(formatRequest(req, updated, updatedDriver));
   } catch (err: unknown) {

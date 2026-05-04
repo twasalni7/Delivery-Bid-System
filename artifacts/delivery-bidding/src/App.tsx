@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import NotFound from "@/pages/not-found";
+import { useInstallAndPushFlow } from "@/hooks/use-install-and-push-flow";
+import { IOSInstallPrompt } from "@/components/ios-install-prompt";
+import { PushPermissionPrompt } from "@/components/push-permission-prompt";
 
 import Home from "@/pages/Home";
 
@@ -183,6 +186,90 @@ function InstallBanner() {
   );
 }
 
+// ─── OneSignal App ID ─────────────────────────────────────────────────────────
+
+const ONESIGNAL_APP_ID =
+  (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
+  "936a2461-9f06-4231-986e-29578e9a56d7";
+
+// ─── FlowOrchestrator ─────────────────────────────────────────────────────────
+/**
+ * Handles three responsibilities in one place:
+ *
+ * 1. OneSignal initialization (runs once on mount).
+ * 2. OneSignal user linking — calls `login(userId)` after sign-in and
+ *    `logout()` on sign-out so push notifications are correctly targeted.
+ * 3. Smart install + push permission prompts:
+ *    - iOS (Safari): iOS install guide → then push permission
+ *    - Android / Desktop: push permission only
+ *
+ * Must be rendered inside <AuthProvider>.
+ */
+function FlowOrchestrator() {
+  const { user } = useAuth();
+  const {
+    showIOSPrompt,
+    showPushPrompt,
+    dismissIOSPrompt,
+    dismissPushPrompt,
+    markPushEnabled,
+  } = useInstallAndPushFlow();
+
+  // ── OneSignal init (once) ─────────────────────────────────────────────────
+  useEffect(() => {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try {
+        await OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          allowLocalhostAsSecureOrigin: true,
+        });
+      } catch {
+        // init already called — safe to ignore
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── OneSignal user linking ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) {
+      // User logged out — unlink from OneSignal
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async (OneSignal) => {
+        try { await OneSignal.logout(); } catch { /* non-critical */ }
+      });
+      return;
+    }
+
+    // User logged in — link device to their account
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try {
+        await OneSignal.login(String(user.id));
+        // Also tag the role so segment-based pushes work
+        await OneSignal.User.addTag("role", user.role);
+      } catch { /* non-critical */ }
+    });
+  }, [user?.id, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Render prompts (only one at a time) ───────────────────────────────────
+  if (showIOSPrompt) {
+    return <IOSInstallPrompt onDismiss={dismissIOSPrompt} />;
+  }
+
+  if (showPushPrompt) {
+    return (
+      <PushPermissionPrompt
+        role={user?.role}
+        onEnabled={markPushEnabled}
+        onDismiss={dismissPushPrompt}
+      />
+    );
+  }
+
+  return null;
+}
+
 // ─── Auth guards ──────────────────────────────────────────────────────────────
 
 const queryClient = new QueryClient({
@@ -341,6 +428,8 @@ function App() {
           </WouterRouter>
           <Toaster />
           <InstallBanner />
+          {/* iOS install guide + push permission soft-ask */}
+          <FlowOrchestrator />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

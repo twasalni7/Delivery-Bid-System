@@ -5,7 +5,7 @@ import { eq, and, ne, count, inArray } from "drizzle-orm";
 import { CreateOfferBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
-import { notify } from "../lib/notify";
+import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
 import { getBidFee } from "./pricing";
@@ -13,6 +13,14 @@ import { getBidFee } from "./pricing";
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
+/** Convert a numeric-column string (Drizzle returns numeric as string) to JS number. */
+function toNum(val: string | number | null | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  const n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
+}
 
 router.get("/", requireAuth("admin"), async (_req, res) => {
   try {
@@ -45,7 +53,7 @@ router.get("/", requireAuth("admin"), async (_req, res) => {
               id: driver.id,
               name: driver.name,
               mobile: driver.mobile,
-              balance: driver.balance,
+              balance: toNum(driver.balance),
               carType: driver.carType,
               nationality: driver.nationality,
               status: driver.status,
@@ -170,7 +178,7 @@ router.get("/my", requireAuth("driver"), async (req, res) => {
               eveningTime: request.eveningTime,
               numberOfPeople: request.numberOfPeople,
               workingDaysPerWeek: request.workingDaysPerWeek,
-              monthlyPrice: request.monthlyPrice,
+              monthlyPrice: toNum(request.monthlyPrice),
               clientType: request.clientType,
               status: request.status,
             }
@@ -251,7 +259,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     }
 
     const bidFee = await getBidFee();
-    if (driver.balance < bidFee) {
+    if (toNum(driver.balance) < bidFee) {
       res.status(400).json({
         error: "رصيد السائق غير كافٍ. الحد الأدنى للقبول على طلب.",
       });
@@ -310,6 +318,15 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       });
     }
 
+    // Notify all admins about the new offer
+    void notifyAllAdmins({
+      title: "🤝 عرض جديد من سائق",
+      message: `قدّم السائق ${driver.name} عرضاً على الطلب من ${request.homeLocation} إلى ${request.workLocation}`,
+      type: "offer",
+      relatedId: request.id,
+      url: `/admin/requests/${request.id}`,
+    });
+
     res.status(201).json({
       id: created.id,
       driverId: created.driverId,
@@ -318,7 +335,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       driver: {
         id: driver.id,
         name: driver.name,
-        balance: driver.balance,
+        balance: toNum(driver.balance),
         carType: driver.carType,
         nationality: driver.nationality,
         status: driver.status,

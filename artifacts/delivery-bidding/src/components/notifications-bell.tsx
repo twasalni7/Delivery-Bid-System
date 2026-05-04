@@ -13,6 +13,7 @@ type Notification = {
   type: string;
   isRead: boolean;
   relatedId: number | null;
+  url: string | null;
   createdAt: string;
 };
 
@@ -58,12 +59,44 @@ export function NotificationsBell() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
+  const markClicked = useMutation({
+    mutationFn: async (id: number) => {
+      await fetch(`${API}/api/notifications/${id}/clicked`, { method: "PATCH", headers: getAuthHeaders() });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+
   const markRead = useMutation({
     mutationFn: async (id: number) => {
       await fetch(`${API}/api/notifications/${id}/read`, { method: "PATCH", headers: getAuthHeaders() });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
+
+  function handleNotificationClick(n: Notification) {
+    if (n.url) {
+      markClicked.mutate(n.id);
+      setOpen(false);
+      // Only navigate to safe same-origin relative paths to prevent open redirect / XSS
+      try {
+        const target = new URL(n.url, window.location.origin);
+        if (
+          target.origin === window.location.origin &&
+          target.protocol !== "javascript:"
+        ) {
+          window.location.assign(target.pathname + target.search + target.hash);
+        }
+      } catch {
+        // URL parsing failed — only allow strict relative paths starting with /
+        // to block javascript: URIs and other non-path strings
+        if (/^\/[^/]/.test(n.url) || n.url === "/") {
+          window.location.assign(n.url);
+        }
+      }
+    } else if (!n.isRead) {
+      markRead.mutate(n.id);
+    }
+  }
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -141,7 +174,7 @@ export function NotificationsBell() {
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => { if (!n.isRead) markRead.mutate(n.id); }}
+                  onClick={() => handleNotificationClick(n)}
                   className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
                   style={{
                     borderBottom: "1px solid var(--border-subtle)",
@@ -173,3 +206,4 @@ export function NotificationsBell() {
     </div>
   );
 }
+
