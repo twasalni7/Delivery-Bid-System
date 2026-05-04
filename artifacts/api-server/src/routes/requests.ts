@@ -229,7 +229,8 @@ router.post("/", requireAuth("client"), async (req, res) => {
 
     // Validate: if multiple passengers, all must have coordinates
     if (data.numberOfPeople > 1 && hasPassengers) {
-      const missingCoords = passengersInput!.some(
+      const passengers = passengersInput!;
+      const missingCoords = passengers.some(
         (p) =>
           p.pickupLat == null ||
           p.pickupLng == null ||
@@ -247,7 +248,8 @@ router.post("/", requireAuth("client"), async (req, res) => {
     let distanceKm: number | null = data.distanceKm ?? null;
 
     if (hasPassengers) {
-      const passengerDistances = passengersInput!
+      const passengers = passengersInput!;
+      const passengerDistances = passengers
         .filter(
           (p) =>
             p.pickupLat != null &&
@@ -308,9 +310,10 @@ router.post("/", requireAuth("client"), async (req, res) => {
       .returning();
 
     // Insert per-passenger records if provided
-    if (hasPassengers && passengersInput!.length > 0) {
+    if (hasPassengers) {
+      const passengers = passengersInput!;
       await db.insert(requestPassengersTable).values(
-        passengersInput!.map((p) => ({
+        passengers.map((p) => ({
           requestId: created.id,
           passengerIndex: p.passengerIndex,
           pickupLat: p.pickupLat ?? null,

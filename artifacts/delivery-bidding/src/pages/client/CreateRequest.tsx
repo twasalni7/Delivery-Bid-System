@@ -66,6 +66,9 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
   );
 }
 
+/** Maximum number of passengers supported per request */
+const MAX_PASSENGERS = 10;
+
 const STEP_TITLES = ["نوع الاشتراك", "تحديد المسار والركاب", "الجدول والوقت", "التفاصيل المالية"];
 
 /** Passenger card shown once per passenger in Step 2 */
@@ -242,7 +245,7 @@ export default function CreateRequest() {
 
   // Sync extraPassengers length when numberOfPeople changes
   const handleSetNumberOfPeople = (n: number) => {
-    const clamped = Math.max(1, Math.min(10, n));
+    const clamped = Math.max(1, Math.min(MAX_PASSENGERS, n));
     setNumberOfPeople(String(clamped));
     setExtraPassengers((prev) => {
       const needed = clamped - 1;
