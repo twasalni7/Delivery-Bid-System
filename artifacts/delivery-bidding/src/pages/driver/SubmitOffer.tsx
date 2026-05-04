@@ -145,12 +145,31 @@ export default function SubmitOffer() {
         </div>
 
         {/* Monthly Price */}
-        <div className="rounded-3xl p-6 mb-6 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <p className="text-sm font-bold mb-2" style={{ color: "var(--text-muted)" }}>السعر الشهري المحدد من العميل</p>
-          <p className="text-5xl font-black tracking-tight" style={{ color: "var(--brand)" }} dir="ltr">
-            {(request as any).monthlyPrice?.toFixed(0) ?? "—"}{" "}
-            <span className="text-xl font-normal" style={{ color: "var(--brand)" }}>ر.س / شهر</span>
-          </p>
+        <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <p className="text-sm font-bold mb-3 text-center" style={{ color: "var(--text-muted)" }}>السعر الشهري المحدد من العميل</p>
+          {(request as any).numberOfPeople > 1 ? (
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-black" style={{ color: "var(--text-hint)" }}>السعر / شخص</p>
+                <p className="text-5xl font-black tracking-tight" style={{ color: "var(--brand)" }} dir="ltr">
+                  {((request as any).monthlyPrice / (request as any).numberOfPeople).toFixed(0)}{" "}
+                  <span className="text-xl font-normal" style={{ color: "var(--brand)" }}>ر.س</span>
+                </p>
+              </div>
+              <div className="text-right pb-1">
+                <p className="text-xs font-black" style={{ color: "var(--text-hint)" }}>الإجمالي ({(request as any).numberOfPeople} أشخاص)</p>
+                <p className="text-2xl font-black" style={{ color: "var(--text-sub)" }} dir="ltr">
+                  {(request as any).monthlyPrice?.toFixed(0) ?? "—"}{" "}
+                  <span className="text-sm font-normal">ر.س/شهر</span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-5xl font-black tracking-tight text-center" style={{ color: "var(--brand)" }} dir="ltr">
+              {(request as any).monthlyPrice?.toFixed(0) ?? "—"}{" "}
+              <span className="text-xl font-normal" style={{ color: "var(--brand)" }}>ر.س / شهر</span>
+            </p>
+          )}
         </div>
 
         {/* Accept Button */}

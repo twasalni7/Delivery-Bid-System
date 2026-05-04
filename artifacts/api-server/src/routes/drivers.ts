@@ -83,6 +83,8 @@ router.get("/me/requests", requireAuth("driver"), async (req, res) => {
         workingDaysPerWeek: r.workingDaysPerWeek,
         morningTime: r.morningTime,
         eveningTime: r.eveningTime,
+        shifts: r.shifts,
+        monthlyPrice: r.monthlyPrice,
         status: r.status,
         selectedDriverId: r.selectedDriverId,
         phone: r.phone,

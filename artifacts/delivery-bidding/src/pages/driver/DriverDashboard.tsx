@@ -214,8 +214,22 @@ export default function DriverDashboard() {
                             </div>
                           </div>
                           <div className="rounded-2xl px-4 py-2 text-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
-                            <p className="font-black text-2xl" style={{ color: "var(--brand)" }} dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"}</p>
-                            <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>ريال/شهر</p>
+                            {(req as any).numberOfPeople > 1 ? (
+                              <>
+                                <p className="font-black text-2xl" style={{ color: "var(--brand)" }} dir="ltr">
+                                  {((req as any).monthlyPrice / (req as any).numberOfPeople).toFixed(0)}
+                                </p>
+                                <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>ر.س/شخص/شهر</p>
+                                <p className="text-[10px] font-black mt-0.5" style={{ color: "var(--text-muted)" }} dir="ltr">
+                                  إجمالي: {(req as any).monthlyPrice?.toFixed(0) ?? "—"} ر.س
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-black text-2xl" style={{ color: "var(--brand)" }} dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"}</p>
+                                <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>ريال/شهر</p>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -347,6 +361,27 @@ export default function DriverDashboard() {
                       </div>
                     )}
                   </div>
+                  {/* Price breakdown in schedule card */}
+                  {(req as any).monthlyPrice != null && (req as any).monthlyPrice > 0 && (
+                    <div className="flex items-center justify-between mt-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                      <div>
+                        <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>
+                          {(req as any).numberOfPeople > 1 ? "السعر / شخص" : "السعر الشهري"}
+                        </p>
+                        <p className="font-black text-lg" style={{ color: "var(--brand)" }} dir="ltr">
+                          {(req as any).numberOfPeople > 1
+                            ? ((req as any).monthlyPrice / (req as any).numberOfPeople).toFixed(0)
+                            : (req as any).monthlyPrice.toFixed(0)}{" "}ر.س
+                        </p>
+                      </div>
+                      {(req as any).numberOfPeople > 1 && (
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الإجمالي ({(req as any).numberOfPeople} أشخاص)</p>
+                          <p className="font-black text-base" style={{ color: "var(--text-sub)" }} dir="ltr">{(req as any).monthlyPrice.toFixed(0)} ر.س/شهر</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="px-5 py-4 space-y-3">
                   <div className="flex gap-1.5 flex-wrap">

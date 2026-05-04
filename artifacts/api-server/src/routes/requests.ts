@@ -213,7 +213,28 @@ router.post("/", requireAuth("client"), async (req, res) => {
     let needsAdminReview = false;
     let distanceKm = data.distanceKm ?? null;
 
-    if (data.homeLat != null && data.homeLng != null && data.destLat != null && data.destLng != null) {
+    // Check if multi-stop route was provided — use its total distance if so
+    const incomingStops = (req.body as { stops?: unknown }).stops;
+    const validStops = Array.isArray(incomingStops)
+      ? (incomingStops as Array<{ stopOrder: number; lat: number; lng: number; address: string; stopType?: string }>)
+          .filter((s) => typeof s.lat === "number" && typeof s.lng === "number")
+          .sort((a, b) => a.stopOrder - b.stopOrder)
+      : [];
+
+    if (validStops.length >= 2) {
+      // Sum haversine distances across all consecutive stops
+      let totalKm = 0;
+      for (let i = 1; i < validStops.length; i++) {
+        const prev = validStops[i - 1];
+        const curr = validStops[i];
+        totalKm += haversineKm(prev.lat, prev.lng, curr.lat, curr.lng);
+      }
+      distanceKm = totalKm;
+      const tripType = (data.numberOfShifts ?? 1) >= 2 ? "round_trip" : "one_way";
+      const result = calculateMonthlyPrice(distanceKm, tripType, data.workingDaysPerWeek, data.numberOfPeople);
+      monthlyPrice = result.price;
+      needsAdminReview = result.needsAdminReview;
+    } else if (data.homeLat != null && data.homeLng != null && data.destLat != null && data.destLng != null) {
       distanceKm = haversineKm(data.homeLat, data.homeLng, data.destLat, data.destLng);
       const tripType = (data.numberOfShifts ?? 1) >= 2 ? "round_trip" : "one_way";
       const result = calculateMonthlyPrice(distanceKm, tripType, data.workingDaysPerWeek, data.numberOfPeople);
@@ -253,10 +274,9 @@ router.post("/", requireAuth("client"), async (req, res) => {
       .returning();
 
     // Insert multi-stop waypoints if provided
-    const stops = (req.body as { stops?: unknown }).stops;
-    if (Array.isArray(stops) && stops.length > 0) {
+    if (validStops.length > 0) {
       await db.insert(requestStopsTable).values(
-        (stops as Array<{ stopOrder: number; lat: number; lng: number; address: string; stopType?: string }>).map(s => ({
+        validStops.map(s => ({
           requestId: created.id,
           stopOrder: s.stopOrder,
           lat: s.lat,

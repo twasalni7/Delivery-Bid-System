@@ -35,7 +35,7 @@ const DAYS = [
   { key: "sat", label: "س" },
 ];
 
-type AdditionalLocation = { type: "pickup" | "dropoff"; address: string };
+type AdditionalLocation = { type: "pickup" | "dropoff"; address: string; lat?: number; lng?: number };
 
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
@@ -101,11 +101,21 @@ export default function CreateRequest() {
     numberOfPeople: number;
   } | undefined>(undefined);
 
-  // Distance calculated from selected coordinates
-  const distanceKm =
-    homeCoords && workCoords
-      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
-      : undefined;
+  // Distance calculated from selected coordinates — sums all route segments
+  const distanceKm = (() => {
+    if (!homeCoords || !workCoords) return undefined;
+    const coordStops = additionalLocations
+      .filter((l) => l.lat != null && l.lng != null)
+      .map((l) => ({ lat: l.lat!, lng: l.lng! }));
+    const points: { lat: number; lng: number }[] = [homeCoords, ...coordStops, workCoords];
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      total += haversineKm(prev.lat, prev.lng, curr.lat, curr.lng);
+    }
+    return total;
+  })();
 
   // Number of people for pricing: for shared subscription, add suggestion count to household
   const sharingCount =
@@ -160,9 +170,9 @@ export default function CreateRequest() {
     setAdditionalLocations((prev) => [...prev, { type: "pickup", address: "" }]);
   const removeLocation = (idx: number) =>
     setAdditionalLocations((prev) => prev.filter((_, i) => i !== idx));
-  const updateLocation = (idx: number, field: "type" | "address", val: string) =>
+  const updateLocation = (idx: number, patch: Partial<AdditionalLocation>) =>
     setAdditionalLocations((prev) =>
-      prev.map((l, i) => (i === idx ? { ...l, [field]: val } : l))
+      prev.map((l, i) => (i === idx ? { ...l, ...patch } : l))
     );
 
   const canNext = () => {
@@ -179,6 +189,17 @@ export default function CreateRequest() {
       ? `[اشتراك مشترك - ${sharingCount} أشخاص]`
       : null;
     const finalNotes = [sharingNote, notes.trim()].filter(Boolean).join(" — ") || undefined;
+
+    // Build stops array for accurate multi-point distance on the server
+    const stopsForSubmit: { stopOrder: number; lat: number; lng: number; address: string; stopType: string }[] = [];
+    let stopOrder = 0;
+    if (homeCoords) stopsForSubmit.push({ stopOrder: stopOrder++, lat: homeCoords.lat, lng: homeCoords.lng, address: homeCoords.address, stopType: "origin" });
+    for (const loc of validAdditional) {
+      if (loc.lat != null && loc.lng != null) {
+        stopsForSubmit.push({ stopOrder: stopOrder++, lat: loc.lat, lng: loc.lng, address: loc.address, stopType: loc.type });
+      }
+    }
+    if (workCoords) stopsForSubmit.push({ stopOrder: stopOrder++, lat: workCoords.lat, lng: workCoords.lng, address: workCoords.address, stopType: "destination" });
 
     createRequest.mutate(
       {
@@ -202,6 +223,7 @@ export default function CreateRequest() {
           // monthlyPrice is intentionally not sent — the server calculates
           // it from coordinates using the DB pricing config to prevent
           // client-side price manipulation.
+          stops: stopsForSubmit.length > 2 ? stopsForSubmit : undefined,
         } as any,
       },
       {
@@ -342,43 +364,48 @@ export default function CreateRequest() {
                 {homeCoords && workCoords && (
                   <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                     <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>
-                      المسافة المقدرة:{" "}
+                      {additionalLocations.some((l) => l.lat != null) ? "إجمالي المسافة (جميع المحطات)" : "المسافة المقدرة"}:{" "}
                       <span className="text-white">
-                        {haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng).toFixed(1)}{" "}
-                        كم
+                        {distanceKm?.toFixed(1)}{" "}كم
                       </span>
                     </p>
+                    {additionalLocations.some((l) => l.lat != null) && (
+                      <p className="text-xs font-bold mt-1" style={{ color: "var(--brand)" }}>
+                        يشمل {additionalLocations.filter((l) => l.lat != null).length} محطة إضافية
+                      </p>
+                    )}
                   </div>
                 )}
 
                 {additionalLocations.map((loc, idx) => (
-                  <div key={idx} className="flex gap-2 items-start">
-                    <div className="flex-1 space-y-1.5">
-                      <div className="flex gap-2">
-                        <select
-                          value={loc.type}
-                          onChange={(e) => updateLocation(idx, "type", e.target.value)}
-                          className="rounded-2xl px-3 py-2.5 text-sm font-bold focus:outline-none"
-                          style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
-                        >
-                          <option value="pickup">استلام</option>
-                          <option value="dropoff">توصيل</option>
-                        </select>
-                        <Input
-                          placeholder="العنوان..."
-                          value={loc.address}
-                          onChange={(e) => updateLocation(idx, "address", e.target.value)}
-                          className="flex-1 rounded-2xl font-bold input-dark"
-                        />
-                      </div>
+                  <div key={idx} className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
+                    <div className="flex items-center justify-between px-3 py-2.5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+                      <select
+                        value={loc.type}
+                        onChange={(e) => updateLocation(idx, { type: e.target.value as "pickup" | "dropoff" })}
+                        className="rounded-xl px-3 py-1.5 text-sm font-bold focus:outline-none"
+                        style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
+                      >
+                        <option value="pickup">استلام إضافي</option>
+                        <option value="dropoff">توصيل إضافي</option>
+                      </select>
+                      <button
+                        onClick={() => removeLocation(idx)}
+                        className="p-2 rounded-xl transition-colors"
+                        style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
+                      >
+                        <X size={16} />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => removeLocation(idx)}
-                      className="mt-2.5 p-2 rounded-xl transition-colors"
-                      style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
-                    >
-                      <X size={16} />
-                    </button>
+                    <div className="p-3">
+                      <MapPicker
+                        value={loc.lat != null && loc.lng != null ? { lat: loc.lat, lng: loc.lng, address: loc.address } : null}
+                        onChange={(coords) => updateLocation(idx, { lat: coords.lat, lng: coords.lng, address: coords.address })}
+                        placeholder={loc.type === "pickup" ? "حدد موقع الاستلام الإضافي على الخريطة" : "حدد موقع التوصيل الإضافي على الخريطة"}
+                        color={loc.type === "pickup" ? "var(--brand)" : "var(--status-cancelled-text)"}
+                        initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+                      />
+                    </div>
                   </div>
                 ))}
 
