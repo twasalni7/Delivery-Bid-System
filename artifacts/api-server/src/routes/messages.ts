@@ -5,6 +5,7 @@ import { eq, asc } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
+import { notify } from "../lib/notify";
 
 const router = Router();
 
@@ -122,6 +123,35 @@ router.post("/:requestId", requireAuth(), async (req, res) => {
         body: body.trim(),
       })
       .returning();
+
+    // Notify the other party about the new message (fire-and-forget)
+    const request = await db.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, requestId),
+    });
+    if (request) {
+      const snippet = body.trim().slice(0, 80);
+      if (sessionUser.role === "driver" && request.clientId) {
+        void notify({
+          userId: request.clientId,
+          userRole: "client",
+          title: "💬 رسالة جديدة من السائق",
+          message: snippet,
+          type: "request",
+          relatedId: requestId,
+          url: `/client/request/${requestId}`,
+        });
+      } else if (sessionUser.role === "client" && request.selectedDriverId) {
+        void notify({
+          userId: request.selectedDriverId,
+          userRole: "driver",
+          title: "💬 رسالة جديدة من العميل",
+          message: snippet,
+          type: "request",
+          relatedId: requestId,
+          url: `/driver/request/${requestId}`,
+        });
+      }
+    }
 
     res.status(201).json({
       id: created.id,

@@ -10,7 +10,7 @@ import {
 } from "@workspace/db";
 import { haversineKm } from "@workspace/db";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
-import { notify } from "../lib/notify";
+import { notify, notifyAllAdmins } from "../lib/notify";
 import {
   CreateRequestBody,
   UpdateRequestStatusBody,
@@ -357,6 +357,15 @@ router.post("/", requireAuth("client"), async (req, res) => {
       entityId:  created.id,
       metadata:  { homeLocation: created.homeLocation, workLocation: created.workLocation, distanceKm, monthlyPrice },
       req,
+    });
+
+    // Notify all admins about the new request
+    void notifyAllAdmins({
+      title: "📦 طلب نقل جديد",
+      message: `طلب جديد من ${created.homeLocation} إلى ${created.workLocation}`,
+      type: "request",
+      relatedId: created.id,
+      url: `/admin/requests/${created.id}`,
     });
 
     res.status(201).json(formatRequest(req, created, null));

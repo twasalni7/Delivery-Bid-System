@@ -64,14 +64,22 @@ async function sendWebPush(
   subscriptionJson: string,
   title: string,
   body: string,
-  url?: string
+  url?: string,
+  icon?: string,
+  badge?: string
 ): Promise<void> {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
   try {
     const subscription = JSON.parse(subscriptionJson) as webpush.PushSubscription;
     await webpush.sendNotification(
       subscription,
-      JSON.stringify({ title, body, url: url ?? "/" })
+      JSON.stringify({
+        title,
+        body,
+        url: url ?? "/",
+        icon: icon ?? "/icons/icon-192.png",
+        badge: badge ?? "/icons/icon-192.png",
+      })
     );
   } catch (err: unknown) {
     const pushErr = err as { statusCode?: number };
@@ -92,6 +100,8 @@ export async function notify(params: {
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
   url?: string;
+  icon?: string;
+  badge?: string;
 }) {
   try {
     await db.insert(notificationsTable).values({
@@ -109,7 +119,16 @@ export async function notify(params: {
 
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
-      void sendWebPush(params.userId, params.userRole, sub, params.title, params.message, params.url);
+      void sendWebPush(
+        params.userId,
+        params.userRole,
+        sub,
+        params.title,
+        params.message,
+        params.url,
+        params.icon,
+        params.badge
+      );
     }
   });
 }
@@ -120,12 +139,34 @@ export async function notifyAllAdmins(params: {
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
   url?: string;
+  icon?: string;
+  badge?: string;
 }) {
   try {
     const admins = await db.select({ id: adminsTable.id }).from(adminsTable);
     await Promise.all(admins.map((admin) => notify({ userId: admin.id, userRole: "admin", ...params })));
   } catch (err) {
     logger.error({ err }, "notifyAllAdmins: failed to fetch admins or send notifications");
+  }
+}
+
+export async function notifyAllDrivers(params: {
+  title: string;
+  message: string;
+  type: "offer" | "request" | "system" | "support";
+  relatedId?: number;
+  url?: string;
+  icon?: string;
+  badge?: string;
+}) {
+  try {
+    const drivers = await db
+      .select({ id: driversTable.id })
+      .from(driversTable)
+      .where(eq(driversTable.status, "ACTIVE"));
+    await Promise.all(drivers.map((driver) => notify({ userId: driver.id, userRole: "driver", ...params })));
+  } catch (err) {
+    logger.error({ err }, "notifyAllDrivers: failed to fetch drivers or send notifications");
   }
 }
 

@@ -85,6 +85,8 @@ self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
   let url = '/';
+  let icon = '/icons/icon-192.png';
+  let badge = '/icons/icon-192.png';
 
   if (event.data) {
     try {
@@ -92,6 +94,8 @@ self.addEventListener('push', (event) => {
       if (data.title) title = data.title;
       if (data.body) body = data.body;
       if (data.url) url = data.url;
+      if (data.icon) icon = data.icon;
+      if (data.badge) badge = data.badge;
     } catch {
       body = event.data.text() || body;
     }
@@ -100,8 +104,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: '/icons/icon-192.svg',
-      badge: '/icons/icon-192.svg',
+      icon,
+      badge,
       vibrate: [200, 100, 200, 100, 200],
       dir: 'rtl',
       lang: 'ar',
