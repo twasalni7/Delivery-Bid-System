@@ -27,6 +27,7 @@ type DriverRequest = {
   morningTime: string; eveningTime: string | null;
   shifts?: { label?: string; goTime: string; returnTime?: string }[] | null;
   numberOfPeople: number; workingDaysPerWeek: number;
+  monthlyPrice?: number;
   status: string; phone: string | null; createdAt: string;
 };
 
@@ -169,6 +170,28 @@ export default function DriverRequests() {
                   )}
                   <span>👥 {r.numberOfPeople} أشخاص · {r.workingDaysPerWeek} أيام/أسبوع</span>
                 </div>
+
+                {/* Price breakdown */}
+                {(r as any).monthlyPrice != null && (r as any).monthlyPrice > 0 && (
+                  <div className="flex items-center justify-between p-3 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                    <div>
+                      <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>
+                        {r.numberOfPeople > 1 ? "السعر / شخص" : "السعر الشهري"}
+                      </p>
+                      <p className="font-black text-xl" style={{ color: "var(--brand)" }} dir="ltr">
+                        {r.numberOfPeople > 1
+                          ? ((r as any).monthlyPrice / r.numberOfPeople).toFixed(0)
+                          : (r as any).monthlyPrice.toFixed(0)}{" "}ر.س
+                      </p>
+                    </div>
+                    {r.numberOfPeople > 1 && (
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الإجمالي ({r.numberOfPeople} أشخاص)</p>
+                        <p className="font-black text-base" style={{ color: "var(--text-sub)" }} dir="ltr">{(r as any).monthlyPrice.toFixed(0)} ر.س/شهر</p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
                   {new Date(r.createdAt).toLocaleDateString("ar-SA")}
