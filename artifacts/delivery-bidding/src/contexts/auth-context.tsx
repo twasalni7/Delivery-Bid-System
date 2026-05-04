@@ -44,6 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearPushSubscriptionCache();
+    // Unlink the device from this user in OneSignal
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try { await OneSignal.logout(); } catch { /* non-critical */ }
+    });
     try { localStorage.removeItem(LS_TOKEN_KEY); } catch { /* ignore */ }
     try { localStorage.removeItem(LS_USER_KEY); } catch { /* ignore */ }
     setUser(null);

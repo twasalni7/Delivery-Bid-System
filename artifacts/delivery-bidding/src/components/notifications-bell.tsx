@@ -77,15 +77,19 @@ export function NotificationsBell() {
     if (n.url) {
       markClicked.mutate(n.id);
       setOpen(false);
-      // Only navigate to relative paths or same-origin URLs to prevent open redirect
+      // Only navigate to safe same-origin relative paths to prevent open redirect / XSS
       try {
         const target = new URL(n.url, window.location.origin);
-        if (target.origin === window.location.origin) {
+        if (
+          target.origin === window.location.origin &&
+          target.protocol !== "javascript:"
+        ) {
           window.location.assign(target.pathname + target.search + target.hash);
         }
       } catch {
-        // n.url is a relative path (no origin) — safe to navigate directly
-        if (n.url.startsWith("/")) {
+        // URL parsing failed — only allow strict relative paths starting with /
+        // to block javascript: URIs and other non-path strings
+        if (/^\/[^/]/.test(n.url) || n.url === "/") {
           window.location.assign(n.url);
         }
       }
