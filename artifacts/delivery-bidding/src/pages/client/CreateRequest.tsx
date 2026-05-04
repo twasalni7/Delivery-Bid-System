@@ -13,7 +13,7 @@ import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import {
   ArrowRight, Plus, X, Home, Briefcase, Users, Clock,
-  CheckCircle2, Check, AlertTriangle, Navigation, Share2, Lock,
+  CheckCircle2, Check, Share2, Lock,
 } from "lucide-react";
 
 const CLIENT_TYPES = [
@@ -37,6 +37,15 @@ const DAYS = [
 
 type AdditionalLocation = { type: "pickup" | "dropoff"; address: string };
 
+/** Per-passenger location and schedule data */
+type ExtraPassenger = {
+  pickupCoords: MapCoords | null;
+  pickupAddress: string;
+  destCoords: MapCoords | null;
+  destAddress: string;
+  workTime: string;
+};
+
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
   return (
@@ -57,7 +66,114 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
   );
 }
 
-const STEP_TITLES = ["نوع الاشتراك", "تحديد المسار", "الجدول والوقت", "التفاصيل المالية"];
+const STEP_TITLES = ["نوع الاشتراك", "تحديد المسار والركاب", "الجدول والوقت", "التفاصيل المالية"];
+
+/** Passenger card shown once per passenger in Step 2 */
+function PassengerCard({
+  index,
+  homeCoords,
+  homeAddress,
+  workCoords,
+  workAddress,
+  workTime,
+  onHomeChange,
+  onWorkChange,
+  onWorkTimeChange,
+}: {
+  index: number;
+  homeCoords: MapCoords | null;
+  homeAddress: string;
+  workCoords: MapCoords | null;
+  workAddress: string;
+  workTime: string;
+  onHomeChange: (coords: MapCoords) => void;
+  onWorkChange: (coords: MapCoords) => void;
+  onWorkTimeChange: (t: string) => void;
+}) {
+  const distKm =
+    homeCoords && workCoords
+      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
+      : null;
+
+  return (
+    <div className="rounded-[2rem] p-4 space-y-4" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
+      {/* Passenger header */}
+      <div className="flex items-center gap-2 pb-2" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
+          {index}
+        </div>
+        <span className="font-black" style={{ color: "var(--text)" }}>
+          {index === 1 ? "الراكب الأول (أنت)" : `الراكب ${index}`}
+        </span>
+        {distKm !== null && (
+          <span className="mr-auto text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+            {distKm.toFixed(1)} كم
+          </span>
+        )}
+      </div>
+
+      {/* Home map */}
+      <div className="space-y-2">
+        <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
+          <Home className="inline-block ml-1" size={14} style={{ color: "var(--brand)" }} />
+          موقع المنزل
+        </label>
+        <MapPicker
+          value={homeCoords}
+          onChange={onHomeChange}
+          placeholder="اضغط على الخريطة لتحديد موقع المنزل"
+          color="var(--brand)"
+          initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+        />
+        <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
+          <Home size={18} style={{ color: "var(--brand)" }} />
+          <span className="text-sm font-bold truncate" style={{ color: homeAddress ? "var(--text)" : "var(--text-hint)" }}>
+            {homeAddress || "لم يتم تحديد الموقع بعد"}
+          </span>
+        </div>
+      </div>
+
+      {/* Work map */}
+      <div className="space-y-2">
+        <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
+          <Briefcase className="inline-block ml-1 text-rose-500" size={14} />
+          موقع الدوام
+        </label>
+        <MapPicker
+          value={workCoords}
+          onChange={onWorkChange}
+          placeholder="اضغط على الخريطة لتحديد موقع العمل"
+          color="var(--brand)"
+          initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+        />
+        <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
+          <Briefcase size={18} className="text-rose-500" />
+          <span className="text-sm font-bold truncate" style={{ color: workAddress ? "var(--text)" : "var(--text-hint)" }}>
+            {workAddress || "لم يتم تحديد الموقع بعد"}
+          </span>
+        </div>
+      </div>
+
+      {/* Work time (for extra passengers) */}
+      {index > 1 && (
+        <div className="space-y-1">
+          <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
+            <Clock className="inline-block ml-1" size={14} style={{ color: "var(--brand)" }} />
+            وقت الدوام (اختياري)
+          </label>
+          <Input
+            type="time"
+            value={workTime}
+            onChange={(e) => onWorkTimeChange(e.target.value)}
+            className="rounded-2xl font-bold text-base input-dark"
+            dir="ltr"
+          />
+          {workTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(workTime)}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CreateRequest() {
   const [, setLocation] = useLocation();
@@ -70,17 +186,20 @@ export default function CreateRequest() {
   // Step 1
   const [clientType, setClientType] = useState("موظفات");
 
-  // Step 2
+  // Step 2 — passenger 1 (main)
   const [homeLocation, setHomeLocation] = useState("");
   const [workLocation, setWorkLocation] = useState("");
   const [homeCoords, setHomeCoords] = useState<MapCoords | null>(null);
   const [workCoords, setWorkCoords] = useState<MapCoords | null>(null);
   const [additionalLocations, setAdditionalLocations] = useState<AdditionalLocation[]>([]);
 
+  // Step 2 — number of people + extra passengers
+  const [numberOfPeople, setNumberOfPeople] = useState("1");
+  const [extraPassengers, setExtraPassengers] = useState<ExtraPassenger[]>([]);
+
   // Step 3
   const [morningTime, setMorningTime] = useState("");
   const [eveningTime, setEveningTime] = useState("");
-  const [numberOfPeople, setNumberOfPeople] = useState("1");
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
   const [notes, setNotes] = useState("");
 
@@ -101,33 +220,67 @@ export default function CreateRequest() {
     numberOfPeople: number;
   } | undefined>(undefined);
 
-  // Distance calculated from selected coordinates
-  const distanceKm =
+  // Compute per-passenger distances, then take the max for pricing
+  const passengerDistances: (number | null)[] = [
     homeCoords && workCoords
       ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
-      : undefined;
+      : null,
+    ...extraPassengers.map((p) =>
+      p.pickupCoords && p.destCoords
+        ? haversineKm(p.pickupCoords.lat, p.pickupCoords.lng, p.destCoords.lat, p.destCoords.lng)
+        : null
+    ),
+  ];
+  const validDistances = passengerDistances.filter((d): d is number => d !== null);
+  const maxDistanceKm = validDistances.length > 0 ? Math.max(...validDistances) : undefined;
 
-  // Number of people for pricing: for shared subscription, add suggestion count to household
+  // Number of people for pricing: for shared subscription, add suggestion count
   const sharingCount =
     subscriptionType === "shared" && sharedSuggestions && sharedSuggestions.count > 0
       ? Math.min(parseInt(numberOfPeople) + sharedSuggestions.count, 4)
       : parseInt(numberOfPeople) || 1;
 
+  // Sync extraPassengers length when numberOfPeople changes
+  const handleSetNumberOfPeople = (n: number) => {
+    const clamped = Math.max(1, Math.min(10, n));
+    setNumberOfPeople(String(clamped));
+    setExtraPassengers((prev) => {
+      const needed = clamped - 1;
+      if (needed > prev.length) {
+        return [
+          ...prev,
+          ...Array.from({ length: needed - prev.length }, () => ({
+            pickupCoords: null,
+            pickupAddress: "",
+            destCoords: null,
+            destAddress: "",
+            workTime: "",
+          })),
+        ];
+      }
+      return prev.slice(0, needed);
+    });
+  };
+
+  const updateExtraPassenger = (idx: number, update: Partial<ExtraPassenger>) => {
+    setExtraPassengers((prev) => prev.map((p, i) => (i === idx ? { ...p, ...update } : p)));
+  };
+
   // Fetch price from server whenever distance or passengers change
   useEffect(() => {
-    if (distanceKm === undefined) {
+    if (maxDistanceKm === undefined) {
       setPricingResult(undefined);
       return;
     }
     fetch(`${API}/api/pricing/calculate`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ distanceKm, numberOfPeople: sharingCount }),
+      body: JSON.stringify({ distanceKm: maxDistanceKm, numberOfPeople: sharingCount }),
     })
       .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
       .then((data) => setPricingResult(data))
       .catch(() => setPricingResult(undefined));
-  }, [distanceKm, sharingCount]);
+  }, [maxDistanceKm, sharingCount]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
@@ -167,18 +320,57 @@ export default function CreateRequest() {
 
   const canNext = () => {
     if (step === 1) return !!clientType;
-    if (step === 2) return homeLocation.trim() && workLocation.trim();
+    if (step === 2) {
+      // Main passenger must have both coordinates
+      if (!homeCoords || !workCoords) return false;
+      // All extra passengers must also have coordinates
+      if (extraPassengers.some((p) => !p.pickupCoords || !p.destCoords)) return false;
+      return true;
+    }
     if (step === 3) return morningTime && selectedDays.length > 0;
     return phone.trim().length >= 10;
   };
 
   const handleSubmit = () => {
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
-    // Build notes: include sharing preference if applicable
     const sharingNote = subscriptionType === "shared" && sharedSuggestions && sharedSuggestions.count > 0
       ? `[اشتراك مشترك - ${sharingCount} أشخاص]`
       : null;
     const finalNotes = [sharingNote, notes.trim()].filter(Boolean).join(" — ") || undefined;
+
+    // Build per-passenger array for the backend
+    const passengersData = [
+      {
+        passengerIndex: 1,
+        pickupLat: homeCoords?.lat ?? null,
+        pickupLng: homeCoords?.lng ?? null,
+        destinationLat: workCoords?.lat ?? null,
+        destinationLng: workCoords?.lng ?? null,
+        pickupAddress: homeLocation || homeCoords?.address || null,
+        destinationAddress: workLocation || workCoords?.address || null,
+        workTime: morningTime || null,
+        daysPerWeek: selectedDays.length,
+        distanceKm:
+          homeCoords && workCoords
+            ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
+            : null,
+      },
+      ...extraPassengers.map((p, idx) => ({
+        passengerIndex: idx + 2,
+        pickupLat: p.pickupCoords?.lat ?? null,
+        pickupLng: p.pickupCoords?.lng ?? null,
+        destinationLat: p.destCoords?.lat ?? null,
+        destinationLng: p.destCoords?.lng ?? null,
+        pickupAddress: p.pickupAddress || p.pickupCoords?.address || null,
+        destinationAddress: p.destAddress || p.destCoords?.address || null,
+        workTime: p.workTime || morningTime || null,
+        daysPerWeek: selectedDays.length,
+        distanceKm:
+          p.pickupCoords && p.destCoords
+            ? haversineKm(p.pickupCoords.lat, p.pickupCoords.lng, p.destCoords.lat, p.destCoords.lng)
+            : null,
+      })),
+    ];
 
     createRequest.mutate(
       {
@@ -190,7 +382,7 @@ export default function CreateRequest() {
           homeLng: homeCoords?.lng,
           destLat: workCoords?.lat,
           destLng: workCoords?.lng,
-          distanceKm,
+          distanceKm: maxDistanceKm,
           additionalLocations: validAdditional.length > 0 ? validAdditional : undefined,
           phone: phone.trim(),
           numberOfPeople: sharingCount,
@@ -199,9 +391,9 @@ export default function CreateRequest() {
           morningTime,
           eveningTime: eveningTime || undefined,
           notes: finalNotes,
-          // monthlyPrice is intentionally not sent — the server calculates
-          // it from coordinates using the DB pricing config to prevent
-          // client-side price manipulation.
+          passengers: passengersData,
+          // monthlyPrice is intentionally not sent — the server calculates it
+          // from coordinates using the DB pricing matrix to prevent manipulation.
         } as any,
       },
       {
@@ -268,89 +460,103 @@ export default function CreateRequest() {
               </div>
             )}
 
-            {/* ── Step 2: Route ── */}
+            {/* ── Step 2: Route & Passengers ── */}
             {step === 2 && (
               <div className="space-y-5">
+                {/* Number of people selector */}
                 <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
-                    <Home className="inline-block ml-1" size={16} style={{ color: "var(--brand)" }} />
-                    موقع الانطلاق (المنزل)
+                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
+                    <Users className="inline-block ml-1" size={14} style={{ color: "var(--brand)" }} />
+                    عدد الأشخاص
                   </label>
-                  <MapPicker
-                    value={homeCoords}
-                    onChange={(coords) => {
-                      setHomeCoords(coords);
-                      setHomeLocation(coords.address);
-                    }}
-                    placeholder="اضغط على الخريطة لتحديد موقع المنزل"
-                    color="var(--brand)"
-                  />
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
-                    <Home className="shrink-0" size={22} style={{ color: "var(--brand)" }} />
-                    <Input
-                      type="text"
-                      placeholder="أو اكتب العنوان يدوياً: حي الروضة، شارع التحلية..."
-                      value={homeLocation}
-                      onChange={(e) => {
-                        setHomeLocation(e.target.value);
-                        // Clear coordinates when user manually edits the address
-                        // to maintain consistency between text and coordinates
-                        if (homeCoords && e.target.value !== homeCoords.address) {
-                          setHomeCoords(null);
-                        }
-                      }}
-                      className="bg-transparent border-0 shadow-none focus-visible:ring-0 text-base font-bold p-0 h-auto"
-                    />
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => handleSetNumberOfPeople(parseInt(numberOfPeople) - 1)}
+                      className="w-10 h-10 rounded-full font-black text-xl transition-colors"
+                      style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
+                    >−</button>
+                    <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "var(--brand)" }}>{numberOfPeople}</span>
+                    <button
+                      onClick={() => handleSetNumberOfPeople(parseInt(numberOfPeople) + 1)}
+                      className="w-10 h-10 rounded-full font-black text-xl transition-colors"
+                      style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
+                    >+</button>
                   </div>
+                  {parseInt(numberOfPeople) > 1 && (
+                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
+                      يجب تحديد موقع المنزل والعمل لكل راكب على الخريطة
+                    </p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
-                    <Briefcase className="inline-block ml-1 text-rose-500" size={16} />
-                    موقع الوصول (الدوام)
-                  </label>
-                  <MapPicker
-                    value={workCoords}
-                    onChange={(coords) => {
-                      setWorkCoords(coords);
-                      setWorkLocation(coords.address);
-                    }}
-                    placeholder="اضغط على الخريطة لتحديد موقع العمل"
-                    color="var(--brand)"
-                    initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
-                  />
-                  <div className="flex items-center gap-3 p-4 rounded-[1.5rem] transition-colors mt-2" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
-                    <Briefcase className="text-rose-500 shrink-0" size={22} />
-                    <Input
-                      type="text"
-                      placeholder="أو اكتب العنوان يدوياً: مستشفى الملك فهد، الرياض..."
-                      value={workLocation}
-                      onChange={(e) => {
-                        setWorkLocation(e.target.value);
-                        // Clear coordinates when user manually edits the address
-                        // to maintain consistency between text and coordinates
-                        if (workCoords && e.target.value !== workCoords.address) {
-                          setWorkCoords(null);
-                        }
-                      }}
-                      className="bg-transparent border-0 shadow-none focus-visible:ring-0 text-base font-bold p-0 h-auto"
-                    />
-                  </div>
-                </div>
+                {/* Passenger 1 card */}
+                <PassengerCard
+                  index={1}
+                  homeCoords={homeCoords}
+                  homeAddress={homeLocation}
+                  workCoords={workCoords}
+                  workAddress={workLocation}
+                  workTime={morningTime}
+                  onHomeChange={(coords) => {
+                    setHomeCoords(coords);
+                    setHomeLocation(coords.address);
+                  }}
+                  onWorkChange={(coords) => {
+                    setWorkCoords(coords);
+                    setWorkLocation(coords.address);
+                  }}
+                  onWorkTimeChange={() => {}}
+                />
 
-                {/* Distance indicator */}
-                {homeCoords && workCoords && (
+                {/* Extra passenger cards */}
+                {extraPassengers.map((p, idx) => (
+                  <PassengerCard
+                    key={idx}
+                    index={idx + 2}
+                    homeCoords={p.pickupCoords}
+                    homeAddress={p.pickupAddress}
+                    workCoords={p.destCoords}
+                    workAddress={p.destAddress}
+                    workTime={p.workTime}
+                    onHomeChange={(coords) =>
+                      updateExtraPassenger(idx, { pickupCoords: coords, pickupAddress: coords.address })
+                    }
+                    onWorkChange={(coords) =>
+                      updateExtraPassenger(idx, { destCoords: coords, destAddress: coords.address })
+                    }
+                    onWorkTimeChange={(t) => updateExtraPassenger(idx, { workTime: t })}
+                  />
+                ))}
+
+                {/* Max distance summary */}
+                {maxDistanceKm !== undefined && (
                   <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                     <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>
-                      المسافة المقدرة:{" "}
-                      <span className="text-white">
-                        {haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng).toFixed(1)}{" "}
-                        كم
+                      أقصى مسافة:{" "}
+                      <span className="font-black" style={{ color: "var(--text)" }}>
+                        {maxDistanceKm.toFixed(1)} كم
                       </span>
+                      {parseInt(numberOfPeople) > 1 && (
+                        <span className="text-xs mr-2" style={{ color: "var(--text-hint)" }}>
+                          (تُستخدم لحساب السعر الإجمالي)
+                        </span>
+                      )}
                     </p>
+                    {parseInt(numberOfPeople) > 1 && (
+                      <div className="mt-2 space-y-0.5">
+                        {passengerDistances.map((d, i) => (
+                          d !== null && (
+                            <p key={i} className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
+                              الراكب {i + 1}: {d.toFixed(1)} كم
+                            </p>
+                          )
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
+                {/* Additional stops */}
                 {additionalLocations.map((loc, idx) => (
                   <div key={idx} className="flex gap-2 items-start">
                     <div className="flex-1 space-y-1.5">
@@ -438,23 +644,6 @@ export default function CreateRequest() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>👥 عدد الأشخاص</label>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setNumberOfPeople((p) => String(Math.max(1, parseInt(p) - 1)))}
-                       className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
-                     >−</button>
-                    <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "var(--brand)" }}>{numberOfPeople}</span>
-                    <button
-                      onClick={() => setNumberOfPeople((p) => String(Math.min(20, parseInt(p) + 1)))}
-                       className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                       style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
-                     >+</button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
                   <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>ملاحظات للسائقين (اختياري)</label>
                   <Textarea
                     placeholder="مثال: يفضل سائقة، باص كبير..."
@@ -522,17 +711,17 @@ export default function CreateRequest() {
                     {/* Per-person price — always displayed */}
                     <div className="space-y-1">
                       <p className="text-xs font-black uppercase tracking-widest" style={{ color: "var(--text-hint)" }}>
-                        Price per person
+                        السعر للشخص
                       </p>
                       <div className="flex items-baseline gap-2">
                         <p className="text-[2.5rem] font-black leading-none" style={{ color: "var(--brand)" }}>
                           {pricingResult.pricePerPerson.toLocaleString("ar-SA")}
                         </p>
-                        <p className="text-base font-black" style={{ color: "var(--text-muted)" }}>SAR / شخص / شهر</p>
+                        <p className="text-base font-black" style={{ color: "var(--text-muted)" }}>ر.س / شخص / شهر</p>
                       </div>
                       {sharingCount > 1 && (
                         <p className="text-sm font-bold" style={{ color: "var(--text-hint)" }}>
-                          ({sharingCount} أشخاص × {pricingResult.pricePerPerson.toLocaleString("ar-SA")} = {pricingResult.price.toLocaleString("ar-SA")} ر.س إجمالي)
+                          ({sharingCount} أشخاص — الإجمالي: {pricingResult.price.toLocaleString("ar-SA")} ر.س)
                         </p>
                       )}
                     </div>
@@ -540,7 +729,7 @@ export default function CreateRequest() {
                     {/* Pricing breakdown */}
                     <div className="pt-2 space-y-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                       <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
-                        المسافة: {distanceKm?.toFixed(1)} كم
+                        أقصى مسافة: {maxDistanceKm?.toFixed(1)} كم
                       </p>
                     </div>
                   </div>
@@ -549,7 +738,7 @@ export default function CreateRequest() {
                     <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
                     <p className="text-base font-black" style={{ color: "var(--brand)" }}>يتطلب مراجعة الإدارة</p>
                     <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
-                      المسافة ({distanceKm?.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
+                      المسافة ({maxDistanceKm?.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
                     </p>
                   </div>
                 ) : (
@@ -591,11 +780,23 @@ export default function CreateRequest() {
                     <span>نوع الاشتراك</span><span className="font-black">{clientType}</span>
                   </div>
                   <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
-                    <span>من</span><span className="font-black text-left text-xs max-w-[55%] text-right">{homeLocation || "—"}</span>
+                    <span>الراكب 1 (من)</span><span className="font-black text-left text-xs max-w-[55%] text-right">{homeLocation || "—"}</span>
                   </div>
                   <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
-                    <span>إلى</span><span className="font-black text-left text-xs max-w-[55%] text-right">{workLocation || "—"}</span>
+                    <span>الراكب 1 (إلى)</span><span className="font-black text-left text-xs max-w-[55%] text-right">{workLocation || "—"}</span>
                   </div>
+                  {extraPassengers.map((p, idx) => (
+                    <div key={idx}>
+                      <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+                        <span>الراكب {idx + 2} (من)</span>
+                        <span className="font-black text-xs max-w-[55%] text-right">{p.pickupAddress || "—"}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+                        <span>الراكب {idx + 2} (إلى)</span>
+                        <span className="font-black text-xs max-w-[55%] text-right">{p.destAddress || "—"}</span>
+                      </div>
+                    </div>
+                  ))}
                   {additionalLocations.filter((l) => l.address.trim()).map((loc, idx) => (
                     <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>{loc.type === "pickup" ? "استلام إضافي" : "توصيل إضافي"}</span>
@@ -615,12 +816,22 @@ export default function CreateRequest() {
                     </span>
                   </div>
                   {pricingResult && !pricingResult.needsAdminReview && (
-                    <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
-                      <span>السعر / شخص</span>
-                      <span className="font-black" style={{ color: "var(--brand)" }}>
-                        {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
-                      </span>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+                        <span>السعر / شخص</span>
+                        <span className="font-black" style={{ color: "var(--brand)" }}>
+                          {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
+                        </span>
+                      </div>
+                      {sharingCount > 1 && (
+                        <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+                          <span>الإجمالي الشهري</span>
+                          <span className="font-black" style={{ color: "var(--brand)" }}>
+                            {pricingResult.price.toLocaleString("ar-SA")} ر.س
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
                   {notes.trim() && (
                     <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
@@ -647,7 +858,10 @@ export default function CreateRequest() {
               onClick={() => {
                 if (step < 4) {
                   if (!canNext()) {
-                    toast({ title: "يرجى ملء الحقول المطلوبة", variant: "destructive" });
+                    const msg = step === 2
+                      ? "يرجى تحديد موقع المنزل والعمل على الخريطة لجميع الركاب"
+                      : "يرجى ملء الحقول المطلوبة";
+                    toast({ title: msg, variant: "destructive" });
                     return;
                   }
                   setStep(step + 1);
