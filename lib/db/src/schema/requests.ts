@@ -3,7 +3,7 @@ import {
   serial,
   text,
   integer,
-  real,
+  numeric,
   doublePrecision,
   boolean,
   timestamp,
@@ -57,9 +57,9 @@ export const requestsTable = pgTable("requests", {
   homeLng: doublePrecision("home_lng"),
   destLat: doublePrecision("dest_lat"),
   destLng: doublePrecision("dest_lng"),
-  distanceKm: real("distance_km"),
+  distanceKm: doublePrecision("distance_km"),
   needsAdminReview: boolean("needs_admin_review").notNull().default(false),
-  monthlyPrice: real("monthly_price").notNull().default(0),
+  monthlyPrice: numeric("monthly_price", { precision: 12, scale: 2 }).notNull().default("0"),
   status: requestStatusEnum("status").notNull().default("OPEN"),
   selectedDriverId: integer("selected_driver_id").references(
     () => driversTable.id

@@ -360,7 +360,7 @@ router.get("/review-requests", requireAuth("admin"), async (_req, res) => {
         numberOfPeople: r.numberOfPeople,
         morningTime: r.morningTime,
         status: r.status,
-        monthlyPrice: r.monthlyPrice,
+        monthlyPrice: r.monthlyPrice != null ? parseFloat(String(r.monthlyPrice)) : 0,
         createdAt: r.createdAt?.toISOString(),
       }))
     );

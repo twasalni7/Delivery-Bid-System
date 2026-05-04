@@ -1,15 +1,31 @@
 import { Router } from "express";
+import { z } from "zod/v4";
 import { db } from "@workspace/db";
-import { walletTransactionsTable, driversTable } from "@workspace/db";
+import { walletTransactionsTable, driversTable, transactionsTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
+import { logActivity } from "../lib/activity";
 
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
+const CreateWalletTxBody = z.object({
+  amount: z.number().min(0.01),
+  receiptUrl: z.string().url().optional().nullable(),
+});
+
+/** Wraps callback in a real DB transaction when available, falls back gracefully. */
+async function withTx<T>(cb: (tx: typeof db) => Promise<T>): Promise<T> {
+  const dbAny = db as typeof db & { transaction?: (cb: (tx: typeof db) => Promise<T>) => Promise<T> };
+  if (typeof dbAny.transaction === "function") {
+    return dbAny.transaction(cb);
+  }
+  return cb(db);
+}
 
 // GET /api/wallet-transactions — driver sees own transactions, admin sees all
 router.get("/", requireAuth(), async (req, res) => {
@@ -55,21 +71,18 @@ router.get("/", requireAuth(), async (req, res) => {
 
 // POST /api/wallet-transactions — driver submits a top-up request
 router.post("/", requireAuth("driver"), async (req, res) => {
-  const driverId = getSessionUser(req)!.id;
-  const { amount, receiptUrl } = req.body ?? {};
-
-  if (!amount || typeof amount !== "number" || amount <= 0) {
-    res.status(400).json({ error: "يرجى إدخال مبلغ صحيح" });
+  const parsed = CreateWalletTxBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "يرجى إدخال مبلغ صحيح أكبر من الصفر" });
     return;
   }
+  const driverId = getSessionUser(req)!.id;
+  const { amount, receiptUrl } = parsed.data;
   try {
     const [tx] = await db
       .insert(walletTransactionsTable)
       .values({
-        // NOTE: intId uses MAX+1 to generate a sequential human-readable ID.
-        // This is safe for low-concurrency driver operations. For high-concurrency
-        // scenarios, consider converting int_id to a SERIAL column via migration.
-        intId: sql`(SELECT COALESCE(MAX("int_id"), 0) + 1 FROM "wallet_transactions")`,
+        // int_id now uses a DB sequence (migration 018) — no race condition
         driverId,
         amount: String(amount),
         receiptUrl: receiptUrl ?? null,
@@ -83,9 +96,9 @@ router.post("/", requireAuth("driver"), async (req, res) => {
     });
     void notifyAllAdmins({
       title: "طلب شحن محفظة جديد",
-      message: `طلب السائق ${driver?.name ?? `#${driverId}`} شحن محفظته بمبلغ ${parseFloat(String(amount)).toFixed(2)} ريال`,
+      message: `طلب السائق ${driver?.name ?? `#${driverId}`} شحن محفظته بمبلغ ${amount.toFixed(2)} ريال`,
       type: "system",
-      relatedId: tx.id,
+      relatedId: tx!.id,
       url: "/admin/settings",
     });
 
@@ -127,7 +140,6 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       return;
     }
 
-    // Credit the driver's wallet
     const driver = await db.query.driversTable.findFirst({
       where: eq(driversTable.id, tx.driverId),
     });
@@ -136,23 +148,45 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       return;
     }
 
-    await db
-      .update(driversTable)
-      .set({ balance: (driver.balance ?? 0) + parseFloat(tx.amount) })
-      .where(eq(driversTable.id, tx.driverId));
+    const creditAmount = parseFloat(tx.amount);
 
-    const [updated] = await db
-      .update(walletTransactionsTable)
-      .set({ status: "approved", updatedAt: new Date() })
-      .where(eq(walletTransactionsTable.id, tx.id))
-      .returning();
+    // Atomically: credit balance + update wallet-transaction status + insert ledger entry
+    const [updated] = await withTx(async (txDb) => {
+      await txDb
+        .update(driversTable)
+        .set({ balance: sql`${driversTable.balance} + ${creditAmount}::numeric` })
+        .where(eq(driversTable.id, tx.driverId));
+
+      // Unified financial ledger entry (same table as bid-fee deductions)
+      await txDb.insert(transactionsTable).values({
+        driverId: tx.driverId,
+        amount: String(creditAmount),
+        type: "topup",
+      });
+
+      return txDb
+        .update(walletTransactionsTable)
+        .set({ status: "approved", updatedAt: new Date() })
+        .where(eq(walletTransactionsTable.id, tx.id))
+        .returning();
+    });
+
+    await logActivity({
+      actorId:   getSessionUser(req)?.id,
+      actorRole: "admin",
+      action:    "wallet.approved",
+      entity:    "wallet_transactions",
+      entityId:  tx.id,
+      metadata:  { driverId: tx.driverId, amount: creditAmount },
+      req,
+    });
 
     // Notify driver
     void notify({
       userId: tx.driverId,
       userRole: "driver",
       title: "تم قبول طلب شحن محفظتك",
-      message: `تمت الموافقة على طلب شحن محفظتك بمبلغ ${parseFloat(tx.amount).toFixed(2)} ريال وإضافته لرصيدك`,
+      message: `تمت الموافقة على طلب شحن محفظتك بمبلغ ${creditAmount.toFixed(2)} ريال وإضافته لرصيدك`,
       type: "system",
       relatedId: tx.id,
       url: "/driver/profile",

@@ -15,9 +15,18 @@ const STATUS_PILL: Record<string, string> = {
   SELECTED:  "pill-selected",
   ACTIVE:    "pill-active",
   COMPLETED: "pill-completed",
+  CANCELLED: "pill-cancelled",
+  EXPIRED:   "pill-cancelled",
+  FROZEN:    "pill-frozen",
 };
 const STATUS_LABELS: Record<string, string> = {
-  OPEN: "مفتوح", SELECTED: "تم الاختيار", ACTIVE: "نشط", COMPLETED: "مكتمل",
+  OPEN:      "مفتوح",
+  SELECTED:  "تم الاختيار",
+  ACTIVE:    "نشط",
+  COMPLETED: "مكتمل",
+  CANCELLED: "ملغي",
+  EXPIRED:   "منتهي الصلاحية",
+  FROZEN:    "مجمّد",
 };
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
@@ -89,7 +98,7 @@ export default function DriverRequests() {
 
   const filtered = (requests ?? []).filter((r) => {
     if (filter === "current") return r.status === "ACTIVE" || r.status === "SELECTED";
-    if (filter === "past") return r.status === "COMPLETED";
+    if (filter === "past") return r.status === "COMPLETED" || r.status === "CANCELLED" || r.status === "EXPIRED";
     return true;
   });
 

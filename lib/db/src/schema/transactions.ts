@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, real, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, numeric, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { driversTable } from "./drivers";
@@ -8,7 +8,7 @@ export const transactionsTable = pgTable("transactions", {
   driverId: integer("driver_id")
     .notNull()
     .references(() => driversTable.id),
-  amount: real("amount").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   type: text("type").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 
 export const systemErrorsTable = pgTable("system_errors", {
   id: serial("id").primaryKey(),
@@ -10,7 +10,7 @@ export const systemErrorsTable = pgTable("system_errors", {
   userRole: text("user_role"),
   count: integer("count").notNull().default(1),
   severity: text("severity").notNull().default("error"),
-  resolved: text("resolved").notNull().default("false"),
+  resolved: boolean("resolved").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

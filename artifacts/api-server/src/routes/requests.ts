@@ -9,7 +9,7 @@ import {
   requestPassengersTable,
 } from "@workspace/db";
 import { haversineKm } from "@workspace/db";
-import { eq, and, count, inArray, sql } from "drizzle-orm";
+import { eq, and, count, inArray, ne, sql } from "drizzle-orm";
 import { notify, notifyAllAdmins, notifyAllDrivers } from "../lib/notify";
 import {
   CreateRequestBody,
@@ -40,6 +40,14 @@ interface PassengerInput {
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
+/** Convert a value that may be a numeric string (Drizzle returns numeric as string) to a JS number. */
+function toNum(val: string | number | null | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  const n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
+}
 
 const ALL_STATUSES = new Set([
   "OPEN",
@@ -89,7 +97,7 @@ function formatDriver(
   return {
     id: d.id,
     name: d.name,
-    balance: d.balance,
+    balance: toNum(d.balance),
     carType: d.carType,
     nationality: d.nationality,
     mobile: showContact ? d.mobile : null,
@@ -127,7 +135,13 @@ function formatRequest(
     morningTime: r.morningTime,
     eveningTime: r.eveningTime,
     notes: r.notes,
-    monthlyPrice: r.monthlyPrice,
+    homeLat: r.homeLat,
+    homeLng: r.homeLng,
+    destLat: r.destLat,
+    destLng: r.destLng,
+    distanceKm: r.distanceKm,
+    needsAdminReview: r.needsAdminReview,
+    monthlyPrice: toNum(r.monthlyPrice),
     status: r.status,
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
@@ -141,7 +155,7 @@ router.get("/", async (req, res) => {
   try {
     const parsed = ListRequestsQueryParams.safeParse(req.query);
     const status = parsed.success ? parsed.data.status : undefined;
-    const sessionUser = req.session?.user;
+    const sessionUser = getSessionUser(req);
     const isClient = sessionUser?.role === "client";
     const isDriver = sessionUser?.role === "driver";
 
@@ -584,14 +598,14 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         throw Object.assign(new Error("السائق غير موجود"), { status: 404 });
       }
 
-      if (driver.balance < bidFee) {
+      if (toNum(driver.balance) < bidFee) {
         throw Object.assign(new Error("رصيد السائق غير كافٍ للقبول على هذا الطلب"), { status: 400 });
       }
 
       const [updatedDriver] = await tx
         .update(driversTable)
-        .set({ balance: sql`${driversTable.balance} - ${bidFee}` })
-        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}`))
+        .set({ balance: sql`${driversTable.balance} - ${bidFee}::numeric` })
+        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}::numeric`))
         .returning();
 
       if (!updatedDriver) {
@@ -625,11 +639,29 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       }
 
       try {
+        // Record bid-fee deduction in the ledger
         await tx.insert(transactionsTable).values({
           driverId: driver.id,
-          amount: -bidFee,
+          amount: String(-bidFee),
           type: "fee",
         });
+
+        // Advance offer state machine: selected offer → SELECTED, all others → CANCELLED
+        await tx
+          .update(offersTable)
+          .set({ status: "SELECTED" })
+          .where(and(eq(offersTable.id, offerId), eq(offersTable.requestId, id)));
+
+        await tx
+          .update(offersTable)
+          .set({ status: "CANCELLED" })
+          .where(
+            and(
+              eq(offersTable.requestId, id),
+              ne(offersTable.id, offerId),
+              eq(offersTable.status, "PENDING"),
+            ),
+          );
       } catch (err) {
         if (!meta.hasRealTransaction) {
           await tx
@@ -656,13 +688,15 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
       userId: updatedDriver.id,
       userRole: "driver",
       title: "🎉 تم اختيارك!",
-      message: `اختار العميل عرضك على الطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation} بسعر ${existingRequest.monthlyPrice.toFixed(0)} ر.س/شهر`,
+      message: `اختار العميل عرضك على الطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation} بسعر ${toNum(existingRequest.monthlyPrice).toFixed(0)} ر.س/شهر`,
       type: "request",
       relatedId: existingRequest.id,
       url: `/driver/request/${existingRequest.id}`,
     });
 
-    // Notify all other drivers whose offers were not selected (fire-and-forget)
+    // Notify drivers whose offers were cancelled (fire-and-forget).
+    // Offers were already set to CANCELLED inside the transaction, so querying
+    // for CANCELLED offers (excluding the winner) gives us the correct set.
     void (async () => {
       try {
         const rejectedOffers = await db
@@ -671,23 +705,22 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
           .where(
             and(
               eq(offersTable.requestId, existingRequest.id),
-              eq(offersTable.status, "PENDING"),
+              eq(offersTable.status, "CANCELLED"),
+              ne(offersTable.driverId, updatedDriver.id),
             )
           );
         await Promise.all(
-          rejectedOffers
-            .filter((o) => o.driverId !== updatedDriver.id)
-            .map((o) =>
-              notify({
-                userId: o.driverId,
-                userRole: "driver",
-                title: "😔 لم يتم اختيارك",
-                message: `تم اختيار سائق آخر للطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation}`,
-                type: "request",
-                relatedId: existingRequest.id,
-                url: `/driver/requests`,
-              })
-            )
+          rejectedOffers.map((o) =>
+            notify({
+              userId: o.driverId,
+              userRole: "driver",
+              title: "😔 لم يتم اختيارك",
+              message: `تم اختيار سائق آخر للطلب من ${existingRequest.homeLocation} إلى ${existingRequest.workLocation}`,
+              type: "request",
+              relatedId: existingRequest.id,
+              url: `/driver/requests`,
+            })
+          )
         );
       } catch (err) {
         // Non-critical — log but don't rethrow

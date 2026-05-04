@@ -4,7 +4,6 @@ import {
   integer,
   doublePrecision,
   text,
-  real,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { requestsTable } from "./requests";
@@ -23,7 +22,7 @@ export const requestPassengersTable = pgTable("request_passengers", {
   destinationAddress: text("destination_address"),
   workTime: text("work_time"),
   daysPerWeek: integer("days_per_week"),
-  distanceKm: real("distance_km"),
+  distanceKm: doublePrecision("distance_km"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

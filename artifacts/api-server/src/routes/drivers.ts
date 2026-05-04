@@ -1,15 +1,24 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { driversTable, transactionsTable, requestsTable } from "@workspace/db";
-import { eq, ne } from "drizzle-orm";
+import { eq, ne, sql } from "drizzle-orm";
 import { AddDriverBalanceBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
+import { logActivity } from "../lib/activity";
 
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
+/** Convert a numeric-column string (Drizzle returns numeric as string) to JS number. */
+function toNum(val: string | number | null | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  const n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
+}
 
 router.get("/", async (_req, res) => {
   try {
@@ -22,7 +31,7 @@ router.get("/", async (_req, res) => {
       drivers.map((d) => ({
         id: d.id,
         name: d.name,
-        balance: d.balance,
+        balance: toNum(d.balance),
         carType: d.carType,
         nationality: d.nationality,
         status: d.status,
@@ -50,7 +59,7 @@ router.get("/me", requireAuth("driver"), async (req, res) => {
       id: driver.id,
       name: driver.name,
       mobile: driver.mobile,
-      balance: driver.balance,
+      balance: toNum(driver.balance),
       carType: driver.carType,
       nationality: driver.nationality,
       age: driver.age,
@@ -84,7 +93,7 @@ router.get("/me/requests", requireAuth("driver"), async (req, res) => {
         morningTime: r.morningTime,
         eveningTime: r.eveningTime,
         shifts: r.shifts,
-        monthlyPrice: r.monthlyPrice,
+        monthlyPrice: toNum(r.monthlyPrice),
         status: r.status,
         selectedDriverId: r.selectedDriverId,
         phone: r.phone,
@@ -116,7 +125,7 @@ router.get("/:id", async (req, res) => {
     res.json({
       id: driver.id,
       name: driver.name,
-      balance: driver.balance,
+      balance: toNum(driver.balance),
       carType: driver.carType,
       nationality: driver.nationality,
       status: driver.status,
@@ -153,22 +162,33 @@ router.patch("/:id/balance", requireAuth("admin"), async (req, res) => {
       return;
     }
 
+    // Use SQL expression to avoid JS float arithmetic on numeric columns
     const [updated] = await db
       .update(driversTable)
-      .set({ balance: driver.balance + amount })
+      .set({ balance: sql`${driversTable.balance} + ${amount}::numeric` })
       .where(eq(driversTable.id, id))
       .returning();
 
     await db.insert(transactionsTable).values({
       driverId: id,
-      amount,
+      amount: String(amount),
       type: "credit",
+    });
+
+    await logActivity({
+      actorId:   getSessionUser(req)?.id,
+      actorRole: "admin",
+      action:    "driver.balance_credited",
+      entity:    "drivers",
+      entityId:  id,
+      metadata:  { amount },
+      req,
     });
 
     res.json({
       id: updated.id,
       name: updated.name,
-      balance: updated.balance,
+      balance: toNum(updated.balance),
       carType: updated.carType,
       nationality: updated.nationality,
       status: updated.status,
@@ -197,7 +217,7 @@ router.get("/:id/transactions", async (req, res) => {
       txns.map((t) => ({
         id: t.id,
         driverId: t.driverId,
-        amount: t.amount,
+        amount: toNum(t.amount),
         type: t.type,
         createdAt: t.createdAt?.toISOString(),
       }))
