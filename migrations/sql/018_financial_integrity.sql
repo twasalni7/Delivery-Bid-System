@@ -42,6 +42,11 @@ ALTER TABLE request_passengers
     USING distance_km::DOUBLE PRECISION;
 
 -- ── 6. system_alerts.is_read  ─────────────────────────────────────────────────
+-- Drop the existing TEXT default first; PostgreSQL cannot auto-cast a text
+-- default expression when changing the column type to boolean.
+ALTER TABLE system_alerts
+  ALTER COLUMN is_read DROP DEFAULT;
+
 ALTER TABLE system_alerts
   ALTER COLUMN is_read TYPE BOOLEAN
     USING (is_read = 'true');
@@ -50,6 +55,9 @@ ALTER TABLE system_alerts
   ALTER COLUMN is_read SET DEFAULT FALSE;
 
 -- ── 7. system_errors.resolved  ────────────────────────────────────────────────
+ALTER TABLE system_errors
+  ALTER COLUMN resolved DROP DEFAULT;
+
 ALTER TABLE system_errors
   ALTER COLUMN resolved TYPE BOOLEAN
     USING (resolved = 'true');
