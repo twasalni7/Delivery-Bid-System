@@ -6,8 +6,9 @@ import {
   offersTable,
   transactionsTable,
   requestStopsTable,
+  requestPassengersTable,
 } from "@workspace/db";
-import { haversineKm, calculateMonthlyPrice } from "@workspace/db";
+import { haversineKm } from "@workspace/db";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notify";
 import {
@@ -20,7 +21,21 @@ import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
-import { getBidFee } from "./pricing";
+import { getBidFee, getPriceFromMatrix } from "./pricing";
+
+/** Per-passenger data submitted by the client */
+interface PassengerInput {
+  passengerIndex: number;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
+  destinationLat?: number | null;
+  destinationLng?: number | null;
+  pickupAddress?: string | null;
+  destinationAddress?: string | null;
+  workTime?: string | null;
+  daysPerWeek?: number | null;
+  distanceKm?: number | null;
+}
 
 const router = Router();
 
@@ -208,41 +223,62 @@ router.post("/", requireAuth("client"), async (req, res) => {
     const clientId = getSessionUser(req)!.id;
     const data = parsed.data;
 
-    // Calculate distance and price server-side from coordinates when available
+    // Extract per-passenger data (not part of the Zod schema — passed as raw body field)
+    const passengersInput = (req.body as { passengers?: PassengerInput[] }).passengers;
+    const hasPassengers = Array.isArray(passengersInput) && passengersInput.length > 0;
+
+    // Validate: if multiple passengers, all must have coordinates
+    if (data.numberOfPeople > 1 && hasPassengers) {
+      const passengers = passengersInput!;
+      const missingCoords = passengers.some(
+        (p) =>
+          p.pickupLat == null ||
+          p.pickupLng == null ||
+          p.destinationLat == null ||
+          p.destinationLng == null
+      );
+      if (missingCoords) {
+        res.status(400).json({ error: "جميع الركاب يجب أن يملكوا إحداثيات محددة على الخريطة" });
+        return;
+      }
+    }
+
+    // Calculate effective distance: use max distance across all passengers when provided,
+    // otherwise fall back to main request coordinates.
+    let distanceKm: number | null = data.distanceKm ?? null;
+
+    if (hasPassengers) {
+      const passengers = passengersInput!;
+      const passengerDistances = passengers
+        .filter(
+          (p) =>
+            p.pickupLat != null &&
+            p.pickupLng != null &&
+            p.destinationLat != null &&
+            p.destinationLng != null
+        )
+        .map((p) => {
+          if (p.distanceKm != null && p.distanceKm > 0) return p.distanceKm;
+          return haversineKm(p.pickupLat!, p.pickupLng!, p.destinationLat!, p.destinationLng!);
+        });
+      if (passengerDistances.length > 0) {
+        distanceKm = Math.max(...passengerDistances);
+      }
+    } else if (
+      data.homeLat != null &&
+      data.homeLng != null &&
+      data.destLat != null &&
+      data.destLng != null
+    ) {
+      distanceKm = haversineKm(data.homeLat, data.homeLng, data.destLat, data.destLng);
+    }
+
+    // Calculate price using the pricing matrix (UNIFIED with /api/pricing/calculate)
     let monthlyPrice = 0;
     let needsAdminReview = false;
-    let distanceKm = data.distanceKm ?? null;
 
-    // Check if multi-stop route was provided — use its total distance if so
-    const incomingStops = (req.body as { stops?: unknown }).stops;
-    const validStops = Array.isArray(incomingStops)
-      ? (incomingStops as Array<{ stopOrder: number; lat: number; lng: number; address: string; stopType?: string }>)
-          .filter((s) => typeof s.lat === "number" && typeof s.lng === "number")
-          .sort((a, b) => a.stopOrder - b.stopOrder)
-      : [];
-
-    if (validStops.length >= 2) {
-      // Sum haversine distances across all consecutive stops
-      let totalKm = 0;
-      for (let i = 1; i < validStops.length; i++) {
-        const prev = validStops[i - 1];
-        const curr = validStops[i];
-        totalKm += haversineKm(prev.lat, prev.lng, curr.lat, curr.lng);
-      }
-      distanceKm = totalKm;
-      const tripType = (data.numberOfShifts ?? 1) >= 2 ? "round_trip" : "one_way";
-      const result = calculateMonthlyPrice(distanceKm, tripType, data.workingDaysPerWeek, data.numberOfPeople);
-      monthlyPrice = result.price;
-      needsAdminReview = result.needsAdminReview;
-    } else if (data.homeLat != null && data.homeLng != null && data.destLat != null && data.destLng != null) {
-      distanceKm = haversineKm(data.homeLat, data.homeLng, data.destLat, data.destLng);
-      const tripType = (data.numberOfShifts ?? 1) >= 2 ? "round_trip" : "one_way";
-      const result = calculateMonthlyPrice(distanceKm, tripType, data.workingDaysPerWeek, data.numberOfPeople);
-      monthlyPrice = result.price;
-      needsAdminReview = result.needsAdminReview;
-    } else if (distanceKm != null) {
-      const tripType = (data.numberOfShifts ?? 1) >= 2 ? "round_trip" : "one_way";
-      const result = calculateMonthlyPrice(distanceKm, tripType, data.workingDaysPerWeek, data.numberOfPeople);
+    if (distanceKm != null) {
+      const result = await getPriceFromMatrix(distanceKm, data.numberOfPeople ?? 1);
       monthlyPrice = result.price;
       needsAdminReview = result.needsAdminReview;
     }
@@ -273,10 +309,36 @@ router.post("/", requireAuth("client"), async (req, res) => {
       })
       .returning();
 
+    // Insert per-passenger records if provided
+    if (hasPassengers) {
+      const passengers = passengersInput!;
+      await db.insert(requestPassengersTable).values(
+        passengers.map((p) => ({
+          requestId: created.id,
+          passengerIndex: p.passengerIndex,
+          pickupLat: p.pickupLat ?? null,
+          pickupLng: p.pickupLng ?? null,
+          destinationLat: p.destinationLat ?? null,
+          destinationLng: p.destinationLng ?? null,
+          pickupAddress: p.pickupAddress ?? null,
+          destinationAddress: p.destinationAddress ?? null,
+          workTime: p.workTime ?? null,
+          daysPerWeek: p.daysPerWeek ?? null,
+          distanceKm:
+            p.distanceKm != null
+              ? p.distanceKm
+              : p.pickupLat != null && p.pickupLng != null && p.destinationLat != null && p.destinationLng != null
+              ? haversineKm(p.pickupLat, p.pickupLng, p.destinationLat, p.destinationLng)
+              : null,
+        }))
+      );
+    }
+
     // Insert multi-stop waypoints if provided
-    if (validStops.length > 0) {
+    const stops = (req.body as { stops?: unknown }).stops;
+    if (Array.isArray(stops) && stops.length > 0) {
       await db.insert(requestStopsTable).values(
-        validStops.map(s => ({
+        (stops as Array<{ stopOrder: number; lat: number; lng: number; address: string; stopType?: string }>).map(s => ({
           requestId: created.id,
           stopOrder: s.stopOrder,
           lat: s.lat,
