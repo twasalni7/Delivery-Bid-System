@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetRequest, useCreateOffer, getGetRequestQueryKey } from "@workspace/api-client-react";
-import type { CreateOfferBody } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +26,7 @@ export default function SubmitOffer() {
 
   const handleAccept = () => {
     createOffer.mutate(
-      { data: { requestId } as CreateOfferBody },
+      { data: { requestId } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(requestId) });

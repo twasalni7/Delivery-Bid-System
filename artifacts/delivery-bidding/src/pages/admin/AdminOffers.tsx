@@ -1,17 +1,11 @@
 import { useState, useMemo } from "react";
 import { useListOffers } from "@workspace/api-client-react";
-import type { Offer } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Search, X } from "lucide-react";
 
-type OfferRow = Offer & {
-  status?: "PENDING" | "SELECTED" | "CANCELLED";
-};
-
 export default function AdminOffers() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: rawOffers, isLoading } = useListOffers({ query: { refetchInterval: 30_000 } as any });
-  const offers = rawOffers as OfferRow[] | undefined;
+  const { data: offers, isLoading } = useListOffers({ query: { refetchInterval: 30_000 } as any });
 
   const [search, setSearch] = useState("");
 

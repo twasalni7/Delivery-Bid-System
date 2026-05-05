@@ -208,6 +208,7 @@ export interface CommuteRequest {
   needsAdminReview?: boolean;
   /** Monthly subscription price in SAR */
   monthlyPrice?: number;
+  createdBy?: "admin" | "client" | null;
   status: CommuteRequestStatus;
   selectedDriverId?: number | null;
   selectedDriver?: Driver | null;
@@ -298,15 +299,13 @@ export interface Offer {
   price: number;
   carType?: string | null;
   nationality?: string | null;
+  status?: "PENDING" | "SELECTED" | "CANCELLED";
   driver?: Driver | null;
   createdAt?: string;
 }
 
 export interface CreateOfferBody {
   requestId: number;
-  price: number;
-  carType: string;
-  nationality: string;
 }
 
 export interface Transaction {

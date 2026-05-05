@@ -12,8 +12,6 @@ import type { CommuteRequest } from "@workspace/api-client-react";
 import { getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 
-type AdminRequestRow = CommuteRequest & { createdBy?: "admin" | "client" | null };
-
 const STATUS_PILL_STYLE: Record<string, React.CSSProperties> = {
   OPEN:      { backgroundColor: "var(--status-open-bg)",      color: "var(--status-open-text)" },
   SELECTED:  { backgroundColor: "var(--status-selected-bg)",  color: "var(--status-selected-text)" },
@@ -32,7 +30,6 @@ export default function AdminRequests() {
   const [search, setSearch] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: requests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 15_000 } as any });
-  const requestRows = (requests ?? []) as AdminRequestRow[];
   const updateRequest = useAdminUpdateRequest();
   const deleteRequest = useAdminDeleteRequest();
   const [editDialog, setEditDialog] = useState<CommuteRequest | null>(null);
@@ -49,7 +46,7 @@ export default function AdminRequests() {
 
   const filteredRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return requestRows.filter((r) => {
+    return (requests ?? []).filter((r) => {
       if (statusFilter !== "ALL" && r.status !== statusFilter) return false;
       if (q) {
         const hay = [
@@ -60,7 +57,7 @@ export default function AdminRequests() {
       }
       return true;
     });
-  }, [requestRows, statusFilter, search]);
+  }, [requests, statusFilter, search]);
 
   const activeFilters = (statusFilter !== "ALL" ? 1 : 0) + (search ? 1 : 0);
 
@@ -290,7 +287,7 @@ export default function AdminRequests() {
                 </tbody>
               </table>
               <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border-subtle)", color: "var(--text-hint)" }}>
-                يُعرض <strong style={{ color: "var(--text)" }}>{filteredRequests.length}</strong> من <strong style={{ color: "var(--text)" }}>{requestRows.length}</strong> طلب
+                يُعرض <strong style={{ color: "var(--text)" }}>{filteredRequests.length}</strong> من <strong style={{ color: "var(--text)" }}>{requests?.length ?? 0}</strong> طلب
               </div>
             </div>
 

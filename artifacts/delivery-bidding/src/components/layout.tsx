@@ -48,6 +48,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const roleLabel =
+    user?.role === "admin" ? "إدارة النظام" : user?.role === "driver" ? "سائق" : "عميل";
 
   const navGroups: NavGroup[] = [
     {
@@ -163,7 +165,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold truncate" style={{ color: "var(--text)" }}>{user.name ?? "مشرف النظام"}</p>
-              <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{user.mobile ?? ""}</p>
+              <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{roleLabel}</p>
             </div>
             <button
               onClick={logout}
