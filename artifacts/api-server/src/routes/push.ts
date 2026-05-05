@@ -272,6 +272,12 @@ router.post("/unsubscribe", requireAuth(), async (req, res) => {
  */
 router.post("/send", requireAuth("admin"), async (req, res) => {
   const body = (req.body ?? {}) as Record<string, unknown>;
+  const legacyAudience = body["audience"] ? undefined : normalizeLegacyAudience(body);
+
+  if (!body["audience"] && !legacyAudience) {
+    res.status(400).json({ error: "صيغة الاستهداف القديمة غير صحيحة" });
+    return;
+  }
 
   const normalizedPayload = body["audience"]
     ? body
@@ -281,7 +287,7 @@ router.post("/send", requireAuth("admin"), async (req, res) => {
         type: "system",
         url: body["url"],
         actionType: "open_url",
-        audience: normalizeLegacyAudience(body),
+        audience: legacyAudience,
       };
 
   const parsed = sendRequestSchema.safeParse(normalizedPayload);
