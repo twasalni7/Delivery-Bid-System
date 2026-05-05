@@ -1,21 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "wouter";
 import { Bell, X, CheckCheck, Package2, Truck, MessageSquare, Info } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { API_ORIGIN as API } from "@/lib/api-config";
-
-type Notification = {
-  id: number;
-  userId: number;
-  userRole: string;
-  title: string;
-  message: string;
-  type: string;
-  isRead: boolean;
-  relatedId: number | null;
-  url: string | null;
-  createdAt: string;
-};
+import { executeNotificationAction, type AppNotification } from "@/lib/notification-actions";
+import { useAuth } from "@/contexts/auth-context";
 
 function typeIcon(type: string) {
   if (type === "offer")   return <Package2   size={14} className="shrink-0" style={{ color: "var(--brand)" }} />;
@@ -39,8 +29,9 @@ export function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const { data: notifications = [] } = useQuery<Notification[]>({
+  const { data: notifications = [] } = useQuery<AppNotification[]>({
     queryKey: ["notifications"],
     queryFn: async () => {
       const r = await fetch(`${API}/api/notifications`, { headers: getAuthHeaders() });
@@ -59,13 +50,6 @@ export function NotificationsBell() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  const markClicked = useMutation({
-    mutationFn: async (id: number) => {
-      await fetch(`${API}/api/notifications/${id}/clicked`, { method: "PATCH", headers: getAuthHeaders() });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
-  });
-
   const markRead = useMutation({
     mutationFn: async (id: number) => {
       await fetch(`${API}/api/notifications/${id}/read`, { method: "PATCH", headers: getAuthHeaders() });
@@ -73,29 +57,13 @@ export function NotificationsBell() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  function handleNotificationClick(n: Notification) {
-    if (n.url) {
-      markClicked.mutate(n.id);
-      setOpen(false);
-      // Only navigate to safe same-origin relative paths to prevent open redirect / XSS
-      try {
-        const target = new URL(n.url, window.location.origin);
-        if (
-          target.origin === window.location.origin &&
-          target.protocol !== "javascript:"
-        ) {
-          window.location.assign(target.pathname + target.search + target.hash);
-        }
-      } catch {
-        // URL parsing failed — only allow strict relative paths starting with /
-        // to block javascript: URIs and other non-path strings
-        if (/^\/[^/]/.test(n.url) || n.url === "/") {
-          window.location.assign(n.url);
-        }
-      }
-    } else if (!n.isRead) {
-      markRead.mutate(n.id);
+  function handleNotificationClick(n: AppNotification) {
+    setOpen(false);
+    if (n.url || n.actionType === "emit_event") {
+      void executeNotificationAction(n, "in_app");
+      return;
     }
+    if (!n.isRead) markRead.mutate(n.id);
   }
 
   useEffect(() => {
@@ -201,9 +169,21 @@ export function NotificationsBell() {
               ))
             )}
           </div>
+          {user && (
+            <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border)", backgroundColor: "var(--surface-2)" }}>
+              <Link href={user.role === "admin" ? "/admin/notifications-center" : user.role === "driver" ? "/driver/notifications" : "/client/notifications"}>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="w-full py-2 rounded-xl text-sm font-bold"
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                >
+                  عرض كل الإشعارات
+                </button>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
-

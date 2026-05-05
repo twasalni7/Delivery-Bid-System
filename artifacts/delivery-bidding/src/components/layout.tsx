@@ -74,7 +74,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
       links: [
         { href: "/admin/operations",              label: "مركز التحكم",     icon: Activity },
         { href: "/admin/activity-logs",           label: "سجل النشاط",      icon: Activity },
-        { href: "/admin/push-debug",              label: "الإشعارات",       icon: BellRing },
+        { href: "/admin/notifications",           label: "إرسال الإشعارات", icon: Bell },
+        { href: "/admin/push-debug",              label: "تشخيص Push",      icon: BellRing },
         { href: "/admin/notifications-monitor",   label: "مراقبة الإشعارات", icon: Bell },
         { href: "/admin/database-monitor",        label: "قاعدة البيانات",   icon: Database },
       ],

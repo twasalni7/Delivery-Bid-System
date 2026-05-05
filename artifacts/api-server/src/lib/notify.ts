@@ -75,10 +75,15 @@ async function sendWebPush(
   title: string,
   body: string,
   url?: string,
+  actionType?: "open_url" | "emit_event",
+  actionPayload?: Record<string, unknown> | null,
   icon?: string,
   badge?: string
 ): Promise<void> {
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    logger.warn({ userId, userRole, notificationId }, "notify: skipping web push because VAPID is not configured");
+    return;
+  }
 
   let subscription: webpush.PushSubscription;
   try {
@@ -92,7 +97,10 @@ async function sendWebPush(
   const payload = JSON.stringify({
     title,
     body,
+    notificationId,
     url: url ?? "/",
+    actionType: actionType ?? "open_url",
+    actionPayload: actionPayload ?? null,
     // icon and badge are intentionally omitted when not explicitly provided.
     // SVG is not supported by the Web Notification API (badge requires PNG;
     // icon is unreliable with SVG on Android Chrome).  When absent, the browser
@@ -126,6 +134,8 @@ async function sendWebPush(
     }
   }
 
+  logger.info({ userId, userRole, notificationId }, "notify: web push delivered");
+
   // Successfully delivered — update delivered_at
   if (notificationId !== undefined) {
     try {
@@ -147,10 +157,23 @@ export async function notify(params: {
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
   url?: string;
+  actionType?: "open_url" | "emit_event";
+  actionLabel?: string;
+  actionPayload?: Record<string, unknown> | null;
   icon?: string;
   badge?: string;
 }) {
   let notificationId: number | undefined;
+  logger.info(
+    {
+      userId: params.userId,
+      userRole: params.userRole,
+      type: params.type,
+      url: params.url ?? null,
+      actionType: params.actionType ?? null,
+    },
+    "notify: creating notification"
+  );
   try {
     const [inserted] = await db
       .insert(notificationsTable)
@@ -162,6 +185,9 @@ export async function notify(params: {
         type: params.type,
         relatedId: params.relatedId ?? null,
         url: params.url ?? null,
+        actionType: params.actionType ?? "open_url",
+        actionLabel: params.actionLabel ?? null,
+        actionPayload: params.actionPayload ?? null,
         isRead: false,
       })
       .returning({ id: notificationsTable.id });
@@ -175,18 +201,23 @@ export async function notify(params: {
 
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
+      logger.info({ userId: params.userId, userRole: params.userRole, notificationId }, "notify: push subscription found");
       void sendWebPush(
         params.userId,
         params.userRole,
         sub,
         notificationId,
-        params.title,
-        params.message,
-        params.url,
-        params.icon,
-        params.badge
-      );
+          params.title,
+          params.message,
+          params.url,
+          params.actionType,
+          params.actionPayload ?? null,
+          params.icon,
+          params.badge
+        );
+      return;
     }
+    logger.info({ userId: params.userId, userRole: params.userRole, notificationId }, "notify: no push subscription stored for recipient");
   });
 }
 
@@ -196,6 +227,9 @@ export async function notifyAllAdmins(params: {
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
   url?: string;
+  actionType?: "open_url" | "emit_event";
+  actionLabel?: string;
+  actionPayload?: Record<string, unknown> | null;
   icon?: string;
   badge?: string;
 }) {
@@ -213,6 +247,9 @@ export async function notifyAllDrivers(params: {
   type: "offer" | "request" | "system" | "support";
   relatedId?: number;
   url?: string;
+  actionType?: "open_url" | "emit_event";
+  actionLabel?: string;
+  actionPayload?: Record<string, unknown> | null;
   icon?: string;
   badge?: string;
 }) {
@@ -228,4 +265,3 @@ export async function notifyAllDrivers(params: {
 }
 
 export { sendWebPush };
-

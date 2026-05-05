@@ -5,9 +5,85 @@ import { eq, isNotNull, count, isNull, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
-import { notify, notifyAllDrivers, notifyAllAdmins } from "../lib/notify";
+import { notify } from "../lib/notify";
+import {
+  ensureNotificationUserExists,
+  getNotificationTargetingMetadata,
+  resolveNotificationRecipients,
+  type NotificationAudience,
+  type NotificationUserRole,
+} from "../lib/notification-targeting";
+import { z } from "zod";
 
 const router = Router();
+
+const roleSchema = z.enum(["client", "driver", "admin"]);
+const filterOperatorSchema = z.enum([
+  "eq",
+  "neq",
+  "contains",
+  "in",
+  "not_in",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "is_null",
+  "not_null",
+]);
+
+const filterSchema = z.object({
+  field: z.string().min(1),
+  operator: filterOperatorSchema,
+  value: z.unknown().optional(),
+});
+
+const audienceSchema = z.discriminatedUnion("mode", [
+  z.object({ mode: z.literal("all") }),
+  z.object({
+    mode: z.literal("roles"),
+    roles: z.array(roleSchema).min(1),
+  }),
+  z.object({
+    mode: z.literal("user"),
+    userId: z.number().int().positive(),
+    userRole: roleSchema,
+  }),
+  z.object({
+    mode: z.literal("filters"),
+    segments: z.array(
+      z.object({
+        role: roleSchema,
+        filters: z.array(filterSchema).min(1),
+      })
+    ).min(1),
+  }),
+]);
+
+const sendRequestSchema = z.object({
+  title: z.string().trim().min(1),
+  message: z.string().trim().min(1),
+  type: z.enum(["offer", "request", "system", "support"]).default("system"),
+  url: z.string().trim().min(1).optional(),
+  actionType: z.enum(["open_url", "emit_event"]).default("open_url"),
+  actionLabel: z.string().trim().min(1).optional(),
+  actionPayload: z.record(z.unknown()).optional(),
+  audience: audienceSchema,
+});
+
+function normalizeLegacyAudience(body: Record<string, unknown>): NotificationAudience | null {
+  const target = body["target"];
+  if (target === "user") {
+    const userId = Number(body["userId"]);
+    const userRole = body["userRole"];
+    if (!Number.isFinite(userId) || !roleSchema.safeParse(userRole).success) return null;
+    return { mode: "user", userId, userRole: userRole as NotificationUserRole };
+  }
+  if (target === "all_drivers") return { mode: "roles", roles: ["driver"] };
+  if (target === "all_admins") return { mode: "roles", roles: ["admin"] };
+  if (target === "all_users") return { mode: "all" };
+  return null;
+}
 
 /**
  * GET /api/push/vapid-public-key
@@ -147,6 +223,16 @@ router.get("/debug", requireAuth("admin"), async (_req, res) => {
   }
 });
 
+router.get("/targeting-metadata", requireAuth("admin"), async (_req, res) => {
+  try {
+    const metadata = await getNotificationTargetingMetadata();
+    res.json(metadata);
+  } catch (err) {
+    logger.error({ err }, "push/targeting-metadata: failed to build metadata");
+    res.status(500).json({ error: "فشل جلب خيارات الاستهداف" });
+  }
+});
+
 /**
  * POST /api/push/unsubscribe
  * Removes the push subscription for the currently logged-in user.
@@ -185,41 +271,108 @@ router.post("/unsubscribe", requireAuth(), async (req, res) => {
  * }
  */
 router.post("/send", requireAuth("admin"), async (req, res) => {
-  const { target, userId, userRole, title, message, url } = req.body ?? {};
+  const body = (req.body ?? {}) as Record<string, unknown>;
 
-  if (!title || typeof title !== "string" || !message || typeof message !== "string") {
-    res.status(400).json({ error: "title و message مطلوبان" });
+  const normalizedPayload = body["audience"]
+    ? body
+    : {
+        title: body["title"],
+        message: body["message"],
+        type: "system",
+        url: body["url"],
+        actionType: "open_url",
+        audience: normalizeLegacyAudience(body),
+      };
+
+  const parsed = sendRequestSchema.safeParse(normalizedPayload);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: "بيانات الإشعار أو الاستهداف غير صحيحة",
+      details: parsed.error.flatten(),
+    });
     return;
   }
 
-  if (!["user", "all_drivers", "all_admins"].includes(target)) {
-    res.status(400).json({ error: "target يجب أن يكون: user | all_drivers | all_admins" });
-    return;
-  }
+  const payload = parsed.data;
 
   try {
-    if (target === "user") {
-      if (!userId || !["client", "driver", "admin"].includes(userRole)) {
-        res.status(400).json({ error: "userId و userRole مطلوبان عند target=user" });
+    if (payload.audience.mode === "user") {
+      const exists = await ensureNotificationUserExists(payload.audience.userId, payload.audience.userRole);
+      if (!exists) {
+        res.status(404).json({ error: "المستخدم المستهدف غير موجود" });
         return;
       }
-      void notify({
-        userId: Number(userId),
-        userRole: userRole as "client" | "driver" | "admin",
-        title,
-        message,
-        type: "system",
-        url,
-      });
-    } else if (target === "all_drivers") {
-      void notifyAllDrivers({ title, message, type: "system", url });
-    } else {
-      void notifyAllAdmins({ title, message, type: "system", url });
     }
 
-    res.json({ message: "تم إرسال الإشعار" });
+    logger.info(
+      {
+        audience: payload.audience,
+        title: payload.title,
+        type: payload.type,
+        actionType: payload.actionType,
+      },
+      "push/send: resolving recipients"
+    );
+
+    const recipients = await resolveNotificationRecipients(payload.audience);
+    if (recipients.length === 0) {
+      logger.warn({ audience: payload.audience }, "push/send: no recipients matched audience");
+      res.status(400).json({ error: "لم يتم العثور على مستخدمين مطابقين لقواعد الاستهداف" });
+      return;
+    }
+
+    logger.info(
+      {
+        audience: payload.audience,
+        recipientCount: recipients.length,
+        recipientsByRole: recipients.reduce<Record<string, number>>((acc, recipient) => {
+          acc[recipient.role] = (acc[recipient.role] ?? 0) + 1;
+          return acc;
+        }, {}),
+      },
+      "push/send: recipients resolved"
+    );
+
+    await Promise.all(
+      recipients.map((recipient) =>
+        notify({
+          userId: recipient.id,
+          userRole: recipient.role,
+          title: payload.title,
+          message: payload.message,
+          type: payload.type,
+          url: payload.url,
+          actionType: payload.actionType,
+          actionLabel: payload.actionLabel,
+          actionPayload: payload.actionPayload ?? null,
+        })
+      )
+    );
+
+    logger.info(
+      {
+        recipientCount: recipients.length,
+        audience: payload.audience,
+      },
+      "push/send: notification dispatch queued"
+    );
+
+    res.json({
+      message: "تم إرسال الإشعار",
+      recipientCount: recipients.length,
+      recipientsByRole: recipients.reduce<Record<string, number>>((acc, recipient) => {
+        acc[recipient.role] = (acc[recipient.role] ?? 0) + 1;
+        return acc;
+      }, {}),
+      sampleRecipients: recipients.slice(0, 10).map((recipient) => ({
+        id: recipient.id,
+        role: recipient.role,
+        name: recipient.name,
+        subtitle: recipient.subtitle,
+      })),
+    });
   } catch (err) {
-    logger.error({ err }, "push/send: failed to dispatch notification");
+    logger.error({ err, payload }, "push/send: failed to dispatch notification");
     res.status(500).json({ error: "فشل إرسال الإشعار" });
   }
 });
