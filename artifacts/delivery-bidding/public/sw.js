@@ -15,7 +15,7 @@ const APP_INDEX_URL = new URL('index.html', self.registration.scope).pathname;
 const APP_MANIFEST_URL = new URL('manifest.json', self.registration.scope).pathname;
 
 function appUrl(path = '') {
-  return new URL(path, self.registration.scope).pathname;
+  return new URL(path.replace(/^\/+/, ''), self.registration.scope).pathname;
 }
 
 /* ─── Install: pre-cache the app shell ─────────────────────────────────── */

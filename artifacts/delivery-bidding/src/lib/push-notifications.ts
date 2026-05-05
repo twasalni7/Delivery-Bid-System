@@ -131,8 +131,7 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
   }
 
   if (!isSecurePushContext()) {
-    const error = new Error("Push subscription requires HTTPS (or localhost) because the page is not in a secure context.");
-    console.error(LOG_PREFIX, error.message, {
+    console.error(LOG_PREFIX, "Push subscription requires HTTPS (or localhost) because the page is not in a secure context.", {
       protocol: window.location.protocol,
       hostname: window.location.hostname,
       isSecureContext: window.isSecureContext,

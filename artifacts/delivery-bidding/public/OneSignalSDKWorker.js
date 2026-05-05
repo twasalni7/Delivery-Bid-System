@@ -17,6 +17,10 @@ try {
   console.warn('[SW/OneSignal] OneSignal SDK failed to load — VAPID push handling still active:', e);
 }
 
+function appUrl(path = '') {
+  return new URL(path.replace(/^\/+/, ''), self.registration.scope).pathname;
+}
+
 /* ─── Push Notifications ───────────────────────────────────────────────── */
 self.addEventListener('push', (event) => {
   let title = 'توصّلني';
@@ -33,7 +37,7 @@ self.addEventListener('push', (event) => {
       if (data.url) {
         url = data.url.startsWith('http')
           ? data.url
-          : new URL(data.url.replace(/^\/+/, ''), self.registration.scope).pathname;
+          : appUrl(data.url);
       }
       if (data.icon) icon = data.icon;
       if (data.badge) badge = data.badge;
@@ -66,7 +70,7 @@ self.addEventListener('notificationclick', (event) => {
   const targetUrl = rawUrl
     ? (rawUrl.startsWith('http')
         ? rawUrl
-        : new URL(rawUrl.replace(/^\/+/, ''), self.registration.scope).pathname)
+        : appUrl(rawUrl))
     : new URL(self.registration.scope).pathname;
 
   event.waitUntil(
