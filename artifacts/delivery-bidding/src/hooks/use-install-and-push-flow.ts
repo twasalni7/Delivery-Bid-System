@@ -152,6 +152,10 @@ export function useInstallAndPushFlow(canPromptForPush: boolean) {
   const [showPushPrompt, setShowPushPrompt] = useState(false);
 
   useEffect(() => {
+    if (!canPromptForPush) {
+      setShowPushPrompt(false);
+    }
+
     const timer = setTimeout(() => {
       const ios = detectIOS();
       const standalone = detectStandalone();
@@ -173,12 +177,6 @@ export function useInstallAndPushFlow(canPromptForPush: boolean) {
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [canPromptForPush]);
-
-  useEffect(() => {
-    if (!canPromptForPush) {
-      setShowPushPrompt(false);
-    }
   }, [canPromptForPush]);
 
   /**
