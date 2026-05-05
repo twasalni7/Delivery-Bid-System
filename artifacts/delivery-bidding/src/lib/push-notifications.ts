@@ -47,18 +47,25 @@ async function saveSubscription(
   subscription: PushSubscription,
   role?: string
 ): Promise<void> {
+  const subJson = subscription.toJSON();
+  console.log(LOG_PREFIX, "sending subscription to server:", {
+    endpoint: subJson.endpoint,
+    hasP256dh: Boolean(subJson.keys?.p256dh),
+    hasAuth: Boolean(subJson.keys?.auth),
+    role,
+  });
   try {
     const res = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ subscription: subscription.toJSON(), role }),
+      body: JSON.stringify({ subscription: subJson, role }),
     });
+    const body = await res.text().catch(() => "");
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
       console.error(LOG_PREFIX, `save subscription failed: HTTP ${res.status}`, body);
       throw new Error(`save subscription HTTP ${res.status}`);
     }
-    console.log(LOG_PREFIX, "subscription saved to server ✓");
+    console.log(LOG_PREFIX, "subscription saved to server ✓ — server response:", body);
   } catch (err) {
     console.error(LOG_PREFIX, "save subscription threw an exception:", err);
     throw err;

@@ -1,7 +1,7 @@
 import webpush from "web-push";
 import { db } from "@workspace/db";
-import { notificationsTable, clientsTable, driversTable, adminsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { notificationsTable, pushSubscriptionsTable, driversTable, adminsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { logger } from "./logger";
 
 const VAPID_PUBLIC_KEY = process.env["VAPID_PUBLIC_KEY"];
@@ -16,13 +16,14 @@ const PUSH_RETRY_DELAY_MS = 2000;
 
 export async function clearExpiredSubscription(userId: number, userRole: "client" | "driver" | "admin") {
   try {
-    if (userRole === "client") {
-      await db.update(clientsTable).set({ pushSubscription: null }).where(eq(clientsTable.id, userId));
-    } else if (userRole === "driver") {
-      await db.update(driversTable).set({ pushSubscription: null }).where(eq(driversTable.id, userId));
-    } else if (userRole === "admin") {
-      await db.update(adminsTable).set({ pushSubscription: null }).where(eq(adminsTable.id, userId));
-    }
+    await db
+      .delete(pushSubscriptionsTable)
+      .where(
+        and(
+          eq(pushSubscriptionsTable.userId, userId),
+          eq(pushSubscriptionsTable.userRole, userRole)
+        )
+      );
   } catch (err) {
     logger.warn({ err, userId, userRole }, "notify: failed to clear expired push subscription");
   }
@@ -33,27 +34,15 @@ async function getPushSubscription(
   userRole: "client" | "driver" | "admin"
 ): Promise<string | null> {
   try {
-    if (userRole === "client") {
-      const row = await db.query.clientsTable.findFirst({
-        where: eq(clientsTable.id, userId),
-        columns: { pushSubscription: true },
-      });
-      return row?.pushSubscription ?? null;
-    }
-    if (userRole === "driver") {
-      const row = await db.query.driversTable.findFirst({
-        where: eq(driversTable.id, userId),
-        columns: { pushSubscription: true },
-      });
-      return row?.pushSubscription ?? null;
-    }
-    if (userRole === "admin") {
-      const row = await db.query.adminsTable.findFirst({
-        where: eq(adminsTable.id, userId),
-        columns: { pushSubscription: true },
-      });
-      return row?.pushSubscription ?? null;
-    }
+    const row = await db.query.pushSubscriptionsTable.findFirst({
+      where: and(
+        eq(pushSubscriptionsTable.userId, userId),
+        eq(pushSubscriptionsTable.userRole, userRole)
+      ),
+      columns: { subscriptionData: true },
+    });
+    if (!row?.subscriptionData) return null;
+    return JSON.stringify(row.subscriptionData);
   } catch (err) {
     logger.warn({ err, userId, userRole }, "notify: failed to fetch push subscription");
   }

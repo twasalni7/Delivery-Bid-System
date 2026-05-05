@@ -4,22 +4,30 @@ import request from "supertest";
 
 vi.mock("@workspace/db", () => {
   const mockDb = {
-    update: vi.fn(),
+    insert: vi.fn(),
+    delete: vi.fn(),
     select: vi.fn(),
     query: {
-      clientsTable: { findFirst: vi.fn() },
-      driversTable: { findFirst: vi.fn() },
-      adminsTable: { findFirst: vi.fn() },
+      pushSubscriptionsTable: { findFirst: vi.fn() },
     },
   };
   return {
     db: mockDb,
-    clientsTable: { id: "id", pushSubscription: "push_subscription" },
-    driversTable: { id: "id", pushSubscription: "push_subscription", status: "status" },
-    adminsTable: { id: "id", pushSubscription: "push_subscription" },
+    pushSubscriptionsTable: {
+      userId: "user_id",
+      userRole: "user_role",
+      subscriptionData: "subscription_data",
+    },
+    notificationsTable: {
+      deliveredAt: "delivered_at",
+      clickedAt: "clicked_at",
+    },
     eq: vi.fn(),
+    and: vi.fn(),
     isNotNull: vi.fn(),
+    isNull: vi.fn(),
     count: vi.fn(() => "count"),
+    sql: vi.fn(),
   };
 });
 
@@ -50,6 +58,12 @@ function createApp(opts?: { sessionUser?: unknown; tokenUser?: unknown }) {
   return app;
 }
 
+/** A valid PushSubscriptionJSON body for testing */
+const VALID_SUBSCRIPTION = {
+  endpoint: "https://fcm.googleapis.com/push/1",
+  keys: { auth: "abc123", p256dh: "defgh456" },
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   delete process.env["VAPID_PUBLIC_KEY"];
@@ -78,7 +92,7 @@ describe("POST /push/subscribe", () => {
     const app = createApp();
     const res = await request(app)
       .post("/push/subscribe")
-      .send({ subscription: { endpoint: "https://example.com", keys: {} } });
+      .send({ subscription: VALID_SUBSCRIPTION });
     expect(res.status).toBe(401);
   });
 
@@ -95,37 +109,41 @@ describe("POST /push/subscribe", () => {
     expect(res.status).toBe(400);
   });
 
-  it("saves subscription for client (session auth)", async () => {
-    const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
-
+  it("returns 400 when subscription is missing keys", async () => {
     const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
     const res = await request(app)
       .post("/push/subscribe")
-      .send({ subscription: { endpoint: "https://fcm.googleapis.com/push/1", keys: { auth: "abc", p256dh: "def" } } });
+      .send({ subscription: { endpoint: "https://example.com", keys: {} } });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("saves subscription for client (session auth)", async () => {
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app).post("/push/subscribe").send({ subscription: VALID_SUBSCRIPTION });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("message");
   });
 
   it("saves subscription for client (Bearer token auth via tokenUser)", async () => {
-    const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
-    // No session user — only tokenUser (simulates Bearer token flow)
     const app = createApp({ tokenUser: { id: 1, role: "client", name: "Ali" } });
-    const res = await request(app)
-      .post("/push/subscribe")
-      .send({ subscription: { endpoint: "https://fcm.googleapis.com/push/1", keys: { auth: "abc", p256dh: "def" } } });
+    const res = await request(app).post("/push/subscribe").send({ subscription: VALID_SUBSCRIPTION });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("message");
   });
 
   it("saves subscription for driver", async () => {
-    const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
     const app = createApp({ sessionUser: { id: 2, role: "driver", name: "Khaled" } });
     const res = await request(app)
@@ -136,9 +154,9 @@ describe("POST /push/subscribe", () => {
   });
 
   it("saves subscription for driver (Bearer token auth via tokenUser)", async () => {
-    const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
     const app = createApp({ tokenUser: { id: 2, role: "driver", name: "Khaled" } });
     const res = await request(app)
@@ -149,9 +167,9 @@ describe("POST /push/subscribe", () => {
   });
 
   it("saves subscription for admin", async () => {
-    const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
     const app = createApp({ sessionUser: { id: 3, role: "admin", name: "Admin" } });
     const res = await request(app)
@@ -161,16 +179,14 @@ describe("POST /push/subscribe", () => {
     expect(res.body).toHaveProperty("message");
   });
 
-  it("returns 500 when database update fails", async () => {
-    const setMock = vi.fn().mockImplementation(() => {
+  it("returns 500 when database insert fails", async () => {
+    const valuesMock = vi.fn().mockImplementation(() => {
       throw new Error("DB error");
     });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
     const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
-    const res = await request(app)
-      .post("/push/subscribe")
-      .send({ subscription: { endpoint: "https://example.com", keys: {} } });
+    const res = await request(app).post("/push/subscribe").send({ subscription: VALID_SUBSCRIPTION });
     expect(res.status).toBe(500);
   });
 });
@@ -192,19 +208,13 @@ describe("GET /push/debug", () => {
     process.env["VAPID_PUBLIC_KEY"] = "test-key";
     process.env["VAPID_PRIVATE_KEY"] = "test-priv";
 
-    const selectChain = { from: vi.fn() };
-    selectChain.from.mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue([]),
-      }),
-    });
-    // First three calls: count queries (clients, drivers, admins)
-    // Then three calls: endpoint listing
+    // First three calls: count queries (clients, drivers, admins) - each resolves with a count
+    // Fourth call: endpoint listing - resolves with empty array
     (db.select as ReturnType<typeof vi.fn>)
       .mockReturnValueOnce({ from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([{ count: 2 }]) }) })
       .mockReturnValueOnce({ from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([{ count: 3 }]) }) })
       .mockReturnValueOnce({ from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([{ count: 1 }]) }) })
-      .mockReturnValue({ from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }) }) });
+      .mockReturnValue({ from: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }) });
 
     const app = createApp({ sessionUser: { id: 1, role: "admin", name: "Admin" } });
     const res = await request(app).get("/push/debug");
@@ -223,8 +233,7 @@ describe("POST /push/unsubscribe", () => {
 
   it("removes subscription for client", async () => {
     const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
 
     const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
     const res = await request(app).post("/push/unsubscribe");
@@ -234,8 +243,7 @@ describe("POST /push/unsubscribe", () => {
 
   it("removes subscription for driver", async () => {
     const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
 
     const app = createApp({ sessionUser: { id: 2, role: "driver", name: "Khaled" } });
     const res = await request(app).post("/push/unsubscribe");
@@ -245,8 +253,7 @@ describe("POST /push/unsubscribe", () => {
 
   it("removes subscription for admin", async () => {
     const whereMock = vi.fn().mockResolvedValue([]);
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
 
     const app = createApp({ sessionUser: { id: 3, role: "admin", name: "Admin" } });
     const res = await request(app).post("/push/unsubscribe");
@@ -254,11 +261,10 @@ describe("POST /push/unsubscribe", () => {
     expect(res.body).toHaveProperty("message");
   });
 
-  it("returns 500 when database update fails", async () => {
-    const setMock = vi.fn().mockImplementation(() => {
+  it("returns 500 when database delete fails", async () => {
+    (db.delete as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error("DB error");
     });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
 
     const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
     const res = await request(app).post("/push/unsubscribe");

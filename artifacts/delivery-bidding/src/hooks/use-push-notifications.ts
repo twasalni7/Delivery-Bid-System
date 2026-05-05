@@ -47,8 +47,9 @@ export function usePushNotifications(role?: string) {
 
   const subscribeUserToPush = async () => {
     await subscribeToPush(role);
-    if (Notification.permission === "granted") {
-      localStorage.setItem(PUSH_SUBSCRIBED_KEY, "1");
+    // subscribeToPush sets the cache only on a successful server save,
+    // so we check the cache here to decide whether to hide the button.
+    if (Notification.permission === "granted" && localStorage.getItem(PUSH_SUBSCRIBED_KEY) === "1") {
       setShowNotificationButton(false);
     }
   };

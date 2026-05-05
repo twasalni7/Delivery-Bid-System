@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { clientsTable, driversTable, adminsTable, notificationsTable } from "@workspace/db";
-import { eq, isNotNull, count, isNull } from "drizzle-orm";
+import { notificationsTable, pushSubscriptionsTable } from "@workspace/db";
+import { eq, isNotNull, count, isNull, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
@@ -24,9 +24,12 @@ router.get("/vapid-public-key", (_req, res) => {
 
 /**
  * POST /api/push/subscribe
- * Saves a push subscription for the currently logged-in user.
+ * Saves (or updates) a push subscription for the currently logged-in user.
  * Reads the user from req.tokenUser (Bearer token) or req.session.user.
  * Body: { subscription: PushSubscriptionJSON }
+ *
+ * Uses INSERT … ON CONFLICT DO UPDATE so that re-subscribing the same device
+ * only updates the existing row (no duplicates).
  */
 router.post("/subscribe", requireAuth(), async (req, res) => {
   const user = getSessionUser(req)!;
@@ -37,27 +40,37 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
     return;
   }
 
-  const subscriptionJson = JSON.stringify(subscription);
+  // Validate that the subscription contains the required fields
+  if (
+    typeof subscription !== "object" ||
+    !subscription ||
+    typeof (subscription as Record<string, unknown>)["endpoint"] !== "string" ||
+    typeof (subscription as Record<string, unknown>)["keys"] !== "object" ||
+    !(subscription as Record<string, unknown>)["keys"] ||
+    typeof ((subscription as Record<string, Record<string, unknown>>)["keys"])["p256dh"] !== "string" ||
+    typeof ((subscription as Record<string, Record<string, unknown>>)["keys"])["auth"] !== "string"
+  ) {
+    logger.warn({ userId: user.id, role: user.role }, "push: subscribe request missing required fields (endpoint/keys)");
+    res.status(400).json({ error: "subscription يجب أن يحتوي على endpoint وkeys.p256dh وkeys.auth" });
+    return;
+  }
+
+  logger.info({ userId: user.id, role: user.role }, "push: saving subscription");
 
   try {
-    if (user.role === "client") {
-      await db
-        .update(clientsTable)
-        .set({ pushSubscription: subscriptionJson })
-        .where(eq(clientsTable.id, user.id));
-    } else if (user.role === "driver") {
-      await db
-        .update(driversTable)
-        .set({ pushSubscription: subscriptionJson })
-        .where(eq(driversTable.id, user.id));
-    } else if (user.role === "admin") {
-      await db
-        .update(adminsTable)
-        .set({ pushSubscription: subscriptionJson })
-        .where(eq(adminsTable.id, user.id));
-    }
+    await db
+      .insert(pushSubscriptionsTable)
+      .values({
+        userId: user.id,
+        userRole: user.role,
+        subscriptionData: subscription as Record<string, unknown>,
+      })
+      .onConflictDoUpdate({
+        target: [pushSubscriptionsTable.userId, pushSubscriptionsTable.userRole],
+        set: { subscriptionData: sql`excluded.subscription_data` },
+      });
 
-    logger.info({ userId: user.id, role: user.role }, "push: subscription saved");
+    logger.info({ userId: user.id, role: user.role }, "push: subscription saved to push_subscriptions");
     res.json({ message: "تم حفظ الاشتراك في الإشعارات" });
   } catch (err) {
     logger.error({ err, userId: user.id, role: user.role }, "push: failed to save subscription");
@@ -79,53 +92,40 @@ router.get("/debug", requireAuth("admin"), async (_req, res) => {
   try {
     const [clientCount] = await db
       .select({ count: count() })
-      .from(clientsTable)
-      .where(isNotNull(clientsTable.pushSubscription));
+      .from(pushSubscriptionsTable)
+      .where(eq(pushSubscriptionsTable.userRole, "client"));
 
     const [driverCount] = await db
       .select({ count: count() })
-      .from(driversTable)
-      .where(isNotNull(driversTable.pushSubscription));
+      .from(pushSubscriptionsTable)
+      .where(eq(pushSubscriptionsTable.userRole, "driver"));
 
     const [adminCount] = await db
       .select({ count: count() })
-      .from(adminsTable)
-      .where(isNotNull(adminsTable.pushSubscription));
+      .from(pushSubscriptionsTable)
+      .where(eq(pushSubscriptionsTable.userRole, "admin"));
 
     // Collect the last 10 registered endpoints per role (endpoint only, no keys)
-    const clientRows = await db
-      .select({ pushSubscription: clientsTable.pushSubscription, id: clientsTable.id })
-      .from(clientsTable)
-      .where(isNotNull(clientsTable.pushSubscription))
-      .limit(10);
+    const rows = await db
+      .select({
+        userId: pushSubscriptionsTable.userId,
+        userRole: pushSubscriptionsTable.userRole,
+        subscriptionData: pushSubscriptionsTable.subscriptionData,
+      })
+      .from(pushSubscriptionsTable)
+      .limit(30);
 
-    const driverRows = await db
-      .select({ pushSubscription: driversTable.pushSubscription, id: driversTable.id })
-      .from(driversTable)
-      .where(isNotNull(driversTable.pushSubscription))
-      .limit(10);
-
-    const adminRows = await db
-      .select({ pushSubscription: adminsTable.pushSubscription, id: adminsTable.id })
-      .from(adminsTable)
-      .where(isNotNull(adminsTable.pushSubscription))
-      .limit(10);
-
-    function extractEndpoint(json: string | null): string | null {
-      if (!json) return null;
-      try {
-        const parsed = JSON.parse(json) as { endpoint?: string };
-        return parsed.endpoint ?? null;
-      } catch {
-        return null;
-      }
+    function extractEndpoint(data: unknown): string | null {
+      if (!data || typeof data !== "object") return null;
+      const obj = data as { endpoint?: string };
+      return obj.endpoint ?? null;
     }
 
-    const devices = [
-      ...clientRows.map((r) => ({ role: "client", userId: r.id, endpoint: extractEndpoint(r.pushSubscription) })),
-      ...driverRows.map((r) => ({ role: "driver", userId: r.id, endpoint: extractEndpoint(r.pushSubscription) })),
-      ...adminRows.map((r) => ({ role: "admin", userId: r.id, endpoint: extractEndpoint(r.pushSubscription) })),
-    ];
+    const devices = rows.map((r) => ({
+      role: r.userRole,
+      userId: r.userId,
+      endpoint: extractEndpoint(r.subscriptionData),
+    }));
 
     res.json({
       vapidConfigured,
@@ -155,22 +155,14 @@ router.post("/unsubscribe", requireAuth(), async (req, res) => {
   const user = getSessionUser(req)!;
 
   try {
-    if (user.role === "client") {
-      await db
-        .update(clientsTable)
-        .set({ pushSubscription: null })
-        .where(eq(clientsTable.id, user.id));
-    } else if (user.role === "driver") {
-      await db
-        .update(driversTable)
-        .set({ pushSubscription: null })
-        .where(eq(driversTable.id, user.id));
-    } else if (user.role === "admin") {
-      await db
-        .update(adminsTable)
-        .set({ pushSubscription: null })
-        .where(eq(adminsTable.id, user.id));
-    }
+    await db
+      .delete(pushSubscriptionsTable)
+      .where(
+        and(
+          eq(pushSubscriptionsTable.userId, user.id),
+          eq(pushSubscriptionsTable.userRole, user.role)
+        )
+      );
 
     logger.info({ userId: user.id, role: user.role }, "push: subscription removed");
     res.json({ message: "تم إلغاء الاشتراك في الإشعارات" });
