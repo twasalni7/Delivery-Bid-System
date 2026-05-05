@@ -30,9 +30,12 @@ export function useRealtimeRefresh(
   enabled = true
 ): void {
   const queryClient = useQueryClient();
-  // Use a ref so the effect doesn't re-run when queryKeys identity changes.
+  // Use refs so the effect doesn't re-run when array identity changes between renders.
   const queryKeysRef = useRef(queryKeys);
   queryKeysRef.current = queryKeys;
+
+  const subscriptionsRef = useRef(subscriptions);
+  subscriptionsRef.current = subscriptions;
 
   useEffect(() => {
     if (!enabled) return;
@@ -48,7 +51,7 @@ export function useRealtimeRefresh(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let channel: any = supabase.channel(channelName);
 
-        for (const { table, events } of subscriptions) {
+        for (const { table, events } of subscriptionsRef.current) {
           for (const event of events) {
             channel = channel.on(
               "postgres_changes",
@@ -82,6 +85,9 @@ export function useRealtimeRefresh(
           .catch(() => {});
       }
     };
+    // subscriptions and queryKeys are intentionally read via refs to avoid
+    // tearing down and re-creating the Supabase channel on every render.
+    // The channel is only recreated when `channelName` or `enabled` changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelName, enabled, queryClient]);
 }
