@@ -163,7 +163,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold truncate" style={{ color: "var(--text)" }}>{user.name ?? "مشرف النظام"}</p>
-              <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{user.email ?? ""}</p>
+              <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{user.mobile ?? ""}</p>
             </div>
             <button
               onClick={logout}

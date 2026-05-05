@@ -42,7 +42,7 @@ interface SystemError {
   userRole: string | null;
   count: number;
   severity: string;
-  resolved: string;
+  resolved: boolean;
   createdAt: string;
 }
 
@@ -51,7 +51,7 @@ interface SystemAlert {
   type: string;
   message: string;
   severity: string;
-  isRead: string;
+  isRead: boolean;
   createdAt: string;
 }
 
@@ -203,13 +203,13 @@ export default function AdminOperations() {
     if (res.ok) setAlerts(prev => prev.filter(a => a.id !== id));
   };
 
-  const filteredErrors = errors.filter(e =>
-    e.resolved === "false" && (severityFilter === "all" || e.severity === severityFilter)
+  const filteredErrors = errors.filter(
+    (e) => !e.resolved && (severityFilter === "all" || e.severity === severityFilter)
   );
 
   if (loading) {
     return (
-      <Layout>
+      <Layout role="admin">
         <div className="flex items-center justify-center h-64" style={{ color: "var(--text-muted)" }}>
           <RefreshCw className="animate-spin ml-2" size={20} />
           جاري تحميل بيانات التشغيل...
@@ -219,7 +219,7 @@ export default function AdminOperations() {
   }
 
   return (
-    <Layout>
+    <Layout role="admin">
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-8" dir="rtl">
 
         {/* Header */}

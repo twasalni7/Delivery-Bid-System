@@ -45,7 +45,7 @@ export default function AdminNotificationsMonitor() {
   useEffect(() => { fetchData(); }, []);
 
   return (
-    <Layout>
+    <Layout role="admin">
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6" dir="rtl">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>مراقبة الإشعارات</h1>
