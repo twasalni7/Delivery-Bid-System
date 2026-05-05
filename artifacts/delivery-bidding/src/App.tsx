@@ -223,6 +223,10 @@ function FlowOrchestrator() {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
           allowLocalhostAsSecureOrigin: true,
+          // Use our custom service worker so VAPID push handling is preserved
+          // and only one SW is registered at the root scope.
+          serviceWorkerPath: "/sw.js",
+          serviceWorkerParam: { scope: "/" },
         });
       } catch {
         // init already called — safe to ignore

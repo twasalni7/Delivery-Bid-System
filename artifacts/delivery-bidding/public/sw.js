@@ -1,6 +1,9 @@
+/* Import OneSignal SDK so this single worker handles both VAPID and OneSignal push */
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+
 /* توصّلني Service Worker — network-first for HTML/API, cache-first for static assets */
 
-const CACHE_VERSION = 'twasalni-v3';
+const CACHE_VERSION = 'twasalni-v4';
 
 /* ─── Install: pre-cache the app shell ─────────────────────────────────── */
 self.addEventListener('install', (event) => {
