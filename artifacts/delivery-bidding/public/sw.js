@@ -10,13 +10,20 @@ try {
 /* توصّلني Service Worker — network-first for HTML/API, cache-first for static assets */
 
 const CACHE_VERSION = 'twasalni-v4';
+const APP_SCOPE = new URL('./', self.registration.scope).pathname;
+const APP_INDEX_URL = new URL('index.html', self.registration.scope).pathname;
+const APP_MANIFEST_URL = new URL('manifest.json', self.registration.scope).pathname;
+
+function appUrl(path = '') {
+  return new URL(path, self.registration.scope).pathname;
+}
 
 /* ─── Install: pre-cache the app shell ─────────────────────────────────── */
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_VERSION)
-      .then((cache) => cache.addAll(['/', '/index.html', '/manifest.json']))
+      .then((cache) => cache.addAll([APP_SCOPE, APP_INDEX_URL, APP_MANIFEST_URL]))
       .then(() => self.skipWaiting())
   );
 });
@@ -61,7 +68,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(async () => {
           if (isNavigation) {
-            const cached = await caches.match('/index.html');
+            const cached = await caches.match(APP_INDEX_URL);
             return cached ?? new Response('Offline', { status: 503 });
           }
           return caches.match(request) ?? new Response('Offline', { status: 503 });
@@ -93,7 +100,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
-  let url = '/';
+  let url = APP_SCOPE;
   // icon and badge intentionally left undefined here.
   // SVG images are NOT supported by the Web Notification API (badge requires
   // monochrome PNG; icon is unreliable with SVG on Android Chrome).
@@ -107,7 +114,11 @@ self.addEventListener('push', (event) => {
       const data = event.data.json();
       if (data.title) title = data.title;
       if (data.body) body = data.body;
-      if (data.url) url = data.url;
+      if (data.url) {
+        url = data.url.startsWith('http')
+          ? data.url
+          : appUrl(data.url.replace(/^\/+/, ''));
+      }
       if (data.icon) icon = data.icon;
       if (data.badge) badge = data.badge;
     } catch {
@@ -135,7 +146,12 @@ self.addEventListener('push', (event) => {
 /* ─── Notification click: navigate to the notification URL ────────────── */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url ?? '/';
+  const rawUrl = event.notification.data?.url;
+  const targetUrl = rawUrl
+    ? (rawUrl.startsWith('http')
+        ? rawUrl
+        : appUrl(rawUrl.replace(/^\/+/, '')))
+    : APP_SCOPE;
 
   event.waitUntil(
     self.clients

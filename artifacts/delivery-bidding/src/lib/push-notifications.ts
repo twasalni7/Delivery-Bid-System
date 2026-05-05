@@ -1,5 +1,6 @@
 import { API_ORIGIN } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 
 const PUSH_SUBSCRIBED_KEY = "push_subscribed";
 const LOG_PREFIX = "[Push]";
@@ -10,6 +11,7 @@ export type PushSubscribeResult =
   | "unsupported"
   | "permission_denied"
   | "permission_default"
+  | "insecure_context"
   | "no_vapid_key"
   | "sw_error"
   | "subscribe_error"
@@ -59,26 +61,67 @@ async function saveSubscription(
   role?: string
 ): Promise<void> {
   const subJson = subscription.toJSON();
+  const authHeaders = getAuthHeaders();
   console.log(LOG_PREFIX, "sending subscription to server:", {
     endpoint: subJson.endpoint,
     hasP256dh: Boolean(subJson.keys?.p256dh),
     hasAuth: Boolean(subJson.keys?.auth),
+    hasAuthToken: Boolean(authHeaders.Authorization),
     role,
   });
   try {
     const res = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ subscription: subJson, role }),
     });
     const body = await res.text().catch(() => "");
     if (!res.ok) {
-      console.error(LOG_PREFIX, `save subscription failed: HTTP ${res.status}`, body);
-      throw new Error(`save subscription HTTP ${res.status}`);
+      console.error(LOG_PREFIX, "POST /api/push/subscribe failed:", {
+        status: res.status,
+        statusText: res.statusText,
+        body,
+      });
+      throw new Error(`POST /api/push/subscribe failed: HTTP ${res.status} ${body || res.statusText}`);
     }
-    console.log(LOG_PREFIX, "subscription saved to server ✓ — server response:", body);
+    console.log(LOG_PREFIX, "POST /api/push/subscribe succeeded ✓", {
+      status: res.status,
+      body,
+    });
   } catch (err) {
     console.error(LOG_PREFIX, "save subscription threw an exception:", err);
+    throw err;
+  }
+}
+
+async function ensureServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
+  const swUrl = appPath("sw.js");
+  const swScope = appPath();
+
+  console.log(LOG_PREFIX, "ensuring service worker registration", {
+    swUrl,
+    swScope,
+    protocol: window.location.protocol,
+    hostname: window.location.hostname,
+    isSecureContext: window.isSecureContext,
+  });
+
+  try {
+    const existingRegistration =
+      (await navigator.serviceWorker.getRegistration(swScope)) ??
+      (await navigator.serviceWorker.getRegistration());
+
+    if (existingRegistration) {
+      console.log(LOG_PREFIX, "using existing service worker registration ✓", existingRegistration.scope);
+      return existingRegistration;
+    }
+
+    const registration = await navigator.serviceWorker.register(swUrl, { scope: swScope });
+    await navigator.serviceWorker.ready;
+    console.log(LOG_PREFIX, "service worker registered from subscribe flow ✓", registration.scope);
+    return registration;
+  } catch (err) {
+    console.error(LOG_PREFIX, "service worker registration failed:", err);
     throw err;
   }
 }
@@ -89,12 +132,22 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
     return "unsupported";
   }
 
+  if (!isSecurePushContext()) {
+    const error = new Error("Push subscription requires HTTPS (or localhost) because the page is not in a secure context.");
+    console.error(LOG_PREFIX, error.message, {
+      protocol: window.location.protocol,
+      hostname: window.location.hostname,
+      isSecureContext: window.isSecureContext,
+    });
+    return "insecure_context";
+  }
+
   // If cached as subscribed, verify the subscription still exists;
   // if the browser unsubscribed (e.g. subscription expired), clear the cache
   // so the full flow runs again.
   if (localStorage.getItem(PUSH_SUBSCRIBED_KEY) === "1") {
     try {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await ensureServiceWorkerRegistration();
       const existing = await reg.pushManager.getSubscription();
       if (!existing) {
         console.log(LOG_PREFIX, "cached subscription no longer valid — clearing cache and re-subscribing");
@@ -111,6 +164,7 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
 
   let permission = Notification.permission;
   if (permission === "default") {
+    console.log(LOG_PREFIX, "requesting notification permission");
     permission = await Notification.requestPermission();
     console.log(LOG_PREFIX, `notification permission: ${permission}`);
   } else {
@@ -127,7 +181,7 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
 
   let registration: ServiceWorkerRegistration;
   try {
-    registration = await navigator.serviceWorker.ready;
+    registration = await ensureServiceWorkerRegistration();
     console.log(LOG_PREFIX, "service worker ready ✓", registration.scope);
   } catch (err) {
     console.error(LOG_PREFIX, "service worker not ready:", err);
@@ -142,11 +196,18 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
 
   let subscription: PushSubscription;
   try {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToArrayBuffer(vapidPublicKey),
-    });
-    console.log(LOG_PREFIX, "push subscription created ✓", subscription.endpoint);
+    const existingSubscription = await registration.pushManager.getSubscription();
+    if (existingSubscription) {
+      subscription = existingSubscription;
+      console.log(LOG_PREFIX, "existing push subscription found ✓", subscription.endpoint);
+    } else {
+      console.log(LOG_PREFIX, "creating push subscription");
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToArrayBuffer(vapidPublicKey),
+      });
+      console.log(LOG_PREFIX, "push subscription created ✓", subscription.endpoint);
+    }
   } catch (err) {
     console.error(LOG_PREFIX, "push subscription creation failed:", err);
     return "subscribe_error";

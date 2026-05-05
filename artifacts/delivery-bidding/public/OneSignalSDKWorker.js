@@ -21,7 +21,7 @@ try {
 self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
-  let url = '/';
+  let url = new URL('./', self.registration.scope).pathname;
   let icon = undefined;
   let badge = undefined;
 
@@ -30,7 +30,11 @@ self.addEventListener('push', (event) => {
       const data = event.data.json();
       if (data.title) title = data.title;
       if (data.body) body = data.body;
-      if (data.url) url = data.url;
+      if (data.url) {
+        url = data.url.startsWith('http')
+          ? data.url
+          : new URL(data.url.replace(/^\/+/, ''), self.registration.scope).pathname;
+      }
       if (data.icon) icon = data.icon;
       if (data.badge) badge = data.badge;
     } catch {
@@ -58,7 +62,12 @@ self.addEventListener('push', (event) => {
 /* ─── Notification click: navigate to the notification URL ────────────── */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url ?? '/';
+  const rawUrl = event.notification.data?.url;
+  const targetUrl = rawUrl
+    ? (rawUrl.startsWith('http')
+        ? rawUrl
+        : new URL(rawUrl.replace(/^\/+/, ''), self.registration.scope).pathname)
+    : new URL('./', self.registration.scope).pathname;
 
   event.waitUntil(
     self.clients

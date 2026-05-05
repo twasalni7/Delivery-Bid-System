@@ -35,6 +35,8 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
   async function handleEnable() {
     setLoading(true);
     try {
+      console.log("[Push] requesting notification permission");
+
       // ── Try OneSignal slidedown first (better UX) ──────────────────────
       const OS = window.OneSignal;
       if (OS?.Slidedown) {
@@ -48,6 +50,13 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
         if ("Notification" in window && Notification.permission === "default") {
           await Notification.requestPermission();
         }
+      }
+
+      console.log("[Push] permission result after prompt:", Notification.permission);
+      if (Notification.permission !== "granted") {
+        console.warn("[Push] permission not granted; subscribeToPush() will not run");
+        onDismiss();
+        return;
       }
 
       // ── Always wire up our own VAPID push subscription ─────────────────
@@ -64,7 +73,8 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
       } else {
         onDismiss();
       }
-    } catch {
+    } catch (err) {
+      console.error("[Push] enable flow failed:", err);
       // Unexpected error — treat as dismiss so we don't block the UI
       onDismiss();
     } finally {
