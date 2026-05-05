@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { MapPin, Loader2, Search, X } from "lucide-react";
+import { MapPin, Loader2, Search, X, LocateFixed } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 export interface MapCoords {
@@ -52,7 +52,7 @@ const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 // Default center: Dammam, Eastern Region
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 // Debounce delays
-const SEARCH_DEBOUNCE_MS = 600;
+const SEARCH_DEBOUNCE_MS = 400;
 const GEOCODE_DEBOUNCE_MS = 1000;
 
 export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "var(--brand)", initialCenter }: MapPickerProps) {
@@ -66,6 +66,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   // Search state
   const [searchText, setSearchText] = useState("");
@@ -122,6 +123,43 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
     setSearchResults([]);
     setShowResults(false);
   };
+
+  const handleLocateMe = useCallback(() => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setLocating(false);
+
+        if (mapRef.current) {
+          import("leaflet").then((L) => {
+            const Lx = L.default || L;
+            if (markerRef.current) {
+              markerRef.current.setLatLng([lat, lng]);
+            } else {
+              markerRef.current = Lx.marker([lat, lng]).addTo(mapRef.current);
+            }
+            mapRef.current.setView([lat, lng], 16);
+          });
+        }
+
+        const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        onChange({ lat, lng, address: fallbackAddress });
+
+        setGeocoding(true);
+        const address = await reverseGeocode(lat, lng);
+        setGeocoding(false);
+        setSearchText(address);
+        onChange({ lat, lng, address });
+      },
+      () => {
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [onChange]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -217,53 +255,77 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
 
   return (
     <div className="space-y-2">
-      {/* ── Search input ── */}
-      <div className="relative">
-        <div className="flex items-center gap-2 px-3 rounded-xl" style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)" }}>
-          {searching ? (
-            <Loader2 size={16} className="shrink-0 animate-spin" style={{ color: "var(--text-muted)" }} />
-          ) : (
-            <Search size={16} className="shrink-0" style={{ color: "var(--text-muted)" }} />
-          )}
-          <input
-            type="text"
-            value={searchText}
-            onChange={handleSearchInput}
-            onFocus={() => searchResults.length > 0 && setShowResults(true)}
-            placeholder="ابحث في المنطقة الشرقية..."
-            className="flex-1 bg-transparent py-3 text-sm outline-none"
-            style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none", minHeight: "auto" }}
-            dir="rtl"
-          />
-          {searchText && (
-            <button onClick={clearSearch} className="touch-compact shrink-0 p-1" style={{ minHeight: "auto", minWidth: "auto" }}>
-              <X size={14} style={{ color: "var(--text-muted)" }} />
-            </button>
+      {/* ── Hint text ── */}
+      <p className="text-xs font-bold text-center" style={{ color: "var(--text-hint)" }}>
+        ابحث عن موقعك أو حدد الموقع من الخريطة
+      </p>
+
+      {/* ── Search input + locate button ── */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <div className="flex items-center gap-2 px-3 rounded-xl" style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)" }}>
+            {searching ? (
+              <Loader2 size={16} className="shrink-0 animate-spin" style={{ color: "var(--text-muted)" }} />
+            ) : (
+              <Search size={16} className="shrink-0" style={{ color: "var(--text-muted)" }} />
+            )}
+            <input
+              type="text"
+              value={searchText}
+              onChange={handleSearchInput}
+              onFocus={() => searchResults.length > 0 && setShowResults(true)}
+              placeholder="ابحث في المنطقة الشرقية..."
+              className="flex-1 bg-transparent py-3 text-sm outline-none"
+              style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none", minHeight: "auto" }}
+              dir="rtl"
+            />
+            {searchText && (
+              <button onClick={clearSearch} className="touch-compact shrink-0 p-1" style={{ minHeight: "auto", minWidth: "auto" }}>
+                <X size={14} style={{ color: "var(--text-muted)" }} />
+              </button>
+            )}
+          </div>
+
+          {/* Search results dropdown */}
+          {showResults && searchResults.length > 0 && (
+            <div
+              className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
+              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
+            >
+              {searchResults.map((r) => (
+                <button
+                  key={r.place_id}
+                  onClick={() => selectSearchResult(r)}
+                  className="w-full flex items-start gap-2 px-4 py-3 text-right transition-colors"
+                  style={{ color: "var(--text-sub)" }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--surface-2)")}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = "")}
+                  dir="rtl"
+                >
+                  <MapPin size={14} className="shrink-0 mt-0.5" style={{ color }} />
+                  <span className="text-sm line-clamp-2">{r.display_name}</span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Search results dropdown */}
-        {showResults && searchResults.length > 0 && (
-          <div
-            className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
-            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
-          >
-            {searchResults.map((r) => (
-              <button
-                key={r.place_id}
-                onClick={() => selectSearchResult(r)}
-                className="w-full flex items-start gap-2 px-4 py-3 text-right transition-colors"
-                style={{ color: "var(--text-sub)" }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--surface-2)")}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "")}
-                dir="rtl"
-              >
-                <MapPin size={14} className="shrink-0 mt-0.5" style={{ color }} />
-                <span className="text-sm line-clamp-2">{r.display_name}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Locate me button */}
+        <button
+          onClick={handleLocateMe}
+          disabled={locating}
+          title="تحديد موقعي الحالي"
+          className="shrink-0 flex items-center justify-center rounded-xl transition-colors disabled:opacity-60"
+          style={{
+            width: "48px",
+            height: "48px",
+            backgroundColor: "var(--brand-subtle)",
+            border: "1px solid var(--brand-border)",
+            color: "var(--brand)",
+          }}
+        >
+          {locating ? <Loader2 size={18} className="animate-spin" /> : <LocateFixed size={18} />}
+        </button>
       </div>
 
       {/* Selected coordinates display */}
@@ -284,7 +346,10 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
 
       {/* Map container */}
       <div className="relative rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div ref={containerRef} style={{ height: "300px", backgroundColor: "#161616" }} />
+        <div
+          ref={containerRef}
+          style={{ height: "clamp(300px, 50vw, 480px)", minHeight: "400px", backgroundColor: "#161616" }}
+        />
         
         {/* Loading overlay */}
         {loading && (

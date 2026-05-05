@@ -3,7 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, X, MapPin } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authed-fetch";
@@ -38,6 +38,8 @@ type DriverRequest = {
   shifts?: { label?: string; goTime: string; returnTime?: string }[] | null;
   numberOfPeople: number; workingDaysPerWeek: number;
   monthlyPrice?: number;
+  homeLat?: number | null; homeLng?: number | null;
+  destLat?: number | null; destLng?: number | null;
   status: string; phone: string | null; createdAt: string;
 };
 
@@ -189,6 +191,34 @@ export default function DriverRequests() {
                   )}
                   <span>👥 {r.numberOfPeople} أشخاص · {r.workingDaysPerWeek} أيام/أسبوع</span>
                 </div>
+
+                {/* Google Maps buttons */}
+                {(r.homeLat && r.homeLng) || (r.destLat && r.destLng) ? (
+                  <div className="flex gap-2 flex-wrap" dir="rtl">
+                    {r.homeLat && r.homeLng && (
+                      <a
+                        href={`https://www.google.com/maps?q=${r.homeLat},${r.homeLng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}
+                      >
+                        <MapPin size={12} /> موقع الانطلاق
+                      </a>
+                    )}
+                    {r.destLat && r.destLng && (
+                      <a
+                        href={`https://www.google.com/maps?q=${r.destLat},${r.destLng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                        style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
+                      >
+                        <MapPin size={12} /> موقع الوصول
+                      </a>
+                    )}
+                  </div>
+                ) : null}
 
                 {/* Price breakdown */}
                 {(r as any).monthlyPrice != null && (r as any).monthlyPrice > 0 && (
