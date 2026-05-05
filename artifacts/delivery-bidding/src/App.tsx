@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import NotFound from "@/pages/not-found";
 import { useInstallAndPushFlow } from "@/hooks/use-install-and-push-flow";
+import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { PushPermissionPrompt } from "@/components/push-permission-prompt";
 
@@ -108,13 +109,13 @@ function ManifestUpdater() {
   const [location] = useLocation();
 
   useEffect(() => {
-    let manifestPath = "/manifest.json";
+    let manifestPath = appPath("manifest.json");
     if (location.startsWith("/driver")) {
-      manifestPath = "/manifest-driver.json";
+      manifestPath = appPath("manifest-driver.json");
     } else if (location.startsWith("/client") || location.startsWith("/customer")) {
-      manifestPath = "/manifest-client.json";
+      manifestPath = appPath("manifest-client.json");
     } else if (location.startsWith("/admin")) {
-      manifestPath = "/manifest-admin.json";
+      manifestPath = appPath("manifest-admin.json");
     }
 
     const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
@@ -219,14 +220,23 @@ function FlowOrchestrator() {
   useEffect(() => {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal) => {
+      if (!isSecurePushContext()) {
+        console.error("[Push] OneSignal init skipped: push requires HTTPS", {
+          protocol: window.location.protocol,
+          hostname: window.location.hostname,
+          isSecureContext: window.isSecureContext,
+        });
+        return;
+      }
+
       try {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
           allowLocalhostAsSecureOrigin: true,
           // Use our custom service worker so VAPID push handling is preserved
           // and only one SW is registered at the root scope.
-          serviceWorkerPath: "/sw.js",
-          serviceWorkerParam: { scope: "/" },
+          serviceWorkerPath: appPath("sw.js"),
+          serviceWorkerParam: { scope: appPath() },
         });
       } catch {
         // init already called — safe to ignore
