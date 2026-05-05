@@ -208,13 +208,14 @@ const ONESIGNAL_APP_ID =
  */
 function FlowOrchestrator() {
   const { user } = useAuth();
+  const canPromptForPush = Boolean(user?.id && user?.role);
   const {
     showIOSPrompt,
     showPushPrompt,
     dismissIOSPrompt,
     dismissPushPrompt,
     markPushEnabled,
-  } = useInstallAndPushFlow();
+  } = useInstallAndPushFlow(canPromptForPush);
 
   // ── OneSignal init (once) ─────────────────────────────────────────────────
   useEffect(() => {
@@ -271,7 +272,7 @@ function FlowOrchestrator() {
     return <IOSInstallPrompt onDismiss={dismissIOSPrompt} />;
   }
 
-  if (showPushPrompt) {
+  if (showPushPrompt && canPromptForPush) {
     return (
       <PushPermissionPrompt
         role={user?.role}

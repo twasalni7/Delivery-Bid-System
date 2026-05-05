@@ -147,7 +147,7 @@ function shouldOfferPush(): boolean {
  * unnecessarily. Smart retry: 3 days after 1st refusal, 7 days after 2nd,
  * never after 3rd.
  */
-export function useInstallAndPushFlow() {
+export function useInstallAndPushFlow(canPromptForPush: boolean) {
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
 
@@ -166,14 +166,20 @@ export function useInstallAndPushFlow() {
       // ── All other cases (Android, Desktop, or iOS already in PWA mode) ──
       // iOS push requires standalone mode (iOS 16.4+ restriction)
       const pushEligible = ios ? standalone : true;
-      if (pushEligible && shouldOfferPush()) {
+      if (pushEligible && canPromptForPush && shouldOfferPush()) {
         setShowPushPrompt(true);
         trackEvent("pushPromptShown");
       }
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [canPromptForPush]);
+
+  useEffect(() => {
+    if (!canPromptForPush) {
+      setShowPushPrompt(false);
+    }
+  }, [canPromptForPush]);
 
   /**
    * Called when the user closes the iOS install prompt.
@@ -188,12 +194,12 @@ export function useInstallAndPushFlow() {
     // The user may have added the app and returned to the browser tab, so
     // we show the push prompt regardless — it will only display if eligible.
     setTimeout(() => {
-      if (shouldOfferPush()) {
+      if (canPromptForPush && shouldOfferPush()) {
         setShowPushPrompt(true);
         trackEvent("pushPromptShown");
       }
     }, 800);
-  }, []);
+  }, [canPromptForPush]);
 
   /**
    * Called when the user taps "لاحقاً" on the push permission prompt.
