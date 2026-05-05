@@ -227,4 +227,3 @@ export default function SubmitOffer() {
     </Layout>
   );
 }
-

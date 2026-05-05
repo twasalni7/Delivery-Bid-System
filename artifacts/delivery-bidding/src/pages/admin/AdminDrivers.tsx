@@ -414,7 +414,8 @@ function normalizeMobile(value: string): string {
   return digits;
 }
 
-function sendWhatsApp(driver: { mobile: string; loginCode: string }) {
+function sendWhatsApp(driver: { mobile?: string | null; loginCode?: string | null }) {
+  if (!driver.mobile || !driver.loginCode) return;
   const normalized = normalizeMobile(driver.mobile);
   const wa = normalized.replace(/^0/, "966");
   const message = `مرحبًا 👋
@@ -433,7 +434,11 @@ function sendWhatsApp(driver: { mobile: string; loginCode: string }) {
   window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, "_blank");
 }
 
-function copyCredentials(driver: { mobile: string; loginCode: string }, toast: (opts: { title: string; variant?: "destructive" }) => void) {
+function copyCredentials(driver: { mobile?: string | null; loginCode?: string | null }, toast: (opts: { title: string; variant?: "destructive" }) => void) {
+  if (!driver.mobile || !driver.loginCode) {
+    toast({ title: "بيانات الدخول غير مكتملة", variant: "destructive" });
+    return;
+  }
   const normalized = normalizeMobile(driver.mobile);
   const text = `📱 رقم الجوال: ${normalized}\n🔐 رمز الدخول: ${driver.loginCode}`;
   navigator.clipboard.writeText(text)

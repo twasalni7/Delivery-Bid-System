@@ -48,6 +48,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const roleLabel =
+    user?.role === "admin" ? "إدارة النظام" : user?.role === "driver" ? "سائق" : "عميل";
 
   const navGroups: NavGroup[] = [
     {
@@ -72,7 +74,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
       links: [
         { href: "/admin/operations",              label: "مركز التحكم",     icon: Activity },
         { href: "/admin/activity-logs",           label: "سجل النشاط",      icon: Activity },
-        { href: "/admin/push-debug",              label: "الإشعارات",       icon: BellRing },
+        { href: "/admin/notifications",           label: "إرسال الإشعارات", icon: Bell },
+        { href: "/admin/push-debug",              label: "تشخيص Push",      icon: BellRing },
         { href: "/admin/notifications-monitor",   label: "مراقبة الإشعارات", icon: Bell },
         { href: "/admin/database-monitor",        label: "قاعدة البيانات",   icon: Database },
       ],
@@ -163,7 +166,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold truncate" style={{ color: "var(--text)" }}>{user.name ?? "مشرف النظام"}</p>
-              <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{user.email ?? ""}</p>
+              <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{roleLabel}</p>
             </div>
             <button
               onClick={logout}

@@ -7,16 +7,20 @@ vi.mock("@workspace/db", () => {
     select: vi.fn(),
     update: vi.fn(),
   };
-  return {
-    db: mockDb,
-    notificationsTable: {
-      userId: "userId",
-      userRole: "userRole",
-      isRead: "isRead",
-      createdAt: "createdAt",
-      id: "id",
-      clickedAt: "clickedAt",
-    },
+    return {
+      db: mockDb,
+      notificationsTable: {
+        userId: "userId",
+        userRole: "userRole",
+        isRead: "isRead",
+        readAt: "readAt",
+        createdAt: "createdAt",
+        id: "id",
+        clickedAt: "clickedAt",
+        interactedAt: "interactedAt",
+        interactionSource: "interactionSource",
+        interactionType: "interactionType",
+      },
     eq: vi.fn(),
     and: vi.fn(),
     desc: vi.fn(),
@@ -25,7 +29,7 @@ vi.mock("@workspace/db", () => {
 });
 
 vi.mock("../lib/logger", () => ({
-  logger: { error: vi.fn() },
+  logger: { error: vi.fn(), info: vi.fn() },
 }));
 
 import { db } from "@workspace/db";
@@ -36,7 +40,8 @@ function makeSelectChain(result: unknown[]) {
   chain.from = vi.fn().mockReturnValue(chain);
   chain.where = vi.fn().mockReturnValue(chain);
   chain.orderBy = vi.fn().mockReturnValue(chain);
-  chain.limit = vi.fn().mockResolvedValue(result);
+  chain.limit = vi.fn().mockReturnValue(chain);
+  chain.offset = vi.fn().mockResolvedValue(result);
   return chain;
 }
 
@@ -106,7 +111,8 @@ describe("GET /notifications", () => {
     chain.from = vi.fn().mockReturnValue(chain);
     chain.where = vi.fn().mockReturnValue(chain);
     chain.orderBy = vi.fn().mockReturnValue(chain);
-    chain.limit = vi.fn().mockRejectedValue(new Error("DB error"));
+    chain.limit = vi.fn().mockReturnValue(chain);
+    chain.offset = vi.fn().mockRejectedValue(new Error("DB error"));
     (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
     const app = createApp({ id: 1, role: "client", name: "Ali" });
@@ -215,5 +221,29 @@ describe("PATCH /notifications/:id/read", () => {
     const app = createApp({ id: 1, role: "client", name: "Ali" });
     const res = await request(app).patch("/notifications/5/read");
     expect(res.status).toBe(500);
+  });
+});
+
+describe("POST /notifications/:id/interact", () => {
+  it("returns 401 when not authenticated", async () => {
+    const app = createApp();
+    const res = await request(app).post("/notifications/1/interact");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 for non-numeric id", async () => {
+    const app = createApp({ id: 1, role: "client", name: "Ali" });
+    const res = await request(app).post("/notifications/abc/interact");
+    expect(res.status).toBe(400);
+  });
+
+  it("tracks interaction for a notification", async () => {
+    const chain = makeUpdateChain();
+    (db.update as ReturnType<typeof vi.fn>).mockReturnValue(chain);
+
+    const app = createApp({ id: 1, role: "client", name: "Ali" });
+    const res = await request(app).post("/notifications/7/interact").send({ source: "push", action: "action" });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("message");
   });
 });

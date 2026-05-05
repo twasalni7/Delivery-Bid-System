@@ -160,7 +160,7 @@ export default function AdminRequestDetails() {
         )}
 
         <div className="rounded-2xl overflow-hidden shadow-md mb-5">
-          <div className="p-5 text-white" style={{ background: gradient }}>
+          <div className="p-5 text-white" style={{ backgroundColor: gradient.bg }}>
             <div className="flex items-start justify-between mb-3">
               <span className="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-full">
                 {getStatusLabel(request.status)}

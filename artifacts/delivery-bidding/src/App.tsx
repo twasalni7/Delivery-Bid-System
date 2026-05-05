@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import NotFound from "@/pages/not-found";
 import { useInstallAndPushFlow } from "@/hooks/use-install-and-push-flow";
+import { consumePendingNotificationInteraction } from "@/lib/notification-actions";
 import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { PushPermissionPrompt } from "@/components/push-permission-prompt";
@@ -46,6 +47,8 @@ import AdminPushDebug from "@/pages/admin/AdminPushDebug";
 import AdminOperations from "@/pages/admin/AdminOperations";
 import AdminNotificationsMonitor from "@/pages/admin/AdminNotificationsMonitor";
 import AdminDatabaseMonitor from "@/pages/admin/AdminDatabaseMonitor";
+import AdminNotificationComposer from "@/pages/admin/AdminNotificationComposer";
+import NotificationsCenter from "@/pages/notifications/NotificationsCenter";
 
 // ─── PWA helpers ─────────────────────────────────────────────────────────────
 
@@ -208,13 +211,14 @@ const ONESIGNAL_APP_ID =
  */
 function FlowOrchestrator() {
   const { user } = useAuth();
+  const canPromptForPush = Boolean(user?.id && user?.role);
   const {
     showIOSPrompt,
     showPushPrompt,
     dismissIOSPrompt,
     dismissPushPrompt,
     markPushEnabled,
-  } = useInstallAndPushFlow();
+  } = useInstallAndPushFlow(canPromptForPush);
 
   // ── OneSignal init (once) ─────────────────────────────────────────────────
   useEffect(() => {
@@ -265,6 +269,11 @@ function FlowOrchestrator() {
       } catch { /* non-critical */ }
     });
   }, [user?.id, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!user) return;
+    void consumePendingNotificationInteraction();
+  }, [user?.id]);
 
   // ── Render prompts (only one at a time) ───────────────────────────────────
   if (showIOSPrompt) {
@@ -354,6 +363,9 @@ function Router() {
         <Route path="/client/support">
           <ClientGuard><ClientSupport /></ClientGuard>
         </Route>
+        <Route path="/client/notifications">
+          <ClientGuard><NotificationsCenter /></ClientGuard>
+        </Route>
 
         <Route path="/driver/login" component={DriverLoginPage} />
         <Route path="/driver" component={DriverLogin} />
@@ -368,6 +380,9 @@ function Router() {
         </Route>
         <Route path="/driver/support">
           <DriverGuard><DriverSupport /></DriverGuard>
+        </Route>
+        <Route path="/driver/notifications">
+          <DriverGuard><NotificationsCenter /></DriverGuard>
         </Route>
         <Route path="/driver/request/:id">
           <DriverGuard><SubmitOffer /></DriverGuard>
@@ -416,6 +431,9 @@ function Router() {
         <Route path="/admin/push-debug">
           <AdminGuard><AdminPushDebug /></AdminGuard>
         </Route>
+        <Route path="/admin/notifications">
+          <AdminGuard><AdminNotificationComposer /></AdminGuard>
+        </Route>
         <Route path="/admin/operations">
           <AdminGuard><AdminOperations /></AdminGuard>
         </Route>
@@ -424,6 +442,9 @@ function Router() {
         </Route>
         <Route path="/admin/database-monitor">
           <AdminGuard><AdminDatabaseMonitor /></AdminGuard>
+        </Route>
+        <Route path="/admin/notifications-center">
+          <AdminGuard><NotificationsCenter /></AdminGuard>
         </Route>
 
         <Route component={NotFound} />

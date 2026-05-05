@@ -101,6 +101,9 @@ self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
   let url = APP_SCOPE;
+  let notificationId = null;
+  let actionType = 'open_url';
+  let actionPayload = null;
   // icon and badge intentionally left undefined here.
   // SVG images are NOT supported by the Web Notification API (badge requires
   // monochrome PNG; icon is unreliable with SVG on Android Chrome).
@@ -119,6 +122,9 @@ self.addEventListener('push', (event) => {
           ? data.url
           : appUrl(data.url.replace(/^\/+/, ''));
       }
+      if (typeof data.notificationId === 'number') notificationId = data.notificationId;
+      if (data.actionType) actionType = data.actionType;
+      if (data.actionPayload && typeof data.actionPayload === 'object') actionPayload = data.actionPayload;
       if (data.icon) icon = data.icon;
       if (data.badge) badge = data.badge;
     } catch {
@@ -133,7 +139,7 @@ self.addEventListener('push', (event) => {
     lang: 'ar',
     tag: 'twasalni-notification',
     renotify: true,
-    data: { url },
+    data: { url, notificationId, actionType, actionPayload },
   };
   if (icon) options.icon = icon;
   if (badge) options.badge = badge;
@@ -147,11 +153,28 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const rawUrl = event.notification.data?.url;
-  const targetUrl = rawUrl
+  const target = rawUrl
     ? (rawUrl.startsWith('http')
         ? rawUrl
         : appUrl(rawUrl.replace(/^\/+/, '')))
     : APP_SCOPE;
+  const targetUrl = new URL(target, self.registration.scope);
+  if (event.notification.data?.notificationId) {
+    targetUrl.searchParams.set('notificationId', String(event.notification.data.notificationId));
+    targetUrl.searchParams.set('notificationSource', 'push');
+    targetUrl.searchParams.set(
+      'notificationAction',
+      event.notification.data?.actionType === 'emit_event' ? 'action' : 'open'
+    );
+    const eventName = event.notification.data?.actionPayload?.eventName;
+    if (typeof eventName === 'string' && eventName) {
+      targetUrl.searchParams.set('notificationEvent', eventName);
+      targetUrl.searchParams.set(
+        'notificationPayload',
+        JSON.stringify(event.notification.data?.actionPayload ?? null)
+      );
+    }
+  }
 
   event.waitUntil(
     self.clients
@@ -159,18 +182,18 @@ self.addEventListener('notificationclick', (event) => {
       .then((clientList) => {
         // If a window is already open on the target URL, focus it
         for (const client of clientList) {
-          if (client.url === targetUrl && 'focus' in client) {
+          if (client.url === targetUrl.toString() && 'focus' in client) {
             return client.focus();
           }
         }
         // If any app window is open, navigate it to the target URL
         for (const client of clientList) {
           if (client.url.startsWith(self.registration.scope) && 'navigate' in client) {
-            return client.navigate(targetUrl).then((c) => c?.focus());
+            return client.navigate(targetUrl.toString()).then((c) => c?.focus());
           }
         }
         // No open window — open a new one
-        return self.clients.openWindow(targetUrl);
+        return self.clients.openWindow(targetUrl.toString());
       })
   );
 });

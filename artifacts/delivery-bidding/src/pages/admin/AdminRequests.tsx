@@ -45,9 +45,8 @@ export default function AdminRequests() {
   const refetch = () => queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
 
   const filteredRequests = useMemo(() => {
-    if (!requests) return [];
     const q = search.trim().toLowerCase();
-    return requests.filter((r) => {
+    return (requests ?? []).filter((r) => {
       if (statusFilter !== "ALL" && r.status !== statusFilter) return false;
       if (q) {
         const hay = [

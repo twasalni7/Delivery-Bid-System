@@ -33,8 +33,26 @@ vi.mock("@workspace/db", () => {
 
 vi.mock("../lib/notify", () => ({
   notify: vi.fn().mockResolvedValue(undefined),
-  notifyAllDrivers: vi.fn().mockResolvedValue(undefined),
-  notifyAllAdmins: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../lib/notification-targeting", () => ({
+  ensureNotificationUserExists: vi.fn().mockResolvedValue(true),
+  getNotificationTargetingMetadata: vi.fn().mockResolvedValue({
+    roles: [
+      { value: "client", label: "عميل", count: 2 },
+      { value: "driver", label: "سائق", count: 3 },
+      { value: "admin", label: "مشرف", count: 1 },
+    ],
+    fieldsByRole: {
+      client: [{ key: "name", label: "الاسم", type: "string", operators: ["eq", "contains"] }],
+      driver: [{ key: "status", label: "الحالة", type: "enum", operators: ["eq"], options: ["ACTIVE"] }],
+      admin: [{ key: "name", label: "الاسم", type: "string", operators: ["eq"] }],
+    },
+    users: [{ id: 5, role: "client", name: "Ali", subtitle: "0500000000" }],
+  }),
+  resolveNotificationRecipients: vi.fn().mockResolvedValue([
+    { id: 5, role: "client", name: "Ali", subtitle: "0500000000" },
+  ]),
 }));
 
 import { db } from "@workspace/db";
@@ -224,6 +242,22 @@ describe("GET /push/debug", () => {
   });
 });
 
+describe("GET /push/targeting-metadata", () => {
+  it("returns 401 when not authenticated", async () => {
+    const app = createApp();
+    const res = await request(app).get("/push/targeting-metadata");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns targeting metadata for admin", async () => {
+    const app = createApp({ sessionUser: { id: 1, role: "admin", name: "Admin" } });
+    const res = await request(app).get("/push/targeting-metadata");
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("roles");
+    expect(res.body).toHaveProperty("users");
+  });
+});
+
 describe("POST /push/unsubscribe", () => {
   it("returns 401 when not authenticated", async () => {
     const app = createApp();
@@ -308,6 +342,7 @@ describe("POST /push/send", () => {
     const res = await request(app).post("/push/send").send({ target: "all_drivers", title: "Test", message: "Hello" });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("message");
+    expect(res.body).toHaveProperty("recipientCount", 1);
   });
 
   it("dispatches notification to all_admins", async () => {
@@ -324,5 +359,23 @@ describe("POST /push/send", () => {
       .send({ target: "user", userId: 5, userRole: "client", title: "Test", message: "Hello" });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("message");
+  });
+
+  it("dispatches notification to a custom filtered segment", async () => {
+    const app = createApp({ sessionUser: { id: 1, role: "admin", name: "Admin" } });
+    const res = await request(app)
+      .post("/push/send")
+      .send({
+        title: "Filtered",
+        message: "Hello",
+        audience: {
+          mode: "filters",
+          segments: [
+            { role: "driver", filters: [{ field: "status", operator: "eq", value: "ACTIVE" }] },
+          ],
+        },
+      });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("recipientCount", 1);
   });
 });
