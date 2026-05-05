@@ -93,8 +93,12 @@ async function sendWebPush(
     title,
     body,
     url: url ?? "/",
-    icon: icon ?? "/icons/icon-192.svg",
-    badge: badge ?? "/icons/icon-192.svg",
+    // icon and badge are intentionally omitted when not explicitly provided.
+    // SVG is not supported by the Web Notification API (badge requires PNG;
+    // icon is unreliable with SVG on Android Chrome).  When absent, the browser
+    // uses the app icon from the installed PWA manifest automatically.
+    ...(icon ? { icon } : {}),
+    ...(badge ? { badge } : {}),
   });
 
   let result = await attemptSend(subscription, payload);
