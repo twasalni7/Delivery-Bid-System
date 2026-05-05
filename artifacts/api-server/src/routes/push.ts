@@ -41,8 +41,15 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
   }
 
   // Validate that the subscription contains the required fields
-  const sub = subscription as { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
-  if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) {
+  if (
+    typeof subscription !== "object" ||
+    !subscription ||
+    typeof (subscription as Record<string, unknown>)["endpoint"] !== "string" ||
+    typeof (subscription as Record<string, unknown>)["keys"] !== "object" ||
+    !(subscription as Record<string, unknown>)["keys"] ||
+    typeof ((subscription as Record<string, Record<string, unknown>>)["keys"])["p256dh"] !== "string" ||
+    typeof ((subscription as Record<string, Record<string, unknown>>)["keys"])["auth"] !== "string"
+  ) {
     logger.warn({ userId: user.id, role: user.role }, "push: subscribe request missing required fields (endpoint/keys)");
     res.status(400).json({ error: "subscription يجب أن يحتوي على endpoint وkeys.p256dh وkeys.auth" });
     return;
