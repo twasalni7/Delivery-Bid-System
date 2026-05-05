@@ -348,7 +348,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
       <div className="relative rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
         <div
           ref={containerRef}
-          style={{ height: "clamp(300px, 50vw, 480px)", minHeight: "400px", backgroundColor: "#161616" }}
+          style={{ height: "clamp(400px, 50vw, 480px)", backgroundColor: "#161616" }}
         />
         
         {/* Loading overlay */}

@@ -126,11 +126,11 @@ export default function SubmitOffer() {
               )}
 
               {/* Google Maps buttons */}
-              {((request as any).homeLat && (request as any).homeLng) || ((request as any).destLat && (request as any).destLng) ? (
+              {(request.homeLat && request.homeLng) || (request.destLat && request.destLng) ? (
                 <div className="flex gap-2 flex-wrap pt-1" dir="rtl">
-                  {(request as any).homeLat && (request as any).homeLng && (
+                  {request.homeLat && request.homeLng && (
                     <a
-                      href={`https://www.google.com/maps?q=${(request as any).homeLat},${(request as any).homeLng}`}
+                      href={`https://www.google.com/maps?q=${request.homeLat},${request.homeLng}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
@@ -139,9 +139,9 @@ export default function SubmitOffer() {
                       <ExternalLink size={11} /> خريطة الانطلاق
                     </a>
                   )}
-                  {(request as any).destLat && (request as any).destLng && (
+                  {request.destLat && request.destLng && (
                     <a
-                      href={`https://www.google.com/maps?q=${(request as any).destLat},${(request as any).destLng}`}
+                      href={`https://www.google.com/maps?q=${request.destLat},${request.destLng}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
