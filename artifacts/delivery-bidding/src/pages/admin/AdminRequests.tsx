@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { Trash2, Edit2, MapPin, Clock, Users, Search, X, Plus, Eye } from "lucide-react";
 import type { CommuteRequest } from "@workspace/api-client-react";
 import { getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
@@ -28,11 +29,18 @@ export default function AdminRequests() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: requests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } as any });
+  const { data: requests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 15_000 } as any });
   const updateRequest = useAdminUpdateRequest();
   const deleteRequest = useAdminDeleteRequest();
   const [editDialog, setEditDialog] = useState<CommuteRequest | null>(null);
   const [editStatus, setEditStatus] = useState("");
+
+  // Real-time: refresh when any request is created or its status changes
+  useRealtimeRefresh(
+    "admin-requests-realtime",
+    [{ table: "requests", events: ["INSERT", "UPDATE"] }],
+    [getListRequestsQueryKey()]
+  );
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
 

@@ -4,6 +4,7 @@ import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useGetRequest, useGetRequestOffers, getGetRequestQueryKey, getGetRequestOffersQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
@@ -40,6 +41,17 @@ export default function AdminRequestDetails() {
   const { data: offers, isLoading: loadingOffers } = useGetRequestOffers(id, {
     query: { queryKey: getGetRequestOffersQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
   });
+
+  // Real-time: refresh when this request's status or offers change
+  useRealtimeRefresh(
+    `admin-request-details-${id}`,
+    [
+      { table: "requests", events: ["UPDATE"] },
+      { table: "offers", events: ["INSERT", "UPDATE"] },
+    ],
+    [getGetRequestQueryKey(id), getGetRequestOffersQueryKey(id)],
+    !!id
+  );
 
   const canChat = request && (request.status === "SELECTED" || request.status === "ACTIVE");
 

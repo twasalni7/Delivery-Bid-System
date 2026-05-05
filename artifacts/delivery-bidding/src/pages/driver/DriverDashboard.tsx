@@ -7,7 +7,7 @@ import { EnablePushButton } from "@/components/enable-push-button";
 import { AlertTriangle, Clock, Users, CheckCircle, Phone, ChevronLeft } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 type TabId = "schedule" | "available";
 
@@ -20,12 +20,11 @@ const CLIENT_TYPE_EMOJI: Record<string, string> = {
 export default function DriverDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 30_000 } as any });
+  const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 15_000 } as any });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 30_000 } as any });
+  const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 15_000 } as any });
   const openRequests = allRequests?.filter((r) => r.status === "OPEN");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");
@@ -54,43 +53,24 @@ export default function DriverDashboard() {
     prevSelectedIdsRef.current = currentIds;
   }, [selectedRequests, user]);
 
-  // Supabase Realtime — listen for new ride requests and refresh the list instantly
+  // Supabase Realtime — listen for new and updated ride requests and refresh instantly
+  useRealtimeRefresh(
+    "driver-dashboard-realtime",
+    [{ table: "requests", events: ["INSERT", "UPDATE"] }],
+    [getListRequestsQueryKey()],
+    !!user
+  );
+
+  // Toast on new INSERT events (kept via separate effect listening to open requests)
+  const prevOpenCountRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    let realtimeChannel: import("@supabase/supabase-js").RealtimeChannel | null = null;
-
-    import("@/lib/supabase").then(({ getSupabase }) => {
-      if (cancelled) return;
-      try {
-        const supabase = getSupabase();
-        realtimeChannel = supabase
-          .channel("requests-realtime")
-          .on(
-            "postgres_changes",
-            { event: "INSERT", schema: "public", table: "requests" },
-            () => {
-              queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
-              toast({ title: "🔔 طلب جديد!", description: "تم إضافة طلب مشوار جديد" });
-            }
-          )
-          .subscribe();
-      } catch {
-        // Supabase not configured — polling via refetchInterval is used as fallback
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      if (realtimeChannel) {
-        import("@/lib/supabase")
-          .then(({ getSupabase }) => {
-            try { getSupabase().removeChannel(realtimeChannel!); } catch { /* ignore */ }
-          })
-          .catch(() => {});
-      }
-    };
-  }, [user, queryClient]);
+    if (!allRequests) return;
+    const openCount = allRequests.filter((r) => r.status === "OPEN").length;
+    if (prevOpenCountRef.current !== null && openCount > prevOpenCountRef.current) {
+      toast({ title: "🔔 طلب جديد!", description: "تم إضافة طلب مشوار جديد" });
+    }
+    prevOpenCountRef.current = openCount;
+  }, [allRequests]);
 
   if (!user) return null;
 

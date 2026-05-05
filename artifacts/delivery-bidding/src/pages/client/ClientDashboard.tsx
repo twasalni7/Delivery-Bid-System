@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout";
 import { EnablePushButton } from "@/components/enable-push-button";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { Bell, MapPin, Clock, Users, Calendar } from "lucide-react";
 
 const SEEN_KEY = (id: number) => `seen_offers_${id}`;
@@ -37,8 +38,18 @@ const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
 
 export default function ClientDashboard() {
   const { data: requests, isLoading } = useListRequests(undefined, {
-    query: { queryKey: getListRequestsQueryKey(), refetchInterval: 20_000 },
+    query: { queryKey: getListRequestsQueryKey(), refetchInterval: 15_000 },
   });
+
+  // Real-time: refresh when any request changes status or a new offer arrives
+  useRealtimeRefresh(
+    "client-dashboard-realtime",
+    [
+      { table: "requests", events: ["UPDATE"] },
+      { table: "offers", events: ["INSERT"] },
+    ],
+    [getListRequestsQueryKey()]
+  );
 
   const [unreadMap, setUnreadMap] = useState<Record<number, number>>({});
   const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");

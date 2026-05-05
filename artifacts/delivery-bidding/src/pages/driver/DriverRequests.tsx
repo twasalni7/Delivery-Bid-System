@@ -7,6 +7,7 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -60,7 +61,16 @@ export default function DriverRequests() {
       return res.json();
     },
     enabled: !!user,
+    refetchInterval: 15_000,
   });
+
+  // Real-time: refresh when any request status changes (e.g., SELECTED → ACTIVE)
+  useRealtimeRefresh(
+    "driver-requests-realtime",
+    [{ table: "requests", events: ["UPDATE"] }],
+    [["driver-me-requests"]],
+    !!user
+  );
 
   const { data: chatMessages } = useQuery<Message[]>({
     queryKey: ["messages", openChatId],
