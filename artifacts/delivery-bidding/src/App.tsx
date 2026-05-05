@@ -272,7 +272,7 @@ function FlowOrchestrator() {
     return <IOSInstallPrompt onDismiss={dismissIOSPrompt} />;
   }
 
-  if (showPushPrompt && canPromptForPush) {
+  if (showPushPrompt) {
     return (
       <PushPermissionPrompt
         role={user?.role}
