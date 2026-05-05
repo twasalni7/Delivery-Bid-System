@@ -79,7 +79,7 @@ export default function AdminClients() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-3xl font-black text-white">العملاء</h1>
+            <h1 className="text-3xl font-black" style={{ color: "var(--text)" }}>العملاء</h1>
             <p className="text-base mt-0.5" style={{ color: "var(--text-muted)" }}>
               {clients ? `${filtered.length} من ${clients.length} عميل` : "قائمة العملاء المسجّلين"}
             </p>
@@ -99,7 +99,7 @@ export default function AdminClients() {
             placeholder="ابحث بالاسم، رقم الجوال، أو الرقم التعريفي..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 text-base bg-transparent outline-none text-white placeholder-gray-600"
+            className="flex-1 text-base bg-transparent outline-none" style={{ color: "var(--text)" }}
           />
           {search && (
             <button onClick={() => setSearch("")} style={{ color: "var(--text-hint)" }}><X size={15} /></button>
@@ -142,7 +142,7 @@ export default function AdminClients() {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: "var(--brand-subtle)" }}>👤</div>
-                          <p className="font-black text-white text-base">{c.name}</p>
+                          <p className="font-black text-base" style={{ color: "var(--text)" }}>{c.name}</p>
                         </div>
                       </td>
                       <td className="px-5 py-4 text-sm font-medium" style={{ color: "var(--text-sub)" }} dir="ltr">{c.mobile}</td>
@@ -172,7 +172,7 @@ export default function AdminClients() {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ backgroundColor: "var(--brand-subtle)" }}>👤</div>
                       <div>
-                        <p className="font-black text-white text-base">{c.name} <span className="text-sm font-mono" style={{ color: "var(--text-hint)" }}>#{c.id}</span></p>
+                        <p className="font-black text-base" style={{ color: "var(--text)" }}>{c.name} <span className="text-sm font-mono" style={{ color: "var(--text-hint)" }}>#{c.id}</span></p>
                         <p className="text-sm" style={{ color: "var(--text-muted)" }} dir="ltr">{c.mobile}</p>
                         <p className="text-sm" style={{ color: "var(--text-hint)" }}>{new Date(c.createdAt).toLocaleDateString("ar-SA")}</p>
                       </div>
@@ -192,20 +192,20 @@ export default function AdminClients() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent dir="rtl" className="max-w-sm" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-white">{editTarget ? "تعديل العميل" : "إضافة عميل جديد"}</DialogTitle>
+            <DialogTitle className="text-xl font-black" style={{ color: "var(--text)" }}>{editTarget ? "تعديل العميل" : "إضافة عميل جديد"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>الاسم الكامل</Label>
-              <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم العميل" required={!editTarget} className="h-11 text-base rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "#fff" }} />
+              <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم العميل" required={!editTarget} className="h-11 text-base rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "var(--text)" }} />
             </div>
             <div className="space-y-2">
               <Label className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>رقم الجوال</Label>
-              <Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" required={!editTarget} className="h-11 text-base rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "#fff" }} />
+              <Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" required={!editTarget} className="h-11 text-base rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "var(--text)" }} />
             </div>
             <div className="space-y-2">
               <Label className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>كلمة المرور {editTarget ? "(اتركها فارغة للإبقاء)" : ""}</Label>
-              <Input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="••••••••" required={!editTarget} className="h-11 text-base rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "#fff" }} />
+              <Input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="••••••••" required={!editTarget} className="h-11 text-base rounded-xl outline-none" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "var(--text)" }} />
             </div>
             <div className="flex gap-2 pt-1">
               <button type="submit" disabled={saveMutation.isPending}

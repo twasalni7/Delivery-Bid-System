@@ -10,6 +10,7 @@ import { useState } from "react";
 import { NotificationsBell } from "@/components/notifications-bell";
 
 type NavLink = { href: string; label: string; icon: typeof Home; badge?: number };
+type NavGroup = { label: string; links: NavLink[] };
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -48,27 +49,50 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
-  const navLinks: NavLink[] = [
-    { href: "/admin",              label: "الرئيسية",   icon: BarChart2 },
-    { href: "/admin/requests",     label: "الطلبات",    icon: FileText },
-    { href: "/admin/drivers",      label: "السائقون",   icon: Car },
-    { href: "/admin/clients",      label: "العملاء",    icon: Users },
-    { href: "/admin/offers",       label: "العروض",     icon: ClipboardList },
-    { href: "/admin/pricing",      label: "التسعير",    icon: DollarSign },
-    { href: "/admin/service-areas",label: "المناطق",    icon: MapPin },
-    { href: "/admin/activity-logs",label: "سجل النشاط", icon: Activity },
-    { href: "/admin/push-debug",   label: "الإشعارات",  icon: BellRing },
-    { href: "/admin/operations",   label: "مركز التحكم", icon: Activity },
-    { href: "/admin/notifications-monitor", label: "مراقبة الإشعارات", icon: Bell },
-    { href: "/admin/database-monitor", label: "قاعدة البيانات", icon: Database },
-    { href: "/admin/support",      label: "الدعم",      icon: LifeBuoy },
-    { href: "/admin/settings",     label: "الإعدادات",  icon: Settings },
+  const navGroups: NavGroup[] = [
+    {
+      label: "الرئيسية",
+      links: [
+        { href: "/admin", label: "لوحة التحكم", icon: BarChart2 },
+      ],
+    },
+    {
+      label: "إدارة البيانات",
+      links: [
+        { href: "/admin/requests",      label: "الطلبات",    icon: FileText },
+        { href: "/admin/drivers",       label: "السائقون",   icon: Car },
+        { href: "/admin/clients",       label: "العملاء",    icon: Users },
+        { href: "/admin/offers",        label: "العروض",     icon: ClipboardList },
+        { href: "/admin/service-areas", label: "المناطق",    icon: MapPin },
+        { href: "/admin/pricing",       label: "التسعير",    icon: DollarSign },
+      ],
+    },
+    {
+      label: "المراقبة",
+      links: [
+        { href: "/admin/operations",              label: "مركز التحكم",     icon: Activity },
+        { href: "/admin/activity-logs",           label: "سجل النشاط",      icon: Activity },
+        { href: "/admin/push-debug",              label: "الإشعارات",       icon: BellRing },
+        { href: "/admin/notifications-monitor",   label: "مراقبة الإشعارات", icon: Bell },
+        { href: "/admin/database-monitor",        label: "قاعدة البيانات",   icon: Database },
+      ],
+    },
+    {
+      label: "الدعم والإعدادات",
+      links: [
+        { href: "/admin/support",  label: "الدعم",      icon: LifeBuoy },
+        { href: "/admin/settings", label: "الإعدادات",  icon: Settings },
+      ],
+    },
   ];
+
+  // Flat list for breadcrumb lookup
+  const allNavLinks = navGroups.flatMap((g) => g.links);
 
   const isActive = (href: string) =>
     href === "/admin" ? location === href : location.startsWith(href);
 
-  const crumb = navLinks.find((l) => isActive(l.href))?.label ?? "";
+  const crumb = allNavLinks.find((l) => isActive(l.href))?.label ?? "";
 
   const SidebarContent = () => (
     <>
@@ -82,39 +106,48 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
         <div>
           <p className="font-bold text-base leading-none" style={{ color: "var(--text)" }}>توصّلني</p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>اشتراكات التوصيل</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>لوحة الإدارة</p>
         </div>
       </div>
 
-      {/* Nav links */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-        {navLinks.map((link) => {
-          const Icon = link.icon;
-          const active = isActive(link.href);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={
-                active
-                  ? { backgroundColor: "var(--sidebar-active-bg)", color: "var(--sidebar-active-text)", fontWeight: 700 }
-                  : { color: "var(--sidebar-text)" }
-              }
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = "var(--sidebar-hover-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--sidebar-text-hover)"; }}
-              onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.backgroundColor = ""; (e.currentTarget as HTMLElement).style.color = "var(--sidebar-text)"; }}}
-            >
-              <Icon size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? "var(--sidebar-active-text)" : "var(--sidebar-icon-color)", flexShrink: 0 }} />
-              <span className="flex-1">{link.label}</span>
-              {link.badge && link.badge > 0 && (
-                <span className="text-[11px] font-black min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
-                  {link.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      {/* Nav groups */}
+      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            <p className="px-3 mb-1 text-[10px] font-black uppercase tracking-widest" style={{ color: "var(--text-hint)" }}>
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.links.map((link) => {
+                const Icon = link.icon;
+                const active = isActive(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                    style={
+                      active
+                        ? { backgroundColor: "var(--sidebar-active-bg)", color: "var(--sidebar-active-text)", fontWeight: 700 }
+                        : { color: "var(--sidebar-text)" }
+                    }
+                    onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--sidebar-hover-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--sidebar-text-hover)"; } }}
+                    onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.backgroundColor = ""; (e.currentTarget as HTMLElement).style.color = "var(--sidebar-text)"; } }}
+                  >
+                    <Icon size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? "var(--sidebar-active-text)" : "var(--sidebar-icon-color)", flexShrink: 0 }} />
+                    <span className="flex-1">{link.label}</span>
+                    {link.badge && link.badge > 0 && (
+                      <span className="text-[11px] font-black min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
+                        {link.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Theme toggle + user */}

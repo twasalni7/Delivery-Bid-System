@@ -175,7 +175,7 @@ export default function AdminActivityLogs() {
                 <thead>
                   <tr style={{ backgroundColor: "var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
                     {["#", "الوقت", "الدور", "الهوية", "العملية", "الجدول", "المعرف", "IP"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-right font-bold text-white/50 whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-4 py-3 text-right font-bold whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -183,23 +183,23 @@ export default function AdminActivityLogs() {
                   {logs.map((log, i) => (
                     <tr
                       key={log.id}
+                      className="transition-colors"
                       style={{ borderBottom: "1px solid var(--border-subtle)" }}
-                      className="hover:bg-white/[0.02] transition-colors"
                     >
-                      <td className="px-4 py-3 text-white/30 font-mono text-xs">{(page - 1) * pageSize + i + 1}</td>
-                      <td className="px-4 py-3 text-white/60 whitespace-nowrap font-mono text-xs">{formatDate(log.createdAt)}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-hint)" }}>{(page - 1) * pageSize + i + 1}</td>
+                      <td className="px-4 py-3 whitespace-nowrap font-mono text-xs" style={{ color: "var(--text-sub)" }}>{formatDate(log.createdAt)}</td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}>
                           {ROLE_LABELS[log.actorRole] ?? log.actorRole}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-white/50 font-mono text-xs">{log.actorId ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-muted)" }}>{log.actorId ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span className="font-mono text-xs font-bold" style={{ color: actionColor(log.action) }}>{log.action}</span>
                       </td>
-                      <td className="px-4 py-3 text-white/50 font-mono text-xs">{log.entity}</td>
-                      <td className="px-4 py-3 text-white/50 font-mono text-xs">{log.entityId ?? "—"}</td>
-                      <td className="px-4 py-3 text-white/30 font-mono text-xs">{log.ipAddress ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-muted)" }}>{log.entity}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-muted)" }}>{log.entityId ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-hint)" }}>{log.ipAddress ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -218,7 +218,7 @@ export default function AdminActivityLogs() {
           >
             <ChevronRight size={16} /> السابق
           </button>
-          <span className="text-sm text-white/40">صفحة {page}</span>
+          <span className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>صفحة {page}</span>
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={!hasMore || loading}

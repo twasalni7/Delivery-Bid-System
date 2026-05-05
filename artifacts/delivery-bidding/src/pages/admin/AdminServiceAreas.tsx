@@ -120,7 +120,7 @@ export default function AdminServiceAreas() {
               <MapPin size={20} style={{ color: "var(--status-active-text)" }} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white">مناطق الخدمة</h1>
+              <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>مناطق الخدمة</h1>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>المدن والأحياء المخدومة في المنطقة الشرقية</p>
             </div>
           </div>
@@ -140,21 +140,21 @@ export default function AdminServiceAreas() {
           className="p-5 rounded-[1.5rem] space-y-4"
           style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}
         >
-          <p className="text-sm font-bold text-white">إضافة منطقة جديدة</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text)" }}>إضافة منطقة جديدة</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <input
               required
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="المدينة *"
-              className="px-3 py-2.5 rounded-xl text-sm text-white bg-white/5 border border-white/10 outline-none placeholder:text-white/30"
+              className="px-3 py-2.5 rounded-xl text-sm outline-none" style={{ color: "var(--text)", backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
               dir="rtl"
             />
             <input
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
               placeholder="الحي (اختياري)"
-              className="px-3 py-2.5 rounded-xl text-sm text-white bg-white/5 border border-white/10 outline-none placeholder:text-white/30"
+              className="px-3 py-2.5 rounded-xl text-sm outline-none" style={{ color: "var(--text)", backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
               dir="rtl"
             />
             <input
@@ -163,7 +163,7 @@ export default function AdminServiceAreas() {
               value={lat}
               onChange={(e) => setLat(e.target.value)}
               placeholder="خط العرض (lat)"
-              className="px-3 py-2.5 rounded-xl text-sm text-white bg-white/5 border border-white/10 outline-none placeholder:text-white/30"
+              className="px-3 py-2.5 rounded-xl text-sm outline-none" style={{ color: "var(--text)", backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
               dir="ltr"
             />
             <input
@@ -172,7 +172,7 @@ export default function AdminServiceAreas() {
               value={lng}
               onChange={(e) => setLng(e.target.value)}
               placeholder="خط الطول (lng)"
-              className="px-3 py-2.5 rounded-xl text-sm text-white bg-white/5 border border-white/10 outline-none placeholder:text-white/30"
+              className="px-3 py-2.5 rounded-xl text-sm outline-none" style={{ color: "var(--text)", backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
               dir="ltr"
             />
           </div>
@@ -203,25 +203,25 @@ export default function AdminServiceAreas() {
 
         {/* Areas list grouped by city */}
         {loading ? (
-          <div className="p-12 text-center text-white/40 text-sm">جاري التحميل...</div>
+          <div className="p-12 text-center text-sm" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
         ) : Object.keys(grouped).length === 0 ? (
-          <div className="p-12 text-center text-white/40 text-sm">لا توجد مناطق مضافة</div>
+          <div className="p-12 text-center text-sm" style={{ color: "var(--text-hint)" }}>لا توجد مناطق مضافة</div>
         ) : (
           <div className="space-y-4">
             {Object.entries(grouped).map(([cityName, cityAreas]) => (
               <div key={cityName} className="rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
                 <div className="px-5 py-3 flex items-center gap-2" style={{ backgroundColor: "var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
                   <MapPin size={16} style={{ color: "var(--status-active-text)" }} />
-                  <span className="font-black text-white">{cityName}</span>
+                  <span className="font-black" style={{ color: "var(--text)" }}>{cityName}</span>
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                     {cityAreas.length} منطقة
                   </span>
                 </div>
-                <div className="divide-y divide-white/5">
+                <div>
                   {cityAreas.map((area) => (
                     <div key={area.id} className="px-5 py-3 flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-white">{area.district ?? `${cityName} (المدينة)`}</p>
+                        <p className="font-bold text-sm" style={{ color: "var(--text)" }}>{area.district ?? `${cityName} (المدينة)`}</p>
                         {area.lat != null && area.lng != null && (
                           <p className="text-xs font-mono mt-0.5" style={{ color: "var(--text-hint)" }}>
                             {area.lat.toFixed(4)}, {area.lng.toFixed(4)}
