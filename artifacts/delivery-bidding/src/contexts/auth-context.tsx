@@ -55,9 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logoutMutation.mutate(undefined);
   }, [logoutMutation]);
 
-  // Subscribe to push notifications when the user is set
+  // Only auto-subscribe when the user already granted permission in a previous session.
+  // Calling Notification.requestPermission() from a useEffect (non-user-gesture context)
+  // causes Chrome to show only a quiet address-bar chip which users often miss, effectively
+  // "using up" the prominent dialog before they can click the manual enable button.
   useEffect(() => {
-    if (user) {
+    if (user && "Notification" in window && Notification.permission === "granted") {
       void subscribeToPush(user.role);
     }
   }, [user]);
