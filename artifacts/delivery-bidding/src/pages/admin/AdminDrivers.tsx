@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet, Search, X } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet, Search, X, Copy, MessageCircle } from "lucide-react";
 import type { DriverDetail } from "@workspace/api-client-react";
 import * as XLSX from "xlsx";
 import { getAuthHeaders } from "@/lib/authed-fetch";
@@ -407,6 +407,40 @@ function ImportDriversDialog({ open, onClose, onImported }: {
   );
 }
 
+function normalizeMobile(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.startsWith("966") && digits.length === 12) return "0" + digits.slice(3);
+  if (digits.startsWith("5") && digits.length === 9) return "0" + digits;
+  return digits;
+}
+
+function sendWhatsApp(driver: { mobile: string; loginCode: string }) {
+  const normalized = normalizeMobile(driver.mobile);
+  const wa = normalized.replace(/^0/, "966");
+  const message = `مرحبًا 👋
+
+تم إنشاء حسابك في تطبيق توصلني
+
+بيانات الدخول:
+📱 رقم الجوال: ${normalized}
+🔐 رمز الدخول: ${driver.loginCode}
+
+يمكنك تحميل التطبيق وتسجيل الدخول مباشرة
+
+إذا واجهت أي مشكلة تواصل معنا
+
+بالتوفيق 🌹`;
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, "_blank");
+}
+
+function copyCredentials(driver: { mobile: string; loginCode: string }, toast: (opts: { title: string; variant?: "destructive" }) => void) {
+  const normalized = normalizeMobile(driver.mobile);
+  const text = `📱 رقم الجوال: ${normalized}\n🔐 رمز الدخول: ${driver.loginCode}`;
+  navigator.clipboard.writeText(text)
+    .then(() => toast({ title: "تم نسخ بيانات الدخول!" }))
+    .catch(() => toast({ title: "تعذّر النسخ، يرجى المحاولة مرة أخرى", variant: "destructive" }));
+}
+
 export default function AdminDrivers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -657,6 +691,8 @@ export default function AdminDrivers() {
                           <Btn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={13} />} />
                           <Btn onClick={() => openBalance(d)} title="الرصيد" icon={<Banknote size={13} />} />
                           <Btn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={13} />} />
+                          <Btn onClick={() => sendWhatsApp(d)} title="إرسال بيانات الدخول للسائق عبر واتساب" icon={<MessageCircle size={13} />} color="whatsapp" />
+                          <Btn onClick={() => copyCredentials(d, toast)} title="نسخ بيانات الدخول" icon={<Copy size={13} />} />
                           {d.status === "ACTIVE" && <>
                             <Btn onClick={() => handleWarn(d)} title="تحذير" icon={<AlertTriangle size={13} />} color="amber" />
                             <Btn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={13} />} color="red" />
@@ -703,6 +739,8 @@ export default function AdminDrivers() {
                       <Btn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={14} />} />
                       <Btn onClick={() => openBalance(d)} title="الرصيد" icon={<Banknote size={14} />} />
                       <Btn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={14} />} />
+                      <Btn onClick={() => sendWhatsApp(d)} title="إرسال بيانات الدخول للسائق عبر واتساب" icon={<MessageCircle size={14} />} color="whatsapp" />
+                      <Btn onClick={() => copyCredentials(d, toast)} title="نسخ بيانات الدخول" icon={<Copy size={14} />} />
                       {d.status === "ACTIVE" && <>
                         <Btn onClick={() => handleWarn(d)} title="تحذير" icon={<AlertTriangle size={14} />} color="amber" />
                         <Btn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={14} />} color="red" />
@@ -762,7 +800,7 @@ export default function AdminDrivers() {
           </DialogHeader>
           <div className="space-y-4">
             <Field label="الاسم الكامل"><Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="اسم السائق" className="h-11 text-base" /></Field>
-            <Field label="رقم الجوال"><Input value={formMobile} onChange={(e) => setFormMobile(e.target.value)} placeholder="05xxxxxxxx" dir="ltr" className="h-11 text-base" /></Field>
+            <Field label="رقم الجوال"><Input value={formMobile} onChange={(e) => setFormMobile(normalizeMobile(e.target.value))} placeholder="05xxxxxxxx" dir="ltr" className="h-11 text-base" /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="الجنسية (اختياري)"><Input value={formNationality} onChange={(e) => setFormNationality(e.target.value)} placeholder="سعودي" className="h-11 text-base" /></Field>
               <Field label="العمر (اختياري)"><Input type="number" min="18" max="70" value={formAge} onChange={(e) => setFormAge(e.target.value)} placeholder="35" dir="ltr" className="h-11 text-base" /></Field>
@@ -804,14 +842,16 @@ export default function AdminDrivers() {
   );
 }
 
-function Btn({ onClick, title, icon, color }: { onClick: () => void; title: string; icon: React.ReactNode; color?: "red" | "amber" | "green" }) {
+function Btn({ onClick, title, icon, color }: { onClick: () => void; title: string; icon: React.ReactNode; color?: "red" | "amber" | "green" | "whatsapp" }) {
   const cls = color === "red" ? "text-red-500 border-red-200 hover:bg-red-50"
     : color === "amber" ? "text-amber-600 border-amber-200 hover:bg-amber-50"
     : color === "green" ? "text-green-600 border-green-200 hover:bg-green-50"
+    : color === "whatsapp" ? "border-green-300 hover:bg-green-50"
     : "border-[var(--border)]";
   return (
     <button onClick={onClick} title={title}
-      className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors ${cls}`}>
+      className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors ${cls}`}
+      style={color === "whatsapp" ? { color: "#25D366" } : undefined}>
       {icon}
     </button>
   );

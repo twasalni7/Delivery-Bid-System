@@ -4,6 +4,17 @@ import { getAuthHeaders } from "@/lib/authed-fetch";
 const PUSH_SUBSCRIBED_KEY = "push_subscribed";
 const LOG_PREFIX = "[Push]";
 
+export type PushSubscribeResult =
+  | "ok"
+  | "already_subscribed"
+  | "unsupported"
+  | "permission_denied"
+  | "permission_default"
+  | "no_vapid_key"
+  | "sw_error"
+  | "subscribe_error"
+  | "server_error";
+
 export function clearPushSubscriptionCache(): void {
   localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
   console.log(LOG_PREFIX, "subscription cache cleared");
@@ -72,10 +83,10 @@ async function saveSubscription(
   }
 }
 
-export async function subscribeToPush(role?: string): Promise<void> {
+export async function subscribeToPush(role?: string): Promise<PushSubscribeResult> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     console.warn(LOG_PREFIX, "push not supported in this browser");
-    return;
+    return "unsupported";
   }
 
   // If cached as subscribed, verify the subscription still exists;
@@ -90,7 +101,7 @@ export async function subscribeToPush(role?: string): Promise<void> {
         localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
       } else {
         console.log(LOG_PREFIX, "already subscribed (cache hit), skipping");
-        return;
+        return "already_subscribed";
       }
     } catch (err) {
       console.warn(LOG_PREFIX, "could not verify existing subscription, clearing cache:", err);
@@ -105,9 +116,13 @@ export async function subscribeToPush(role?: string): Promise<void> {
   } else {
     console.log(LOG_PREFIX, `notification permission (pre-existing): ${permission}`);
   }
+  if (permission === "denied") {
+    console.warn(LOG_PREFIX, "notification permission denied");
+    return "permission_denied";
+  }
   if (permission !== "granted") {
     console.warn(LOG_PREFIX, "notification permission not granted — aborting");
-    return;
+    return "permission_default";
   }
 
   let registration: ServiceWorkerRegistration;
@@ -116,13 +131,13 @@ export async function subscribeToPush(role?: string): Promise<void> {
     console.log(LOG_PREFIX, "service worker ready ✓", registration.scope);
   } catch (err) {
     console.error(LOG_PREFIX, "service worker not ready:", err);
-    return;
+    return "sw_error";
   }
 
   const vapidPublicKey = await fetchVapidPublicKey();
   if (!vapidPublicKey) {
     console.error(LOG_PREFIX, "aborting: no VAPID public key");
-    return;
+    return "no_vapid_key";
   }
 
   let subscription: PushSubscription;
@@ -134,15 +149,17 @@ export async function subscribeToPush(role?: string): Promise<void> {
     console.log(LOG_PREFIX, "push subscription created ✓", subscription.endpoint);
   } catch (err) {
     console.error(LOG_PREFIX, "push subscription creation failed:", err);
-    return;
+    return "subscribe_error";
   }
 
   try {
     await saveSubscription(subscription, role);
     localStorage.setItem(PUSH_SUBSCRIBED_KEY, "1");
     console.log(LOG_PREFIX, "push notifications fully enabled ✓");
+    return "ok";
   } catch {
     // saveSubscription already logged the error
     console.error(LOG_PREFIX, "push enabled in browser but failed to save to server — will retry on next load");
+    return "server_error";
   }
 }

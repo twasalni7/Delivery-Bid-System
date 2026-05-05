@@ -5,7 +5,7 @@ import { useGetRequest, useCreateOffer, getGetRequestQueryKey } from "@workspace
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, MapPin, Clock, Users, CheckCircle } from "lucide-react";
+import { ArrowRight, MapPin, Clock, Users, CheckCircle, ExternalLink } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
@@ -124,6 +124,34 @@ export default function SubmitOffer() {
               {request.notes && (
                 <p className="text-xs mt-1 font-bold" style={{ color: "var(--text-muted)" }}>📝 {request.notes}</p>
               )}
+
+              {/* Google Maps buttons */}
+              {(request.homeLat && request.homeLng) || (request.destLat && request.destLng) ? (
+                <div className="flex gap-2 flex-wrap pt-1" dir="rtl">
+                  {request.homeLat && request.homeLng && (
+                    <a
+                      href={`https://www.google.com/maps?q=${request.homeLat},${request.homeLng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                      style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}
+                    >
+                      <ExternalLink size={11} /> خريطة الانطلاق
+                    </a>
+                  )}
+                  {request.destLat && request.destLng && (
+                    <a
+                      href={`https://www.google.com/maps?q=${request.destLat},${request.destLng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                      style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
+                    >
+                      <ExternalLink size={11} /> خريطة الوصول
+                    </a>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
 

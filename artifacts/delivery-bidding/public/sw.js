@@ -1,5 +1,11 @@
-/* Import OneSignal SDK so this single worker handles both VAPID and OneSignal push */
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+/* Import OneSignal SDK so this single worker handles both VAPID and OneSignal push.
+   Wrapped in try-catch: if the CDN is unreachable the SW must NOT crash — our custom
+   VAPID push handler (below) must still run regardless. */
+try {
+  importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+} catch (e) {
+  console.warn('[SW] OneSignal SDK failed to load — VAPID push handling still active:', e);
+}
 
 /* توصّلني Service Worker — network-first for HTML/API, cache-first for static assets */
 
@@ -88,8 +94,13 @@ self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
   let url = '/';
-  let icon = '/icons/icon-192.svg';
-  let badge = '/icons/icon-192.svg';
+  // icon and badge intentionally left undefined here.
+  // SVG images are NOT supported by the Web Notification API (badge requires
+  // monochrome PNG; icon is unreliable with SVG on Android Chrome).
+  // The server payload may supply PNG URLs via data.icon / data.badge.
+  // When absent, the browser uses the app icon from the installed PWA manifest.
+  let icon = undefined;
+  let badge = undefined;
 
   if (event.data) {
     try {
@@ -104,18 +115,20 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  const options = {
+    body,
+    vibrate: [200, 100, 200, 100, 200],
+    dir: 'rtl',
+    lang: 'ar',
+    tag: 'twasalni-notification',
+    renotify: true,
+    data: { url },
+  };
+  if (icon) options.icon = icon;
+  if (badge) options.badge = badge;
+
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon,
-      badge,
-      vibrate: [200, 100, 200, 100, 200],
-      dir: 'rtl',
-      lang: 'ar',
-      tag: 'twasalni-notification',
-      renotify: true,
-      data: { url },
-    })
+    self.registration.showNotification(title, options)
   );
 });
 

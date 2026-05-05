@@ -53,12 +53,15 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
       // ── Always wire up our own VAPID push subscription ─────────────────
       // subscribeToPush checks permission internally; if it was just granted
       // above this will complete the subscription; if already granted it's a no-op.
-      await subscribeToPush(role);
+      const result = await subscribeToPush(role);
 
-      if ("Notification" in window && Notification.permission === "granted") {
+      // Only call onEnabled when the subscription was actually created (or
+      // saved temporarily — server_error means the browser sub exists and will
+      // be retried). For all other failure modes, dismiss so we don't mark
+      // push as permanently enabled when it never actually worked.
+      if (result === "ok" || result === "already_subscribed" || result === "server_error") {
         onEnabled();
       } else {
-        // User denied or dismissed the browser prompt
         onDismiss();
       }
     } catch {

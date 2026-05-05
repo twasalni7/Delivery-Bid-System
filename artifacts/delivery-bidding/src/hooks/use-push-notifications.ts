@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { subscribeToPush } from "@/lib/push-notifications";
+import { subscribeToPush, type PushSubscribeResult } from "@/lib/push-notifications";
 
 const PUSH_SUBSCRIBED_KEY = "push_subscribed";
 
@@ -15,11 +15,16 @@ const PUSH_SUBSCRIBED_KEY = "push_subscribed";
  * @param role - دور المستخدم ("driver" | "client" | "admin") لتوجيه الاشتراك للجدول الصحيح.
  */
 export function usePushNotifications(role?: string) {
-  const [showNotificationButton, setShowNotificationButton] = useState(true);
+  const [showNotificationButton, setShowNotificationButton] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [lastError, setLastError] = useState<PushSubscribeResult | null>(null);
 
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!("Notification" in window)) return;
+      if (!("Notification" in window)) {
+        setIsChecking(false);
+        return;
+      }
       const permission = Notification.permission;
       const isSubscribedLocal = localStorage.getItem(PUSH_SUBSCRIBED_KEY);
 
@@ -33,26 +38,33 @@ export function usePushNotifications(role?: string) {
             const existing = await reg.pushManager.getSubscription();
             if (!existing) {
               localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
-              return; // showNotificationButton stays true
+              setShowNotificationButton(true);
+              setIsChecking(false);
+              return;
             }
           } catch {
             // Cannot verify — optimistically hide the button
           }
         }
         setShowNotificationButton(false);
+      } else {
+        setShowNotificationButton(true);
       }
+      setIsChecking(false);
     };
     void checkSubscription();
   }, []);
 
-  const subscribeUserToPush = async () => {
-    await subscribeToPush(role);
-    // subscribeToPush sets the cache only on a successful server save,
-    // so we check the cache here to decide whether to hide the button.
-    if (Notification.permission === "granted" && localStorage.getItem(PUSH_SUBSCRIBED_KEY) === "1") {
+  const subscribeUserToPush = async (): Promise<PushSubscribeResult> => {
+    setLastError(null);
+    const result = await subscribeToPush(role);
+    if (result === "ok" || result === "already_subscribed") {
       setShowNotificationButton(false);
+    } else {
+      setLastError(result);
     }
+    return result;
   };
 
-  return { showNotificationButton, subscribeUserToPush };
+  return { showNotificationButton, isChecking, lastError, subscribeUserToPush };
 }
