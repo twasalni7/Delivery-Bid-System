@@ -107,9 +107,7 @@ async function ensureServiceWorkerRegistration(): Promise<ServiceWorkerRegistrat
   });
 
   try {
-    const existingRegistration =
-      (await navigator.serviceWorker.getRegistration(swScope)) ??
-      (await navigator.serviceWorker.getRegistration());
+    const existingRegistration = await navigator.serviceWorker.getRegistration(swScope);
 
     if (existingRegistration) {
       console.log(LOG_PREFIX, "using existing service worker registration ✓", existingRegistration.scope);

@@ -21,7 +21,7 @@ try {
 self.addEventListener('push', (event) => {
   let title = 'توصّلني';
   let body = 'لديك إشعار جديد';
-  let url = new URL('./', self.registration.scope).pathname;
+  let url = new URL(self.registration.scope).pathname;
   let icon = undefined;
   let badge = undefined;
 
@@ -67,7 +67,7 @@ self.addEventListener('notificationclick', (event) => {
     ? (rawUrl.startsWith('http')
         ? rawUrl
         : new URL(rawUrl.replace(/^\/+/, ''), self.registration.scope).pathname)
-    : new URL('./', self.registration.scope).pathname;
+    : new URL(self.registration.scope).pathname;
 
   event.waitUntil(
     self.clients

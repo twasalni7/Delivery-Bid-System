@@ -10,7 +10,7 @@ try {
 /* توصّلني Service Worker — network-first for HTML/API, cache-first for static assets */
 
 const CACHE_VERSION = 'twasalni-v4';
-const APP_SCOPE = new URL('./', self.registration.scope).pathname;
+const APP_SCOPE = new URL(self.registration.scope).pathname;
 const APP_INDEX_URL = new URL('index.html', self.registration.scope).pathname;
 const APP_MANIFEST_URL = new URL('manifest.json', self.registration.scope).pathname;
 
