@@ -30,7 +30,14 @@ function resolveSafeRelativeUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
     const target = new URL(url, window.location.origin);
-    if (target.origin !== window.location.origin || target.protocol === "javascript:") return null;
+    if (
+      target.origin !== window.location.origin ||
+      target.protocol === "javascript:" ||
+      target.protocol === "data:" ||
+      target.protocol === "vbscript:"
+    ) {
+      return null;
+    }
     return `${target.pathname}${target.search}${target.hash}`;
   } catch {
     if (/^\/[^/]/.test(url) || url === "/") return url;

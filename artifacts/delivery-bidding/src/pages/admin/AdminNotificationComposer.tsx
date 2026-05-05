@@ -31,7 +31,7 @@ type AnalyticsResponse = {
   deliveryRate: string;
   clickRate: string;
 };
-type FilterRow = { field: string; operator: string; value: string };
+type FilterRow = { id: string; field: string; operator: string; value: string };
 type SendResponse = {
   message: string;
   recipientCount: number;
@@ -61,7 +61,7 @@ export default function AdminNotificationComposer() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [searchUser, setSearchUser] = useState("");
   const [filterRole, setFilterRole] = useState<"client" | "driver" | "admin">("driver");
-  const [filters, setFilters] = useState<FilterRow[]>([{ field: "", operator: "eq", value: "" }]);
+  const [filters, setFilters] = useState<FilterRow[]>([{ id: crypto.randomUUID(), field: "", operator: "eq", value: "" }]);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [url, setUrl] = useState("");
@@ -315,7 +315,7 @@ export default function AdminNotificationComposer() {
 
               {mode === "filters" && (
                 <div className="space-y-3">
-                  <select value={filterRole} onChange={(e) => { setFilterRole(e.target.value as "client" | "driver" | "admin"); setFilters([{ field: "", operator: "eq", value: "" }]); }} className="w-full px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}>
+                  <select value={filterRole} onChange={(e) => { setFilterRole(e.target.value as "client" | "driver" | "admin"); setFilters([{ id: crypto.randomUUID(), field: "", operator: "eq", value: "" }]); }} className="w-full px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}>
                     {(metadata?.roles ?? []).map((role) => (
                       <option key={role.value} value={role.value}>{role.label}</option>
                     ))}
@@ -324,7 +324,7 @@ export default function AdminNotificationComposer() {
                     const fieldOptions = availableFields;
                     const selectedField = fieldOptions.find((field) => field.key === filter.field);
                     return (
-                      <div key={`${filter.field}-${index}`} className="rounded-2xl p-3 space-y-2" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                      <div key={filter.id} className="rounded-2xl p-3 space-y-2" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-sm font-bold" style={{ color: "var(--text)" }}>
                             <Filter size={14} />
@@ -360,7 +360,7 @@ export default function AdminNotificationComposer() {
                       </div>
                     );
                   })}
-                  <button onClick={() => setFilters((current) => [...current, { field: "", operator: "eq", value: "" }])} className="w-full py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--brand)", border: "1px dashed var(--brand-border)" }}>
+                  <button onClick={() => setFilters((current) => [...current, { id: crypto.randomUUID(), field: "", operator: "eq", value: "" }])} className="w-full py-2 rounded-xl text-sm font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--brand)", border: "1px dashed var(--brand-border)" }}>
                     إضافة فلتر
                   </button>
                 </div>
