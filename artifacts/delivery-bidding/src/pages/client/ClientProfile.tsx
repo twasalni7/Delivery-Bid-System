@@ -59,7 +59,7 @@ export default function ClientProfile() {
     <Layout role="client">
       <div dir="rtl" className="max-w-lg mx-auto space-y-5">
         <div className="mb-6">
-          <h1 className="text-2xl font-black text-white">ملفي الشخصي</h1>
+          <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>ملفي الشخصي</h1>
           <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>تحديث بياناتك الشخصية</p>
         </div>
 
@@ -70,7 +70,7 @@ export default function ClientProfile() {
               👤
             </div>
             <div>
-              <p className="font-black text-white text-lg">{user?.name}</p>
+              <p className="font-black text-lg" style={{ color: "var(--text)" }}>{user?.name}</p>
               <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>عميل</p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function ClientProfile() {
           <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
               style={{ backgroundColor: "var(--border-subtle)" }}>🔒</div>
-            <p className="font-black text-white text-lg">تغيير كلمة المرور</p>
+            <p className="font-black text-lg" style={{ color: "var(--text)" }}>تغيير كلمة المرور</p>
           </div>
           <form onSubmit={handleChangePassword} className="space-y-5">
             <div className="space-y-2">

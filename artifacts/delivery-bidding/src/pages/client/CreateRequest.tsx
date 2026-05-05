@@ -425,7 +425,7 @@ export default function CreateRequest() {
           {/* Step header */}
           <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 4</p>
-            <h2 className="text-[1.8rem] font-black tracking-tight leading-none text-white">{STEP_TITLES[step - 1]}</h2>
+            <h2 className="text-[1.8rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>{STEP_TITLES[step - 1]}</h2>
           </div>
 
           <div className="p-6 space-y-5">
@@ -450,7 +450,7 @@ export default function CreateRequest() {
                             <span>{t.emoji}</span>
                           )}
                         </div>
-                        <span className="text-[1.1rem] font-black text-white">{t.label}</span>
+                        <span className="text-[1.1rem] font-black" style={{ color: "var(--text)" }}>{t.label}</span>
                       </div>
                       <div
                         className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"

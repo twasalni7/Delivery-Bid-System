@@ -4,7 +4,7 @@ import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Star, AlertCircle } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
@@ -16,6 +16,81 @@ const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
+
+/** Confirmation dialog shown before finalizing a driver selection */
+function DriverConfirmDialog({
+  offer,
+  onConfirm,
+  onCancel,
+  isPending,
+}: {
+  offer: Offer;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+    >
+      <div
+        className="w-full max-w-sm rounded-3xl overflow-hidden"
+        style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
+        dir="rtl"
+      >
+        {/* Header */}
+        <div className="p-5" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-11 h-11 rounded-full flex items-center justify-center text-lg font-black"
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
+              {offer.driver?.name?.charAt(0) ?? "س"}
+            </div>
+            <div>
+              <p className="font-black text-lg leading-tight" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+              {offer.driver?.carType && (
+                <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+            <AlertCircle size={15} style={{ color: "var(--brand)" }} />
+            <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>هل أنت متأكد من اختيار هذا السائق؟</p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 space-y-2">
+          <p className="text-sm font-bold text-center" style={{ color: "var(--text-muted)" }}>
+            بعد التأكيد سيتم إخطار السائق وإغلاق الطلب أمام السائقين الآخرين
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="px-5 pb-5 grid grid-cols-2 gap-3">
+          <button
+            onClick={onCancel}
+            disabled={isPending}
+            className="py-3.5 rounded-2xl font-black text-sm transition-colors"
+            style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
+          >
+            لا، رجوع
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isPending}
+            className="py-3.5 rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+          >
+            {isPending ? "جاري التأكيد..." : (
+              <><CheckCircle size={15} /> نعم، تأكيد</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string }> = {
   OPEN:      { bg: "var(--status-open-bg)",      border: "var(--status-open-border)",      text: "var(--status-open-text)" },
@@ -35,6 +110,7 @@ export default function RequestDetails() {
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [confirmOffer, setConfirmOffer] = useState<Offer | null>(null);
 
   const { data: request, isLoading: loadingReq } = useGetRequest(id, {
     query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
@@ -99,9 +175,11 @@ export default function RequestDetails() {
           queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
           queryClient.invalidateQueries({ queryKey: getGetRequestOffersQueryKey(id) });
           toast({ title: "تم تأكيد السائق بنجاح!" });
+          setConfirmOffer(null);
         },
         onError: (err: Error) => {
           toast({ title: err.message ?? "فشل الاختيار", variant: "destructive" });
+          setConfirmOffer(null);
         },
       }
     );
@@ -116,7 +194,7 @@ export default function RequestDetails() {
       <Layout role="client">
         <div className="text-center py-20">
           <p className="text-5xl mb-3">😕</p>
-          <p className="font-bold text-lg text-white">الطلب غير موجود</p>
+          <p className="font-bold text-lg" style={{ color: "var(--text)" }}>الطلب غير موجود</p>
           <Link href="/client">
             <div className="mt-4 inline-block px-5 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>العودة</div>
           </Link>
@@ -154,14 +232,14 @@ export default function RequestDetails() {
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
                 <div>
                   <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>من</p>
-                  <p className="text-white font-black text-sm">{request.homeLocation}</p>
+                  <p className="font-black text-sm" style={{ color: "var(--text)" }}>{request.homeLocation}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
                 <div>
                   <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>إلى</p>
-                  <p className="text-white font-black text-sm">{request.workLocation}</p>
+                  <p className="font-black text-sm" style={{ color: "var(--text)" }}>{request.workLocation}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 mt-1">
@@ -243,7 +321,7 @@ export default function RequestDetails() {
                   {request.status === "COMPLETED" ? "تمت الاتفاقية" : "تم اختيار السائق"}
                 </span>
               </div>
-              <p className="text-2xl font-black text-white">{request.selectedDriver.name}</p>
+              <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{request.selectedDriver.name}</p>
               {request.selectedDriver.carType && (
                 <p className="text-xs font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>{request.selectedDriver.carType}</p>
               )}
@@ -251,7 +329,7 @@ export default function RequestDetails() {
             {request.selectedDriver.mobile && (
               <div className="px-5 py-4 flex items-center gap-3">
                 <Phone size={14} style={{ color: "var(--status-active-text)" }} />
-                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold text-white" dir="ltr">
+                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold" style={{ color: "var(--text)" }} dir="ltr">
                   {request.selectedDriver.mobile}
                 </a>
                 <a
@@ -269,7 +347,7 @@ export default function RequestDetails() {
 
         <div>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-black text-white">
+            <h2 className="text-lg font-black" style={{ color: "var(--text)" }}>
               السائقون المقبِلون {offers ? `(${offers.length})` : ""}
             </h2>
             {canChat && (
@@ -319,7 +397,7 @@ export default function RequestDetails() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
                   placeholder="اكتب رسالة..."
                   className="flex-1 text-sm px-3 py-2 rounded-xl"
-                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "#fff", outline: "none" }}
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }}
                   dir="rtl"
                 />
                 <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
@@ -337,7 +415,7 @@ export default function RequestDetails() {
           {!loadingOffers && (!offers || offers.length === 0) && (
             <div className="text-center py-12 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
               <p className="text-3xl mb-2">⏳</p>
-              <p className="font-black text-white">لا يوجد سائقون قبلوا بعد</p>
+              <p className="font-black" style={{ color: "var(--text)" }}>لا يوجد سائقون قبلوا بعد</p>
               <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>ستظهر أسماء السائقين هنا عند قبولهم طلبك</p>
             </div>
           )}
@@ -346,8 +424,12 @@ export default function RequestDetails() {
             {(offers ?? []).map((offer: Offer) => {
               const isSelected = request.selectedDriverId === offer.driverId;
               return (
-                <div key={offer.id} className="rounded-2xl overflow-hidden"
-                  style={{ backgroundColor: "var(--surface)", border: `1px solid ${isSelected ? "var(--brand-border)" : "var(--border-subtle)"}` }}>
+                <div key={offer.id} className="rounded-2xl overflow-hidden transition-all"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    border: `1px solid ${isSelected ? "var(--brand-border)" : "var(--border-subtle)"}`,
+                    boxShadow: isSelected ? "0 0 0 2px var(--brand-border)" : undefined,
+                  }}>
                   {isSelected && (
                     <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
                       <CheckCircle size={14} style={{ color: "var(--brand)" }} />
@@ -355,25 +437,34 @@ export default function RequestDetails() {
                     </div>
                   )}
                   <div className="p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black"
-                          style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-                          {offer.driver?.name?.charAt(0) ?? "س"}
-                        </div>
-                        <div>
-                          <p className="font-black text-white">{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                          {offer.driver?.carType && <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</p>}
+                    <div className="flex items-center gap-3">
+                      {/* Avatar */}
+                      <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-black shrink-0"
+                        style={{ backgroundColor: isSelected ? "var(--brand)" : "var(--brand-subtle)", color: isSelected ? "var(--brand-fg)" : "var(--brand)" }}>
+                        {offer.driver?.name?.charAt(0) ?? "س"}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                          {offer.driver?.carType && (
+                            <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</span>
+                          )}
+                          {offer.driver?.nationality && (
+                            <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}>
+                              {offer.driver.nationality}
+                            </span>
+                          )}
                         </div>
                       </div>
+                      {/* Action */}
                       {isOpen && !request.selectedDriverId && (
                         <button
-                          onClick={() => handleSelect(offer.id)}
-                          disabled={selectOffer.isPending}
-                          className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform disabled:opacity-50"
+                          onClick={() => setConfirmOffer(offer)}
+                          className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
                           style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                         >
-                          تأكيد السائق
+                          اختيار
                         </button>
                       )}
                     </div>
@@ -384,6 +475,16 @@ export default function RequestDetails() {
           </div>
         </div>
       </div>
+
+      {/* Driver confirmation dialog */}
+      {confirmOffer && (
+        <DriverConfirmDialog
+          offer={confirmOffer}
+          onConfirm={() => handleSelect(confirmOffer.id)}
+          onCancel={() => setConfirmOffer(null)}
+          isPending={selectOffer.isPending}
+        />
+      )}
     </Layout>
   );
 }
