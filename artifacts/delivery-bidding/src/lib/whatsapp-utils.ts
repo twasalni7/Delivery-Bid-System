@@ -1,9 +1,16 @@
+/** Returns true when running on an Android device. */
+function isAndroid(): boolean {
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+}
+
 /**
  * Normalize a mobile number to the international format used by WhatsApp (e.g. "966xxxxxxxxx").
- * Accepts local Saudi format "05xxxxxxxxx", international "966xxxxxxxxx", or "+966xxxxxxxxx".
+ * Accepts local Saudi format "05xxxxxxxxx", international "966xxxxxxxxx" (12 digits: country
+ * code 966 + 9-digit number), or "+966xxxxxxxxx".
  */
 export function toWhatsAppNumber(mobile: string): string {
   const digits = mobile.replace(/\D/g, "");
+  // 966 (3) + 9-digit local number = 12 digits total
   if (digits.startsWith("966") && digits.length >= 12) return digits;
   if (digits.startsWith("05") && digits.length === 10) return "966" + digits.slice(1);
   if (digits.startsWith("5") && digits.length === 9) return "966" + digits;
@@ -26,7 +33,7 @@ export function buildWhatsAppUrl(phone: string, message?: string): string {
     ? `https://wa.me/${wa}?text=${encodedMsg}`
     : `https://wa.me/${wa}`;
 
-  if (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent)) {
+  if (isAndroid()) {
     const intentPath = message ? `send?phone=${wa}&text=${encodedMsg}` : `send?phone=${wa}`;
     return (
       `intent://${intentPath}` +
@@ -46,7 +53,7 @@ export function openWhatsApp(phone: string, message?: string): void {
   const url = buildWhatsAppUrl(phone, message);
   // On Android the intent URL must replace the current location so the system can
   // dispatch it to the installed app; on all other platforms open a new tab.
-  if (/Android/i.test(navigator.userAgent)) {
+  if (isAndroid()) {
     window.location.href = url;
   } else {
     window.open(url, "_blank", "noopener,noreferrer");
