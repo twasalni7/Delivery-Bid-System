@@ -136,6 +136,15 @@ describe("POST /push/subscribe", () => {
     expect(res.body).toHaveProperty("error");
   });
 
+  it("returns 400 when subscription is fake/test data like {test: true}", async () => {
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app)
+      .post("/push/subscribe")
+      .send({ subscription: { test: true } });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
   it("saves subscription for client (session auth)", async () => {
     const onConflictMock = vi.fn().mockResolvedValue([]);
     const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
