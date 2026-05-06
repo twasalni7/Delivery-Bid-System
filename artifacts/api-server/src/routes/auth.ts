@@ -46,6 +46,21 @@ function validateMobile(mobile: unknown): boolean {
   return typeof mobile === "string" && MOBILE_RE.test(mobile.trim());
 }
 
+/**
+ * Normalize a Saudi driver mobile to the canonical "05XXXXXXXX" format.
+ * Handles:
+ *   "5XXXXXXXX"       (9 digits, no leading 0)  → "05XXXXXXXX"
+ *   "966XXXXXXXXX"    (12 digits, country code)  → "05XXXXXXXX"
+ *   "+966XXXXXXXXX"   (with plus)                → "05XXXXXXXX"
+ *   "05XXXXXXXX"      (already canonical)        → unchanged
+ */
+export function normalizeDriverMobile(mobile: string): string {
+  const digits = mobile.trim().replace(/\D/g, "");
+  if (digits.startsWith("966") && digits.length === 12) return "0" + digits.slice(3);
+  if (digits.startsWith("5") && digits.length === 9) return "0" + digits;
+  return digits;
+}
+
 function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) =>
     req.session.regenerate((err: unknown) =>
@@ -135,8 +150,9 @@ router.post("/login-driver", async (req, res) => {
     return;
   }
   try {
+    const normalizedMobile = normalizeDriverMobile(String(mobile));
     const driver = await db.query.driversTable.findFirst({
-      where: eq(driversTable.mobile, mobile),
+      where: eq(driversTable.mobile, normalizedMobile),
     });
     if (!driver || driver.loginCode !== loginCode) {
       res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });

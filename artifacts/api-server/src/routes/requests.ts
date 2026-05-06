@@ -22,6 +22,7 @@ import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
 import { getBidFee, getPriceFromMatrix } from "./pricing";
+import { withDbTransaction } from "../lib/db-transaction";
 
 /** Per-passenger data submitted by the client */
 interface PassengerInput {
@@ -76,18 +77,6 @@ function canSeePhone(
   )
     return true;
   return false;
-}
-
-async function withDbTransaction<T>(
-  callback: (tx: typeof db, meta: { hasRealTransaction: boolean }) => Promise<T>,
-): Promise<T> {
-  const dbWithTransaction = db as typeof db & {
-    transaction?: <R>(cb: (tx: typeof db) => Promise<R>) => Promise<R>;
-  };
-  if (typeof dbWithTransaction.transaction === "function") {
-    return dbWithTransaction.transaction((tx) => callback(tx, { hasRealTransaction: true }));
-  }
-  return callback(db, { hasRealTransaction: false });
 }
 
 function formatDriver(

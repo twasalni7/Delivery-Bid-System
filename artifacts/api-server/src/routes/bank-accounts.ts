@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { bankAccountsTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
@@ -80,7 +80,6 @@ router.post("/", async (req, res) => {
     const [account] = await db
       .insert(bankAccountsTable)
       .values({
-        intId: sql`(SELECT COALESCE(MAX("int_id"), 0) + 1 FROM "bank_accounts")`,
         bankName,
         iban,
         accountHolderName,

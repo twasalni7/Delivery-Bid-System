@@ -29,15 +29,26 @@
 
 
 -- ─────────────────────────────────────────────────────────────────────
--- 1. Add push_subscription JSONB column to profiles table
---    (لحفظ كائن PushSubscription لمستخدمي Supabase Auth)
+-- 1. Add push_subscription JSONB column to profiles table (legacy)
+--    This project uses push_subscriptions table instead of Supabase
+--    Auth profiles.  The ALTER TABLE below is guarded with an existence
+--    check so it is safe to run even when the profiles table does not
+--    exist (e.g. fresh installs or non-Supabase environments).
 -- ─────────────────────────────────────────────────────────────────────
-ALTER TABLE profiles
-  ADD COLUMN IF NOT EXISTS push_subscription JSONB;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'profiles'
+  ) THEN
+    ALTER TABLE profiles
+      ADD COLUMN IF NOT EXISTS push_subscription JSONB;
 
-COMMENT ON COLUMN profiles.push_subscription IS
-  'Web Push PushSubscription object { endpoint, keys: { p256dh, auth } }.'
-  ' Populated after the user grants notification permission in the browser.';
+    COMMENT ON COLUMN profiles.push_subscription IS
+      'Web Push PushSubscription object { endpoint, keys: { p256dh, auth } }.'
+      ' Populated after the user grants notification permission in the browser.';
+  END IF;
+END $$;
 
 
 -- ─────────────────────────────────────────────────────────────────────
