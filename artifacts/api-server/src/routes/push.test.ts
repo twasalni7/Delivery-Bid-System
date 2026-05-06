@@ -233,17 +233,22 @@ describe("POST /push/subscribe", () => {
 
     const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
     const res = await request(app).post("/push/subscribe").send({ subscription: VALID_SUBSCRIPTION });
+    const normalizedPayload = JSON.stringify({
+      endpoint: VALID_SUBSCRIPTION.endpoint,
+      expirationTime: null,
+      keys: { p256dh: VALID_SUBSCRIPTION.keys.p256dh, auth: VALID_SUBSCRIPTION.keys.auth },
+    });
 
     expect(res.status).toBe(200);
     expect(pool.query).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining("UPDATE push_subscriptions"),
-      [1, JSON.stringify({ ...VALID_SUBSCRIPTION, expirationTime: null })]
+      [1, normalizedPayload]
     );
     expect(pool.query).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining("INSERT INTO push_subscriptions"),
-      [1, JSON.stringify({ ...VALID_SUBSCRIPTION, expirationTime: null })]
+      [1, normalizedPayload]
     );
   });
 
