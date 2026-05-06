@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, pool } from "@workspace/db";
 import { notificationsTable, pushSubscriptionsTable } from "@workspace/db";
 import { eq, isNotNull, count, isNull, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
@@ -162,6 +162,63 @@ function normalizePushSubscription(body: unknown): {
   return null;
 }
 
+function shouldFallbackToLegacyPushSave(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const dbErr = err as { code?: string; message?: string };
+  if (dbErr.code === "42703" || dbErr.code === "42P10") return true;
+  const message = dbErr.message?.toLowerCase() ?? "";
+  return (
+    message.includes('column "user_role" does not exist') ||
+    message.includes("no unique or exclusion constraint matching the on conflict specification")
+  );
+}
+
+async function savePushSubscription(
+  userId: number,
+  userRole: string,
+  normalized: { endpoint: string; expirationTime: number | null; keys: { p256dh: string; auth: string } }
+) {
+  try {
+    await db
+      .insert(pushSubscriptionsTable)
+      .values({
+        userId,
+        userRole,
+        subscriptionData: normalized as unknown as Record<string, unknown>,
+      })
+      .onConflictDoUpdate({
+        target: [pushSubscriptionsTable.userId, pushSubscriptionsTable.userRole],
+        set: { subscriptionData: sql`excluded.subscription_data` },
+      });
+    return;
+  } catch (err) {
+    if (!shouldFallbackToLegacyPushSave(err)) {
+      throw err;
+    }
+
+    logger.warn(
+      { err, userId, userRole },
+      "push/subscribe: modern schema unavailable, falling back to legacy push_subscriptions save"
+    );
+
+    const payload = JSON.stringify(normalized);
+    const updateResult = await pool.query(
+      `UPDATE push_subscriptions
+          SET subscription_data = $2::jsonb
+        WHERE user_id = $1`,
+      [userId, payload]
+    );
+
+    if ((updateResult.rowCount ?? 0) === 0) {
+      await pool.query(
+        `INSERT INTO push_subscriptions (user_id, subscription_data)
+         VALUES ($1, $2::jsonb)`,
+        [userId, payload]
+      );
+    }
+  }
+}
+
 /**
  * POST /api/push/subscribe
  * Saves (or updates) a push subscription for the currently logged-in user.
@@ -228,17 +285,7 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
 
   // ── 3. Persist ─────────────────────────────────────────────────────────────
   try {
-    await db
-      .insert(pushSubscriptionsTable)
-      .values({
-        userId: user.id,
-        userRole: user.role,
-        subscriptionData: normalized as unknown as Record<string, unknown>,
-      })
-      .onConflictDoUpdate({
-        target: [pushSubscriptionsTable.userId, pushSubscriptionsTable.userRole],
-        set: { subscriptionData: sql`excluded.subscription_data` },
-      });
+    await savePushSubscription(user.id, user.role, normalized);
 
     logger.info(
       { userId: user.id, userRole: user.role },
