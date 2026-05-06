@@ -431,7 +431,7 @@ function sendWhatsApp(driver: { mobile?: string | null; loginCode?: string | nul
 إذا واجهت أي مشكلة تواصل معنا
 
 بالتوفيق 🌹`;
-  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, "_blank");
+  window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`, "_blank");
 }
 
 function copyCredentials(driver: { mobile?: string | null; loginCode?: string | null }, toast: (opts: { title: string; variant?: "destructive" }) => void) {

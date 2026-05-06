@@ -20,6 +20,7 @@ import { notify } from "../lib/notify";
 import { getSessionUser } from "../lib/session";
 import { getBidFee } from "./pricing";
 import { withDbTransaction } from "../lib/db-transaction";
+import { normalizeDriverMobile } from "./auth";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -273,8 +274,10 @@ router.post("/drivers", async (req, res) => {
     return;
   }
 
+  const normalizedMobile = normalizeDriverMobile(String(mobile));
+
   const existing = await db.query.driversTable.findFirst({
-    where: eq(driversTable.mobile, mobile),
+    where: eq(driversTable.mobile, normalizedMobile),
   });
   if (existing) {
     res.status(400).json({ error: "رقم الجوال مسجّل مسبقاً" });
@@ -287,7 +290,7 @@ router.post("/drivers", async (req, res) => {
     .insert(driversTable)
     .values({
       name,
-      mobile,
+      mobile: normalizedMobile,
       loginCode,
       carType: carType ?? null,
       nationality: nationality ?? null,
@@ -431,7 +434,7 @@ router.patch("/drivers/:id", async (req, res) => {
 
   const updates: Record<string, unknown> = {};
   if (name !== undefined) updates.name = name;
-  if (mobile !== undefined) updates.mobile = mobile;
+  if (mobile !== undefined) updates.mobile = normalizeDriverMobile(String(mobile));
   if (carType !== undefined) updates.carType = carType;
   if (nationality !== undefined) updates.nationality = nationality;
   if (age !== undefined) updates.age = age ? parseInt(age) : null;
