@@ -68,11 +68,11 @@ const authLimiter = rateLimit({
   message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },
 });
 
-// Very lenient rate limiter for driver login (1000 requests per 15 minutes)
-// This protects against DoS while allowing many simultaneous driver logins
+// Rate limiter for driver login — stricter than the high limit that was
+// previously here (1000/15 min) to reduce brute-force exposure on login codes.
 const driverAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Very high limit to effectively allow unlimited access
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "طلبات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة" },

@@ -141,14 +141,14 @@ describe("POST /bank-accounts (admin only)", () => {
 
   it("creates bank account successfully", async () => {
     const returningMock = vi.fn().mockResolvedValue([{
-      id: 3, bankName: "Al Rajhi", iban: "SA789", accountHolderName: "Company", isActive: true, createdAt: new Date(),
+      id: 3, bankName: "Al Rajhi", iban: "SA0380000000608010167519", accountHolderName: "Company", isActive: true, createdAt: new Date(),
     }]);
     const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).post("/bank-accounts").send({
-      bankName: "Al Rajhi", iban: "SA789", accountHolderName: "Company",
+      bankName: "Al Rajhi", iban: "SA0380000000608010167519", accountHolderName: "Company",
     });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ id: 3, bankName: "Al Rajhi" });

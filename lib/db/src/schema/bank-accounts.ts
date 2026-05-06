@@ -1,11 +1,12 @@
 import { pgTable, serial, integer, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const bankAccountsTable = pgTable("bank_accounts", {
   id: serial("id").primaryKey(),
 
-  intId: integer("int_id").notNull().unique(),
+  intId: integer("int_id").notNull().unique().default(sql`nextval('bank_accounts_int_id_seq')`),
 
   bankName: text("bank_name").notNull(),
 

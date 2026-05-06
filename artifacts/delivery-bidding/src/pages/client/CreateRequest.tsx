@@ -388,7 +388,7 @@ export default function CreateRequest() {
           distanceKm: maxDistanceKm,
           additionalLocations: validAdditional.length > 0 ? validAdditional : undefined,
           phone: phone.trim(),
-          numberOfPeople: sharingCount,
+          numberOfPeople: parseInt(numberOfPeople) || 1,
           workingDaysPerWeek: selectedDays.length,
           numberOfShifts: eveningTime ? 2 : 1,
           morningTime,
