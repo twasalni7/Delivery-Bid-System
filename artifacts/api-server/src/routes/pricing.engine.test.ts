@@ -28,6 +28,7 @@ describe("pricing formula v2", () => {
       locations: 1,
     });
 
+    // 10km * 1 * 5 * 4 = 200km; 200*0.85 + (20 visits*15) = 170 + 300 = 470
     expect(result.totalPrice).toBe(470);
     expect(result.pricePerPerson).toBe(470);
     expect(result.details.monthlyKm).toBe(200);

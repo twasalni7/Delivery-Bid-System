@@ -17,6 +17,9 @@ const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 const DEFAULT_PRICING_ENGINE = "matrix" as const;
+const BASE_LOCATION_COUNT = 1;
+// Business rule: each extra passenger adds 50% to the base total (shared trips).
+const EXTRA_PASSENGER_FACTOR_INCREMENT = 0.5;
 
 type AppConfigMap = Record<string, string>;
 
@@ -56,16 +59,17 @@ async function loadAppConfigMap(): Promise<AppConfigMap> {
   }
 }
 
-function parsePositiveNumber(raw: string | undefined, fallback: number): number {
+function parseStrictPositiveNumber(raw: string | undefined, fallback: number): number {
   const parsed = Number.parseFloat(raw ?? "");
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function parseBoolean(raw: string | undefined, fallback: boolean): boolean {
-  if (raw == null) return fallback;
+  if (raw === undefined) return fallback;
   const normalized = String(raw).trim().toLowerCase();
   if (["1", "true", "yes", "on"].includes(normalized)) return true;
   if (["0", "false", "no", "off"].includes(normalized)) return false;
+  logger.warn({ raw }, "Invalid boolean app_config value, using fallback");
   return fallback;
 }
 
@@ -78,13 +82,13 @@ async function loadPricingRuntimeConfig(): Promise<{
   const engine = resolvePricingEngine(map["pricing_engine"]);
   const shadowCompare = parseBoolean(map["pricing_shadow_compare"], false);
   const formulaConstants: FormulaV2Constants = {
-    pricePerKm: parsePositiveNumber(map["pricing_v2_price_per_km"], DEFAULT_FORMULA_V2_CONSTANTS.pricePerKm),
-    visitFee: parsePositiveNumber(map["pricing_v2_visit_fee"], DEFAULT_FORMULA_V2_CONSTANTS.visitFee),
-    extraLocationRate: parsePositiveNumber(
+    pricePerKm: parseStrictPositiveNumber(map["pricing_v2_price_per_km"], DEFAULT_FORMULA_V2_CONSTANTS.pricePerKm),
+    visitFee: parseStrictPositiveNumber(map["pricing_v2_visit_fee"], DEFAULT_FORMULA_V2_CONSTANTS.visitFee),
+    extraLocationRate: parseStrictPositiveNumber(
       map["pricing_v2_extra_location_rate"],
       DEFAULT_FORMULA_V2_CONSTANTS.extraLocationRate
     ),
-    weeks: parsePositiveNumber(map["pricing_v2_weeks"], DEFAULT_FORMULA_V2_CONSTANTS.weeks),
+    weeks: parseStrictPositiveNumber(map["pricing_v2_weeks"], DEFAULT_FORMULA_V2_CONSTANTS.weeks),
   };
   return { engine, shadowCompare, formulaConstants };
 }
@@ -165,7 +169,7 @@ export function resolveTripsPerDay(type: string | number): number {
 
   const numericType = typeof type === "number" ? type : Number.parseInt(String(type), 10);
   if (Number.isFinite(numericType) && numericType > 0) {
-    return Math.max(1, Math.round(numericType));
+    return Math.round(numericType);
   }
   return 1;
 }
@@ -187,8 +191,9 @@ export function calculateSubscriptionPriceV2(
   const totalTripsMonthly = tripsPerDay * daysPerWeek * constants.weeks;
   const laborCost = totalTripsMonthly * constants.visitFee;
   const baseTotal = transportCost + locationExtraCharge + laborCost;
-  const riderFactor = 1 + (persons - 1) * 0.5;
-  const finalTotal = baseTotal * riderFactor;
+  // Business formula: every extra rider adds 50% to base (driver income grows, per-person share drops).
+  const sharedRidePricingFactor = 1 + (persons - 1) * EXTRA_PASSENGER_FACTOR_INCREMENT;
+  const finalTotal = baseTotal * sharedRidePricingFactor;
   const pricePerPerson = finalTotal / persons;
 
   return {
@@ -286,8 +291,14 @@ export async function calculatePriceForRequest(input: PriceForRequestInput): Pro
   const daysPerWeek = Math.max(1, Math.round(Number(input.workingDaysPerWeek) || 5));
   const persons = Math.max(1, Math.round(Number(input.numberOfPeople) || 1));
   const type = input.type ?? getTripTypeFromShifts(input.numberOfShifts, input.shifts);
-  const derivedLocations = 1 + (Array.isArray(input.additionalLocations) ? input.additionalLocations.length : 0);
-  const locations = Math.max(1, Math.round(Number(input.locations) || derivedLocations));
+  const derivedLocations =
+    BASE_LOCATION_COUNT + (Array.isArray(input.additionalLocations) ? input.additionalLocations.length : 0);
+  const explicitLocations = Number(input.locations);
+  // If caller sends explicit `locations`, it has priority; otherwise derive from request additional stops.
+  const locations =
+    Number.isFinite(explicitLocations) && explicitLocations >= BASE_LOCATION_COUNT
+      ? Math.round(explicitLocations)
+      : derivedLocations;
 
   return getPriceFromActiveEngine({
     distance: input.distanceKm,
