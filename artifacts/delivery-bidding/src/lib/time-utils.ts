@@ -9,6 +9,18 @@ export function formatTime12h(time: string | null | undefined): string {
   return `${paddedHour}:${minute} ${period}`;
 }
 
+/** Same as formatTime12h but uses "صباحاً" / "مساءً" instead of "ص" / "م" */
+export function formatTime12hLong(time: string | null | undefined): string {
+  if (!time) return "";
+  const [hourStr, minuteStr] = time.split(":");
+  const hour = parseInt(hourStr ?? "0", 10);
+  const minute = minuteStr ?? "00";
+  const period = hour < 12 ? "صباحاً" : "مساءً";
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  const paddedHour = String(displayHour).padStart(2, "0");
+  return `${paddedHour}:${minute} ${period}`;
+}
+
 export function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();

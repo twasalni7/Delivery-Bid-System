@@ -6,7 +6,7 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
 import { haversineKm } from "@/lib/pricing";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
@@ -34,6 +34,11 @@ const DAYS = [
   { key: "fri", label: "ج" },
   { key: "sat", label: "س" },
 ];
+
+const SHIFT_LABELS = ["الوردية الأولى", "الوردية الثانية", "الوردية الثالثة", "الوردية الرابعة"];
+const MAX_SHIFTS = 4;
+
+type ShiftEntry = { goTime: string; returnTime: string };
 
 type AdditionalLocation = { type: "pickup" | "dropoff"; address: string };
 
@@ -70,6 +75,68 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
 const MAX_PASSENGERS = 10;
 
 const STEP_TITLES = ["نوع الاشتراك", "تحديد المسار والركاب", "الجدول والوقت", "التفاصيل المالية"];
+
+/** Single shift editor card used in Step 3 */
+function ShiftCard({
+  index,
+  shift,
+  onChange,
+  onRemove,
+}: {
+  index: number;
+  shift: ShiftEntry;
+  onChange: (s: ShiftEntry) => void;
+  onRemove?: () => void;
+}) {
+  return (
+    <div className="rounded-[1.5rem] p-4 space-y-3" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-black" style={{ color: "var(--text)" }}>
+          {SHIFT_LABELS[index] ?? `الوردية ${index + 1}`}
+        </span>
+        {onRemove && (
+          <button
+            onClick={onRemove}
+            className="p-1.5 rounded-xl transition-colors"
+            style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>⏰ وقت الذهاب</label>
+          <Input
+            type="time"
+            value={shift.goTime}
+            onChange={(e) => onChange({ ...shift, goTime: e.target.value })}
+            className="rounded-2xl font-bold text-base input-dark"
+            dir="ltr"
+          />
+          {shift.goTime && (
+            <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12hLong(shift.goTime)}</p>
+          )}
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>🔄 وقت العودة</label>
+          <Input
+            type="time"
+            value={shift.returnTime}
+            onChange={(e) => onChange({ ...shift, returnTime: e.target.value })}
+            className="rounded-2xl font-bold text-base input-dark"
+            dir="ltr"
+          />
+          {shift.returnTime && (
+            <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{formatTime12hLong(shift.returnTime)}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 /** Passenger card shown once per passenger in Step 2 */
 function PassengerCard({
@@ -201,8 +268,7 @@ export default function CreateRequest() {
   const [extraPassengers, setExtraPassengers] = useState<ExtraPassenger[]>([]);
 
   // Step 3
-  const [morningTime, setMorningTime] = useState("");
-  const [eveningTime, setEveningTime] = useState("");
+  const [shifts, setShifts] = useState<ShiftEntry[]>([{ goTime: "", returnTime: "" }]);
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
   const [notes, setNotes] = useState("");
 
@@ -288,18 +354,19 @@ export default function CreateRequest() {
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
     if (!homeCoords || !workCoords) return;
+    const firstGoTime = shifts[0]?.goTime;
     const params = new URLSearchParams({
       homeLat: String(homeCoords.lat),
       homeLng: String(homeCoords.lng),
       destLat: String(workCoords.lat),
       destLng: String(workCoords.lng),
-      ...(morningTime ? { morningTime } : {}),
+      ...(firstGoTime ? { morningTime: firstGoTime } : {}),
     });
     fetch(`${API}/api/pricing/suggestions?${params}`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (typeof d.count === "number") setSharedSuggestions({ count: d.count }); })
       .catch(() => {});
-  }, [homeCoords, workCoords, morningTime]);
+  }, [homeCoords, workCoords, shifts]);
 
   useEffect(() => {
     if (step === 4 && homeCoords && workCoords) {
@@ -330,7 +397,7 @@ export default function CreateRequest() {
       if (extraPassengers.some((p) => !p.pickupCoords || !p.destCoords)) return false;
       return true;
     }
-    if (step === 3) return morningTime && selectedDays.length > 0;
+    if (step === 3) return !!(shifts[0]?.goTime) && selectedDays.length > 0;
     return phone.trim().length >= 10;
   };
 
@@ -340,6 +407,17 @@ export default function CreateRequest() {
       ? `[اشتراك مشترك - ${sharingCount} أشخاص]`
       : null;
     const finalNotes = [sharingNote, notes.trim()].filter(Boolean).join(" — ") || undefined;
+
+    // Derive backward-compat scalar times from the first shift
+    const firstGoTime = shifts[0]?.goTime ?? "";
+    const firstReturnTime = shifts[0]?.returnTime ?? "";
+    const validShifts = shifts
+      .filter((s) => s.goTime)
+      .map((s, i) => ({
+        label: SHIFT_LABELS[i] ?? `الوردية ${i + 1}`,
+        goTime: s.goTime,
+        returnTime: s.returnTime || undefined,
+      }));
 
     // Build per-passenger array for the backend
     const passengersData = [
@@ -351,7 +429,7 @@ export default function CreateRequest() {
         destinationLng: workCoords?.lng ?? null,
         pickupAddress: homeLocation || homeCoords?.address || null,
         destinationAddress: workLocation || workCoords?.address || null,
-        workTime: morningTime || null,
+        workTime: firstGoTime || null,
         daysPerWeek: selectedDays.length,
         distanceKm:
           homeCoords && workCoords
@@ -366,7 +444,7 @@ export default function CreateRequest() {
         destinationLng: p.destCoords?.lng ?? null,
         pickupAddress: p.pickupAddress || p.pickupCoords?.address || null,
         destinationAddress: p.destAddress || p.destCoords?.address || null,
-        workTime: p.workTime || morningTime || null,
+        workTime: p.workTime || firstGoTime || null,
         daysPerWeek: selectedDays.length,
         distanceKm:
           p.pickupCoords && p.destCoords
@@ -390,9 +468,10 @@ export default function CreateRequest() {
           phone: phone.trim(),
           numberOfPeople: parseInt(numberOfPeople) || 1,
           workingDaysPerWeek: selectedDays.length,
-          numberOfShifts: eveningTime ? 2 : 1,
-          morningTime,
-          eveningTime: eveningTime || undefined,
+          numberOfShifts: validShifts.length || 1,
+          morningTime: firstGoTime,
+          eveningTime: firstReturnTime || undefined,
+          shifts: validShifts.length > 0 ? validShifts : undefined,
           notes: finalNotes,
           passengers: passengersData,
           // monthlyPrice is intentionally not sent — the server calculates it
@@ -499,7 +578,7 @@ export default function CreateRequest() {
                   homeAddress={homeLocation}
                   workCoords={workCoords}
                   workAddress={workLocation}
-                  workTime={morningTime}
+                  workTime={shifts[0]?.goTime ?? ""}
                   onHomeChange={(coords) => {
                     setHomeCoords(coords);
                     setHomeLocation(coords.address);
@@ -604,29 +683,43 @@ export default function CreateRequest() {
             {/* ── Step 3: Schedule ── */}
             {step === 3 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت الذهاب</label>
-                    <Input
-                      type="time"
-                      value={morningTime}
-                      onChange={(e) => setMorningTime(e.target.value)}
-                      className="rounded-2xl font-bold text-base input-dark"
-                      dir="ltr"
-                    />
-                    {morningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(morningTime)}</p>}
+                {/* Multi-shift editor */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
+                      <Clock className="inline-block ml-1" size={14} style={{ color: "var(--brand)" }} />
+                      الأوقات / الورديات
+                    </label>
+                    <span className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
+                      {shifts.length} / {MAX_SHIFTS}
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت العودة</label>
-                    <Input
-                      type="time"
-                      value={eveningTime}
-                      onChange={(e) => setEveningTime(e.target.value)}
-                      className="rounded-2xl font-bold text-base input-dark"
-                      dir="ltr"
+
+                  {shifts.map((shift, idx) => (
+                    <ShiftCard
+                      key={idx}
+                      index={idx}
+                      shift={shift}
+                      onChange={(updated) =>
+                        setShifts((prev) => prev.map((s, i) => (i === idx ? updated : s)))
+                      }
+                      onRemove={
+                        shifts.length > 1
+                          ? () => setShifts((prev) => prev.filter((_, i) => i !== idx))
+                          : undefined
+                      }
                     />
-                    {eveningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(eveningTime)}</p>}
-                  </div>
+                  ))}
+
+                  {shifts.length < MAX_SHIFTS && (
+                    <button
+                      onClick={() => setShifts((prev) => [...prev, { goTime: "", returnTime: "" }])}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[1.5rem] border-2 border-dashed text-sm font-black transition-colors"
+                      style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+                    >
+                      <Plus size={15} /> إضافة وردية
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-3">

@@ -892,6 +892,7 @@ router.post("/requests", async (req, res) => {
         numberOfShifts: parsed.data.numberOfShifts ?? 1,
         morningTime: parsed.data.morningTime,
         eveningTime: parsed.data.eveningTime,
+        shifts: (parsed.data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
         additionalLocations: parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
         notes: parsed.data.notes,
         clientType: parsed.data.clientType ?? "غيره",

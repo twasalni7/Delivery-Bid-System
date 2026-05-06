@@ -10,7 +10,7 @@ import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { Trash2, Edit2, MapPin, Clock, Users, Search, X, Plus, Eye } from "lucide-react";
 import type { CommuteRequest } from "@workspace/api-client-react";
 import { getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
 
 const STATUS_PILL_STYLE: Record<string, React.CSSProperties> = {
   OPEN:      { backgroundColor: "var(--status-open-bg)",      color: "var(--status-open-text)" },
@@ -237,7 +237,7 @@ export default function AdminRequests() {
                             {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
                               <div key={i} className="flex items-center gap-1 text-xs" dir="ltr">
                                 <Clock size={11} style={{ color: "var(--text-hint)" }} />
-                                <span className="font-medium">{formatTime12h(s.goTime)}{s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}</span>
+                                <span className="font-medium">{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}</span>
                                 {s.label && <span style={{ color: "var(--text-hint)" }}>({s.label})</span>}
                               </div>
                             ))}
@@ -327,7 +327,7 @@ export default function AdminRequests() {
                         <span className="flex items-center gap-1 flex-wrap" dir="ltr">
                           <Clock size={13} />
                           {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
-                            <span key={i}>{formatTime12h(s.goTime)}{s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}{i < (req as any).shifts.length - 1 ? " |" : ""}</span>
+                            <span key={i}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < (req as any).shifts.length - 1 ? " |" : ""}</span>
                           ))}
                         </span>
                       ) : (

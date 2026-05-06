@@ -303,6 +303,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
         numberOfShifts: data.numberOfShifts ?? 1,
         morningTime: data.morningTime,
         eveningTime: data.eveningTime,
+        shifts: (data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
         additionalLocations: data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
         notes: data.notes,
         clientType: data.clientType ?? "غيره",

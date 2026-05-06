@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { MessageCircle, Send, X, MapPin } from "lucide-react";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12hLong } from "@/lib/time-utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authed-fetch";
@@ -186,9 +186,9 @@ export default function DriverRequests() {
 
                 <div className="flex flex-wrap gap-3 text-xs font-black" style={{ color: "var(--text-muted)" }} dir="ltr">
                   {r.shifts && r.shifts.length > 0 ? (
-                    <span>⏰ {r.shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
+                    <span>⏰ {r.shifts.map((s) => `${formatTime12hLong(s.goTime ?? "")}${s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}`).join(" | ")}</span>
                   ) : (
-                    <span>⏰ {formatTime12h(r.morningTime)}{r.eveningTime ? ` – ${formatTime12h(r.eveningTime)}` : ""}</span>
+                    <span>⏰ {formatTime12hLong(r.morningTime)}{r.eveningTime ? ` – ${formatTime12hLong(r.eveningTime)}` : ""}</span>
                   )}
                   <span>👥 {r.numberOfPeople} أشخاص · {r.workingDaysPerWeek} أيام/أسبوع</span>
                 </div>

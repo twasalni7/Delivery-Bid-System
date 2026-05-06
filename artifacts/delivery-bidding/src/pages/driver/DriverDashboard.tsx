@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { EnablePushButton } from "@/components/enable-push-button";
 import { AlertTriangle, Clock, Users, CheckCircle, Phone, ChevronLeft } from "lucide-react";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12hLong } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
@@ -233,25 +233,43 @@ export default function DriverDashboard() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                            <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Clock size={12} /></div>
-                            <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.morningTime)}</p>
-                            <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الذهاب</p>
+                        {/* Shift / time display */}
+                        {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {((req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }>).map((s, i) => (
+                              <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                                <span className="text-[10px] font-black" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</span>
+                                <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
+                                  {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
+                                </span>
+                              </div>
+                            ))}
+                            <div className="text-center rounded-xl p-2" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                              <p className="text-xs font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
+                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>أشخاص</p>
+                            </div>
                           </div>
-                          {req.eveningTime && (
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2">
                             <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
                               <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Clock size={12} /></div>
-                              <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.eveningTime)}</p>
-                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>العودة</p>
+                              <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.morningTime)}</p>
+                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الذهاب</p>
                             </div>
-                          )}
-                          <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                            <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Users size={12} /></div>
-                            <p className="text-xs font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
-                            <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>أشخاص</p>
+                            {req.eveningTime && (
+                              <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                                <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Clock size={12} /></div>
+                                <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.eveningTime)}</p>
+                                <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>العودة</p>
+                              </div>
+                            )}
+                            <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                              <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Users size={12} /></div>
+                              <p className="text-xs font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
+                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>أشخاص</p>
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         <div className="flex gap-1.5 flex-wrap">
                           {DAYS_FULL.slice(0, req.workingDaysPerWeek ?? 5).map((d) => (
@@ -329,18 +347,32 @@ export default function DriverDashboard() {
                       <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workLocation}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                      <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>الذهاب</p>
-                      <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.morningTime)}</p>
+                  {/* Shift / time display for active job */}
+                  {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                    <div className="space-y-1.5 mt-4">
+                      {((req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }>).map((s, i) => (
+                        <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                          <span className="text-[10px] font-black" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</span>
+                          <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
+                            {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    {req.eveningTime && (
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 mt-4">
                       <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                        <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>العودة</p>
-                        <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.eveningTime)}</p>
+                        <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>الذهاب</p>
+                        <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.morningTime)}</p>
                       </div>
-                    )}
-                  </div>
+                      {req.eveningTime && (
+                        <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                          <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>العودة</p>
+                          <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.eveningTime)}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {/* Price breakdown in schedule card */}
                   {(req as any).monthlyPrice != null && (req as any).monthlyPrice > 0 && (
                     <div className="flex items-center justify-between mt-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>

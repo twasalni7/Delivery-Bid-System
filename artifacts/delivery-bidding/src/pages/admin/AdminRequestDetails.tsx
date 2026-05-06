@@ -8,7 +8,7 @@ import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
@@ -183,22 +183,35 @@ export default function AdminRequestDetails() {
                   <p className="text-white font-bold text-sm">{request.workLocation}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 mt-2">
-                <div className="flex items-center gap-1.5 text-white/80 text-sm">
-                  <Clock size={13} />
-                  {shifts && shifts.length > 0 ? (
-                    <span dir="ltr">{shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
-                  ) : (
-                    <>
+              <div className="flex items-center gap-4 mt-2 flex-wrap">
+                {shifts && shifts.length > 0 ? (
+                  <div className="flex-1 space-y-1.5 mt-1">
+                    {shifts.map((s, i) => (
+                      <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                        <span className="text-xs font-black text-white/70">{s.label ?? `الوردية ${i + 1}`}</span>
+                        <span className="text-xs font-bold text-white" dir="ltr">
+                          {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-1.5 text-white/80 text-sm mt-1">
+                      <Users size={13} />
+                      <span>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                      <Clock size={13} />
                       <span dir="ltr">{formatTime12h(request.morningTime)}</span>
                       {request.eveningTime && <span dir="ltr"> – {formatTime12h(request.eveningTime)}</span>}
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 text-white/80 text-sm">
-                  <Users size={13} />
-                  <span>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</span>
-                </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                      <Users size={13} />
+                      <span>{request.numberOfPeople} {request.numberOfPeople === 1 ? "شخص" : "أشخاص"}</span>
+                    </div>
+                  </>
+                )}
               </div>
               {additionalLocations && additionalLocations.length > 0 && (
                 <div className="mt-2 space-y-1">
