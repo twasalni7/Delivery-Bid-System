@@ -1,11 +1,11 @@
 import { useState, type FC } from "react";
-import { Bell, Loader2 } from "lucide-react";
+import { Bell, Loader2, AlertCircle } from "lucide-react";
 import { subscribeToPush } from "@/lib/push-notifications";
 
 interface PushPermissionPromptProps {
   /** Current user's role — forwarded to subscribeToPush to register the correct DB table */
   role?: string;
-  /** Called after the user successfully grants push permission */
+  /** Called after the user successfully grants push permission AND server confirms save */
   onEnabled: () => void;
   /** Called when the user taps "لاحقاً" or permission is denied */
   onDismiss: () => void;
@@ -17,10 +17,15 @@ interface PushPermissionPromptProps {
  * Soft-ask UI shown before the native browser permission dialog.
  * Explains the value of notifications, then calls:
  *   1. OneSignal.Slidedown.promptPush()  — if the SDK is loaded
- *   2. subscribeToPush(role)             — VAPID fallback (always called
+ *   2. subscribeToPush(role)             — VAPID subscription (always called
  *                                          after permission is granted so
  *                                          our own server push system is
  *                                          also registered)
+ *
+ * onEnabled() is called ONLY when the subscription is confirmed saved on
+ * the server (result "ok" or "already_subscribed").  On server_error the
+ * prompt stays open with a retry banner so the user can try again without
+ * burning their dismissal counter.
  *
  * Smart dismissal: the hook (useInstallAndPushFlow) increments a counter
  * and records a timestamp so we back-off exponentially.
@@ -31,12 +36,12 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
   onDismiss,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   async function handleEnable() {
     setLoading(true);
+    setSaveError(false);
     try {
-      console.log("[Push] requesting notification permission");
-
       // ── Try OneSignal slidedown first (better UX) ──────────────────────
       const OS = window.OneSignal;
       if (OS?.Slidedown) {
@@ -52,30 +57,30 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
         }
       }
 
-      console.log("[Push] permission result after prompt:", Notification.permission);
       if (Notification.permission !== "granted") {
-        console.warn("[Push] permission not granted; subscribeToPush() will not run");
         onDismiss();
         return;
       }
 
-      // ── Always wire up our own VAPID push subscription ─────────────────
-      // subscribeToPush checks permission internally; if it was just granted
-      // above this will complete the subscription; if already granted it's a no-op.
+      // ── Wire up our VAPID push subscription ────────────────────────────
       const result = await subscribeToPush(role);
 
-      // Only call onEnabled when the subscription was actually created (or
-      // saved temporarily — server_error means the browser sub exists and will
-      // be retried). For all other failure modes, dismiss so we don't mark
-      // push as permanently enabled when it never actually worked.
-      if (result === "ok" || result === "already_subscribed" || result === "server_error") {
+      if (result === "ok" || result === "already_subscribed") {
+        // Subscription confirmed saved on the server — mark as permanently enabled.
         onEnabled();
+      } else if (result === "server_error") {
+        // Browser subscription created successfully but the server failed to save
+        // it.  Show a retry banner so the user can try again.  We intentionally
+        // do NOT call onEnabled() here because doing so would permanently set
+        // PUSH_ENABLED_KEY and prevent future retries.
+        setSaveError(true);
       } else {
+        // Permission denied, unsupported, no VAPID key, etc. — dismiss without
+        // incrementing the dismissal counter so we can offer again later.
         onDismiss();
       }
     } catch (err) {
       console.error("[Push] enable flow failed:", err);
-      // Unexpected error — treat as dismiss so we don't block the UI
       onDismiss();
     } finally {
       setLoading(false);
@@ -139,17 +144,34 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
             ابقَ على اطلاع فوري بطلباتك وعروض السائقين ورسائل التطبيق
           </p>
 
+          {/* Server-save error banner */}
+          {saveError && (
+            <div
+              className="flex items-start gap-2 rounded-xl px-3 py-2.5 mb-4 text-sm"
+              style={{
+                backgroundColor: "var(--status-cancelled-bg)",
+                border: "1px solid var(--status-cancelled-border)",
+                color: "var(--status-cancelled-text)",
+              }}
+            >
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>تم تفعيل الإشعارات في المتصفح، لكن فشل الحفظ في الخادم. يرجى المحاولة مجدداً.</span>
+            </div>
+          )}
+
           {/* Benefits list */}
-          <div className="space-y-3 mb-6">
-            {benefits.map((b) => (
-              <div key={b.text} className="flex items-center gap-3">
-                <span className="text-xl shrink-0">{b.icon}</span>
-                <p className="text-sm" style={{ color: "var(--text)" }}>
-                  {b.text}
-                </p>
-              </div>
-            ))}
-          </div>
+          {!saveError && (
+            <div className="space-y-3 mb-6">
+              {benefits.map((b) => (
+                <div key={b.text} className="flex items-center gap-3">
+                  <span className="text-xl shrink-0">{b.icon}</span>
+                  <p className="text-sm" style={{ color: "var(--text)" }}>
+                    {b.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Primary CTA */}
           <button
@@ -168,7 +190,7 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
             ) : (
               <Bell size={18} />
             )}
-            {loading ? "جارٍ التفعيل..." : "تفعيل الإشعارات الآن"}
+            {loading ? "جارٍ التفعيل..." : saveError ? "إعادة المحاولة" : "تفعيل الإشعارات الآن"}
           </button>
 
           {/* Dismiss */}
