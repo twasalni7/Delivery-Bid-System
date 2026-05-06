@@ -99,75 +99,88 @@ router.get("/vapid-public-key", (_req, res) => {
 });
 
 /**
+ * Normalises any common PushSubscription shape received from browsers or
+ * client code into the canonical form expected by the server:
+ *   { endpoint: string, expirationTime: number|null, keys: { p256dh, auth } }
+ *
+ * Handles (in order of preference):
+ *   1. { subscription: { endpoint, keys } }          — standard wrapped format sent by our frontend
+ *   2. { endpoint, keys }                             — flat / direct format
+ *   3. { subscription: { subscription: { … } } }     — double-nested (defensive)
+ *   4. { endpoint, p256dh, auth }                    — keys at top-level (some older push providers)
+ *
+ * Returns null when no valid subscription can be extracted.
+ */
+function normalizePushSubscription(body: unknown): {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: { p256dh: string; auth: string };
+} | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as Record<string, unknown>;
+
+  // Build a list of candidate objects to try, from most to least specific.
+  const candidates: unknown[] = [
+    b["subscription"],
+    b,
+    b["subscription"] && typeof b["subscription"] === "object"
+      ? (b["subscription"] as Record<string, unknown>)["subscription"]
+      : undefined,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const sub = candidate as Record<string, unknown>;
+
+    if (typeof sub["endpoint"] !== "string" || !sub["endpoint"]) continue;
+
+    const expTime =
+      typeof sub["expirationTime"] === "number" ? sub["expirationTime"] : null;
+
+    // Standard: keys nested under { keys: { p256dh, auth } }
+    if (sub["keys"] && typeof sub["keys"] === "object") {
+      const k = sub["keys"] as Record<string, unknown>;
+      if (typeof k["p256dh"] === "string" && typeof k["auth"] === "string") {
+        return {
+          endpoint: sub["endpoint"],
+          expirationTime: expTime,
+          keys: { p256dh: k["p256dh"], auth: k["auth"] },
+        };
+      }
+    }
+
+    // Fallback: p256dh / auth at top level of the subscription object
+    if (typeof sub["p256dh"] === "string" && typeof sub["auth"] === "string") {
+      return {
+        endpoint: sub["endpoint"],
+        expirationTime: expTime,
+        keys: { p256dh: sub["p256dh"], auth: sub["auth"] },
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * POST /api/push/subscribe
  * Saves (or updates) a push subscription for the currently logged-in user.
  * Reads the user from req.tokenUser (Bearer token) or req.session.user.
  * Body: { subscription: PushSubscriptionJSON }
  *
+ * Automatically normalises any common PushSubscription format before saving.
  * Uses INSERT … ON CONFLICT DO UPDATE so that re-subscribing the same device
  * only updates the existing row (no duplicates).
  */
 router.post("/subscribe", requireAuth(), async (req, res) => {
   const user = getSessionUser(req)!;
-  const { subscription } = req.body ?? {};
 
-  // Log on receive — before any validation
-  logger.info(
-    {
-      userId: user.id,
-      role: user.role,
-      receivedKeys: subscription && typeof subscription === "object"
-        ? Object.keys(subscription as Record<string, unknown>)
-        : null,
-    },
-    "push: subscription received from client"
-  );
+  const normalized = normalizePushSubscription(req.body ?? {});
 
-  if (!subscription || typeof subscription !== "object") {
-    res.status(400).json({ error: "subscription مطلوب" });
+  if (!normalized) {
+    res.status(400).json({ error: "invalid push subscription" });
     return;
   }
-
-  // Validate that the subscription contains the required fields.
-  // This also rejects any fake/test payloads (e.g. {"test": true}) that
-  // do not carry a real endpoint and VAPID keys.
-  const sub = subscription as Record<string, unknown>;
-  const keys = sub["keys"] as Record<string, unknown> | undefined;
-  if (
-    typeof sub["endpoint"] !== "string" ||
-    typeof keys !== "object" ||
-    !keys ||
-    typeof keys["p256dh"] !== "string" ||
-    typeof keys["auth"] !== "string"
-  ) {
-    logger.warn(
-      {
-        userId: user.id,
-        role: user.role,
-        receivedKeys: Object.keys(sub),
-        hasEndpoint: typeof sub["endpoint"] === "string",
-        hasP256dh: typeof keys?.["p256dh"] === "string",
-        hasAuth: typeof keys?.["auth"] === "string",
-      },
-      "push: rejected — subscription missing required fields (endpoint/keys); possible fake/test data"
-    );
-    res.status(400).json({ error: "subscription يجب أن يحتوي على endpoint وkeys.p256dh وkeys.auth" });
-    return;
-  }
-
-  const endpointStr = sub["endpoint"] as string;
-  const endpointPreview = endpointStr.length > 60 ? endpointStr.substring(0, 60) + "…" : endpointStr;
-
-  logger.info(
-    {
-      userId: user.id,
-      role: user.role,
-      endpoint: endpointPreview,
-      hasP256dh: true,
-      hasAuth: true,
-    },
-    "push: saving real PushSubscription to database"
-  );
 
   try {
     await db
@@ -175,21 +188,13 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
       .values({
         userId: user.id,
         userRole: user.role,
-        subscriptionData: subscription as Record<string, unknown>,
+        subscriptionData: normalized,
       })
       .onConflictDoUpdate({
         target: [pushSubscriptionsTable.userId, pushSubscriptionsTable.userRole],
         set: { subscriptionData: sql`excluded.subscription_data` },
       });
 
-    logger.info(
-      {
-        userId: user.id,
-        role: user.role,
-        endpoint: endpointPreview,
-      },
-      "push: subscription saved to push_subscriptions ✓"
-    );
     res.json({ message: "تم حفظ الاشتراك في الإشعارات" });
   } catch (err) {
     logger.error({ err, userId: user.id, role: user.role }, "push: failed to save subscription");
