@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const sendNotificationMock = vi.fn();
-const setVapidDetailsMock = vi.fn();
+const { sendNotificationMock, setVapidDetailsMock } = vi.hoisted(() => ({
+  sendNotificationMock: vi.fn(),
+  setVapidDetailsMock: vi.fn(),
+}));
 
 vi.mock("web-push", () => ({
   default: {
