@@ -111,27 +111,63 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
   const user = getSessionUser(req)!;
   const { subscription } = req.body ?? {};
 
+  // Log on receive — before any validation
+  logger.info(
+    {
+      userId: user.id,
+      role: user.role,
+      receivedKeys: subscription && typeof subscription === "object"
+        ? Object.keys(subscription as Record<string, unknown>)
+        : null,
+    },
+    "push: subscription received from client"
+  );
+
   if (!subscription || typeof subscription !== "object") {
     res.status(400).json({ error: "subscription مطلوب" });
     return;
   }
 
-  // Validate that the subscription contains the required fields
+  // Validate that the subscription contains the required fields.
+  // This also rejects any fake/test payloads (e.g. {"test": true}) that
+  // do not carry a real endpoint and VAPID keys.
+  const sub = subscription as Record<string, unknown>;
+  const keys = sub["keys"] as Record<string, unknown> | undefined;
   if (
-    typeof subscription !== "object" ||
-    !subscription ||
-    typeof (subscription as Record<string, unknown>)["endpoint"] !== "string" ||
-    typeof (subscription as Record<string, unknown>)["keys"] !== "object" ||
-    !(subscription as Record<string, unknown>)["keys"] ||
-    typeof ((subscription as Record<string, Record<string, unknown>>)["keys"])["p256dh"] !== "string" ||
-    typeof ((subscription as Record<string, Record<string, unknown>>)["keys"])["auth"] !== "string"
+    typeof sub["endpoint"] !== "string" ||
+    typeof keys !== "object" ||
+    !keys ||
+    typeof keys["p256dh"] !== "string" ||
+    typeof keys["auth"] !== "string"
   ) {
-    logger.warn({ userId: user.id, role: user.role }, "push: subscribe request missing required fields (endpoint/keys)");
+    logger.warn(
+      {
+        userId: user.id,
+        role: user.role,
+        receivedKeys: Object.keys(sub),
+        hasEndpoint: typeof sub["endpoint"] === "string",
+        hasP256dh: typeof keys?.["p256dh"] === "string",
+        hasAuth: typeof keys?.["auth"] === "string",
+      },
+      "push: rejected — subscription missing required fields (endpoint/keys); possible fake/test data"
+    );
     res.status(400).json({ error: "subscription يجب أن يحتوي على endpoint وkeys.p256dh وkeys.auth" });
     return;
   }
 
-  logger.info({ userId: user.id, role: user.role }, "push: saving subscription");
+  const endpointStr = sub["endpoint"] as string;
+  const endpointPreview = endpointStr.length > 60 ? endpointStr.substring(0, 60) + "…" : endpointStr;
+
+  logger.info(
+    {
+      userId: user.id,
+      role: user.role,
+      endpoint: endpointPreview,
+      hasP256dh: true,
+      hasAuth: true,
+    },
+    "push: saving real PushSubscription to database"
+  );
 
   try {
     await db
@@ -146,7 +182,14 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
         set: { subscriptionData: sql`excluded.subscription_data` },
       });
 
-    logger.info({ userId: user.id, role: user.role }, "push: subscription saved to push_subscriptions");
+    logger.info(
+      {
+        userId: user.id,
+        role: user.role,
+        endpoint: endpointPreview,
+      },
+      "push: subscription saved to push_subscriptions ✓"
+    );
     res.json({ message: "تم حفظ الاشتراك في الإشعارات" });
   } catch (err) {
     logger.error({ err, userId: user.id, role: user.role }, "push: failed to save subscription");
