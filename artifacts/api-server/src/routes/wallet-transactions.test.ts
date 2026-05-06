@@ -11,6 +11,7 @@ vi.mock("@workspace/db", () => {
     select: vi.fn(),
     insert: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
   };
   return {
     db: mockDb,
@@ -21,10 +22,17 @@ vi.mock("@workspace/db", () => {
       status: "status",
     },
     driversTable: { id: "id", name: "name" },
+    transactionsTable: { driverId: "driverId", amount: "amount", type: "type" },
     eq: vi.fn(),
     desc: vi.fn(),
+    sql: vi.fn(),
   };
 });
+
+vi.mock("../lib/notify", () => ({
+  notify: vi.fn().mockResolvedValue(undefined),
+  notifyAllAdmins: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { db } from "@workspace/db";
 import walletTransactionsRouter from "../routes/wallet-transactions";
@@ -228,6 +236,8 @@ describe("POST /wallet-transactions/:id/approve (admin only)", () => {
       if (callCount === 1) return { set: updateSetMock };
       return { set: updateSetMock2 };
     });
+    const insertValuesMock = vi.fn().mockResolvedValue([]);
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: insertValuesMock });
 
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).post("/wallet-transactions/1/approve");

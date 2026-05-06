@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { API_ORIGIN } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { appPath } from "@/lib/pwa-utils";
 
 type NotificationPermissionState = "default" | "granted" | "denied";
 
@@ -95,8 +96,10 @@ export function usePushNotifications(): UsePushNotificationsResult {
       // 1. Register service worker
       let reg: ServiceWorkerRegistration;
       try {
-        const existing = await navigator.serviceWorker.getRegistration("/");
-        reg = existing ?? await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+        const swScope = appPath();
+        const swUrl = appPath("sw.js");
+        const existing = await navigator.serviceWorker.getRegistration(swScope);
+        reg = existing ?? await navigator.serviceWorker.register(swUrl, { scope: swScope });
         await navigator.serviceWorker.ready;
       } catch (err) {
         console.error("[push] service worker registration failed:", err);
