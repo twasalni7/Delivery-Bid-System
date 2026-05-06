@@ -4,12 +4,38 @@ import { notificationsTable, pushSubscriptionsTable, driversTable, adminsTable }
 import { eq, and } from "drizzle-orm";
 import { logger } from "./logger";
 
-const VAPID_PUBLIC_KEY = process.env["VAPID_PUBLIC_KEY"];
-const VAPID_PRIVATE_KEY = process.env["VAPID_PRIVATE_KEY"];
-const VAPID_SUBJECT = process.env["VAPID_SUBJECT"] || process.env["VAPID_EMAIL"] || "mailto:admin@twasalni.app";
+function getVapidConfig(): { public: string; private: string; subject: string } | null {
+  const pub = process.env["VAPID_PUBLIC_KEY"];
+  const priv = process.env["VAPID_PRIVATE_KEY"];
+  if (!pub || !priv) return null;
+  const subject = process.env["VAPID_SUBJECT"] || process.env["VAPID_EMAIL"] || "mailto:admin@twasalni.app";
+  return { public: pub, private: priv, subject };
+}
 
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+/**
+ * Normalizes a stored push subscription object to the flat format expected by
+ * the web-push library: { endpoint, expirationTime?, keys: { p256dh, auth } }.
+ *
+ * Some subscriptions may have been stored in the wrapped format
+ * { subscription: { endpoint, keys, … }, role } if the canonical
+ * normalization failed at subscribe time.  This function unwraps those so
+ * that web-push always receives a valid PushSubscription object.
+ */
+function normalizeSubscriptionData(data: Record<string, unknown>): Record<string, unknown> {
+  // Already in correct format — has endpoint at top level
+  if (typeof data["endpoint"] === "string" && data["endpoint"]) {
+    return data;
+  }
+  // Wrapped format: { subscription: { endpoint, keys, … }, … }
+  const nested = data["subscription"];
+  if (
+    nested != null &&
+    typeof nested === "object" &&
+    typeof (nested as Record<string, unknown>)["endpoint"] === "string"
+  ) {
+    return nested as Record<string, unknown>;
+  }
+  return data;
 }
 
 const PUSH_RETRY_DELAY_MS = 2000;
@@ -42,7 +68,9 @@ async function getPushSubscription(
       columns: { subscriptionData: true },
     });
     if (!row?.subscriptionData) return null;
-    return JSON.stringify(row.subscriptionData);
+    // Normalize to flat format so sendWebPush always receives { endpoint, keys }
+    const normalized = normalizeSubscriptionData(row.subscriptionData as Record<string, unknown>);
+    return JSON.stringify(normalized);
   } catch (err) {
     logger.warn({ err, userId, userRole }, "notify: failed to fetch push subscription");
   }
@@ -80,10 +108,14 @@ async function sendWebPush(
   icon?: string,
   badge?: string
 ): Promise<void> {
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  const vapid = getVapidConfig();
+  if (!vapid) {
     logger.warn({ userId, userRole, notificationId }, "notify: skipping web push because VAPID is not configured");
     return;
   }
+
+  // Configure VAPID details at send time to pick up any runtime env changes
+  webpush.setVapidDetails(vapid.subject, vapid.public, vapid.private);
 
   let subscription: webpush.PushSubscription;
   try {
