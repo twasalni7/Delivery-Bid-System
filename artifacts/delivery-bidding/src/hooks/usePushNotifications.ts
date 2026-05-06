@@ -61,7 +61,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
     let cancelled = false;
 
-    void (async () => {
+    const checkSubscription = async () => {
       try {
         const reg = await navigator.serviceWorker.ready;
         const existing = await reg.pushManager.getSubscription();
@@ -74,7 +74,11 @@ export function usePushNotifications(): UsePushNotificationsResult {
       } finally {
         if (!cancelled) setIsLoading(false);
       }
-    })();
+    };
+
+    checkSubscription().catch(() => {
+      if (!cancelled) setIsLoading(false);
+    });
 
     return () => { cancelled = true; };
   }, [isSupported]);

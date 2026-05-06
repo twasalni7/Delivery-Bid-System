@@ -14,15 +14,15 @@ function getVapidConfig(): { public: string; private: string; subject: string } 
 
 // Initialize VAPID at module load if keys are available.
 // sendPushToUser() will throw if keys are absent when it is called.
-{
-  const _vapid = getVapidConfig();
-  if (_vapid) {
-    webpush.setVapidDetails(_vapid.subject, _vapid.public, _vapid.private);
+(function initVapid() {
+  const vapid = getVapidConfig();
+  if (vapid) {
+    webpush.setVapidDetails(vapid.subject, vapid.public, vapid.private);
     logger.info("[push] VAPID details initialized at module load");
   } else {
     logger.warn("[push] VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY is missing — push notifications will be disabled until they are set");
   }
-}
+})();
 
 /**
  * Normalizes a stored push subscription object to the flat format expected by
@@ -440,7 +440,13 @@ export async function sendPushToUser(
     return { sent: false };
   }
 
-  const subscription = parsed as unknown as webpush.PushSubscription;
+  const subscription: webpush.PushSubscription = {
+    endpoint: endpoint as string,
+    keys: {
+      p256dh: keys["p256dh"] as string,
+      auth: keys["auth"] as string,
+    },
+  };
 
   // Re-apply VAPID at send time to pick up any runtime env changes
   webpush.setVapidDetails(vapid.subject, vapid.public, vapid.private);
