@@ -1,20 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
-import { Bell, RefreshCw, CheckCircle, XCircle, Smartphone } from "lucide-react";
+import { Bell, RefreshCw, CheckCircle, XCircle, Smartphone, Users, TrendingUp, MousePointerClick } from "lucide-react";
+
+interface DeliveryStats {
+  total: number;
+  delivered: number;
+  failed: number;
+  clicked: number;
+  deliveryRate: string;
+  clickRate: string;
+}
+
+interface SubscriptionsByRole {
+  clients: number;
+  drivers: number;
+  admins: number;
+}
 
 interface NotifMonitor {
   totalNotifications: number;
   totalSubscriptions: number;
+  subscriptionsByRole: SubscriptionsByRole;
+  deliveryStats: DeliveryStats;
   recentNotifications: Array<{
     id: number;
     title: string;
     message: string;
+    userRole: string;
+    type: string;
+    deliveredAt: string | null;
+    clickedAt: string | null;
     createdAt: string;
   }>;
   pushStatus: "configured" | "not_configured";
 }
+
+const ROLE_LABEL: Record<string, string> = {
+  client: "عميل",
+  driver: "سائق",
+  admin: "مشرف",
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  offer: "عرض",
+  request: "طلب",
+  system: "نظام",
+  support: "دعم",
+};
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -26,11 +60,39 @@ function timeAgo(iso: string): string {
   return `منذ ${Math.floor(hrs / 24)} يوم`;
 }
 
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  sub?: string;
+  color?: string;
+}) {
+  return (
+    <div className="rounded-2xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+        style={{ backgroundColor: "var(--brand-subtle)", color: color ?? "var(--brand)" }}
+      >
+        {icon}
+      </div>
+      <div className="text-2xl font-bold" style={{ color: color ?? "var(--text)" }}>{value}</div>
+      <div className="text-sm" style={{ color: "var(--text-muted)" }}>{label}</div>
+      {sub && <div className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>{sub}</div>}
+    </div>
+  );
+}
+
 export default function AdminNotificationsMonitor() {
   const [data, setData] = useState<NotifMonitor | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API}/api/admin/notifications-monitor`, { headers: getAuthHeaders() });
@@ -40,9 +102,12 @@ export default function AdminNotificationsMonitor() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { void fetchData(); }, [fetchData]);
+
+  const s = data?.subscriptionsByRole;
+  const d = data?.deliveryStats;
 
   return (
     <Layout role="admin">
@@ -50,7 +115,7 @@ export default function AdminNotificationsMonitor() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>مراقبة الإشعارات</h1>
           <button
-            onClick={fetchData}
+            onClick={() => void fetchData()}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
           >
@@ -66,44 +131,77 @@ export default function AdminNotificationsMonitor() {
           </div>
         ) : (
           <>
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                { icon: <Bell size={20} />, label: "إجمالي الإشعارات", value: data?.totalNotifications ?? 0 },
-                { icon: <Smartphone size={20} />, label: "الأجهزة المشتركة", value: data?.totalSubscriptions ?? 0 },
-                {
-                  icon: data?.pushStatus === "configured" ? <CheckCircle size={20} /> : <XCircle size={20} />,
-                  label: "حالة Push",
-                  value: data?.pushStatus === "configured" ? "مفعّل" : "غير مفعّل",
-                },
-              ].map((card, i) => (
-                <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-                    {card.icon}
-                  </div>
-                  <div className="text-2xl font-bold" style={{ color: "var(--text)" }}>{card.value}</div>
-                  <div className="text-sm" style={{ color: "var(--text-muted)" }}>{card.label}</div>
+            {/* Push / VAPID status banner */}
+            <div
+              className="flex items-center gap-3 rounded-2xl p-4"
+              style={{
+                backgroundColor: "var(--surface)",
+                border: `1px solid ${data?.pushStatus === "configured" ? "var(--status-active-border)" : "var(--status-cancelled-border)"}`,
+              }}
+            >
+              <div
+                className="w-3 h-3 rounded-full shrink-0"
+                style={{ backgroundColor: data?.pushStatus === "configured" ? "var(--status-active-text)" : "var(--status-cancelled-text)" }}
+              />
+              <div>
+                <div className="font-medium text-sm" style={{ color: "var(--text)" }}>
+                  {data?.pushStatus === "configured" ? "مفاتيح VAPID مضبوطة ✓ — الإشعارات الفورية تعمل" : "مفاتيح VAPID غير مضبوطة"}
                 </div>
-              ))}
+                {data?.pushStatus !== "configured" && (
+                  <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    يرجى إضافة VAPID_PUBLIC_KEY و VAPID_PRIVATE_KEY في متغيرات البيئة
+                  </div>
+                )}
+              </div>
+              {data?.pushStatus === "configured"
+                ? <CheckCircle size={18} className="mr-auto shrink-0" style={{ color: "var(--status-active-text)" }} />
+                : <XCircle size={18} className="mr-auto shrink-0" style={{ color: "var(--status-cancelled-text)" }} />
+              }
             </div>
 
-            {/* VAPID keys status */}
-            <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: data?.pushStatus === "configured" ? "var(--status-active-text)" : "var(--status-cancelled-text)" }}
-                />
-                <div>
-                  <div className="font-medium text-sm" style={{ color: "var(--text)" }}>
-                    {data?.pushStatus === "configured" ? "مفاتيح VAPID مضبوطة ✓" : "مفاتيح VAPID غير مضبوطة"}
+            {/* Summary stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <StatCard
+                icon={<Bell size={20} />}
+                label="إجمالي الإشعارات"
+                value={d?.total ?? 0}
+              />
+              <StatCard
+                icon={<Smartphone size={20} />}
+                label="الأجهزة المشتركة"
+                value={data?.totalSubscriptions ?? 0}
+              />
+              <StatCard
+                icon={<TrendingUp size={20} />}
+                label="معدل التوصيل"
+                value={d?.deliveryRate ?? "0%"}
+                sub={`${d?.delivered ?? 0} من ${d?.total ?? 0}`}
+              />
+              <StatCard
+                icon={<MousePointerClick size={20} />}
+                label="معدل النقر"
+                value={d?.clickRate ?? "0%"}
+                sub={`${d?.clicked ?? 0} نقرة`}
+              />
+            </div>
+
+            {/* Subscriptions by role */}
+            <div className="rounded-2xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: "var(--text)" }}>
+                <Users size={16} />
+                الاشتراكات حسب الدور
+              </h2>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "العملاء", value: s?.clients ?? 0 },
+                  { label: "السائقون", value: s?.drivers ?? 0 },
+                  { label: "المشرفون", value: s?.admins ?? 0 },
+                ].map(({ label, value }) => (
+                  <div key={label} className="rounded-xl px-4 py-3 text-center" style={{ backgroundColor: "var(--surface-2)" }}>
+                    <p className="text-xl font-bold" style={{ color: "var(--brand)" }}>{value}</p>
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{label}</p>
                   </div>
-                  <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {data?.pushStatus === "configured"
-                      ? "الإشعارات الفورية تعمل بشكل صحيح"
-                      : "يرجى إضافة VAPID_PUBLIC_KEY و VAPID_PRIVATE_KEY"}
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -129,6 +227,23 @@ export default function AdminNotificationsMonitor() {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm" style={{ color: "var(--text)" }}>{n.title}</div>
                         <div className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>{n.message}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                            {ROLE_LABEL[n.userRole] ?? n.userRole}
+                          </span>
+                          <span className="text-xs" style={{ color: "var(--text-hint)" }}>
+                            {TYPE_LABEL[n.type] ?? n.type}
+                          </span>
+                          {n.deliveredAt && (
+                            <span className="text-xs" style={{ color: "var(--status-active-text)" }}>✓ وصل</span>
+                          )}
+                          {n.clickedAt && (
+                            <span className="text-xs" style={{ color: "var(--status-active-text)" }}>✓ نُقر</span>
+                          )}
+                          {!n.deliveredAt && (
+                            <span className="text-xs" style={{ color: "var(--text-hint)" }}>⏳ في الانتظار</span>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs shrink-0" style={{ color: "var(--text-hint)" }}>{timeAgo(n.createdAt)}</div>
                     </div>
@@ -142,3 +257,4 @@ export default function AdminNotificationsMonitor() {
     </Layout>
   );
 }
+

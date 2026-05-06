@@ -11,7 +11,7 @@ import {
 import { systemErrorsTable, systemAlertsTable } from "@workspace/db";
 import { requireAuth } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
-import { eq, and, gte, lte, desc, count, sql, ne } from "drizzle-orm";
+import { eq, and, gte, lte, desc, count, isNotNull, isNull, sql, ne } from "drizzle-orm";
 
 const router = Router();
 router.use(requireAuth("admin"));
@@ -221,19 +221,53 @@ router.get("/database-monitor", async (_req, res) => {
 // GET /api/admin/notifications-monitor
 router.get("/notifications-monitor", async (_req, res) => {
   try {
-    const [notifCountResult] = await db.select({ count: count() }).from(notificationsTable);
-    const [subsCountResult] = await db.select({ count: count() }).from(pushSubscriptionsTable);
+    // Run all queries in parallel for efficiency
+    const [
+      [notifCountResult],
+      subsByRole,
+      [deliveredResult],
+      [clickedResult],
+      [failedResult],
+      recentNotifs,
+    ] = await Promise.all([
+      db.select({ count: count() }).from(notificationsTable),
+      db.select({ role: pushSubscriptionsTable.userRole, count: count() })
+        .from(pushSubscriptionsTable)
+        .groupBy(pushSubscriptionsTable.userRole),
+      db.select({ count: count() }).from(notificationsTable).where(isNotNull(notificationsTable.deliveredAt)),
+      db.select({ count: count() }).from(notificationsTable).where(isNotNull(notificationsTable.clickedAt)),
+      db.select({ count: count() }).from(notificationsTable).where(isNull(notificationsTable.deliveredAt)),
+      db.select().from(notificationsTable).orderBy(desc(notificationsTable.createdAt)).limit(10),
+    ]);
 
-    const recentNotifs = await db.select().from(notificationsTable)
-      .orderBy(desc(notificationsTable.createdAt))
-      .limit(10);
+    const roleCount = (role: string) =>
+      Number(subsByRole.find((r) => r.role === role)?.count ?? 0);
+    const totalSubscriptions = subsByRole.reduce((s, r) => s + Number(r.count ?? 0), 0);
 
-    const vapidPublic = process.env["VAPID_PUBLIC_KEY"] ?? process.env["NEXT_PUBLIC_VAPID_PUBLIC_KEY"];
+    const vapidPublic = process.env["VAPID_PUBLIC_KEY"];
     const vapidPrivate = process.env["VAPID_PRIVATE_KEY"];
 
+    const total = Number(notifCountResult?.count ?? 0);
+    const delivered = Number(deliveredResult?.count ?? 0);
+    const clicked = Number(clickedResult?.count ?? 0);
+    const failed = Number(failedResult?.count ?? 0);
+
     res.json({
-      totalNotifications: Number(notifCountResult?.count ?? 0),
-      totalSubscriptions: Number(subsCountResult?.count ?? 0),
+      totalNotifications: total,
+      totalSubscriptions,
+      subscriptionsByRole: {
+        clients: roleCount("client"),
+        drivers: roleCount("driver"),
+        admins: roleCount("admin"),
+      },
+      deliveryStats: {
+        total,
+        delivered,
+        failed,
+        clicked,
+        deliveryRate: total > 0 ? `${((delivered / total) * 100).toFixed(1)}%` : "0%",
+        clickRate: delivered > 0 ? `${((clicked / delivered) * 100).toFixed(1)}%` : "0%",
+      },
       recentNotifications: recentNotifs,
       pushStatus: (vapidPublic && vapidPrivate) ? "configured" : "not_configured",
     });
