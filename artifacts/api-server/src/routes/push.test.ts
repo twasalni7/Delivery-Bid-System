@@ -217,7 +217,7 @@ describe("POST /push/subscribe", () => {
     expect(res.status).toBe(500);
   });
 
-  it("normalises flat body format (body IS the subscription, no wrapper)", async () => {
+  it("normalizes flat body format (body IS the subscription, no wrapper)", async () => {
     const onConflictMock = vi.fn().mockResolvedValue([]);
     const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
@@ -229,7 +229,7 @@ describe("POST /push/subscribe", () => {
     expect(res.body).toHaveProperty("message");
   });
 
-  it("normalises double-nested format { subscription: { subscription: {...} } }", async () => {
+  it("normalizes double-nested format { subscription: { subscription: {...} } }", async () => {
     const onConflictMock = vi.fn().mockResolvedValue([]);
     const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
@@ -242,7 +242,7 @@ describe("POST /push/subscribe", () => {
     expect(res.body).toHaveProperty("message");
   });
 
-  it("normalises top-level keys format { endpoint, p256dh, auth }", async () => {
+  it("normalizes top-level keys format { endpoint, p256dh, auth }", async () => {
     const onConflictMock = vi.fn().mockResolvedValue([]);
     const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });

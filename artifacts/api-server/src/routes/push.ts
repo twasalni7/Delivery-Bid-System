@@ -99,7 +99,7 @@ router.get("/vapid-public-key", (_req, res) => {
 });
 
 /**
- * Normalises any common PushSubscription shape received from browsers or
+ * Normalizes any common PushSubscription shape received from browsers or
  * client code into the canonical form expected by the server:
  *   { endpoint: string, expirationTime: number|null, keys: { p256dh, auth } }
  *
@@ -168,7 +168,7 @@ function normalizePushSubscription(body: unknown): {
  * Reads the user from req.tokenUser (Bearer token) or req.session.user.
  * Body: { subscription: PushSubscriptionJSON }
  *
- * Automatically normalises any common PushSubscription format before saving.
+ * Automatically normalizes any common PushSubscription format before saving.
  * Uses INSERT … ON CONFLICT DO UPDATE so that re-subscribing the same device
  * only updates the existing row (no duplicates).
  */
