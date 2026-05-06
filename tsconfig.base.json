@@ -16,7 +16,6 @@
     "strictBindCallApply": false,
     "strictPropertyInitialization": false,
     "useUnknownInCatchVariables": false,
-    "alwaysStrict": false,
     "skipLibCheck": true,
     "target": "es2022",
     "types": ["node"],

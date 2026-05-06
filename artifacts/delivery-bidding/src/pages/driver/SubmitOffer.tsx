@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, MapPin, Clock, Users, CheckCircle, ExternalLink } from "lucide-react";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12hLong } from "@/lib/time-utils";
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
 
@@ -98,12 +98,25 @@ export default function SubmitOffer() {
                 <p className="text-sm font-black" style={{ color: "var(--text)" }}>{request.workLocation}</p>
               </div>
               <div className="flex items-center gap-4 mt-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "var(--text-muted)" }}>
-                  <Clock size={11} />
+                <div className="flex-1">
                   {request.shifts && request.shifts.length > 0 ? (
-                    <span dir="ltr">{request.shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
+                    <div className="space-y-2 mt-2">
+                      {request.shifts.map((s, i) => (
+                        <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                          <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>
+                            {s.label ?? `الوردية ${i + 1}`}
+                          </span>
+                          <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
+                            {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    <span dir="ltr">{formatTime12h(request.morningTime)}{request.eveningTime ? ` – ${formatTime12h(request.eveningTime)}` : ""}</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold mt-2" style={{ color: "var(--text-muted)" }}>
+                      <Clock size={11} />
+                      <span dir="ltr">{formatTime12hLong(request.morningTime)}{request.eveningTime ? ` ← ${formatTime12hLong(request.eveningTime)}` : ""}</span>
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "var(--text-muted)" }}>

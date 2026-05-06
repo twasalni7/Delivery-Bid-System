@@ -8,6 +8,7 @@ vi.mock("@workspace/db", () => {
       requestsTable: { findFirst: vi.fn() },
       driversTable: { findFirst: vi.fn() },
       offersTable: { findFirst: vi.fn() },
+      appConfigTable: { findFirst: vi.fn() },
     },
     select: vi.fn(),
     insert: vi.fn(),
@@ -47,6 +48,8 @@ vi.mock("@workspace/api-zod", () => ({
 
 vi.mock("../lib/notify", () => ({
   notify: vi.fn().mockResolvedValue(undefined),
+  notifyAllAdmins: vi.fn().mockResolvedValue(undefined),
+  notifyAllDrivers: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { db } from "@workspace/db";
@@ -87,7 +90,7 @@ describe("GET /requests", () => {
     const chain = makeSelectChain([]);
     (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/requests");
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -167,14 +170,14 @@ describe("POST /requests (client creates request)", () => {
 
 describe("GET /requests/:id", () => {
   it("returns 400 for non-numeric id", async () => {
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/requests/abc");
     expect(res.status).toBe(400);
   });
 
   it("returns 404 when request not found", async () => {
     (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/requests/999");
     expect(res.status).toBe(404);
   });

@@ -11,10 +11,11 @@ export const clientsTable = pgTable("clients", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertClientSchema = createInsertSchema(clientsTable).omit({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const insertClientSchema = (createInsertSchema(clientsTable) as z.ZodObject<any>).omit({
   id: true,
   createdAt: true,
 });
 
-export type InsertClient = z.infer<typeof insertClientSchema>;
+export type InsertClient = Omit<typeof clientsTable.$inferInsert, "id" | "createdAt">;
 export type Client = typeof clientsTable.$inferSelect;

@@ -9,7 +9,7 @@ import {
   transactionsTable,
   walletTransactionsTable,
   supportTicketsTable,
-  ADMIN_REVIEW_DISTANCE_KM,
+  haversineKm,
 } from "@workspace/db";
 import { eq, count, ne, desc, sql, sum, inArray, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
@@ -18,7 +18,7 @@ import { logger } from "../lib/logger";
 import { CreateRequestBody } from "@workspace/api-zod";
 import { notify } from "../lib/notify";
 import { getSessionUser } from "../lib/session";
-import { getBidFee } from "./pricing";
+import { getBidFee, calculatePriceForRequest } from "./pricing";
 import { withDbTransaction } from "../lib/db-transaction";
 import { normalizeDriverMobile } from "./auth";
 
@@ -872,8 +872,32 @@ router.post("/requests", async (req, res) => {
     req.body?.selectedDriverId != null ? Number(req.body.selectedDriverId) : null;
 
   try {
-    const distanceKm = parsed.data.distanceKm ?? null;
-    const needsAdminReview = distanceKm != null && distanceKm > ADMIN_REVIEW_DISTANCE_KM;
+    let distanceKm: number | null = parsed.data.distanceKm ?? null;
+    if (
+      distanceKm == null &&
+      parsed.data.homeLat != null &&
+      parsed.data.homeLng != null &&
+      parsed.data.destLat != null &&
+      parsed.data.destLng != null
+    ) {
+      distanceKm = haversineKm(parsed.data.homeLat, parsed.data.homeLng, parsed.data.destLat, parsed.data.destLng);
+    }
+
+    let needsAdminReview = false;
+    let calculatedMonthlyPrice = 0;
+    if (distanceKm != null) {
+      const pricing = await calculatePriceForRequest({
+        distanceKm,
+        numberOfPeople: parsed.data.numberOfPeople ?? 1,
+        workingDaysPerWeek: parsed.data.workingDaysPerWeek ?? 5,
+        numberOfShifts: parsed.data.numberOfShifts ?? 1,
+        shifts: (parsed.data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
+        additionalLocations:
+          (parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
+      });
+      needsAdminReview = pricing.needsAdminReview;
+      calculatedMonthlyPrice = pricing.price;
+    }
 
     const [created] = await db
       .insert(requestsTable)
@@ -892,10 +916,11 @@ router.post("/requests", async (req, res) => {
         numberOfShifts: parsed.data.numberOfShifts ?? 1,
         morningTime: parsed.data.morningTime,
         eveningTime: parsed.data.eveningTime,
+        shifts: (parsed.data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
         additionalLocations: parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
         notes: parsed.data.notes,
         clientType: parsed.data.clientType ?? "غيره",
-        monthlyPrice: parsed.data.monthlyPrice ?? 0,
+        monthlyPrice: parsed.data.monthlyPrice ?? calculatedMonthlyPrice,
         clientId: Number.isFinite(clientId) ? clientId : null,
         selectedDriverId: Number.isFinite(selectedDriverId) ? selectedDriverId : null,
         status: selectedDriverId ? "SELECTED" : "OPEN",

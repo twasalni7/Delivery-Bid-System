@@ -6,7 +6,7 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12hLong, buildShiftsPayload, SHIFT_LABELS } from "@/lib/time-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { ArrowRight, Plus, X, Home, Briefcase, Users, Clock, CheckCircle2, Check } from "lucide-react";
@@ -30,7 +30,73 @@ const DAYS = [
   { key: "sat", label: "س" },
 ];
 
+const MAX_SHIFTS = 4;
+
+type ShiftEntry = { goTime: string; returnTime: string };
+
 type AdditionalLocation = { type: "pickup" | "dropoff"; address: string };
+
+/** Single shift editor card */
+function ShiftCard({
+  index,
+  shift,
+  onChange,
+  onRemove,
+}: {
+  index: number;
+  shift: ShiftEntry;
+  onChange: (s: ShiftEntry) => void;
+  onRemove?: () => void;
+}) {
+  return (
+    <div className="rounded-[1.5rem] p-4 space-y-3" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-black" style={{ color: "var(--text)" }}>
+          {SHIFT_LABELS[index] ?? `الوردية ${index + 1}`}
+        </span>
+        {onRemove && (
+          <button
+            onClick={onRemove}
+            className="p-1.5 rounded-xl transition-colors"
+            style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>⏰ وقت الذهاب</label>
+          <input
+            type="time"
+            value={shift.goTime}
+            onChange={(e) => onChange({ ...shift, goTime: e.target.value })}
+            className="w-full rounded-2xl font-bold text-base input-dark px-3 py-2.5 focus:outline-none"
+            style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
+            dir="ltr"
+          />
+          {shift.goTime && (
+            <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12hLong(shift.goTime)}</p>
+          )}
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>🔄 وقت العودة</label>
+          <input
+            type="time"
+            value={shift.returnTime}
+            onChange={(e) => onChange({ ...shift, returnTime: e.target.value })}
+            className="w-full rounded-2xl font-bold text-base input-dark px-3 py-2.5 focus:outline-none"
+            style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text)" }}
+            dir="ltr"
+          />
+          {shift.returnTime && (
+            <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{formatTime12hLong(shift.returnTime)}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
@@ -71,8 +137,7 @@ export default function AdminCreateRequest() {
   const [additionalLocations, setAdditionalLocations] = useState<AdditionalLocation[]>([]);
 
   // Step 3
-  const [morningTime, setMorningTime] = useState("");
-  const [eveningTime, setEveningTime] = useState("");
+  const [shifts, setShifts] = useState<ShiftEntry[]>([{ goTime: "", returnTime: "" }]);
   const [numberOfPeople, setNumberOfPeople] = useState("1");
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
   const [notes, setNotes] = useState("");
@@ -99,12 +164,15 @@ export default function AdminCreateRequest() {
   const canNext = () => {
     if (step === 1) return !!clientType;
     if (step === 2) return homeLocation.trim() && workLocation.trim();
-    if (step === 3) return morningTime && selectedDays.length > 0;
+    if (step === 3) return !!(shifts[0]?.goTime) && selectedDays.length > 0;
     return phone.trim().length >= 10;
   };
 
   const handleSubmit = async () => {
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
+    const firstGoTime = shifts[0]?.goTime ?? "";
+    const firstReturnTime = shifts[0]?.returnTime ?? "";
+    const validShifts = buildShiftsPayload(shifts);
     setSubmitting(true);
     try {
       const res = await fetch(`${API}/api/admin/requests`, {
@@ -118,9 +186,10 @@ export default function AdminCreateRequest() {
           phone: phone.trim(),
           numberOfPeople: parseInt(numberOfPeople) || 1,
           workingDaysPerWeek: selectedDays.length,
-          numberOfShifts: eveningTime ? 2 : 1,
-          morningTime,
-          eveningTime: eveningTime || undefined,
+          numberOfShifts: validShifts.length || 1,
+          morningTime: firstGoTime,
+          eveningTime: firstReturnTime || undefined,
+          shifts: validShifts.length > 0 ? validShifts : undefined,
           notes: notes.trim() || undefined,
           monthlyPrice: monthlyPrice.trim() ? parseFloat(monthlyPrice) : 0,
         }),
@@ -276,29 +345,42 @@ export default function AdminCreateRequest() {
             {/* ── Step 3: Schedule ── */}
             {step === 3 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت الذهاب</label>
-                    <Input
-                      type="time"
-                      value={morningTime}
-                      onChange={(e) => setMorningTime(e.target.value)}
-                      className="rounded-2xl font-bold text-base input-dark"
-                      dir="ltr"
-                    />
-                    {morningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(morningTime)}</p>}
+                {/* Multi-shift editor */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
+                      ⏰ الأوقات / الورديات
+                    </label>
+                    <span className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
+                      {shifts.length} / {MAX_SHIFTS}
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>⏰ وقت العودة</label>
-                    <Input
-                      type="time"
-                      value={eveningTime}
-                      onChange={(e) => setEveningTime(e.target.value)}
-                      className="rounded-2xl font-bold text-base input-dark"
-                      dir="ltr"
+
+                  {shifts.map((shift, idx) => (
+                    <ShiftCard
+                      key={idx}
+                      index={idx}
+                      shift={shift}
+                      onChange={(updated) =>
+                        setShifts((prev) => prev.map((s, i) => (i === idx ? updated : s)))
+                      }
+                      onRemove={
+                        shifts.length > 1
+                          ? () => setShifts((prev) => prev.filter((_, i) => i !== idx))
+                          : undefined
+                      }
                     />
-                    {eveningTime && <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12h(eveningTime)}</p>}
-                  </div>
+                  ))}
+
+                  {shifts.length < MAX_SHIFTS && (
+                    <button
+                      onClick={() => setShifts((prev) => [...prev, { goTime: "", returnTime: "" }])}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[1.5rem] border-2 border-dashed text-sm font-black transition-colors"
+                      style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+                    >
+                      <Plus size={15} /> إضافة وردية
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-3">

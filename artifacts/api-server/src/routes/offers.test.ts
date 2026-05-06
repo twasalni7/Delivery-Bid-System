@@ -8,6 +8,7 @@ vi.mock("@workspace/db", () => {
       offersTable: { findFirst: vi.fn() },
       driversTable: { findFirst: vi.fn() },
       requestsTable: { findFirst: vi.fn() },
+      appConfigTable: { findFirst: vi.fn() },
     },
     select: vi.fn(),
     insert: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock("@workspace/api-zod", () => ({
 
 vi.mock("../lib/notify", () => ({
   notify: vi.fn().mockResolvedValue(undefined),
+  notifyAllAdmins: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { db } from "@workspace/db";
@@ -306,13 +308,14 @@ describe("DELETE /offers/:id (driver withdraws offer)", () => {
 
   it("deletes offer successfully", async () => {
     (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 1, driverId: 2, requestId: 5,
+      id: 1, driverId: 2, requestId: 5, status: "PENDING",
     });
     (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 5, status: "OPEN",
     });
     const whereMock = vi.fn().mockResolvedValue([]);
-    (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
+    const setMock = vi.fn().mockReturnValue({ where: whereMock });
+    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
 
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
     const res = await request(app).delete("/offers/1");

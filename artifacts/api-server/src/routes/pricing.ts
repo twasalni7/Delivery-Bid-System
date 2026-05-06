@@ -16,14 +16,90 @@ import { logger } from "../lib/logger";
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+const DEFAULT_PRICING_ENGINE = "matrix" as const;
+const BASE_LOCATION_COUNT = 1;
+// Business rule: each extra passenger adds 50% to the base total (shared trips).
+const EXTRA_PASSENGER_FACTOR_INCREMENT = 0.5;
+
+type AppConfigMap = Record<string, string>;
+
+interface FormulaV2Constants {
+  pricePerKm: number;
+  visitFee: number;
+  extraLocationRate: number;
+  weeks: number;
+}
+
+const DEFAULT_FORMULA_V2_CONSTANTS: FormulaV2Constants = {
+  pricePerKm: 0.85,
+  visitFee: 15,
+  extraLocationRate: 0.15,
+  weeks: 4,
+};
+
+export type PricingEngine = "matrix" | "formula_v2";
+
+export interface UnifiedPricingInput {
+  distance: number;
+  daysPerWeek: number;
+  type: string | number;
+  persons: number;
+  locations: number;
+}
 
 // ─── Helper: load pricing config from DB ──────────────────────────────────────
 
-export async function loadPricingConfig(): Promise<PricingConfig> {
+async function loadAppConfigMap(): Promise<AppConfigMap> {
   try {
     const rows = await db.select().from(appConfigTable);
-    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  } catch (err) {
+    logger.error({ err }, "loadAppConfigMap: DB read failed, using empty config");
+    return {};
+  }
+}
 
+function parseStrictPositiveNumber(raw: string | undefined, fallback: number): number {
+  const parsed = Number.parseFloat(raw ?? "");
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseBoolean(raw: string | undefined, fallback: boolean): boolean {
+  if (raw === undefined) return fallback;
+  const normalized = String(raw).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  logger.warn({ raw }, "Invalid boolean app_config value, using fallback");
+  return fallback;
+}
+
+async function loadPricingRuntimeConfig(): Promise<{
+  engine: PricingEngine;
+  shadowCompare: boolean;
+  formulaConstants: FormulaV2Constants;
+}> {
+  const map = await loadAppConfigMap();
+  const engine = resolvePricingEngine(map["pricing_engine"]);
+  const shadowCompare = parseBoolean(map["pricing_shadow_compare"], false);
+  const formulaConstants: FormulaV2Constants = {
+    pricePerKm: parseStrictPositiveNumber(map["pricing_v2_price_per_km"], DEFAULT_FORMULA_V2_CONSTANTS.pricePerKm),
+    visitFee: parseStrictPositiveNumber(map["pricing_v2_visit_fee"], DEFAULT_FORMULA_V2_CONSTANTS.visitFee),
+    extraLocationRate: parseStrictPositiveNumber(
+      map["pricing_v2_extra_location_rate"],
+      DEFAULT_FORMULA_V2_CONSTANTS.extraLocationRate
+    ),
+    weeks: parseStrictPositiveNumber(map["pricing_v2_weeks"], DEFAULT_FORMULA_V2_CONSTANTS.weeks),
+  };
+  return { engine, shadowCompare, formulaConstants };
+}
+
+export function resolvePricingEngine(raw: string | undefined | null): PricingEngine {
+  return raw === "formula_v2" ? "formula_v2" : DEFAULT_PRICING_ENGINE;
+}
+
+export async function loadPricingConfig(): Promise<PricingConfig> {
+  try {
+    const map = await loadAppConfigMap();
     const def = getDefaultPricingConfig();
 
     let tiers: PricingTier[] = def.tiers;
@@ -74,6 +150,163 @@ export interface MatrixPricingResult {
   needsAdminReview: boolean;
   distanceKm: number;
   numberOfPeople: number;
+}
+
+export interface FormulaV2Result {
+  totalPrice: number;
+  pricePerPerson: number;
+  details: {
+    monthlyKm: number;
+    monthlyTrips: number;
+    baseCost: number;
+  };
+}
+
+export function resolveTripsPerDay(type: string | number): number {
+  if (type === "one_way") return 1;
+  if (type === "round_trip") return 2;
+  if (type === "shift") return 4;
+
+  const numericType = typeof type === "number" ? type : Number.parseInt(String(type), 10);
+  if (Number.isFinite(numericType) && numericType > 0) {
+    return Math.round(numericType);
+  }
+  return 1;
+}
+
+export function calculateSubscriptionPriceV2(
+  input: UnifiedPricingInput,
+  constants: FormulaV2Constants = DEFAULT_FORMULA_V2_CONSTANTS
+): FormulaV2Result {
+  const distance = Math.max(0, Number(input.distance) || 0);
+  const daysPerWeek = Math.max(1, Math.round(Number(input.daysPerWeek) || 1));
+  const persons = Math.max(1, Math.round(Number(input.persons) || 1));
+  const locations = Math.max(1, Math.round(Number(input.locations) || 1));
+  const tripsPerDay = resolveTripsPerDay(input.type);
+
+  const totalKmMonthly = distance * tripsPerDay * daysPerWeek * constants.weeks;
+  const transportCost = totalKmMonthly * constants.pricePerKm;
+  const extraLocationsCount = Math.max(0, locations - 1);
+  const locationExtraCharge = extraLocationsCount * (transportCost * constants.extraLocationRate);
+  const totalTripsMonthly = tripsPerDay * daysPerWeek * constants.weeks;
+  const laborCost = totalTripsMonthly * constants.visitFee;
+  const baseTotal = transportCost + locationExtraCharge + laborCost;
+  // Business formula: every extra rider adds 50% to base (driver income grows, per-person share drops).
+  const sharedRidePricingFactor = 1 + (persons - 1) * EXTRA_PASSENGER_FACTOR_INCREMENT;
+  const finalTotal = baseTotal * sharedRidePricingFactor;
+  const pricePerPerson = finalTotal / persons;
+
+  return {
+    totalPrice: Math.round(finalTotal),
+    pricePerPerson: Math.round(pricePerPerson),
+    details: {
+      monthlyKm: totalKmMonthly,
+      monthlyTrips: totalTripsMonthly,
+      baseCost: Math.round(baseTotal),
+    },
+  };
+}
+
+export function getTripTypeFromShifts(
+  numberOfShifts?: number | null,
+  shifts?: { goTime: string; returnTime?: string; label?: string }[] | null
+): string | number {
+  const shiftsCount = Array.isArray(shifts) ? shifts.length : 0;
+  const count = shiftsCount > 0 ? shiftsCount : Math.max(1, Math.round(Number(numberOfShifts) || 1));
+  if (count === 1) return "one_way";
+  if (count === 2) return "round_trip";
+  if (count === 4) return "shift";
+  return count;
+}
+
+function toFormulaResult(distanceKm: number, persons: number, formula: FormulaV2Result): MatrixPricingResult {
+  return {
+    pricePerPerson: formula.pricePerPerson,
+    price: formula.totalPrice,
+    needsAdminReview: false,
+    distanceKm,
+    numberOfPeople: persons,
+  };
+}
+
+export async function getPriceFromActiveEngine(input: UnifiedPricingInput): Promise<MatrixPricingResult> {
+  const distanceKm = Math.max(0, Number(input.distance) || 0);
+  const persons = Math.max(1, Math.round(Number(input.persons) || 1));
+  const needsAdminReview = distanceKm > ADMIN_REVIEW_DISTANCE_KM;
+
+  if (needsAdminReview) {
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: persons };
+  }
+
+  const runtime = await loadPricingRuntimeConfig();
+  const formulaResult = calculateSubscriptionPriceV2({ ...input, distance: distanceKm, persons }, runtime.formulaConstants);
+
+  if (runtime.engine === "formula_v2") {
+    if (runtime.shadowCompare) {
+      const matrix = await getPriceFromMatrix(distanceKm, persons);
+      logger.info(
+        {
+          engine: runtime.engine,
+          distanceKm,
+          persons,
+          formulaPrice: formulaResult.totalPrice,
+          matrixPrice: matrix.price,
+          diff: formulaResult.totalPrice - matrix.price,
+        },
+        "pricing shadow compare"
+      );
+    }
+    return toFormulaResult(distanceKm, persons, formulaResult);
+  }
+
+  const matrix = await getPriceFromMatrix(distanceKm, persons);
+  if (runtime.shadowCompare) {
+    logger.info(
+      {
+        engine: runtime.engine,
+        distanceKm,
+        persons,
+        matrixPrice: matrix.price,
+        formulaPrice: formulaResult.totalPrice,
+        diff: matrix.price - formulaResult.totalPrice,
+      },
+      "pricing shadow compare"
+    );
+  }
+  return matrix;
+}
+
+export interface PriceForRequestInput {
+  distanceKm: number;
+  numberOfPeople?: number | null;
+  workingDaysPerWeek?: number | null;
+  numberOfShifts?: number | null;
+  shifts?: { goTime: string; returnTime?: string; label?: string }[] | null;
+  additionalLocations?: { type: "pickup" | "dropoff"; address: string }[] | null;
+  locations?: number | null;
+  type?: string | number | null;
+}
+
+export async function calculatePriceForRequest(input: PriceForRequestInput): Promise<MatrixPricingResult> {
+  const daysPerWeek = Math.max(1, Math.round(Number(input.workingDaysPerWeek) || 5));
+  const persons = Math.max(1, Math.round(Number(input.numberOfPeople) || 1));
+  const type = input.type ?? getTripTypeFromShifts(input.numberOfShifts, input.shifts);
+  const derivedLocations =
+    BASE_LOCATION_COUNT + (Array.isArray(input.additionalLocations) ? input.additionalLocations.length : 0);
+  const explicitLocations = Number(input.locations);
+  // If caller sends explicit `locations`, it has priority; otherwise derive from request additional stops.
+  const locations =
+    Number.isFinite(explicitLocations) && explicitLocations >= BASE_LOCATION_COUNT
+      ? Math.round(explicitLocations)
+      : derivedLocations;
+
+  return getPriceFromActiveEngine({
+    distance: input.distanceKm,
+    daysPerWeek,
+    type,
+    persons,
+    locations,
+  });
 }
 
 export async function getPriceFromMatrix(
@@ -244,6 +477,12 @@ router.post("/calculate", requireAuth(), async (req, res) => {
     homeLat, homeLng, destLat, destLng,
     numberOfPeople,
     distanceKm: clientDistanceKm,
+    workingDaysPerWeek,
+    numberOfShifts,
+    shifts,
+    additionalLocations,
+    locations,
+    type,
   } = req.body ?? {};
 
   try {
@@ -261,7 +500,16 @@ router.post("/calculate", requireAuth(), async (req, res) => {
       return;
     }
 
-    const result = await getPriceFromMatrix(distKm, Number(numberOfPeople) || 1);
+    const result = await calculatePriceForRequest({
+      distanceKm: distKm,
+      numberOfPeople: Number(numberOfPeople) || 1,
+      workingDaysPerWeek: Number(workingDaysPerWeek) || 5,
+      numberOfShifts: Number(numberOfShifts) || null,
+      shifts: Array.isArray(shifts) ? shifts : null,
+      additionalLocations: Array.isArray(additionalLocations) ? additionalLocations : null,
+      locations: Number(locations) || null,
+      type: type ?? null,
+    });
     res.json(result);
   } catch (err) {
     logger.error({ err }, "pricing POST /calculate error");

@@ -65,7 +65,7 @@ describe("GET /drivers", () => {
     ]);
     (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/drivers");
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -137,14 +137,14 @@ describe("GET /drivers/me/requests", () => {
 
 describe("GET /drivers/:id", () => {
   it("returns 400 for invalid id", async () => {
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/drivers/abc");
     expect(res.status).toBe(400);
   });
 
   it("returns 404 when driver not found", async () => {
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/drivers/999");
     expect(res.status).toBe(404);
   });
@@ -160,7 +160,7 @@ describe("GET /drivers/:id", () => {
       warningCount: 1,
       createdAt: new Date(),
     });
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/drivers/3");
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 3, name: "Fahad" });
@@ -256,7 +256,7 @@ describe("PATCH /drivers/:id/balance", () => {
 
 describe("GET /drivers/:id/transactions", () => {
   it("returns 400 for non-numeric id", async () => {
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/drivers/abc/transactions");
     expect(res.status).toBe(400);
   });
@@ -268,7 +268,7 @@ describe("GET /drivers/:id/transactions", () => {
     ]);
     (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
-    const app = createApp();
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/drivers/2/transactions");
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);

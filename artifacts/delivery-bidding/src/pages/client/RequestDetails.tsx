@@ -8,7 +8,8 @@ import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Star, AlertCircle } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
-import { formatTime12h } from "@/lib/time-utils";
+import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 
@@ -258,7 +259,16 @@ export default function RequestDetails() {
                 <div className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                   <Clock size={13} />
                   {shifts && shifts.length > 0 ? (
-                    <span dir="ltr">{shifts.map((s) => `${formatTime12h(s.goTime)}${s.returnTime ? ` – ${formatTime12h(s.returnTime)}` : ""}`).join(" | ")}</span>
+                    <div className="space-y-1.5 mt-1 flex-1">
+                      {shifts.map((s, i) => (
+                        <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                          <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>{s.label ?? `الوردية ${i + 1}`}</span>
+                          <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
+                            {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <>
                       <span dir="ltr">{formatTime12h(request.morningTime)}</span>
@@ -345,7 +355,7 @@ export default function RequestDetails() {
                   {request.selectedDriver.mobile}
                 </a>
                 <a
-                  href={`https://wa.me/${request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966")}`}
+                  href={buildWhatsAppUrl(request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966"))}
                   target="_blank" rel="noopener noreferrer"
                   className="mr-auto text-xs font-black px-4 py-2 rounded-full flex items-center gap-1.5"
                   style={{ backgroundColor: "#25D366", color: "#fff", boxShadow: "0 2px 12px rgba(37,211,102,0.3)" }}
