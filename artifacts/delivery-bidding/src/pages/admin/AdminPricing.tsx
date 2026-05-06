@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { formatTime12h } from "@/lib/time-utils";
 import { Plus, Trash2, Save, RefreshCw, AlertTriangle, MapPin, Clock, Users, Settings2 } from "lucide-react";
 import type { PricingConfig, PricingTier, SharingDiscount } from "@/lib/pricing";
 
@@ -423,7 +424,7 @@ export default function AdminPricing() {
                       <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>من: {r.homeLocation}</p>
                       <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>إلى: {r.workLocation}</p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        وقت الذهاب: {r.morningTime}
+                        وقت الذهاب: {formatTime12h(r.morningTime)}
                       </p>
                     </div>
                   </div>

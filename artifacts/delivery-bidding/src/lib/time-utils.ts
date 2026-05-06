@@ -5,7 +5,8 @@ export function formatTime12h(time: string | null | undefined): string {
   const minute = minuteStr ?? "00";
   const period = hour < 12 ? "ص" : "م";
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${minute} ${period}`;
+  const paddedHour = String(displayHour).padStart(2, "0");
+  return `${paddedHour}:${minute} ${period}`;
 }
 
 export function timeAgo(dateStr: string): string {

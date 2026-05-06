@@ -14,6 +14,7 @@ import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, Refr
 import type { DriverDetail } from "@workspace/api-client-react";
 import * as XLSX from "xlsx";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { openWhatsApp } from "@/lib/whatsapp-utils";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -431,7 +432,7 @@ function sendWhatsApp(driver: { mobile?: string | null; loginCode?: string | nul
 إذا واجهت أي مشكلة تواصل معنا
 
 بالتوفيق 🌹`;
-  window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`, "_blank");
+  openWhatsApp(wa, message);
 }
 
 function copyCredentials(driver: { mobile?: string | null; loginCode?: string | null }, toast: (opts: { title: string; variant?: "destructive" }) => void) {

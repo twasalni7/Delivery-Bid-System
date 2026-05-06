@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { MessageCircle, Send, X, MapPin } from "lucide-react";
 import { formatTime12h } from "@/lib/time-utils";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
@@ -252,7 +253,7 @@ export default function DriverRequests() {
                 {r.phone && (
                   <div className="flex items-center justify-between gap-3">
                     <a href={`tel:${r.phone}`} className="font-black text-sm" style={{ color: "var(--text-sub)" }} dir="ltr">{r.phone}</a>
-                    <a href={`https://wa.me/${r.phone.replace(/\D/g, "").replace(/^0/, "966")}`}
+                    <a href={buildWhatsAppUrl(r.phone.replace(/\D/g, "").replace(/^0/, "966"))}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-black"
                       style={{ backgroundColor: "#25D366", color: "#fff", boxShadow: "0 2px 12px rgba(37,211,102,0.3)" }}>

@@ -9,6 +9,7 @@ import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, Message
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 
@@ -345,7 +346,7 @@ export default function RequestDetails() {
                   {request.selectedDriver.mobile}
                 </a>
                 <a
-                  href={`https://wa.me/${request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966")}`}
+                  href={buildWhatsAppUrl(request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966"))}
                   target="_blank" rel="noopener noreferrer"
                   className="mr-auto text-xs font-black px-4 py-2 rounded-full flex items-center gap-1.5"
                   style={{ backgroundColor: "#25D366", color: "#fff", boxShadow: "0 2px 12px rgba(37,211,102,0.3)" }}
