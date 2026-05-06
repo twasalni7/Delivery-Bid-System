@@ -9,7 +9,22 @@ export function formatTime12h(time: string | null | undefined): string {
   return `${paddedHour}:${minute} ${period}`;
 }
 
-/** Same as formatTime12h but uses "صباحاً" / "مساءً" instead of "ص" / "م" */
+export const SHIFT_LABELS = ["الوردية الأولى", "الوردية الثانية", "الوردية الثالثة", "الوردية الرابعة"];
+
+/** Converts a raw ShiftEntry list into the API-ready shifts array with labels. */
+export function buildShiftsPayload(
+  shifts: { goTime: string; returnTime: string }[]
+): { label: string; goTime: string; returnTime?: string }[] {
+  return shifts
+    .filter((s) => s.goTime)
+    .map((s, i) => ({
+      label: SHIFT_LABELS[i] ?? `الوردية ${i + 1}`,
+      goTime: s.goTime,
+      returnTime: s.returnTime || undefined,
+    }));
+}
+
+
 export function formatTime12hLong(time: string | null | undefined): string {
   if (!time) return "";
   const [hourStr, minuteStr] = time.split(":");

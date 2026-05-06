@@ -6,7 +6,7 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
+import { formatTime12h, formatTime12hLong, buildShiftsPayload, SHIFT_LABELS } from "@/lib/time-utils";
 import { haversineKm } from "@/lib/pricing";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
@@ -35,7 +35,6 @@ const DAYS = [
   { key: "sat", label: "س" },
 ];
 
-const SHIFT_LABELS = ["الوردية الأولى", "الوردية الثانية", "الوردية الثالثة", "الوردية الرابعة"];
 const MAX_SHIFTS = 4;
 
 type ShiftEntry = { goTime: string; returnTime: string };
@@ -411,13 +410,7 @@ export default function CreateRequest() {
     // Derive backward-compat scalar times from the first shift
     const firstGoTime = shifts[0]?.goTime ?? "";
     const firstReturnTime = shifts[0]?.returnTime ?? "";
-    const validShifts = shifts
-      .filter((s) => s.goTime)
-      .map((s, i) => ({
-        label: SHIFT_LABELS[i] ?? `الوردية ${i + 1}`,
-        goTime: s.goTime,
-        returnTime: s.returnTime || undefined,
-      }));
+    const validShifts = buildShiftsPayload(shifts);
 
     // Build per-passenger array for the backend
     const passengersData = [

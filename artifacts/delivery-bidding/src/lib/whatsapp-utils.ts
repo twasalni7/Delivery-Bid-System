@@ -10,8 +10,8 @@ function isAndroid(): boolean {
  */
 export function toWhatsAppNumber(mobile: string): string {
   const digits = mobile.replace(/\D/g, "");
-  // 966 (3) + 9-digit local number = 12 digits total
-  if (digits.startsWith("966") && digits.length >= 12) return digits;
+  // 966 (3) + 9-digit local number = exactly 12 digits total
+  if (digits.startsWith("966") && digits.length === 12) return digits;
   if (digits.startsWith("05") && digits.length === 10) return "966" + digits.slice(1);
   if (digits.startsWith("5") && digits.length === 9) return "966" + digits;
   return digits;

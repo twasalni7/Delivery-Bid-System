@@ -6,7 +6,7 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { formatTime12hLong } from "@/lib/time-utils";
+import { formatTime12hLong, buildShiftsPayload, SHIFT_LABELS } from "@/lib/time-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { ArrowRight, Plus, X, Home, Briefcase, Users, Clock, CheckCircle2, Check } from "lucide-react";
@@ -30,7 +30,6 @@ const DAYS = [
   { key: "sat", label: "س" },
 ];
 
-const SHIFT_LABELS = ["الوردية الأولى", "الوردية الثانية", "الوردية الثالثة", "الوردية الرابعة"];
 const MAX_SHIFTS = 4;
 
 type ShiftEntry = { goTime: string; returnTime: string };
@@ -173,13 +172,7 @@ export default function AdminCreateRequest() {
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
     const firstGoTime = shifts[0]?.goTime ?? "";
     const firstReturnTime = shifts[0]?.returnTime ?? "";
-    const validShifts = shifts
-      .filter((s) => s.goTime)
-      .map((s, i) => ({
-        label: SHIFT_LABELS[i] ?? `الوردية ${i + 1}`,
-        goTime: s.goTime,
-        returnTime: s.returnTime || undefined,
-      }));
+    const validShifts = buildShiftsPayload(shifts);
     setSubmitting(true);
     try {
       const res = await fetch(`${API}/api/admin/requests`, {
