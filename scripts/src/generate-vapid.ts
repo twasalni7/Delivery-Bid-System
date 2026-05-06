@@ -35,7 +35,7 @@ console.log("# Add these to your .env file (keep the private key secret!)");
 console.log("#");
 console.log(`VAPID_PUBLIC_KEY=${vapidPublicKey}`);
 console.log(`VAPID_PRIVATE_KEY=${vapidPrivateKey}`);
-console.log("VAPID_SUBJECT=mailto:admin@twasalni.app");
+console.log("VAPID_SUBJECT=mailto:admin@example.com");
 console.log("#");
 console.log("# Also copy VAPID_PUBLIC_KEY to your frontend .env as:");
 console.log(`# VITE_VAPID_PUBLIC_KEY=${vapidPublicKey}`);

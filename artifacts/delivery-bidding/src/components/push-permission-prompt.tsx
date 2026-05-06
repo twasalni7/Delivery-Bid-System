@@ -155,7 +155,7 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
               }}
             >
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
-              <span>تم تفعيل الإشعارات في المتصفح، لكن فشل الحفظ في الخادم. يرجى المحاولة مجدداً.</span>
+              <span>تم تفعيل الإشعارات في المتصفح، لكن فشل الحفظ في الخادم. يرجى المحاولة مجددًا.</span>
             </div>
           )}
 
