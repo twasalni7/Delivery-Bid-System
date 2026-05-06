@@ -21,7 +21,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
-import { getBidFee, getPriceFromMatrix } from "./pricing";
+import { getBidFee, calculatePriceForRequest } from "./pricing";
 import { withDbTransaction } from "../lib/db-transaction";
 
 /** Per-passenger data submitted by the client */
@@ -276,12 +276,20 @@ router.post("/", requireAuth("client"), async (req, res) => {
       distanceKm = haversineKm(data.homeLat, data.homeLng, data.destLat, data.destLng);
     }
 
-    // Calculate price using the pricing matrix (UNIFIED with /api/pricing/calculate)
+    // Calculate price using active pricing engine (UNIFIED with /api/pricing/calculate)
     let monthlyPrice = 0;
     let needsAdminReview = false;
 
     if (distanceKm != null) {
-      const result = await getPriceFromMatrix(distanceKm, data.numberOfPeople ?? 1);
+      const result = await calculatePriceForRequest({
+        distanceKm,
+        numberOfPeople: data.numberOfPeople ?? 1,
+        workingDaysPerWeek: data.workingDaysPerWeek ?? 5,
+        numberOfShifts: data.numberOfShifts ?? 1,
+        shifts: (data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
+        additionalLocations:
+          (data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
+      });
       monthlyPrice = result.price;
       needsAdminReview = result.needsAdminReview;
     }
