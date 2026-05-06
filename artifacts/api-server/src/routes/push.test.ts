@@ -11,8 +11,12 @@ vi.mock("@workspace/db", () => {
       pushSubscriptionsTable: { findFirst: vi.fn() },
     },
   };
+  const mockPool = {
+    query: vi.fn(),
+  };
   return {
     db: mockDb,
+    pool: mockPool,
     pushSubscriptionsTable: {
       userId: "user_id",
       userRole: "user_role",
@@ -55,7 +59,7 @@ vi.mock("../lib/notification-targeting", () => ({
   ]),
 }));
 
-import { db } from "@workspace/db";
+import { db, pool } from "@workspace/db";
 import pushRouter from "../routes/push";
 
 /** Helper: create an app with optional session user or tokenUser (Bearer auth) */
@@ -215,6 +219,32 @@ describe("POST /push/subscribe", () => {
     const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
     const res = await request(app).post("/push/subscribe").send({ subscription: VALID_SUBSCRIPTION });
     expect(res.status).toBe(500);
+  });
+
+  it("falls back to legacy save when the modern push schema is unavailable", async () => {
+    const onConflictMock = vi.fn().mockRejectedValue(
+      Object.assign(new Error('column "user_role" does not exist'), { code: "42703" })
+    );
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+    (pool.query as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ rowCount: 0 })
+      .mockResolvedValueOnce({ rowCount: 1 });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app).post("/push/subscribe").send({ subscription: VALID_SUBSCRIPTION });
+
+    expect(res.status).toBe(200);
+    expect(pool.query).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining("UPDATE push_subscriptions"),
+      [1, JSON.stringify({ ...VALID_SUBSCRIPTION, expirationTime: null })]
+    );
+    expect(pool.query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("INSERT INTO push_subscriptions"),
+      [1, JSON.stringify({ ...VALID_SUBSCRIPTION, expirationTime: null })]
+    );
   });
 
   it("normalizes flat body format (body IS the subscription, no wrapper)", async () => {
