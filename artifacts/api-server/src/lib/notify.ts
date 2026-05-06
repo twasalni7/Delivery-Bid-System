@@ -81,16 +81,22 @@ type SendResult = "ok" | "expired" | "error";
 
 async function attemptSend(
   subscription: webpush.PushSubscription,
-  payload: string
+  payload: string,
+  context: { userId: number; userRole: string }
 ): Promise<SendResult> {
   try {
     await webpush.sendNotification(subscription, payload);
     return "ok";
   } catch (err: unknown) {
-    const pushErr = err as { statusCode?: number };
-    if (pushErr?.statusCode === 404 || pushErr?.statusCode === 410) {
+    const pushErr = err as { statusCode?: number; body?: string };
+    const statusCode = pushErr?.statusCode;
+    if (statusCode === 404 || statusCode === 410) {
       return "expired";
     }
+    logger.warn(
+      { ...context, statusCode: statusCode ?? null, errorBody: pushErr?.body ?? null },
+      "notify: web push attempt failed"
+    );
     return "error";
   }
 }
@@ -108,10 +114,24 @@ async function sendWebPush(
   icon?: string,
   badge?: string
 ): Promise<void> {
+  const pushDebug = process.env["PUSH_DEBUG"] === "true";
   const vapid = getVapidConfig();
   if (!vapid) {
     logger.warn({ userId, userRole, notificationId }, "notify: skipping web push because VAPID is not configured");
     return;
+  }
+
+  if (pushDebug) {
+    logger.info(
+      {
+        userId,
+        userRole,
+        notificationId,
+        "vapid.public.prefix": vapid.public.substring(0, 20) + "...",
+        "vapid.subject": vapid.subject,
+      },
+      "notify: sendWebPush called"
+    );
   }
 
   // Configure VAPID details at send time to pick up any runtime env changes
@@ -141,7 +161,11 @@ async function sendWebPush(
     ...(badge ? { badge } : {}),
   });
 
-  let result = await attemptSend(subscription, payload);
+  const ctx = { userId, userRole };
+
+  logger.info({ userId, userRole, notificationId }, "notify: attempting web push delivery");
+
+  let result = await attemptSend(subscription, payload, ctx);
 
   if (result === "expired") {
     logger.info({ userId, userRole }, "notify: removing expired push subscription");
@@ -152,7 +176,7 @@ async function sendWebPush(
   if (result === "error") {
     // One retry after a short delay
     await new Promise<void>((resolve) => setTimeout(resolve, PUSH_RETRY_DELAY_MS));
-    result = await attemptSend(subscription, payload);
+    result = await attemptSend(subscription, payload, ctx);
 
     if (result === "expired") {
       logger.info({ userId, userRole }, "notify: removing expired push subscription (retry)");
@@ -161,12 +185,12 @@ async function sendWebPush(
     }
 
     if (result === "error") {
-      logger.warn({ userId, userRole }, "notify: web push delivery failed after retry");
+      logger.warn({ userId, userRole, notificationId }, "notify: web push delivery failed after retry");
       return;
     }
   }
 
-  logger.info({ userId, userRole, notificationId }, "notify: web push delivered");
+  logger.info({ userId, userRole, notificationId }, "notify: web push delivered successfully");
 
   // Successfully delivered — update delivered_at
   if (notificationId !== undefined) {

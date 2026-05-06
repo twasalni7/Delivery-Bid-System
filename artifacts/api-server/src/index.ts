@@ -19,11 +19,21 @@ if (Number.isNaN(port) || port <= 0) {
 // ─── VAPID check ───────────────────────────────────────────────────────────
 // Without these keys the server cannot send web push notifications.
 // Generate a pair with: pnpm --filter @workspace/scripts run generate-vapid
-if (!process.env["VAPID_PUBLIC_KEY"] || !process.env["VAPID_PRIVATE_KEY"]) {
+const vapidPublicKey = process.env["VAPID_PUBLIC_KEY"];
+const vapidPrivateKey = process.env["VAPID_PRIVATE_KEY"];
+if (!vapidPublicKey || !vapidPrivateKey) {
   logger.warn(
     "VAPID_PUBLIC_KEY and/or VAPID_PRIVATE_KEY are not set. " +
     "Web push delivery will be skipped. " +
     "Run: pnpm --filter @workspace/scripts run generate-vapid"
+  );
+} else {
+  logger.info(
+    {
+      "vapid.public.prefix": vapidPublicKey.substring(0, 20) + "...",
+      "vapid.subject": process.env["VAPID_SUBJECT"] || process.env["VAPID_EMAIL"] || "mailto:admin@twasalni.app",
+    },
+    "VAPID keys loaded — web push notifications are enabled"
   );
 }
 
