@@ -127,7 +127,7 @@ async function sendWebPush(
         userId,
         userRole,
         notificationId,
-        "vapid.public.prefix": vapid.public.substring(0, 20) + "...",
+        "vapid.public.prefix": vapid.public.substring(0, Math.min(20, vapid.public.length)) + "...",
         "vapid.subject": vapid.subject,
       },
       "notify: sendWebPush called"

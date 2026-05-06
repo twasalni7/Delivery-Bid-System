@@ -30,7 +30,7 @@ if (!vapidPublicKey || !vapidPrivateKey) {
 } else {
   logger.info(
     {
-      "vapid.public.prefix": vapidPublicKey.substring(0, 20) + "...",
+      "vapid.public.prefix": vapidPublicKey.substring(0, Math.min(20, vapidPublicKey.length)) + "...",
       "vapid.subject": process.env["VAPID_SUBJECT"] || process.env["VAPID_EMAIL"] || "mailto:admin@twasalni.app",
     },
     "VAPID keys loaded — web push notifications are enabled"
