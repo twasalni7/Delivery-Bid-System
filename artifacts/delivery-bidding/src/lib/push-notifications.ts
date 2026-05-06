@@ -221,8 +221,20 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
   try {
     const existingSubscription = await registration.pushManager.getSubscription();
     if (existingSubscription) {
-      subscription = existingSubscription;
-      console.log(LOG_PREFIX, "existing push subscription found ✓", subscription.endpoint);
+      console.warn(
+        LOG_PREFIX,
+        "existing browser push subscription found without app cache; recreating it with this app VAPID key"
+      );
+      const unsubscribed = await existingSubscription.unsubscribe();
+      if (!unsubscribed) {
+        console.error(LOG_PREFIX, "failed to unsubscribe existing browser push subscription");
+        return "subscribe_error";
+      }
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToArrayBuffer(vapidPublicKey),
+      });
+      console.log(LOG_PREFIX, "push subscription recreated ✓", subscription.endpoint);
     } else {
       console.log(LOG_PREFIX, "creating push subscription");
       subscription = await registration.pushManager.subscribe({

@@ -1,5 +1,5 @@
 import webpush from "web-push";
-import { db } from "@workspace/db";
+import { db, pool } from "@workspace/db";
 import { notificationsTable, pushSubscriptionsTable, driversTable, adminsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { logger } from "./logger";
@@ -38,6 +38,39 @@ function normalizeSubscriptionData(data: Record<string, unknown>): Record<string
   return data;
 }
 
+function shouldFallbackToLegacyPushSchema(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const dbErr = err as { code?: string; message?: string };
+  if (dbErr.code === "42703" || dbErr.code === "42P10") return true;
+  const message = dbErr.message?.toLowerCase() ?? "";
+  return (
+    message.includes('column "user_role" does not exist') ||
+    message.includes("no unique or exclusion constraint matching the on conflict specification")
+  );
+}
+
+async function getLegacyPushSubscription(userId: number): Promise<string | null> {
+  try {
+    const result = await pool.query(
+      `SELECT subscription_data
+         FROM push_subscriptions
+        WHERE user_id = $1
+        ORDER BY id DESC
+        LIMIT 1`,
+      [userId]
+    );
+    const raw = result.rows[0]?.["subscription_data"];
+    if (!raw) return null;
+    if (typeof raw === "string") return raw;
+    if (typeof raw === "object") {
+      return JSON.stringify(normalizeSubscriptionData(raw as Record<string, unknown>));
+    }
+  } catch (err) {
+    logger.warn({ err, userId }, "notify: failed to fetch legacy push subscription");
+  }
+  return null;
+}
+
 const PUSH_RETRY_DELAY_MS = 2000;
 
 export async function clearExpiredSubscription(userId: number, userRole: "client" | "driver" | "admin") {
@@ -51,6 +84,18 @@ export async function clearExpiredSubscription(userId: number, userRole: "client
         )
       );
   } catch (err) {
+    if (shouldFallbackToLegacyPushSchema(err)) {
+      try {
+        await pool.query(`DELETE FROM push_subscriptions WHERE user_id = $1`, [userId]);
+        return;
+      } catch (legacyErr) {
+        logger.warn(
+          { err: legacyErr, userId, userRole },
+          "notify: failed to clear expired legacy push subscription"
+        );
+        return;
+      }
+    }
     logger.warn({ err, userId, userRole }, "notify: failed to clear expired push subscription");
   }
 }
@@ -72,6 +117,13 @@ async function getPushSubscription(
     const normalized = normalizeSubscriptionData(row.subscriptionData as Record<string, unknown>);
     return JSON.stringify(normalized);
   } catch (err) {
+    if (shouldFallbackToLegacyPushSchema(err)) {
+      logger.warn(
+        { err, userId, userRole },
+        "notify: modern push schema unavailable, falling back to legacy push subscription lookup"
+      );
+      return getLegacyPushSubscription(userId);
+    }
     logger.warn({ err, userId, userRole }, "notify: failed to fetch push subscription");
   }
   return null;

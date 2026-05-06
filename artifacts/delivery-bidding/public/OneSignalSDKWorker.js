@@ -18,7 +18,8 @@ try {
 }
 
 function appUrl(path = '') {
-  return new URL(path.replace(/^\/+/, ''), self.registration.scope).pathname;
+  const url = new URL(path.replace(/^\/+/, ''), self.registration.scope);
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 /* ─── Push Notifications ───────────────────────────────────────────────── */
