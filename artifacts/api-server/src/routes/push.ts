@@ -175,10 +175,47 @@ function normalizePushSubscription(body: unknown): {
 router.post("/subscribe", requireAuth(), async (req, res) => {
   const user = getSessionUser(req)!;
 
+  // ── DIAGNOSTIC: log everything that arrives ──────────────────────────────
+  logger.info(
+    {
+      "diag:headers": req.headers,
+      "diag:body": req.body,
+      "diag:bodyType": typeof req.body,
+      "diag:bodyIsNull": req.body == null,
+      "diag:contentType": req.headers["content-type"],
+      "diag:userId": user.id,
+      "diag:userRole": user.role,
+    },
+    "push/subscribe: RAW REQUEST RECEIVED"
+  );
+
   const normalized = normalizePushSubscription(req.body ?? {});
 
+  logger.info(
+    {
+      "diag:normalizedResult": normalized,
+      "diag:normalizedIsNull": normalized == null,
+    },
+    "push/subscribe: NORMALIZATION RESULT"
+  );
+
   if (!normalized) {
-    res.status(400).json({ error: "invalid push subscription" });
+    // ── DIAGNOSTIC: don't reject — echo back what was received ──────────────
+    logger.warn(
+      { "diag:body": req.body },
+      "push/subscribe: DIAGNOSTIC MODE — normalization failed, echoing body"
+    );
+    res.status(200).json({
+      _diagnostic: true,
+      _message: "normalization failed — echoing received body for debugging",
+      _received: {
+        body: req.body,
+        bodyType: typeof req.body,
+        contentType: req.headers["content-type"],
+        hasSubscriptionKey: req.body != null && typeof req.body === "object" && "subscription" in (req.body as object),
+        hasEndpointKey: req.body != null && typeof req.body === "object" && "endpoint" in (req.body as object),
+      },
+    });
     return;
   }
 
@@ -195,6 +232,10 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
         set: { subscriptionData: sql`excluded.subscription_data` },
       });
 
+    logger.info(
+      { "diag:userId": user.id, "diag:userRole": user.role, "diag:endpoint": normalized.endpoint },
+      "push/subscribe: SAVED SUCCESSFULLY"
+    );
     res.json({ message: "تم حفظ الاشتراك في الإشعارات" });
   } catch (err) {
     logger.error({ err, userId: user.id, role: user.role }, "push: failed to save subscription");

@@ -75,29 +75,49 @@ async function saveSubscription(
   }
 
   const authHeaders = getAuthHeaders();
+  const requestPayload = { subscription: subJson, role };
+
+  // ── DIAGNOSTIC: log subscription before sending ──────────────────────────
+  console.log(LOG_PREFIX, "DIAG — subscription toJSON before send:", subJson);
+  console.log(LOG_PREFIX, "DIAG — request payload:", JSON.stringify(requestPayload));
+  console.log(LOG_PREFIX, "DIAG — auth headers present:", Object.keys(authHeaders));
+  console.log(LOG_PREFIX, "DIAG — target URL:", `${API_ORIGIN}/api/push/subscribe`);
+
+  let res: Response;
   try {
-    const res = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
+    res = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
-      body: JSON.stringify({ subscription: subJson, role }),
+      body: JSON.stringify(requestPayload),
     });
-    const body = await res.text().catch(() => "");
-    if (!res.ok) {
-      console.error(LOG_PREFIX, "POST /api/push/subscribe failed:", {
-        status: res.status,
-        statusText: res.statusText,
-        body,
-      });
-      throw new Error(`POST /api/push/subscribe failed: HTTP ${res.status} ${body || res.statusText}`);
-    }
-    console.log(LOG_PREFIX, "POST /api/push/subscribe succeeded ✓", {
+  } catch (networkErr) {
+    console.error(LOG_PREFIX, "DIAG — fetch NETWORK ERROR (CORS / offline / DNS?):", networkErr);
+    throw networkErr;
+  }
+
+  const body = await res.text().catch(() => "");
+
+  // ── DIAGNOSTIC: log full response ────────────────────────────────────────
+  console.log(LOG_PREFIX, "DIAG — fetch response:", {
+    status: res.status,
+    statusText: res.statusText,
+    ok: res.ok,
+    body,
+    headers: Object.fromEntries(res.headers.entries()),
+  });
+
+  if (!res.ok) {
+    console.error(LOG_PREFIX, "POST /api/push/subscribe failed:", {
       status: res.status,
+      statusText: res.statusText,
       body,
     });
-  } catch (err) {
-    console.error(LOG_PREFIX, "save subscription threw an exception:", err);
-    throw err;
+    throw new Error(`POST /api/push/subscribe failed: HTTP ${res.status} ${body || res.statusText}`);
   }
+  console.log(LOG_PREFIX, "POST /api/push/subscribe succeeded ✓", {
+    status: res.status,
+    body,
+  });
 }
 
 async function ensureServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
