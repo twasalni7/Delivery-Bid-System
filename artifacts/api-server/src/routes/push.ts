@@ -172,34 +172,95 @@ function normalizePushSubscription(body: unknown): {
  * Uses INSERT … ON CONFLICT DO UPDATE so that re-subscribing the same device
  * only updates the existing row (no duplicates).
  */
+/**
+ * POST /api/push/subscribe  — LENIENT / DIAGNOSTIC MODE
+ *
+ * Accepts ANY body shape without rejecting.
+ * • Tries normalizePushSubscription first (full canonical form).
+ * • If normalization fails, falls back to saving the raw body as-is so the
+ *   subscription_data jsonb column still gets written — this lets us inspect
+ *   exactly what the browser sent even when keys are missing.
+ * • Always returns a debug echo so the caller can see what the server received
+ *   and what was ultimately saved.
+ */
 router.post("/subscribe", requireAuth(), async (req, res) => {
   const user = getSessionUser(req)!;
+  const rawBody: unknown = req.body ?? {};
 
-  const normalized = normalizePushSubscription(req.body ?? {});
+  // ── 1. Log everything that arrived ────────────────────────────────────────
+  logger.info(
+    {
+      "diag:userId": user.id,
+      "diag:userRole": user.role,
+      "diag:contentType": req.headers["content-type"],
+      "diag:authorization": req.headers["authorization"] ? "present" : "missing",
+      "diag:bodyType": typeof rawBody,
+      "diag:bodyIsNull": rawBody == null,
+      "diag:body": rawBody,
+    },
+    "push/subscribe: RAW REQUEST RECEIVED"
+  );
 
-  if (!normalized) {
-    res.status(400).json({ error: "invalid push subscription" });
-    return;
-  }
+  // ── 2. Try canonical normalization ────────────────────────────────────────
+  const normalized = normalizePushSubscription(rawBody);
+  const validationResult = normalized
+    ? { ok: true, endpoint: normalized.endpoint, hasKeys: true }
+    : {
+        ok: false,
+        reason: "normalizePushSubscription returned null",
+        bodyKeys: rawBody && typeof rawBody === "object" ? Object.keys(rawBody as object) : [],
+        hasSubscriptionKey:
+          rawBody != null && typeof rawBody === "object" && "subscription" in (rawBody as object),
+        hasEndpointKey:
+          rawBody != null && typeof rawBody === "object" && "endpoint" in (rawBody as object),
+      };
 
+  logger.info({ "diag:validationResult": validationResult }, "push/subscribe: VALIDATION RESULT");
+
+  // ── 3. Decide what to save: normalized > raw body > empty fallback ─────────
+  // We always save something so the row is written and the DB round-trip is tested.
+  const dataToSave: unknown = normalized ?? rawBody ?? {};
+
+  let saveError: string | null = null;
   try {
     await db
       .insert(pushSubscriptionsTable)
       .values({
         userId: user.id,
         userRole: user.role,
-        subscriptionData: normalized,
+        subscriptionData: dataToSave as Record<string, unknown>,
       })
       .onConflictDoUpdate({
         target: [pushSubscriptionsTable.userId, pushSubscriptionsTable.userRole],
         set: { subscriptionData: sql`excluded.subscription_data` },
       });
 
-    res.json({ message: "تم حفظ الاشتراك في الإشعارات" });
+    logger.info(
+      {
+        "diag:userId": user.id,
+        "diag:userRole": user.role,
+        "diag:savedNormalized": normalized != null,
+      },
+      "push/subscribe: SAVED SUCCESSFULLY"
+    );
   } catch (err) {
-    logger.error({ err, userId: user.id, role: user.role }, "push: failed to save subscription");
-    res.status(500).json({ error: "فشل حفظ الاشتراك" });
+    saveError = err instanceof Error ? err.message : String(err);
+    logger.error({ err, userId: user.id, userRole: user.role }, "push/subscribe: DB SAVE FAILED");
   }
+
+  // ── 4. Always return full debug echo ─────────────────────────────────────
+  res.json({
+    _diagnostic: true,
+    receivedBody: rawBody,
+    parsedSubscription: normalized,
+    validationResult,
+    savedNormalized: normalized != null,
+    savedRawFallback: normalized == null,
+    dbSaveError: saveError,
+    message: saveError
+      ? `فشل الحفظ في قاعدة البيانات: ${saveError}`
+      : "تم حفظ الاشتراك في الإشعارات",
+  });
 });
 
 /**
