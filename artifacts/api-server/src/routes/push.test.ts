@@ -37,6 +37,7 @@ vi.mock("@workspace/db", () => {
 
 vi.mock("../lib/notify", () => ({
   notify: vi.fn().mockResolvedValue(undefined),
+  sendPushToUser: vi.fn().mockResolvedValue({ sent: true }),
 }));
 
 vi.mock("../lib/notification-targeting", () => ({
@@ -485,5 +486,71 @@ describe("POST /push/send", () => {
       });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("recipientCount", 1);
+  });
+});
+
+import { sendPushToUser } from "../lib/notify";
+
+describe("DELETE /push/subscribe", () => {
+  it("returns 401 when not authenticated", async () => {
+    const app = createApp();
+    const res = await request(app).delete("/push/subscribe");
+    expect(res.status).toBe(401);
+  });
+
+  it("removes subscription for authenticated user", async () => {
+    const whereMock = vi.fn().mockResolvedValue([]);
+    (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app).delete("/push/subscribe");
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("message");
+  });
+
+  it("returns 500 when database delete fails", async () => {
+    (db.delete as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error("DB error");
+    });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app).delete("/push/subscribe");
+    expect(res.status).toBe(500);
+  });
+});
+
+describe("POST /push/test", () => {
+  it("returns 401 when not authenticated", async () => {
+    const app = createApp();
+    const res = await request(app).post("/push/test");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns { ok: true } when notification is sent", async () => {
+    (sendPushToUser as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ sent: true });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app).post("/push/test");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true });
+  });
+
+  it("returns { ok: false } when no subscription exists", async () => {
+    (sendPushToUser as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ sent: false });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app).post("/push/test");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: false });
+    expect(res.body).toHaveProperty("reason");
+  });
+
+  it("returns { ok: false, reason } when sendPushToUser throws", async () => {
+    (sendPushToUser as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("VAPID not configured"));
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app).post("/push/test");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: false, reason: "VAPID not configured" });
   });
 });

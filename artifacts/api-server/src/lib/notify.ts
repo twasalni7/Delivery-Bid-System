@@ -12,6 +12,18 @@ function getVapidConfig(): { public: string; private: string; subject: string } 
   return { public: pub, private: priv, subject };
 }
 
+// Initialize VAPID at module load if keys are available.
+// sendPushToUser() will throw if keys are absent when it is called.
+{
+  const _vapid = getVapidConfig();
+  if (_vapid) {
+    webpush.setVapidDetails(_vapid.subject, _vapid.public, _vapid.private);
+    logger.info("[push] VAPID details initialized at module load");
+  } else {
+    logger.warn("[push] VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY is missing — push notifications will be disabled until they are set");
+  }
+}
+
 /**
  * Normalizes a stored push subscription object to the flat format expected by
  * the web-push library: { endpoint, expirationTime?, keys: { p256dh, auth } }.
@@ -373,3 +385,87 @@ export async function notifyAllDrivers(params: {
 }
 
 export { sendWebPush };
+
+/**
+ * sendPushToUser — simple end-to-end push helper used by the /test route.
+ *
+ * Reads the push subscription from pushSubscriptionsTable, validates it, and
+ * sends a web-push notification.  Returns { sent: false } on any recoverable
+ * failure (no subscription, invalid subscription, 404/410 from push service).
+ * Throws only on unexpected / non-recoverable errors.
+ */
+export async function sendPushToUser(
+  userId: number,
+  role: "client" | "driver" | "admin",
+  params: { title: string; body: string; url?: string; tag?: string }
+): Promise<{ sent: boolean }> {
+  const vapid = getVapidConfig();
+  if (!vapid) {
+    const msg = "[push] VAPID keys are not configured — cannot send push notification";
+    logger.error({ userId, role }, msg);
+    throw new Error(msg);
+  }
+
+  logger.info({ userId, role }, "[push] sendPushToUser: looking up subscription");
+
+  const subscriptionJson = await getPushSubscription(userId, role);
+  if (!subscriptionJson) {
+    logger.info({ userId, role }, "[push] sendPushToUser: no subscription found");
+    return { sent: false };
+  }
+
+  // Parse and validate the subscription object
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(subscriptionJson) as Record<string, unknown>;
+  } catch {
+    logger.error({ userId, role }, "[push] sendPushToUser: subscription JSON is invalid — clearing");
+    void clearExpiredSubscription(userId, role);
+    return { sent: false };
+  }
+
+  const endpoint = parsed["endpoint"];
+  const keys = parsed["keys"] as Record<string, unknown> | undefined;
+  if (
+    typeof endpoint !== "string" || !endpoint ||
+    !keys ||
+    typeof keys["p256dh"] !== "string" || !keys["p256dh"] ||
+    typeof keys["auth"] !== "string" || !keys["auth"]
+  ) {
+    logger.error(
+      { userId, role, hasEndpoint: !!endpoint, hasKeys: !!keys },
+      "[push] sendPushToUser: subscription missing endpoint or keys — clearing"
+    );
+    void clearExpiredSubscription(userId, role);
+    return { sent: false };
+  }
+
+  const subscription = parsed as unknown as webpush.PushSubscription;
+
+  // Re-apply VAPID at send time to pick up any runtime env changes
+  webpush.setVapidDetails(vapid.subject, vapid.public, vapid.private);
+
+  const payload = JSON.stringify({
+    title: params.title,
+    body: params.body,
+    url: params.url ?? "/",
+    tag: params.tag ?? "push-test",
+  });
+
+  logger.info({ userId, role }, "[push] sendPushToUser: sending notification");
+
+  try {
+    await webpush.sendNotification(subscription, payload);
+    logger.info({ userId, role }, "[push] sendPushToUser: sent successfully");
+    return { sent: true };
+  } catch (err: unknown) {
+    const pushErr = err as { statusCode?: number; body?: string };
+    if (pushErr?.statusCode === 404 || pushErr?.statusCode === 410) {
+      logger.warn({ userId, role, statusCode: pushErr.statusCode }, "[push] sendPushToUser: subscription expired — clearing");
+      void clearExpiredSubscription(userId, role);
+      return { sent: false };
+    }
+    logger.error({ err, userId, role }, "[push] sendPushToUser: unexpected error from push service");
+    throw err;
+  }
+}

@@ -5,7 +5,7 @@ import { eq, isNotNull, count, isNull, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
-import { notify } from "../lib/notify";
+import { notify, sendPushToUser } from "../lib/notify";
 import {
   ensureNotificationUserExists,
   getNotificationTargetingMetadata,
@@ -399,6 +399,64 @@ router.post("/unsubscribe", requireAuth(), async (req, res) => {
   } catch (err) {
     logger.error({ err, userId: user.id, role: user.role }, "push: failed to remove subscription");
     res.status(500).json({ error: "فشل إلغاء الاشتراك" });
+  }
+});
+
+/**
+ * DELETE /api/push/subscribe
+ * Removes the push subscription for the currently logged-in user (REST-style).
+ */
+router.delete("/subscribe", requireAuth(), async (req, res) => {
+  const user = getSessionUser(req)!;
+
+  try {
+    await db
+      .delete(pushSubscriptionsTable)
+      .where(
+        and(
+          eq(pushSubscriptionsTable.userId, user.id),
+          eq(pushSubscriptionsTable.userRole, user.role)
+        )
+      );
+
+    logger.info({ userId: user.id, role: user.role }, "[push] DELETE /subscribe: subscription removed");
+    res.json({ message: "تم إلغاء الاشتراك في الإشعارات" });
+  } catch (err) {
+    logger.error({ err, userId: user.id, role: user.role }, "[push] DELETE /subscribe: failed to remove subscription");
+    res.status(500).json({ error: "فشل إلغاء الاشتراك" });
+  }
+});
+
+/**
+ * POST /api/push/test
+ * Sends a test push notification to the currently logged-in user.
+ * Useful for verifying end-to-end push delivery.
+ */
+router.post("/test", requireAuth(), async (req, res) => {
+  const user = getSessionUser(req)!;
+  const role = user.role as "client" | "driver" | "admin";
+
+  logger.info({ userId: user.id, role }, "[push] /test: starting end-to-end push test");
+
+  try {
+    const result = await sendPushToUser(user.id, role, {
+      title: "🔔 اختبار الإشعارات",
+      body: "تم تفعيل إشعارات الدفع بنجاح! ستصلك الإشعارات المهمة هنا.",
+      url: "/",
+      tag: "push-test",
+    });
+
+    if (result.sent) {
+      logger.info({ userId: user.id, role }, "[push] /test: notification sent successfully");
+      res.json({ ok: true });
+    } else {
+      logger.warn({ userId: user.id, role }, "[push] /test: notification not sent — no valid subscription");
+      res.json({ ok: false, reason: "لا يوجد اشتراك صالح في الإشعارات لهذا الحساب" });
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err, userId: user.id, role }, "[push] /test: failed to send test notification");
+    res.json({ ok: false, reason: message });
   }
 });
 
