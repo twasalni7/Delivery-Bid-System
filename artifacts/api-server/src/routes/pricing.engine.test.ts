@@ -1,4 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@workspace/db", () => ({
+  db: {
+    select: vi.fn(),
+    query: {
+      appConfigTable: { findFirst: vi.fn() },
+    },
+  },
+  appConfigTable: {},
+  requestsTable: {},
+  pricingMatrixTable: {},
+}));
 import {
   calculateSubscriptionPriceV2,
   getTripTypeFromShifts,
@@ -60,4 +72,3 @@ describe("pricing engine mapping helpers", () => {
     expect(resolvePricingEngine("formula_v2")).toBe("formula_v2");
   });
 });
-
