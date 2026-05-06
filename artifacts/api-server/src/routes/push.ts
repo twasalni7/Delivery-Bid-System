@@ -167,7 +167,10 @@ function shouldFallbackToLegacyPushSave(err: unknown): boolean {
   const dbErr = err as { code?: string; message?: string };
   if (dbErr.code === "42703" || dbErr.code === "42P10") return true;
   const message = dbErr.message?.toLowerCase() ?? "";
-  return message.includes("user_role") || message.includes("on conflict");
+  return (
+    message.includes('column "user_role" does not exist') ||
+    message.includes("no unique or exclusion constraint matching the on conflict specification")
+  );
 }
 
 async function savePushSubscription(
