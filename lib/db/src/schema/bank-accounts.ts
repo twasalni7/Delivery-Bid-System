@@ -21,11 +21,12 @@ export const bankAccountsTable = pgTable("bank_accounts", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertBankAccountSchema = createInsertSchema(bankAccountsTable).omit({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const insertBankAccountSchema = (createInsertSchema(bankAccountsTable) as z.ZodObject<any>).omit({
   id: true,
   intId: true,
   createdAt: true,
 });
 
-export type InsertBankAccount = z.infer<typeof insertBankAccountSchema>;
+export type InsertBankAccount = Omit<typeof bankAccountsTable.$inferInsert, "id" | "intId" | "createdAt">;
 export type BankAccount = typeof bankAccountsTable.$inferSelect;
