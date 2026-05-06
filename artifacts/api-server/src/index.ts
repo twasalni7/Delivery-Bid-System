@@ -16,6 +16,17 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+// ─── VAPID check ───────────────────────────────────────────────────────────
+// Without these keys the server cannot send web push notifications.
+// Generate a pair with: pnpm --filter @workspace/scripts run generate-vapid
+if (!process.env["VAPID_PUBLIC_KEY"] || !process.env["VAPID_PRIVATE_KEY"]) {
+  logger.warn(
+    "VAPID_PUBLIC_KEY and/or VAPID_PRIVATE_KEY are not set. " +
+    "Web push delivery will be skipped. " +
+    "Run: pnpm --filter @workspace/scripts run generate-vapid"
+  );
+}
+
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");

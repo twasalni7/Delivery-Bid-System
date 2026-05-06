@@ -61,14 +61,20 @@ async function saveSubscription(
   role?: string
 ): Promise<void> {
   const subJson = subscription.toJSON();
+
+  // Guard: ensure the browser returned a complete subscription with real keys.
+  // An incomplete toJSON() would cause a 400 on the server and is unsaveable.
+  if (
+    !subJson.endpoint ||
+    !subJson.keys?.p256dh ||
+    !subJson.keys?.auth
+  ) {
+    throw new Error(
+      `PushSubscription.toJSON() returned incomplete data: endpoint=${!!subJson.endpoint} p256dh=${!!subJson.keys?.p256dh} auth=${!!subJson.keys?.auth}`
+    );
+  }
+
   const authHeaders = getAuthHeaders();
-  console.log(LOG_PREFIX, "sending subscription to server:", {
-    endpoint: subJson.endpoint,
-    hasP256dh: Boolean(subJson.keys?.p256dh),
-    hasAuth: Boolean(subJson.keys?.auth),
-    hasAuthToken: Boolean(authHeaders.Authorization),
-    role,
-  });
   try {
     const res = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
       method: "POST",

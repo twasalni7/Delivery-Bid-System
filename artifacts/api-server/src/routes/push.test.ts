@@ -216,6 +216,70 @@ describe("POST /push/subscribe", () => {
     const res = await request(app).post("/push/subscribe").send({ subscription: VALID_SUBSCRIPTION });
     expect(res.status).toBe(500);
   });
+
+  it("normalizes flat body format (body IS the subscription, no wrapper)", async () => {
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    // Send the subscription object directly without wrapping in { subscription: ... }
+    const res = await request(app).post("/push/subscribe").send(VALID_SUBSCRIPTION);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("message");
+  });
+
+  it("normalizes double-nested format { subscription: { subscription: {...} } }", async () => {
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    const res = await request(app)
+      .post("/push/subscribe")
+      .send({ subscription: { subscription: VALID_SUBSCRIPTION } });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("message");
+  });
+
+  it("normalizes top-level keys format { endpoint, p256dh, auth }", async () => {
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    // Some older push providers return keys at the top level instead of nested under `keys`
+    const res = await request(app).post("/push/subscribe").send({
+      subscription: {
+        endpoint: "https://fcm.googleapis.com/push/4",
+        p256dh: "topLevelKey",
+        auth: "topLevelAuth",
+      },
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("message");
+  });
+
+  it("saves normalised data with only endpoint+expirationTime+keys to DB", async () => {
+    const onConflictMock = vi.fn().mockResolvedValue([]);
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+
+    const app = createApp({ sessionUser: { id: 1, role: "client", name: "Ali" } });
+    await request(app).post("/push/subscribe").send({
+      subscription: { ...VALID_SUBSCRIPTION, expirationTime: 9999, extraField: "ignored" },
+    });
+
+    expect(valuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscriptionData: {
+          endpoint: VALID_SUBSCRIPTION.endpoint,
+          expirationTime: 9999,
+          keys: VALID_SUBSCRIPTION.keys,
+        },
+      })
+    );
+  });
 });
 
 describe("GET /push/debug", () => {
