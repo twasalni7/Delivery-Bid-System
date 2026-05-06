@@ -6,6 +6,7 @@ import { getAuthHeaders } from "@/lib/authed-fetch";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { executeNotificationAction, type AppNotification } from "@/lib/notification-actions";
 import { useAuth } from "@/contexts/auth-context";
+import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 
 function typeIcon(type: string) {
   if (type === "offer")   return <Package2   size={14} className="shrink-0" style={{ color: "var(--brand)" }} />;
@@ -171,15 +172,18 @@ export function NotificationsBell() {
           </div>
           {user && (
             <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border)", backgroundColor: "var(--surface-2)" }}>
-              <Link href={user.role === "admin" ? "/admin/notifications-center" : user.role === "driver" ? "/driver/notifications" : "/client/notifications"}>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="w-full py-2 rounded-xl text-sm font-bold"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-                >
-                  عرض كل الإشعارات
-                </button>
-              </Link>
+              <PushNotificationPrompt />
+              <div className="mt-2">
+                <Link href={user.role === "admin" ? "/admin/notifications-center" : user.role === "driver" ? "/driver/notifications" : "/client/notifications"}>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className="w-full py-2 rounded-xl text-sm font-bold"
+                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                  >
+                    عرض كل الإشعارات
+                  </button>
+                </Link>
+              </div>
             </div>
           )}
         </div>
