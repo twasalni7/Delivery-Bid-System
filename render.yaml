@@ -24,6 +24,12 @@ services:
         value: "1"
       - key: CORS_ORIGIN
         sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: mailto:admin@twasalni.app
 
   - type: web
     name: delivery-bid-frontend
