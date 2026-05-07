@@ -35,4 +35,3 @@ export const requireHardDeleteApproval: RequestHandler = (req, res, next) => {
 
   next();
 };
-
