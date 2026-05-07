@@ -2,7 +2,7 @@ import { Router, Request } from "express";
 import { randomBytes } from "crypto";
 import { db } from "@workspace/db";
 import { clientsTable, driversTable, adminsTable, userTokensTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { hashPassword, comparePassword } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
@@ -166,13 +166,9 @@ router.post("/login-driver", async (req, res) => {
   try {
     const mobileCandidates = getDriverMobileLoginCandidates(String(mobile));
     const normalizedLoginCode = normalizeLoginCode(String(loginCode));
-    let driver: Awaited<ReturnType<typeof db.query.driversTable.findFirst>> = null;
-    for (const mobileCandidate of mobileCandidates) {
-      driver = await db.query.driversTable.findFirst({
-        where: eq(driversTable.mobile, mobileCandidate),
-      });
-      if (driver) break;
-    }
+    const driver = await db.query.driversTable.findFirst({
+      where: inArray(driversTable.mobile, mobileCandidates),
+    });
     if (!driver || normalizeLoginCode(String(driver.loginCode)) !== normalizedLoginCode) {
       res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });
       return;

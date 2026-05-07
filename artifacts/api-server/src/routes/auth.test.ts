@@ -303,7 +303,6 @@ describe("POST /auth/login-driver", () => {
 
   it("accepts login when stored mobile is legacy format without leading 0", async () => {
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({
         id: 4,
         mobile: "501234567",
@@ -318,7 +317,7 @@ describe("POST /auth/login-driver", () => {
       .send({ mobile: "0501234567", loginCode: "ABCD1234" });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 4, name: "Nasser", role: "driver" });
-    expect((db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mock.calls.length).toBe(2);
+    expect((db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
   });
 });
 
