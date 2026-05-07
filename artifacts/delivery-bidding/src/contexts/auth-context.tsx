@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { useLogout } from "@workspace/api-client-react";
+import { logout as callLogoutApi } from "@workspace/api-client-react";
 import type { AuthUser } from "@workspace/api-client-react";
 import { subscribeToPush, clearPushSubscriptionCache } from "@/lib/push-notifications";
 
@@ -27,7 +27,6 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(readStoredUser);
-  const logoutMutation = useLogout();
 
   const login = useCallback((data: AuthUser) => {
     const { token, ...userData } = data;
@@ -49,11 +48,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.OneSignalDeferred.push(async (OneSignal) => {
       try { await OneSignal.logout(); } catch { /* non-critical */ }
     });
+    // Capture the token BEFORE clearing localStorage so the server can invalidate it.
+    let currentToken: string | null = null;
+    try { currentToken = localStorage.getItem(LS_TOKEN_KEY); } catch { /* ignore */ }
     try { localStorage.removeItem(LS_TOKEN_KEY); } catch { /* ignore */ }
     try { localStorage.removeItem(LS_USER_KEY); } catch { /* ignore */ }
     setUser(null);
-    logoutMutation.mutate(undefined);
-  }, [logoutMutation]);
+    // Fire server-side logout with the captured token so the DB record is deleted.
+    void callLogoutApi(
+      currentToken ? { headers: { Authorization: `Bearer ${currentToken}` } } : undefined
+    ).catch(() => { /* non-critical */ });
+  }, []);
 
   // Only auto-subscribe when the user already granted permission in a previous session.
   // Calling Notification.requestPermission() from a useEffect (non-user-gesture context)

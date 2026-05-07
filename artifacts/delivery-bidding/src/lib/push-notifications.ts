@@ -176,7 +176,8 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
         console.log(LOG_PREFIX, "cached subscription no longer valid — clearing cache and re-subscribing");
         localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
       } else {
-        console.log(LOG_PREFIX, "already subscribed (cache hit), skipping");
+        console.log(LOG_PREFIX, "already subscribed in browser (cache hit), ensuring server record");
+        await saveSubscription(existing, role);
         return "already_subscribed";
       }
     } catch (err) {

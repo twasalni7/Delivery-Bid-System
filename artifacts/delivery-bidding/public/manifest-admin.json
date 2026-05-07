@@ -2,7 +2,7 @@
   "name": "توصّلني - لوحة الإدارة",
   "short_name": "إدارة",
   "description": "لوحة تحكم الإدارة - إدارة الطلبات والسائقين والعملاء",
-  "start_url": "/admin/login",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#000000",

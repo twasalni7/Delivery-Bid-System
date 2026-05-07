@@ -158,6 +158,59 @@ If you prefer to host the API separately on Render:
 
 ---
 
+## Production Hardening Checklist (Required before full launch)
+
+1. **Mandatory secrets and safety flags**
+   - `SESSION_SECRET` must be set in production (server will fail to boot if missing).
+   - Keep `ENABLE_PRODUCTION_HARD_DELETE` unset/false in production by default.
+   - If a hard delete is truly required, temporarily set:
+     - `ENABLE_PRODUCTION_HARD_DELETE=true`
+     - send header `x-hard-delete-confirmation: I_UNDERSTAND_DATA_DELETION`
+     - then disable again after the operation.
+
+2. **Health / readiness probes**
+   - Liveness: `GET /api/healthz`
+   - Readiness: `GET /api/readyz`
+   - Treat non-200 from `/api/readyz` as not ready for traffic.
+
+3. **Traffic protection**
+   - Global API rate-limiting is enabled in production with role-aware limits.
+   - Keep reverse-proxy/LB rate limits enabled as an outer protection layer.
+
+4. **Backup and restore drill**
+   - Enable daily automated PostgreSQL backups at provider level.
+   - Before go-live, execute one full restore drill to a staging database.
+   - Verify restored DB can run app login and request lifecycle successfully.
+
+5. **Load test gate (hundreds of users)**
+   - Run staged load tests on:
+     - auth endpoints
+     - requests listing/creation/update
+     - offers flow
+     - notifications and push-related APIs
+   - Baseline targets:
+     - no 5xx spikes under expected peak
+     - stable p95 latency
+     - DB saturation remains within safe limits
+
+6. **Observability gate**
+   - Monitor and alert on:
+     - API error rate (4xx/5xx split)
+     - p95/p99 latency by endpoint group
+     - DB connectivity and query pressure
+     - push delivery failure rate
+   - Keep alert routing tested (on-call receives notifications).
+
+7. **Release strategy**
+   - Use staged rollout:
+     - staging validation → pilot traffic → full rollout
+   - Prepare rollback:
+     - previous deploy artifact ready
+     - DB migration rollback path verified (or forward-fix plan documented)
+     - incident owner and communication channel defined.
+
+---
+
 ## Common Issues
 
 - **Build fails with "PORT is required"** — this is fixed; `PORT` and `BASE_PATH` are now optional during the Vercel build.
