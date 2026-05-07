@@ -694,7 +694,7 @@ router.patch("/requests/:id", async (req, res) => {
 
   // `status` is not added to `updates` here — it is resolved by the engine
   // later.  The check therefore covers two valid rejection paths:
-  //   1. No field updates (selectedDriverId/monthlyPrice/needsAdminReview) AND
+  //   1. No OTHER field updates (selectedDriverId/monthlyPrice/needsAdminReview) AND
   //   2. No `status` payload was provided either.
   if (Object.keys(updates).length === 0 && status === undefined) {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });

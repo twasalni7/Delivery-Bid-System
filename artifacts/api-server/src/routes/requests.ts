@@ -499,10 +499,11 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
       event: "manual_status_sync_requested",
     });
 
-    // Always write to the DB so the caller always receives a fresh record
-    // (consistent updatedAt and no stale data), even when the engine resolves
-    // to the same status that is already stored.  This endpoint is explicitly
-    // a sync trigger, so the write cost is acceptable and expected.
+    // Always write to the DB so the caller always receives a fresh record with
+    // a refreshed `updatedAt` timestamp (important for auditing and client
+    // cache invalidation), even when the engine resolves to the same status
+    // that is already stored.  This endpoint is explicitly a sync trigger, so
+    // the write cost is acceptable and expected.
     const [updated] = await db
       .update(requestsTable)
       .set({ status: resolvedStatus, updatedAt: new Date() })
@@ -825,7 +826,7 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
 
   // `status` is not added to `updates` here — the engine resolves it later.
   // The check covers two rejection paths:
-  //   1. No field updates (selectedDriverId) AND
+  //   1. No OTHER field updates (selectedDriverId) AND
   //   2. No `status` payload was provided either.
   if (Object.keys(updates).length === 0 && status === undefined) {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });

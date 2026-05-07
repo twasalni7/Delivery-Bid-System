@@ -66,10 +66,12 @@ export async function runRequestStatusSync(): Promise<number> {
 export function startRequestStatusSyncJob(): void {
   const timer = setTimeout(() => {
     // Set up the recurring interval FIRST so it is guaranteed to run even if
-    // the initial sync call throws unexpectedly (runRequestStatusSync is
-    // designed to be no-throw, but we defend-in-depth here).
+    // the initial sync call throws synchronously (runRequestStatusSync is
+    // async and catches internally, but we establish the interval before
+    // firing the first run as an explicit defensive measure).
     const interval = setInterval(() => void runRequestStatusSync(), INTERVAL_MS);
     if (interval.unref) interval.unref();
+    // Fire the first run immediately after the interval is registered.
     void runRequestStatusSync();
   }, STARTUP_DELAY_MS);
   if (timer.unref) timer.unref();
