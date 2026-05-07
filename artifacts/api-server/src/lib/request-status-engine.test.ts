@@ -64,12 +64,8 @@ describe("request-status-engine", () => {
     }
   });
 
-  it("resolves non-locked statuses on admin_request_updated/manual_status_sync/background_sync", () => {
-    const events = [
-      "admin_request_updated",
-      "manual_status_sync_requested",
-      "background_sync",
-    ] as const;
+  it("resolves non-locked statuses on admin_request_updated/background_sync", () => {
+    const events = ["admin_request_updated", "background_sync"] as const;
 
     for (const event of events) {
       expect(
