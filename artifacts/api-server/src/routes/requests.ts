@@ -18,6 +18,7 @@ import {
   ListRequestsQueryParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
+import { requireHardDeleteApproval } from "../middleware/requireHardDeleteApproval";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
@@ -914,7 +915,7 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   }
 });
 
-router.delete("/:id", requireAuth("admin"), async (req, res) => {
+router.delete("/:id", requireAuth("admin"), requireHardDeleteApproval, async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });

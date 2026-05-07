@@ -144,7 +144,7 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
 });
 
 // ─── DELETE /service-areas/:id ────────────────────────────────────────────────
-// Admin: permanently delete a service area
+// Admin: soft-delete (deactivate) a service area
 
 router.delete("/:id", requireAuth("admin"), async (req, res) => {
   const id = parseInt(String(req.params.id ?? ""));
@@ -152,7 +152,8 @@ router.delete("/:id", requireAuth("admin"), async (req, res) => {
 
   try {
     const [deleted] = await db
-      .delete(serviceAreasTable)
+      .update(serviceAreasTable)
+      .set({ isActive: false })
       .where(eq(serviceAreasTable.id, id))
       .returning();
 
@@ -167,7 +168,7 @@ router.delete("/:id", requireAuth("admin"), async (req, res) => {
       req,
     });
 
-    res.json({ message: "تم حذف المنطقة بنجاح" });
+    res.json({ message: "تم تعطيل المنطقة بنجاح" });
   } catch (err) {
     logger.error({ err }, "service-areas DELETE /:id error");
     res.status(500).json({ error: SERVER_ERROR_MSG });

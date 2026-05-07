@@ -12,10 +12,16 @@ import { resolveTokenUser } from "./middleware/resolveTokenUser";
 const app = express();
 
 const isProduction = process.env["NODE_ENV"] === "production";
+const isTest = process.env["NODE_ENV"] === "test";
 
 // ─── SESSION_SECRET validation ─────────────────────────────────────────────
 const SESSION_SECRET = process.env["SESSION_SECRET"];
-if (!SESSION_SECRET) {
+if (isProduction && !SESSION_SECRET) {
+  throw new Error(
+    "SESSION_SECRET must be set in production. Refusing to start with insecure fallback.",
+  );
+}
+if (!isProduction && !SESSION_SECRET) {
   logger.warn(
     "SESSION_SECRET is not set. Using insecure default — set it before deploying to production."
   );
@@ -105,6 +111,31 @@ app.use(
 );
 
 app.use(resolveTokenUser);
+
+if (!isTest) {
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: (req) => {
+      const role = req.tokenUser?.role ?? req.sessionUser?.role ?? null;
+      if (role === "admin") return 1200;
+      if (role === "driver" || role === "client") return 900;
+      return 300;
+    },
+    keyGenerator: (req) => {
+      const tokenUser = req.tokenUser;
+      if (tokenUser) return `token:${tokenUser.role}:${tokenUser.id}`;
+      const sessionUser = req.sessionUser;
+      if (sessionUser) return `session:${sessionUser.role}:${sessionUser.id}`;
+      return req.ip ?? "unknown-ip";
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.path === "/healthz" || req.path === "/readyz",
+    message: { error: "تم تجاوز الحد المسموح للطلبات، يرجى المحاولة لاحقاً" },
+  });
+
+  app.use("/api", apiLimiter);
+}
 
 app.get("/", (_req, res) => {
   res.send("Server is running");

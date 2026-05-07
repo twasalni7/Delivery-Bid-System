@@ -13,6 +13,7 @@ import {
 } from "@workspace/db";
 import { eq, count, ne, desc, sql, sum, inArray, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { requireHardDeleteApproval } from "../middleware/requireHardDeleteApproval";
 import { generateLoginCode } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { CreateRequestBody } from "@workspace/api-zod";
@@ -815,7 +816,7 @@ router.patch("/requests/:id", async (req, res) => {
   });
 });
 
-router.delete("/requests/:id", async (req, res) => {
+router.delete("/requests/:id", requireHardDeleteApproval, async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
@@ -987,7 +988,7 @@ router.patch("/clients/:id", async (req, res) => {
   });
 });
 
-router.delete("/clients/:id", async (req, res) => {
+router.delete("/clients/:id", requireHardDeleteApproval, async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
     res.status(400).json({ error: "معرّف غير صحيح" });
