@@ -214,6 +214,19 @@ describe("POST /wallet-transactions/:id/approve (admin only)", () => {
     expect(res.status).toBe(404);
   });
 
+  it("returns 400 when transaction amount is invalid", async () => {
+    (db.query.walletTransactionsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1, driverId: 2, amount: "invalid", status: "pending", intId: 1,
+    });
+    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 2, name: "Khaled", balance: 50,
+    });
+
+    const app = createApp({ id: 1, role: "admin", name: "Admin" });
+    const res = await request(app).post("/wallet-transactions/1/approve");
+    expect(res.status).toBe(400);
+  });
+
   it("approves transaction and credits driver balance", async () => {
     (db.query.walletTransactionsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 1, driverId: 2, amount: "100", status: "pending",
