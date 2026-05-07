@@ -297,6 +297,26 @@ router.post("/", requireAuth("client"), async (req, res) => {
       });
       monthlyPrice = result.price;
       needsAdminReview = result.needsAdminReview;
+
+      // Log pricing decision at the request creation level
+      logger.info(
+        {
+          context: "request.create",
+          engine: result.engine,
+          finalPrice: result.price,
+          pricePerPerson: result.pricePerPerson,
+          distanceKm,
+          workingDaysPerWeek: data.workingDaysPerWeek ?? 5,
+          numberOfShifts: data.numberOfShifts ?? 1,
+          shiftsCount: Array.isArray(data.shifts) ? data.shifts.length : 0,
+          shifts: (data.shifts as { goTime: string; returnTime?: string }[] | undefined) ?? null,
+          additionalLocationsCount: Array.isArray(data.additionalLocations) ? data.additionalLocations.length : 0,
+          additionalLocations: data.additionalLocations ?? null,
+          numberOfPeople: data.numberOfPeople ?? 1,
+          needsAdminReview: result.needsAdminReview,
+        },
+        "request.create: price calculated"
+      );
     }
 
     const initialStatus = resolveRequestStatus({

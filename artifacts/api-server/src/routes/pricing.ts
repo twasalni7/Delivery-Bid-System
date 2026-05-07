@@ -16,7 +16,7 @@ import { logger } from "../lib/logger";
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
-const DEFAULT_PRICING_ENGINE = "matrix" as const;
+const DEFAULT_PRICING_ENGINE = "formula_v2" as const;
 const BASE_LOCATION_COUNT = 1;
 const LEGACY_ROUND_TRIP_COUNT = 2;
 // Business rule: each extra passenger adds 50% to the base total (shared trips).
@@ -39,6 +39,7 @@ const DEFAULT_FORMULA_V2_CONSTANTS: FormulaV2Constants = {
 };
 
 export type PricingEngine = "matrix" | "formula_v2";
+export const VALID_PRICING_ENGINES: readonly PricingEngine[] = ["matrix", "formula_v2"];
 
 export interface UnifiedPricingInput {
   distance: number;
@@ -95,7 +96,8 @@ async function loadPricingRuntimeConfig(): Promise<{
 }
 
 export function resolvePricingEngine(raw: string | undefined | null): PricingEngine {
-  return raw === "formula_v2" ? "formula_v2" : DEFAULT_PRICING_ENGINE;
+  if (VALID_PRICING_ENGINES.includes(raw as PricingEngine)) return raw as PricingEngine;
+  return DEFAULT_PRICING_ENGINE;
 }
 
 export async function loadPricingConfig(): Promise<PricingConfig> {
@@ -151,6 +153,8 @@ export interface MatrixPricingResult {
   needsAdminReview: boolean;
   distanceKm: number;
   numberOfPeople: number;
+  /** The pricing engine that produced this result */
+  engine: PricingEngine | "none";
 }
 
 export interface FormulaV2Result {
@@ -251,6 +255,7 @@ function toFormulaResult(distanceKm: number, persons: number, formula: FormulaV2
     needsAdminReview: false,
     distanceKm,
     numberOfPeople: persons,
+    engine: "formula_v2",
   };
 }
 
@@ -260,13 +265,31 @@ export async function getPriceFromActiveEngine(input: UnifiedPricingInput): Prom
   const needsAdminReview = distanceKm > ADMIN_REVIEW_DISTANCE_KM;
 
   if (needsAdminReview) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: persons };
+    logger.info(
+      { engine: "none", distanceKm, persons, reason: "needs_admin_review" },
+      "pricing: distance exceeds review threshold — skipping calculation"
+    );
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: persons, engine: "none" };
   }
 
   const runtime = await loadPricingRuntimeConfig();
   const formulaResult = calculateSubscriptionPriceV2({ ...input, distance: distanceKm, persons }, runtime.formulaConstants);
 
   if (runtime.engine === "formula_v2") {
+    logger.info(
+      {
+        engine: "formula_v2",
+        distanceKm,
+        persons,
+        daysPerWeek: input.daysPerWeek,
+        locations: input.locations,
+        type: input.type,
+        totalPrice: formulaResult.totalPrice,
+        pricePerPerson: formulaResult.pricePerPerson,
+        details: formulaResult.details,
+      },
+      "pricing: using formula_v2 (new engine)"
+    );
     if (runtime.shadowCompare) {
       const matrix = await getPriceFromMatrix(distanceKm, persons);
       logger.info(
@@ -285,6 +308,17 @@ export async function getPriceFromActiveEngine(input: UnifiedPricingInput): Prom
   }
 
   const matrix = await getPriceFromMatrix(distanceKm, persons);
+  logger.info(
+    {
+      engine: "matrix",
+      distanceKm,
+      persons,
+      price: matrix.price,
+      pricePerPerson: matrix.pricePerPerson,
+      needsAdminReview: matrix.needsAdminReview,
+    },
+    "pricing: using matrix (legacy engine)"
+  );
   if (runtime.shadowCompare) {
     logger.info(
       {
@@ -341,7 +375,7 @@ export async function getPriceFromMatrix(
 ): Promise<MatrixPricingResult> {
   const needsAdminReview = distanceKm > ADMIN_REVIEW_DISTANCE_KM;
   if (needsAdminReview) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers, engine: "matrix" };
   }
 
   const passengers = Math.max(1, Math.round(numPassengers));
@@ -370,6 +404,7 @@ export async function getPriceFromMatrix(
         needsAdminReview: false,
         distanceKm,
         numberOfPeople: passengers,
+        engine: "matrix",
       };
     }
   }
@@ -392,13 +427,13 @@ export async function getPriceFromMatrix(
     .limit(1);
 
   if (baseRows.length === 0) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers };
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers, engine: "matrix" };
   }
 
   const row = baseRows[0]!;
   const priceSar = row.priceSar ?? row.pricePerPerson;
   if (priceSar == null || priceSar <= 0) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers };
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers, engine: "matrix" };
   }
 
   const passengersMax = row.passengersMax ?? 4;
@@ -411,6 +446,7 @@ export async function getPriceFromMatrix(
     needsAdminReview: false,
     distanceKm,
     numberOfPeople: effectivePassengers,
+    engine: "matrix",
   };
 }
 
@@ -445,12 +481,41 @@ router.get("/config", requireAuth(), async (_req, res) => {
   }
 });
 
+// ─── GET /pricing/engine ──────────────────────────────────────────────────────
+// Admin: get current pricing engine and formula_v2 constants
+
+router.get("/engine", requireAuth("admin"), async (_req, res) => {
+  try {
+    const runtime = await loadPricingRuntimeConfig();
+    res.json({
+      engine: runtime.engine,
+      shadowCompare: runtime.shadowCompare,
+      formulaConstants: runtime.formulaConstants,
+      defaultEngine: DEFAULT_PRICING_ENGINE,
+    });
+  } catch (err) {
+    logger.error({ err }, "pricing GET /engine error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
+});
+
 // ─── PATCH /pricing/config ────────────────────────────────────────────────────
-// Admin: update any subset of pricing config
+// Admin: update any subset of pricing config (tiers, discounts, proximity, engine)
 
 router.patch("/config", requireAuth("admin"), async (req, res) => {
-  const { tiers, sharingDiscounts, proximityHomeKm, proximityWorkKm, proximityTimeMinutes } =
-    req.body ?? {};
+  const {
+    tiers,
+    sharingDiscounts,
+    proximityHomeKm,
+    proximityWorkKm,
+    proximityTimeMinutes,
+    engine,
+    shadowCompare,
+    pricePerKm,
+    visitFee,
+    extraLocationRate,
+    weeks,
+  } = req.body ?? {};
 
   try {
     if (tiers !== undefined) {
@@ -487,8 +552,45 @@ router.patch("/config", requireAuth("admin"), async (req, res) => {
       await upsertConfig("proximity_time_minutes", String(val));
     }
 
+    // Pricing engine selector
+    if (engine !== undefined) {
+      if (!VALID_PRICING_ENGINES.includes(engine)) {
+        res.status(400).json({ error: `محرك التسعير يجب أن يكون أحد القيم: ${VALID_PRICING_ENGINES.join(" أو ")}` });
+        return;
+      }
+      await upsertConfig("pricing_engine", engine);
+      logger.info({ engine }, "pricing: engine switched by admin");
+    }
+
+    if (shadowCompare !== undefined) {
+      await upsertConfig("pricing_shadow_compare", shadowCompare ? "true" : "false");
+    }
+
+    // formula_v2 constants
+    if (pricePerKm !== undefined) {
+      const val = parseStrictPositiveNumber(String(pricePerKm), 0);
+      if (val <= 0) { res.status(400).json({ error: "سعر الكيلومتر يجب أن يكون رقماً موجباً" }); return; }
+      await upsertConfig("pricing_v2_price_per_km", String(val));
+    }
+    if (visitFee !== undefined) {
+      const val = parseStrictPositiveNumber(String(visitFee), 0);
+      if (val <= 0) { res.status(400).json({ error: "رسوم الزيارة يجب أن تكون رقماً موجباً" }); return; }
+      await upsertConfig("pricing_v2_visit_fee", String(val));
+    }
+    if (extraLocationRate !== undefined) {
+      const val = parseStrictPositiveNumber(String(extraLocationRate), 0);
+      if (val <= 0) { res.status(400).json({ error: "معدل الموقع الإضافي يجب أن يكون رقماً موجباً" }); return; }
+      await upsertConfig("pricing_v2_extra_location_rate", String(val));
+    }
+    if (weeks !== undefined) {
+      const val = parseStrictPositiveNumber(String(weeks), 0);
+      if (val <= 0) { res.status(400).json({ error: "عدد الأسابيع يجب أن يكون رقماً موجباً" }); return; }
+      await upsertConfig("pricing_v2_weeks", String(val));
+    }
+
     const updated = await loadPricingConfig();
-    res.json(updated);
+    const runtime = await loadPricingRuntimeConfig();
+    res.json({ ...updated, engine: runtime.engine, shadowCompare: runtime.shadowCompare });
   } catch (err) {
     logger.error({ err }, "pricing PATCH /config error");
     res.status(500).json({ error: SERVER_ERROR_MSG });

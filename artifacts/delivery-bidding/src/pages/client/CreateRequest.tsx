@@ -288,6 +288,7 @@ export default function CreateRequest() {
     distanceKm: number;
     numberOfPeople: number;
   } | undefined>(undefined);
+  const [isPricingLoading, setIsPricingLoading] = useState(false);
 
   // Compute per-passenger distances, then take the max for pricing
   const passengerDistances: (number | null)[] = [
@@ -335,17 +336,21 @@ export default function CreateRequest() {
     setExtraPassengers((prev) => prev.map((p, i) => (i === idx ? { ...p, ...update } : p)));
   };
 
-  // Fetch price from server whenever distance or passengers change
+  // Fetch price from server whenever distance, passengers, schedule or locations change
   useEffect(() => {
     if (maxDistanceKm === undefined) {
       setPricingResult(undefined);
       return;
     }
+    const controller = new AbortController();
     const validShifts = buildShiftsPayload(shifts);
     const firstReturnTime = shifts[0]?.returnTime ?? "";
+    const validAdditionalForPricing = additionalLocations.filter((l) => l.address.trim());
+    setIsPricingLoading(true);
     fetch(`${API}/api/pricing/calculate`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      signal: controller.signal,
       body: JSON.stringify({
         distanceKm: maxDistanceKm,
         numberOfPeople: sharingCount,
@@ -353,12 +358,14 @@ export default function CreateRequest() {
         numberOfShifts: validShifts.length || 1,
         eveningTime: firstReturnTime || undefined,
         shifts: validShifts.length > 0 ? validShifts : undefined,
+        additionalLocations: validAdditionalForPricing.length > 0 ? validAdditionalForPricing : undefined,
       }),
     })
       .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
-      .then((data) => setPricingResult(data))
-      .catch(() => setPricingResult(undefined));
-  }, [maxDistanceKm, sharingCount, selectedDays, shifts]);
+      .then((data) => { setPricingResult(data); setIsPricingLoading(false); })
+      .catch((err) => { if (err?.name !== "AbortError") { setPricingResult(undefined); setIsPricingLoading(false); } });
+    return () => controller.abort();
+  }, [maxDistanceKm, sharingCount, selectedDays, shifts, additionalLocations]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
@@ -798,7 +805,12 @@ export default function CreateRequest() {
                 )}
 
                 {/* Auto-calculated price display */}
-                {pricingResult && !pricingResult.needsAdminReview ? (
+                {isPricingLoading ? (
+                  <div className="p-5 rounded-[1.5rem] flex items-center gap-3" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                    <div className="w-5 h-5 rounded-full border-4 border-t-transparent animate-spin shrink-0" style={{ borderColor: "var(--brand-border)", borderTopColor: "var(--brand)" }} />
+                    <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>جاري حساب السعر...</p>
+                  </div>
+                ) : pricingResult && !pricingResult.needsAdminReview ? (
                   <div className="p-5 rounded-[1.5rem] space-y-3" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري المحسوب تلقائياً</p>
@@ -914,7 +926,12 @@ export default function CreateRequest() {
                       {subscriptionType === "shared" ? "مشترك" : "خاص"}
                     </span>
                   </div>
-                  {pricingResult && !pricingResult.needsAdminReview && (
+                  {isPricingLoading ? (
+                    <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+                      <span>السعر</span>
+                      <span className="font-black" style={{ color: "var(--text-muted)" }}>جاري الحساب...</span>
+                    </div>
+                  ) : pricingResult && !pricingResult.needsAdminReview ? (
                     <>
                       <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                         <span>السعر / شخص</span>
@@ -931,7 +948,7 @@ export default function CreateRequest() {
                         </div>
                       )}
                     </>
-                  )}
+                  ) : null}
                   {notes.trim() && (
                     <div className="flex justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                       <span>ملاحظات</span><span className="font-black text-xs max-w-[55%] text-right">{notes.trim()}</span>
