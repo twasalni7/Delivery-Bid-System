@@ -5,9 +5,9 @@ import { useGetRequest, useGetRequestOffers, getGetRequestQueryKey, getGetReques
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Lock, Unlock, ChevronDown } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
-import { getStatusLabel } from "@/lib/status-utils";
+import { getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
 import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
@@ -35,6 +35,7 @@ export default function AdminRequestDetails() {
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
 
   const { data: request, isLoading: loadingReq } = useGetRequest(id, {
     query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
@@ -106,6 +107,44 @@ export default function AdminRequestDetails() {
     },
   });
 
+  // Admin manual status change
+  const changeStatus = useMutation({
+    mutationFn: async (status: string) => {
+      const res = await fetch(`${API}/api/admin/requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "فشل تغيير الحالة");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+      setShowStatusMenu(false);
+      toast({ title: "✅ تم تغيير الحالة يدوياً", description: "التزامن التلقائي متوقف الآن لهذا الطلب." });
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
+
+  // Admin unlock manual status — re-enable auto-sync
+  const unlockStatus = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API}/api/admin/requests/${id}/unlock-status`, {
+        method: "POST",
+        headers: { ...getAuthHeaders() },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "فشل فك التثبيت");
+      return data;
+    },
+    onSuccess: (data: { message: string; status: string }) => {
+      queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+      toast({ title: "✅ تم فك التثبيت", description: data.message });
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
+
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -159,6 +198,62 @@ export default function AdminRequestDetails() {
             🛡️ طلب منشأ من الإدارة
           </div>
         )}
+
+        {/* Manual status lock banner */}
+        {request.statusManuallySetByAdmin && (
+          <div className="rounded-2xl px-4 py-3 mb-4 flex items-center gap-3" style={{ backgroundColor: "var(--status-frozen-bg)", border: "1px solid var(--status-frozen-border)" }}>
+            <Lock size={16} style={{ color: "var(--status-frozen-text)", flexShrink: 0 }} />
+            <div className="flex-1">
+              <p className="text-sm font-bold" style={{ color: "var(--status-frozen-text)" }}>الحالة مثبّتة يدوياً</p>
+              <p className="text-xs" style={{ color: "var(--status-frozen-text)", opacity: 0.8 }}>التزامن التلقائي متوقف لهذا الطلب. فك التثبيت لإعادة التحكم التلقائي.</p>
+            </div>
+            <button
+              onClick={() => { if (confirm("هل تريد فك تثبيت الحالة وإعادة التزامن التلقائي؟")) unlockStatus.mutate(); }}
+              disabled={unlockStatus.isPending}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+            >
+              <Unlock size={13} /> {unlockStatus.isPending ? "جاري..." : "فك التثبيت"}
+            </button>
+          </div>
+        )}
+
+        {/* Admin status control */}
+        <div className="flex items-center gap-2 mb-4 relative">
+          <div className="relative">
+            <button
+              onClick={() => setShowStatusMenu((v) => !v)}
+              className="flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-xl"
+              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            >
+              <Lock size={13} /> تغيير الحالة <ChevronDown size={13} />
+            </button>
+            {showStatusMenu && (
+              <div
+                className="absolute z-50 top-full mt-1 right-0 rounded-xl overflow-hidden shadow-lg"
+                style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", minWidth: 160 }}
+              >
+                {ALL_STATUSES.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => changeStatus.mutate(s)}
+                    disabled={changeStatus.isPending || s === request.status}
+                    className="w-full text-right px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-40"
+                    style={s === request.status
+                      ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }
+                      : { color: "var(--text)" }}
+                  >
+                    {getStatusLabel(s)}
+                    {s === request.status && " ✓"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {showStatusMenu && (
+            <div className="fixed inset-0 z-40" onClick={() => setShowStatusMenu(false)} />
+          )}
+        </div>
 
         <div className="rounded-2xl overflow-hidden shadow-md mb-5">
           <div className="p-5 text-white" style={{ backgroundColor: gradient.bg }}>

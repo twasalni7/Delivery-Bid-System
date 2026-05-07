@@ -136,6 +136,8 @@ function formatRequest(
     needsAdminReview: r.needsAdminReview,
     monthlyPrice: toNum(r.monthlyPrice),
     status: r.status,
+    // Only expose the manual-override flag to admins so clients/drivers cannot see it
+    ...(user?.role === "admin" ? { statusManuallySetByAdmin: r.statusManuallySetByAdmin } : {}),
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
     createdBy: r.createdBy ?? "client",

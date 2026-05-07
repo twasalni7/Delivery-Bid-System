@@ -210,6 +210,8 @@ export interface CommuteRequest {
   monthlyPrice?: number;
   createdBy?: "admin" | "client" | null;
   status: CommuteRequestStatus;
+  /** True when admin has manually overridden the status; auto-sync is paused */
+  statusManuallySetByAdmin?: boolean;
   selectedDriverId?: number | null;
   selectedDriver?: Driver | null;
   createdAt?: string;

@@ -194,9 +194,14 @@ export default function AdminRequests() {
                          )}
                        </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm px-3 py-1 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-                          {getStatusLabel(req.status)}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm px-3 py-1 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+                            {getStatusLabel(req.status)}
+                          </span>
+                          {req.statusManuallySetByAdmin && (
+                            <span title="الحالة مثبّتة يدوياً — التزامن التلقائي متوقف" className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>🔒</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ color: "var(--text-sub)", backgroundColor: "var(--border-subtle)" }}>{(req as any).clientType ?? "—"}</span>
@@ -283,6 +288,9 @@ export default function AdminRequests() {
                       <span className="text-sm px-3 py-0.5 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                         {getStatusLabel(req.status)}
                       </span>
+                      {req.statusManuallySetByAdmin && (
+                        <span title="الحالة مثبّتة يدوياً" className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>🔒</span>
+                      )}
                       {req.selectedDriver && <span className="text-sm px-2.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--brand-border)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>}
                     </div>
                     <div className="flex gap-2 shrink-0">

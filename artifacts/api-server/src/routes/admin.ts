@@ -690,6 +690,7 @@ router.get("/requests", async (_req, res) => {
       notes: r.notes,
       monthlyPrice: r.monthlyPrice,
       status: r.status,
+      statusManuallySetByAdmin: r.statusManuallySetByAdmin,
       selectedDriverId: r.selectedDriverId,
       createdAt: r.createdAt?.toISOString(),
       updatedAt: r.updatedAt?.toISOString(),
@@ -807,6 +808,7 @@ router.patch("/requests/:id", async (req, res) => {
     notes: updated.notes,
     monthlyPrice: updated.monthlyPrice,
     status: updated.status,
+    statusManuallySetByAdmin: updated.statusManuallySetByAdmin,
     selectedDriverId: updated.selectedDriverId,
     createdAt: updated.createdAt?.toISOString(),
     updatedAt: updated.updatedAt?.toISOString(),
@@ -828,6 +830,64 @@ router.delete("/requests/:id", async (req, res) => {
     return;
   }
   res.json({ message: "تم حذف الطلب" });
+});
+
+/**
+ * POST /api/admin/requests/:id/unlock-status
+ * Resets statusManuallySetByAdmin = false and recalculates the correct status
+ * via the status engine so that the background auto-sync takes over again.
+ */
+router.post("/requests/:id/unlock-status", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+
+  const result = await withDbTransaction(async (tx) => {
+    const existing = await tx.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, id),
+    });
+    if (!existing) return null;
+
+    const { status: resolvedStatus, reason } = resolveRequestStatus({
+      currentStatus: existing.status as RequestStatus,
+      selectedDriverId: existing.selectedDriverId,
+      needsAdminReview: existing.needsAdminReview,
+      event: "admin_request_updated",
+    });
+
+    const [updated] = await tx
+      .update(requestsTable)
+      .set({ status: resolvedStatus, statusManuallySetByAdmin: false, updatedAt: new Date() })
+      .where(eq(requestsTable.id, id))
+      .returning();
+
+    return { existing, updated, reason };
+  });
+
+  if (!result) {
+    res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+
+  const { existing, updated, reason } = result;
+
+  logRequestStatusTransition({
+    requestId: id,
+    previousStatus: existing.status as RequestStatus,
+    nextStatus: updated.status as RequestStatus,
+    reason: reason + " (manual_lock_released)",
+    event: "admin_request_updated",
+  });
+
+  res.json({
+    id: updated.id,
+    status: updated.status,
+    statusManuallySetByAdmin: updated.statusManuallySetByAdmin,
+    updatedAt: updated.updatedAt?.toISOString(),
+    message: "تم فك تثبيت الحالة وإعادة التزامن التلقائي",
+  });
 });
 
 router.post("/change-code", async (req, res) => {
