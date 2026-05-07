@@ -151,10 +151,11 @@ router.post("/login-driver", async (req, res) => {
   }
   try {
     const normalizedMobile = normalizeDriverMobile(String(mobile));
+    const normalizedLoginCode = String(loginCode).trim().toUpperCase();
     const driver = await db.query.driversTable.findFirst({
       where: eq(driversTable.mobile, normalizedMobile),
     });
-    if (!driver || driver.loginCode !== loginCode.toUpperCase()) {
+    if (!driver || String(driver.loginCode).trim().toUpperCase() !== normalizedLoginCode) {
       res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });
       return;
     }
@@ -312,4 +313,3 @@ router.patch("/me/password", async (req, res) => {
 });
 
 export default router;
-

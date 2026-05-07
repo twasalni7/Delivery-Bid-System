@@ -78,7 +78,7 @@ function parseFile(file: File): Promise<ParsedRow[]> {
       try {
         const data = e.target?.result;
         if (!(data instanceof ArrayBuffer)) {
-          reject(new Error("تعذّر قراءة الملف. حاول رفع الملف مرة أخرى."));
+          reject(new Error("تعذّر قراءة الملف. تأكد من أن الملف CSV أو Excel صالح."));
           return;
         }
         const workbook = XLSX.read(data, { type: "array" });
