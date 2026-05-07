@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("drizzle-orm", () => ({
+  eq: vi.fn((column: unknown, value: unknown) => ({ column, value })),
+}));
+
 vi.mock("@workspace/db", () => {
   const mockDb = {
     select: vi.fn(),
@@ -62,5 +66,11 @@ describe("request-status-sync", () => {
     const updatedCount = await runRequestStatusSync();
     expect(updatedCount).toBe(1);
     expect(db.update).toHaveBeenCalledTimes(1);
+    expect(where).toHaveBeenCalledWith(
+      expect.objectContaining({
+        column: "id",
+        value: 3,
+      }),
+    );
   });
 });
