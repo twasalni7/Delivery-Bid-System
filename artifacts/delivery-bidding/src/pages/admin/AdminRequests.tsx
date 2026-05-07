@@ -1,13 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useListRequests, useAdminUpdateRequest, useAdminDeleteRequest, getListRequestsQueryKey, UpdateStatusBodyStatus } from "@workspace/api-client-react";
+import { useListRequests, useAdminDeleteRequest, getListRequestsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Trash2, Edit2, MapPin, Clock, Users, Search, X, Plus, Eye } from "lucide-react";
+import { Trash2, MapPin, Clock, Users, Search, X, Plus, Eye } from "lucide-react";
 import type { CommuteRequest } from "@workspace/api-client-react";
 import { getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
 import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
@@ -30,10 +29,7 @@ export default function AdminRequests() {
   const [search, setSearch] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: requests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 15_000 } as any });
-  const updateRequest = useAdminUpdateRequest();
   const deleteRequest = useAdminDeleteRequest();
-  const [editDialog, setEditDialog] = useState<CommuteRequest | null>(null);
-  const [editStatus, setEditStatus] = useState("");
 
   // Real-time: refresh when any request is created or its status changes
   useRealtimeRefresh(
@@ -60,19 +56,6 @@ export default function AdminRequests() {
   }, [requests, statusFilter, search]);
 
   const activeFilters = (statusFilter !== "ALL" ? 1 : 0) + (search ? 1 : 0);
-
-  const handleEdit = (req: CommuteRequest) => { setEditStatus(req.status); setEditDialog(req); };
-
-  const handleSave = () => {
-    if (!editDialog) return;
-    updateRequest.mutate(
-      { id: editDialog.id, data: { status: editStatus as UpdateStatusBodyStatus } },
-      {
-        onSuccess: () => { refetch(); toast({ title: "تم التحديث!" }); setEditDialog(null); },
-        onError: (err: Error) => toast({ title: err.message ?? "فشل التحديث", variant: "destructive" }),
-      }
-    );
-  };
 
   const handleDelete = (req: CommuteRequest) => {
     if (!confirm(`هل تريد حذف الطلب #${req.id}؟`)) return;
@@ -272,10 +255,6 @@ export default function AdminRequests() {
                               <Eye size={14} style={{ color: "var(--brand)" }} />
                             </button>
                           </Link>
-                          <button onClick={() => handleEdit(req)}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                            <Edit2 size={14} style={{ color: "var(--text-muted)" }} />
-                          </button>
                           <button onClick={() => handleDelete(req)}
                             className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
                             <Trash2 size={14} style={{ color: "var(--status-cancelled-text)" }} />
@@ -310,7 +289,6 @@ export default function AdminRequests() {
                       <Link href={`/admin/request/${req.id}`}>
                         <button className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}><Eye size={14} style={{ color: "var(--brand)" }} /></button>
                       </Link>
-                      <button onClick={() => handleEdit(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}><Edit2 size={14} style={{ color: "var(--text-muted)" }} /></button>
                       <button onClick={() => handleDelete(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}><Trash2 size={14} style={{ color: "var(--status-cancelled-text)" }} /></button>
                     </div>
                   </div>
@@ -344,27 +322,6 @@ export default function AdminRequests() {
           </>
         )}
 
-        <Dialog open={!!editDialog} onOpenChange={(o) => !o && setEditDialog(null)}>
-          <DialogContent dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-black" style={{ color: "var(--text)" }}>تعديل حالة الطلب #{editDialog?.id}</DialogTitle>
-            </DialogHeader>
-            <Select value={editStatus} onValueChange={setEditStatus}>
-              <SelectTrigger className="rounded-xl h-12 text-base"><SelectValue placeholder="اختر الحالة" /></SelectTrigger>
-              <SelectContent>
-                {ALL_STATUSES.map((val) => <SelectItem key={val} value={val}>{getStatusLabel(val)}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <DialogFooter className="gap-2 flex-row-reverse">
-              <button onClick={handleSave} disabled={updateRequest.isPending}
-                className="flex-1 py-3 rounded-xl font-black text-base disabled:opacity-50"
-                style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
-                {updateRequest.isPending ? "جاري الحفظ..." : "حفظ"}
-              </button>
-              <button onClick={() => setEditDialog(null)} className="flex-1 py-3 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-sub)" }}>إلغاء</button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
   );
