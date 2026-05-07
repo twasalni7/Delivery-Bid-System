@@ -66,7 +66,6 @@ function getDriverMobileLoginCandidates(mobile: string): string[] {
   const candidates = new Set<string>([normalized]);
   if (normalized.startsWith("05") && normalized.length === 10) {
     candidates.add(normalized.slice(1)); // legacy format without leading zero
-    candidates.add(`966${normalized.slice(1)}`); // legacy country-code format
   }
   return [...candidates];
 }
