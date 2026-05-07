@@ -290,6 +290,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
         numberOfPeople: data.numberOfPeople ?? 1,
         workingDaysPerWeek: data.workingDaysPerWeek ?? 5,
         numberOfShifts: data.numberOfShifts ?? 1,
+        eveningTime: data.eveningTime ?? null,
         shifts: (data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
         additionalLocations:
           (data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,

@@ -69,6 +69,14 @@ describe("pricing engine mapping helpers", () => {
     expect(getTripTypeFromShifts(2, null)).toBe("round_trip");
     expect(getTripTypeFromShifts(4, null)).toBe("shift");
     expect(getTripTypeFromShifts(3, null)).toBe(3);
+    expect(getTripTypeFromShifts(1, [{ goTime: "07:00", returnTime: "15:00" }])).toBe("round_trip");
+    expect(
+      getTripTypeFromShifts(1, [
+        { goTime: "07:00", returnTime: "12:00" },
+        { goTime: "13:00", returnTime: "18:00" },
+      ])
+    ).toBe("shift");
+    expect(getTripTypeFromShifts(1, null, "15:00")).toBe("round_trip");
     // default engine (no config) is now formula_v2
     expect(resolvePricingEngine(undefined)).toBe("formula_v2");
     expect(resolvePricingEngine(null)).toBe("formula_v2");

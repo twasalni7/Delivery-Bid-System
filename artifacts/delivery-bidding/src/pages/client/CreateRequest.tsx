@@ -343,7 +343,8 @@ export default function CreateRequest() {
       return;
     }
     const controller = new AbortController();
-    const validShiftsForPricing = shifts.filter((s) => s.goTime);
+    const validShifts = buildShiftsPayload(shifts);
+    const firstReturnTime = shifts[0]?.returnTime ?? "";
     const validAdditionalForPricing = additionalLocations.filter((l) => l.address.trim());
     setIsPricingLoading(true);
     fetch(`${API}/api/pricing/calculate`, {
@@ -354,8 +355,9 @@ export default function CreateRequest() {
         distanceKm: maxDistanceKm,
         numberOfPeople: sharingCount,
         workingDaysPerWeek: selectedDays.length || DEFAULT_WORKING_DAYS_PER_WEEK,
-        numberOfShifts: shifts.length,
-        shifts: validShiftsForPricing.length > 0 ? validShiftsForPricing : undefined,
+        numberOfShifts: validShifts.length || 1,
+        eveningTime: firstReturnTime || undefined,
+        shifts: validShifts.length > 0 ? validShifts : undefined,
         additionalLocations: validAdditionalForPricing.length > 0 ? validAdditionalForPricing : undefined,
       }),
     })

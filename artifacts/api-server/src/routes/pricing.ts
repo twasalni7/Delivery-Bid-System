@@ -18,6 +18,7 @@ const router = Router();
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 const DEFAULT_PRICING_ENGINE = "formula_v2" as const;
 const BASE_LOCATION_COUNT = 1;
+const LEGACY_ROUND_TRIP_COUNT = 2;
 // Business rule: each extra passenger adds 50% to the base total (shared trips).
 const EXTRA_PASSENGER_FACTOR_INCREMENT = 0.5;
 
@@ -211,12 +212,36 @@ export function calculateSubscriptionPriceV2(
   };
 }
 
+/**
+ * Resolves the pricing trip type from schedule payload.
+ * Priority: explicit structured `shifts` (go/return counts) then legacy `eveningTime`,
+ * then `numberOfShifts` fallback for older payloads.
+ * Note: counting is based on trip legs (go + return), not just shift array length.
+ */
 export function getTripTypeFromShifts(
   numberOfShifts?: number | null,
-  shifts?: { goTime: string; returnTime?: string; label?: string }[] | null
+  shifts?: { goTime: string; returnTime?: string; label?: string }[] | null,
+  eveningTime?: string | null
 ): string | number {
-  const shiftsCount = Array.isArray(shifts) ? shifts.length : 0;
-  const count = shiftsCount > 0 ? shiftsCount : Math.max(1, Math.round(Number(numberOfShifts) || 1));
+  const tripsFromShifts = Array.isArray(shifts)
+    ? shifts.reduce((sum, shift) => {
+        const hasGo = typeof shift.goTime === "string" && shift.goTime.trim() !== "";
+        const hasReturn = typeof shift.returnTime === "string" && shift.returnTime.trim() !== "";
+        return sum + (hasGo ? 1 : 0) + (hasReturn ? 1 : 0);
+      }, 0)
+    : 0;
+  // Legacy payloads may send only morning/evening scalar times instead of shifts.
+  // In that shape, eveningTime means the rider provided a return leg as well, so treat it as round trip.
+  const tripsFromLegacyTimes =
+    tripsFromShifts === 0 && typeof eveningTime === "string" && eveningTime.trim() !== ""
+      ? LEGACY_ROUND_TRIP_COUNT
+      : 0;
+  const count =
+    tripsFromShifts > 0
+      ? tripsFromShifts
+      : tripsFromLegacyTimes > 0
+      ? tripsFromLegacyTimes
+      : Math.max(1, Math.round(Number(numberOfShifts) || 1));
   if (count === 1) return "one_way";
   if (count === 2) return "round_trip";
   if (count === 4) return "shift";
@@ -315,6 +340,7 @@ export interface PriceForRequestInput {
   numberOfPeople?: number | null;
   workingDaysPerWeek?: number | null;
   numberOfShifts?: number | null;
+  eveningTime?: string | null;
   shifts?: { goTime: string; returnTime?: string; label?: string }[] | null;
   additionalLocations?: { type: "pickup" | "dropoff"; address: string }[] | null;
   locations?: number | null;
@@ -324,7 +350,7 @@ export interface PriceForRequestInput {
 export async function calculatePriceForRequest(input: PriceForRequestInput): Promise<MatrixPricingResult> {
   const daysPerWeek = Math.max(1, Math.round(Number(input.workingDaysPerWeek) || 5));
   const persons = Math.max(1, Math.round(Number(input.numberOfPeople) || 1));
-  const type = input.type ?? getTripTypeFromShifts(input.numberOfShifts, input.shifts);
+  const type = input.type ?? getTripTypeFromShifts(input.numberOfShifts, input.shifts, input.eveningTime);
   const derivedLocations =
     BASE_LOCATION_COUNT + (Array.isArray(input.additionalLocations) ? input.additionalLocations.length : 0);
   const explicitLocations = Number(input.locations);
@@ -581,6 +607,7 @@ router.post("/calculate", requireAuth(), async (req, res) => {
     distanceKm: clientDistanceKm,
     workingDaysPerWeek,
     numberOfShifts,
+    eveningTime,
     shifts,
     additionalLocations,
     locations,
@@ -607,6 +634,7 @@ router.post("/calculate", requireAuth(), async (req, res) => {
       numberOfPeople: Number(numberOfPeople) || 1,
       workingDaysPerWeek: Number(workingDaysPerWeek) || 5,
       numberOfShifts: Number(numberOfShifts) || null,
+      eveningTime: typeof eveningTime === "string" ? eveningTime : null,
       shifts: Array.isArray(shifts) ? shifts : null,
       additionalLocations: Array.isArray(additionalLocations) ? additionalLocations : null,
       locations: Number(locations) || null,
