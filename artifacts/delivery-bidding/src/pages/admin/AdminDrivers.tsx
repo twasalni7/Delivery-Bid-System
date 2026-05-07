@@ -79,7 +79,8 @@ async function parseFile(file: File): Promise<ParsedRow[]> {
     const sheet = workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
     return json.map(normalizeRow);
-  } catch {
+  } catch (error) {
+    console.error("Driver import file parse failed", error);
     throw new Error("تعذّر قراءة الملف. تأكد من أنه CSV أو Excel صحيح.");
   }
 }
