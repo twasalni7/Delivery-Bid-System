@@ -154,7 +154,7 @@ router.post("/login-driver", async (req, res) => {
     const driver = await db.query.driversTable.findFirst({
       where: eq(driversTable.mobile, normalizedMobile),
     });
-    if (!driver || driver.loginCode !== loginCode) {
+    if (!driver || driver.loginCode !== loginCode.toUpperCase()) {
       res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });
       return;
     }
