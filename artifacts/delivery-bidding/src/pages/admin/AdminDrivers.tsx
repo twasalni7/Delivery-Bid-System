@@ -2,15 +2,16 @@ import { useState, useRef, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useAdminListDrivers, useAdminCreateDriver, useAdminUpdateDriver, useAdminDeleteDriver,
-  useAdminBlockDriver, useAdminUnblockDriver, useAdminWarnDriver, useAdminRestoreDriver,
-  useAdminUpdateDriverBalance, useAdminRegenerateDriverCode, getAdminListDriversQueryKey,
+  useAdminBlockDriver, useAdminUnblockDriver, useAdminWarnDriver, useAdminRemoveDriverWarning,
+  useAdminRestoreDriver, useAdminUpdateDriverBalance, useAdminRegenerateDriverCode,
+  getAdminListDriversQueryKey,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet, Search, X, Copy, MessageCircle } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet, Search, X, Copy, MessageCircle, MinusCircle } from "lucide-react";
 import type { DriverDetail } from "@workspace/api-client-react";
 import * as XLSX from "xlsx";
 import { getAuthHeaders } from "@/lib/authed-fetch";
@@ -18,7 +19,7 @@ import { openWhatsApp } from "@/lib/whatsapp-utils";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
-type DialogMode = "create" | "edit" | "balance" | "import" | null;
+type DialogMode = "create" | "edit" | "balance" | "deduct" | "import" | null;
 
 function getStatusStyle(status: string): React.CSSProperties {
   if (status === "ACTIVE") return { backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)", border: "1px solid var(--status-active-border)" };
@@ -476,6 +477,7 @@ export default function AdminDrivers() {
   const blockDriver = useAdminBlockDriver();
   const unblockDriver = useAdminUnblockDriver();
   const warnDriver = useAdminWarnDriver();
+  const removeWarning = useAdminRemoveDriverWarning();
   const restoreDriver = useAdminRestoreDriver();
   const updateBalance = useAdminUpdateDriverBalance();
   const regenCode = useAdminRegenerateDriverCode();
@@ -518,6 +520,7 @@ export default function AdminDrivers() {
     setDialogMode("edit");
   };
   const openBalance = (d: DriverDetail) => { setSelectedDriver(d); setFormBalance(""); setDialogMode("balance"); };
+  const openDeduct  = (d: DriverDetail) => { setSelectedDriver(d); setFormBalance(""); setDialogMode("deduct"); };
 
   const handleCreate = () => {
     createDriver.mutate(
@@ -554,10 +557,19 @@ export default function AdminDrivers() {
     if (!confirm(`إصدار تحذير للسائق "${d.name}"؟`)) return;
     warnDriver.mutate({ id: d.id }, { onSuccess: () => { refetch(); toast({ title: "تم إصدار تحذير" }); } });
   };
+  const handleRemoveWarning = (d: DriverDetail) => {
+    if (!confirm(`إلغاء آخر تحذير للسائق "${d.name}"؟`)) return;
+    removeWarning.mutate({ id: d.id }, {
+      onSuccess: () => { refetch(); toast({ title: "تم إلغاء التحذير" }); },
+      onError: (err: unknown) => toast({ title: err instanceof Error ? err.message : "فشل إلغاء التحذير", variant: "destructive" }),
+    });
+  };
   const handleBalance = () => {
     if (!selectedDriver) return;
-    const amount = parseFloat(formBalance);
-    if (isNaN(amount) || amount === 0) { toast({ title: "مبلغ غير صحيح", variant: "destructive" }); return; }
+    const raw = parseFloat(formBalance);
+    if (isNaN(raw) || raw <= 0) { toast({ title: "يرجى إدخال مبلغ موجب أكبر من الصفر", variant: "destructive" }); return; }
+    // For the deduct dialog, always send a negative amount
+    const amount = dialogMode === "deduct" ? -raw : raw;
     updateBalance.mutate(
       { id: selectedDriver.id, data: { amount } },
       { onSuccess: (d) => { refetch(); toast({ title: "تم تعديل الرصيد!", description: `الرصيد الجديد: ${d.balance.toFixed(2)} ر.س` }); setDialogMode(null); }, onError: (err: Error) => toast({ title: err.message, variant: "destructive" }) }
@@ -659,78 +671,7 @@ export default function AdminDrivers() {
 
         {filteredDrivers.length > 0 && (
           <>
-            {/* Desktop table */}
-            <div className="hidden lg:block rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-              <table className="w-full" dir="rtl">
-                <thead>
-                  <tr className="border-b" style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>السائق</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الجوال</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>المركبة</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الرصيد</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الحالة</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>رمز الدخول</th>
-                    <th className="text-center px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDrivers.map((d, idx) => (
-                    <tr key={d.id} className="border-b transition-colors" style={{ borderColor: "var(--border)" }}>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg shrink-0">🚗</div>
-                          <div>
-                            <p className="font-black text-base" style={{ color: "var(--text)" }}>{d.name}</p>
-                            <p className="text-xs" style={{ color: "var(--text-hint)" }}>#{d.id}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-sm font-medium" dir="ltr" style={{ color: "var(--text-muted)" }}>{d.mobile}</td>
-                      <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{d.carType || "—"}</td>
-                      <td className="px-5 py-4">
-                        <span className="text-sm font-black" style={{ color: d.balance >= 50 ? "var(--status-active-text)" : "var(--status-cancelled-text)" }} dir="ltr">
-                          {d.balance.toFixed(2)} ر.س
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit" style={getStatusStyle(d.status ?? "")}>
-                            {STATUS_LABEL[d.status] ?? d.status}
-                          </span>
-                          {d.warningCount > 0 && (
-                            <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-bold w-fit">{d.warningCount} تحذير</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <code className="text-sm font-mono px-2.5 py-1 rounded-lg" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>{d.loginCode}</code>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                          <Btn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={13} />} />
-                          <Btn onClick={() => openBalance(d)} title="الرصيد" icon={<Banknote size={13} />} />
-                          <Btn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={13} />} />
-                          <Btn onClick={() => sendWhatsApp(d)} title="إرسال بيانات الدخول للسائق عبر واتساب" icon={<MessageCircle size={13} />} color="whatsapp" />
-                          <Btn onClick={() => copyCredentials(d, toast)} title="نسخ بيانات الدخول" icon={<Copy size={13} />} />
-                          {d.status === "ACTIVE" && <>
-                            <Btn onClick={() => handleWarn(d)} title="تحذير" icon={<AlertTriangle size={13} />} color="amber" />
-                            <Btn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={13} />} color="red" />
-                          </>}
-                          {d.status === "BLOCKED" && <Btn onClick={() => handleUnblock(d)} title="رفع الحظر" icon={<ShieldCheck size={13} />} color="green" />}
-                          <Btn onClick={() => handleDelete(d)} title="حذف" icon={<Trash2 size={13} />} color="red" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border)", color: "var(--text-hint)" }}>
-                يُعرض <strong style={{ color: "var(--text)" }}>{filteredDrivers.length}</strong> من <strong style={{ color: "var(--text)" }}>{drivers?.length ?? 0}</strong> سائق
-              </div>
-            </div>
-
-            {/* Mobile / tablet cards */}
-            <div className="lg:hidden space-y-3">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {filteredDrivers.map((d) => (
                 <div key={d.id} className="rounded-2xl shadow-sm p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -751,25 +692,33 @@ export default function AdminDrivers() {
                       <div className="flex flex-wrap gap-3 text-sm mr-12" style={{ color: "var(--text-hint)" }}>
                         <span>رصيد: <strong style={{ color: d.balance >= 50 ? "var(--status-active-text)" : "var(--status-cancelled-text)" }} dir="ltr">{d.balance.toFixed(2)} ر.س</strong></span>
                         {d.carType && <span>{d.carType}</span>}
+                        <span>#{d.id}</span>
                         <span className="font-mono px-2 py-0.5 rounded" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>رمز: {d.loginCode}</span>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
                       <Btn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={14} />} />
-                      <Btn onClick={() => openBalance(d)} title="الرصيد" icon={<Banknote size={14} />} />
+                      <Btn onClick={() => openBalance(d)} title="إضافة رصيد" icon={<Banknote size={14} />} color="green" />
+                      <Btn onClick={() => openDeduct(d)} title="خصم رصيد" icon={<MinusCircle size={14} />} color="red" />
                       <Btn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={14} />} />
                       <Btn onClick={() => sendWhatsApp(d)} title="إرسال بيانات الدخول للسائق عبر واتساب" icon={<MessageCircle size={14} />} color="whatsapp" />
                       <Btn onClick={() => copyCredentials(d, toast)} title="نسخ بيانات الدخول" icon={<Copy size={14} />} />
                       {d.status === "ACTIVE" && <>
-                        <Btn onClick={() => handleWarn(d)} title="تحذير" icon={<AlertTriangle size={14} />} color="amber" />
+                        <Btn onClick={() => handleWarn(d)} title="إضافة تحذير" icon={<AlertTriangle size={14} />} color="amber" />
                         <Btn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={14} />} color="red" />
                       </>}
+                      {d.warningCount > 0 && (
+                        <Btn onClick={() => handleRemoveWarning(d)} title="إلغاء تحذير" icon={<MinusCircle size={14} />} color="amber" />
+                      )}
                       {d.status === "BLOCKED" && <Btn onClick={() => handleUnblock(d)} title="رفع الحظر" icon={<ShieldCheck size={14} />} color="green" />}
                       <Btn onClick={() => handleDelete(d)} title="حذف" icon={<Trash2 size={14} />} color="red" />
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="px-5 py-3 text-sm rounded-2xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-hint)" }}>
+              يُعرض <strong style={{ color: "var(--text)" }}>{filteredDrivers.length}</strong> من <strong style={{ color: "var(--text)" }}>{drivers?.length ?? 0}</strong> سائق
             </div>
           </>
         )}
@@ -839,20 +788,24 @@ export default function AdminDrivers() {
         </DialogContent>
       </Dialog>
 
-      {/* Balance dialog */}
-      <Dialog open={dialogMode === "balance"} onOpenChange={(o) => !o && setDialogMode(null)}>
+      {/* Balance / Deduct dialog */}
+      <Dialog open={dialogMode === "balance" || dialogMode === "deduct"} onOpenChange={(o) => !o && setDialogMode(null)}>
         <DialogContent dir="rtl" className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black">تعديل رصيد {selectedDriver?.name}</DialogTitle>
+            <DialogTitle className="text-xl font-black">
+              {dialogMode === "deduct" ? `خصم رصيد من ${selectedDriver?.name}` : `إضافة رصيد لـ ${selectedDriver?.name}`}
+            </DialogTitle>
           </DialogHeader>
           <p className="text-base" style={{ color: "var(--text-hint)" }}>الرصيد الحالي: <strong dir="ltr" style={{ color: "var(--text)" }}>{selectedDriver?.balance.toFixed(2)} ر.س</strong></p>
-          <Field label="المبلغ (+ إيداع / − خصم)">
-            <Input value={formBalance} onChange={(e) => setFormBalance(e.target.value)} placeholder="مثال: 100 أو -50" type="number" step="0.01" dir="ltr" className="h-11 text-base" />
+          <Field label={dialogMode === "deduct" ? "المبلغ المُخصوم (ريال)" : "المبلغ المُضاف (ريال)"}>
+            <Input value={formBalance} onChange={(e) => setFormBalance(e.target.value)} placeholder="مثال: 50" type="number" min="0.01" step="0.01" dir="ltr" className="h-11 text-base" />
           </Field>
           <DialogFooter className="gap-2 flex-row-reverse">
             <button onClick={handleBalance} disabled={!formBalance || updateBalance.isPending}
               className="flex-1 py-3 rounded-xl text-white font-black text-base disabled:opacity-50"
-              style={{ backgroundColor: "var(--brand)" }}>تأكيد</button>
+              style={{ backgroundColor: dialogMode === "deduct" ? "var(--status-cancelled-text, #dc2626)" : "var(--brand)" }}>
+              {dialogMode === "deduct" ? "خصم الرصيد" : "إضافة الرصيد"}
+            </button>
             <button onClick={() => setDialogMode(null)} className="flex-1 py-3 rounded-xl font-bold text-base" style={{ border: "1px solid var(--border)", color: "var(--text-muted)" }}>إلغاء</button>
           </DialogFooter>
         </DialogContent>

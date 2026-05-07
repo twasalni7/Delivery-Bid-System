@@ -322,7 +322,7 @@ describe("PATCH /requests/:id/status (admin updates status)", () => {
     expect(res.status).toBe(404);
   });
 
-  it("runs automatic status sync instead of manual status set", async () => {
+  it("applies manual status set and pins it from auto-sync", async () => {
     (UpdateRequestStatusBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true,
       data: { status: "ACTIVE" },
@@ -335,7 +335,7 @@ describe("PATCH /requests/:id/status (admin updates status)", () => {
       createdAt: new Date(), updatedAt: new Date(),
     });
     const updated = {
-      id: 1, clientId: 5, status: "OPEN", selectedDriverId: null,
+      id: 1, clientId: 5, status: "ACTIVE", selectedDriverId: null,
       homeLocation: "Riyadh", workLocation: "KFUPM", phone: "050",
       numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
       morningTime: "07:00", eveningTime: null, clientType: "غيره",
@@ -349,11 +349,9 @@ describe("PATCH /requests/:id/status (admin updates status)", () => {
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).patch("/requests/1/status").send({ status: "ACTIVE" });
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: 1, status: "OPEN" });
-    // Verify that the warning is emitted when a manual status override is attempted
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ requestId: 1, requestedStatus: "ACTIVE", currentStatus: "SELECTED" }),
-      expect.stringContaining("manual request status update ignored"),
+    expect(res.body).toMatchObject({ id: 1, status: "ACTIVE" });
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "ACTIVE", statusManuallySetByAdmin: true }),
     );
   });
 });

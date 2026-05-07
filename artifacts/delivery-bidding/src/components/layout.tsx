@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LogOut, Menu, Home, FileText, User, LifeBuoy, Settings,
   Users, Car, BarChart2, ClipboardList, DollarSign, Activity,
-  MapPin, Search, ChevronRight, Sun, Moon, Coffee, BellRing, Bell, Database,
+  MapPin, Search, ChevronRight, Sun, Moon, Coffee, Bell, Database,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme, Theme } from "@/contexts/theme-context";
@@ -74,9 +74,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
       links: [
         { href: "/admin/operations",              label: "مركز التحكم",     icon: Activity },
         { href: "/admin/activity-logs",           label: "سجل النشاط",      icon: Activity },
-        { href: "/admin/notifications",           label: "إرسال الإشعارات", icon: Bell },
-        { href: "/admin/push-debug",              label: "تشخيص Push",      icon: BellRing },
-        { href: "/admin/notifications-monitor",   label: "مراقبة الإشعارات", icon: Bell },
+        { href: "/admin/notifications",           label: "مركز الإشعارات",  icon: Bell },
         { href: "/admin/database-monitor",        label: "قاعدة البيانات",   icon: Database },
       ],
     },

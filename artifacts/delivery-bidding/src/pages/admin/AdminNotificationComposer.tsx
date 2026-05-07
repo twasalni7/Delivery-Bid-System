@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
@@ -166,6 +167,13 @@ export default function AdminNotificationComposer() {
   return (
     <Layout role="admin">
       <div dir="rtl" className="max-w-5xl mx-auto space-y-6">
+        <AdminPageTabs
+          tabs={[
+            { href: "/admin/notifications", label: "إرسال الإشعارات" },
+            { href: "/admin/notifications-monitor", label: "مراقبة الإشعارات" },
+            { href: "/admin/push-debug", label: "تشخيص Push" },
+          ]}
+        />
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-black" style={{ color: "var(--text)" }}>إرسال الإشعارات</h1>

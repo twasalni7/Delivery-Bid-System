@@ -136,6 +136,8 @@ function formatRequest(
     needsAdminReview: r.needsAdminReview,
     monthlyPrice: toNum(r.monthlyPrice),
     status: r.status,
+    // Only expose the manual-override flag to admins so clients/drivers cannot see it
+    ...(user?.role === "admin" ? { statusManuallySetByAdmin: r.statusManuallySetByAdmin } : {}),
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
     createdBy: r.createdBy ?? "client",
@@ -502,43 +504,28 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
       return;
     }
 
-    if (parsed.data.status !== existing.status) {
-      logger.warn(
-        {
-          requestId: id,
-          requestedStatus: parsed.data.status,
-          currentStatus: existing.status,
-        },
-        "manual request status update ignored; endpoint now runs automatic status sync only",
-      );
-    }
+    const nextStatus = parsed.data.status as RequestStatus;
+    const reason =
+      nextStatus === existing.status
+        ? "admin_manual_override_same_status"
+        : "admin_manual_override";
 
-    const { status: resolvedStatus, reason } = resolveRequestStatus({
-      currentStatus: existing.status as RequestStatus,
-      selectedDriverId: existing.selectedDriverId,
-      needsAdminReview: existing.needsAdminReview,
-      event: "manual_status_sync_requested",
-    });
-
-    // Always write to the DB so the caller always receives a fresh record with
-    // a refreshed `updatedAt` timestamp (important for auditing and client
-    // cache invalidation), even when the engine resolves to the same status
-    // that is already stored.  This endpoint is explicitly a sync trigger, so
-    // the write cost is acceptable and expected.
     const [updated] = await db
       .update(requestsTable)
-      .set({ status: resolvedStatus, updatedAt: new Date() })
+      .set({
+        status: nextStatus,
+        statusManuallySetByAdmin: true,
+        updatedAt: new Date(),
+      })
       .where(eq(requestsTable.id, id))
       .returning();
 
-    // logRequestStatusTransition is a no-op when both statuses are equal,
-    // so calling it unconditionally is safe and keeps the code symmetric.
     logRequestStatusTransition({
       requestId: id,
       previousStatus: existing.status as RequestStatus,
       nextStatus: updated.status as RequestStatus,
       reason,
-      event: "manual_status_sync_requested",
+      event: "admin_manual_override",
     });
 
     await logActivity({
@@ -551,7 +538,7 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
         previousStatus: existing.status,
         newStatus: updated.status,
         reason,
-        sourceEvent: "manual_status_sync_requested",
+        sourceEvent: "admin_manual_override",
       },
       req,
     });
@@ -644,7 +631,12 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
 
       const [updated] = await tx
         .update(requestsTable)
-        .set({ status: nextStatus, selectedDriverId: driver.id, updatedAt: new Date() })
+        .set({
+          status: nextStatus,
+          selectedDriverId: driver.id,
+          statusManuallySetByAdmin: false,
+          updatedAt: new Date(),
+        })
         .where(
           and(
             eq(requestsTable.id, id),
@@ -862,26 +854,31 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
       return;
     }
 
-    if (status !== undefined && status !== existing.status) {
-      logger.warn(
-        { requestId: id, requestedStatus: status, currentStatus: existing.status },
-        "manual request status update ignored on admin PATCH /requests/:id",
-      );
+    let reason = "admin_request_updated";
+    let statusEvent: "selected_driver_assigned" | "admin_request_updated" | "admin_manual_override" =
+      "admin_request_updated";
+    if (status !== undefined) {
+      updates.status = status;
+      updates.statusManuallySetByAdmin = true;
+      statusEvent = "admin_manual_override";
+      reason = status === existing.status ? "admin_manual_override_same_status" : "admin_manual_override";
+    } else {
+      const effectiveSelectedDriverId =
+        selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
+      statusEvent =
+        selectedDriverId !== undefined && effectiveSelectedDriverId != null
+          ? "selected_driver_assigned"
+          : "admin_request_updated";
+      const resolved = resolveRequestStatus({
+        currentStatus: existing.status as RequestStatus,
+        selectedDriverId: effectiveSelectedDriverId,
+        needsAdminReview: existing.needsAdminReview,
+        event: statusEvent,
+      });
+      updates.status = resolved.status;
+      updates.statusManuallySetByAdmin = false;
+      reason = resolved.reason;
     }
-
-    const effectiveSelectedDriverId =
-      selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
-    const statusEvent =
-      selectedDriverId !== undefined && effectiveSelectedDriverId != null
-        ? "selected_driver_assigned"
-        : "admin_request_updated";
-    const { status: resolvedStatus, reason } = resolveRequestStatus({
-      currentStatus: existing.status as RequestStatus,
-      selectedDriverId: effectiveSelectedDriverId,
-      needsAdminReview: existing.needsAdminReview,
-      event: statusEvent,
-    });
-    updates.status = resolvedStatus;
     updates.updatedAt = new Date();
 
     const [updated] = await db

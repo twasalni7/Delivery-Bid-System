@@ -852,7 +852,7 @@ describe("PATCH /admin/requests/:id", () => {
     const updated = {
       id: 1, clientId: 5, homeLocation: "Riyadh", workLocation: "KFUPM",
       phone: "050", numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
-      morningTime: "07:00", eveningTime: null, status: "OPEN", clientType: "غيره",
+      morningTime: "07:00", eveningTime: null, status: "ACTIVE", clientType: "غيره",
       selectedDriverId: null, createdAt: new Date(),
     };
     const returningMock = vi.fn().mockResolvedValue([updated]);
@@ -863,10 +863,10 @@ describe("PATCH /admin/requests/:id", () => {
     const app = createApp(adminUser);
     const res = await request(app).patch("/admin/requests/1").send({ status: "ACTIVE" });
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: 1, status: "OPEN" });
+    expect(res.body).toMatchObject({ id: 1, status: "ACTIVE" });
   });
 
-  it("accepts all status payload values but resolves automatically", async () => {
+  it("accepts all status payload values for manual admin control", async () => {
     const validStatuses = ["OPEN", "SELECTED", "ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED", "FROZEN"];
     for (const status of validStatuses) {
       (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -875,7 +875,7 @@ describe("PATCH /admin/requests/:id", () => {
       const updated = {
         id: 1, clientId: 5, homeLocation: "Riyadh", workLocation: "KFUPM",
         phone: "050", numberOfPeople: 1, workingDaysPerWeek: 5,
-        morningTime: "07:00", eveningTime: null, numberOfShifts: 1, clientType: "غيره", status: "OPEN",
+        morningTime: "07:00", eveningTime: null, numberOfShifts: 1, clientType: "غيره", status,
         selectedDriverId: null, createdAt: new Date(),
       };
       const returningMock = vi.fn().mockResolvedValue([updated]);
@@ -886,6 +886,10 @@ describe("PATCH /admin/requests/:id", () => {
       const app = createApp(adminUser);
       const res = await request(app).patch("/admin/requests/1").send({ status });
       expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ status });
+      expect(setMock).toHaveBeenCalledWith(
+        expect.objectContaining({ status, statusManuallySetByAdmin: true }),
+      );
     }
   });
 });

@@ -527,6 +527,34 @@ router.post("/drivers/:id/warn", async (req, res) => {
   });
 });
 
+router.delete("/drivers/:id/warn", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const driver = await db.query.driversTable.findFirst({
+    where: eq(driversTable.id, id),
+  });
+  if (!driver) {
+    res.status(404).json({ error: "السائق غير موجود" });
+    return;
+  }
+  if (!driver.warningCount || driver.warningCount <= 0) {
+    res.status(400).json({ error: "لا توجد تحذيرات لإلغائها" });
+    return;
+  }
+  const [updated] = await db
+    .update(driversTable)
+    .set({ warningCount: driver.warningCount - 1 })
+    .where(eq(driversTable.id, id))
+    .returning();
+  res.json({
+    message: "تم إلغاء تحذير",
+    warningCount: updated.warningCount,
+  });
+});
+
 router.post("/drivers/:id/restore", async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
@@ -662,6 +690,7 @@ router.get("/requests", async (_req, res) => {
       notes: r.notes,
       monthlyPrice: r.monthlyPrice,
       status: r.status,
+      statusManuallySetByAdmin: r.statusManuallySetByAdmin,
       selectedDriverId: r.selectedDriverId,
       createdAt: r.createdAt?.toISOString(),
       updatedAt: r.updatedAt?.toISOString(),
@@ -709,28 +738,33 @@ router.patch("/requests/:id", async (req, res) => {
     });
     if (!existing) return null;
 
-    if (status !== undefined && status !== existing.status) {
-      logger.warn(
-        { requestId: id, requestedStatus: status, currentStatus: existing.status },
-        "manual request status update ignored on admin PATCH /requests/:id",
-      );
+    let reason = "admin_request_updated";
+    let event: "selected_driver_assigned" | "admin_request_updated" | "admin_manual_override" =
+      "admin_request_updated";
+    if (status !== undefined) {
+      updates.status = status;
+      updates.statusManuallySetByAdmin = true;
+      event = "admin_manual_override";
+      reason = status === existing.status ? "admin_manual_override_same_status" : "admin_manual_override";
+    } else {
+      const effectiveSelectedDriverId =
+        selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
+      const effectiveNeedsAdminReview =
+        needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
+      event =
+        selectedDriverId !== undefined && effectiveSelectedDriverId != null
+          ? "selected_driver_assigned"
+          : "admin_request_updated";
+      const resolved = resolveRequestStatus({
+        currentStatus: existing.status as RequestStatus,
+        selectedDriverId: effectiveSelectedDriverId,
+        needsAdminReview: effectiveNeedsAdminReview,
+        event,
+      });
+      updates.status = resolved.status;
+      updates.statusManuallySetByAdmin = false;
+      reason = resolved.reason;
     }
-
-    const effectiveSelectedDriverId =
-      selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
-    const effectiveNeedsAdminReview =
-      needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
-    const event =
-      selectedDriverId !== undefined && effectiveSelectedDriverId != null
-        ? "selected_driver_assigned"
-        : "admin_request_updated";
-    const { status: resolvedStatus, reason } = resolveRequestStatus({
-      currentStatus: existing.status as RequestStatus,
-      selectedDriverId: effectiveSelectedDriverId,
-      needsAdminReview: effectiveNeedsAdminReview,
-      event,
-    });
-    updates.status = resolvedStatus;
 
     const [updated] = await tx
       .update(requestsTable)
@@ -774,6 +808,7 @@ router.patch("/requests/:id", async (req, res) => {
     notes: updated.notes,
     monthlyPrice: updated.monthlyPrice,
     status: updated.status,
+    statusManuallySetByAdmin: updated.statusManuallySetByAdmin,
     selectedDriverId: updated.selectedDriverId,
     createdAt: updated.createdAt?.toISOString(),
     updatedAt: updated.updatedAt?.toISOString(),
@@ -795,6 +830,64 @@ router.delete("/requests/:id", async (req, res) => {
     return;
   }
   res.json({ message: "تم حذف الطلب" });
+});
+
+/**
+ * POST /api/admin/requests/:id/unlock-status
+ * Resets statusManuallySetByAdmin = false and recalculates the correct status
+ * via the status engine so that the background auto-sync takes over again.
+ */
+router.post("/requests/:id/unlock-status", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+
+  const result = await withDbTransaction(async (tx) => {
+    const existing = await tx.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, id),
+    });
+    if (!existing) return null;
+
+    const { status: resolvedStatus, reason } = resolveRequestStatus({
+      currentStatus: existing.status as RequestStatus,
+      selectedDriverId: existing.selectedDriverId,
+      needsAdminReview: existing.needsAdminReview,
+      event: "admin_request_updated",
+    });
+
+    const [updated] = await tx
+      .update(requestsTable)
+      .set({ status: resolvedStatus, statusManuallySetByAdmin: false, updatedAt: new Date() })
+      .where(eq(requestsTable.id, id))
+      .returning();
+
+    return { existing, updated, reason };
+  });
+
+  if (!result) {
+    res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+
+  const { existing, updated, reason } = result;
+
+  logRequestStatusTransition({
+    requestId: id,
+    previousStatus: existing.status as RequestStatus,
+    nextStatus: updated.status as RequestStatus,
+    reason: reason + " (manual_lock_released)",
+    event: "admin_request_updated",
+  });
+
+  res.json({
+    id: updated.id,
+    status: updated.status,
+    statusManuallySetByAdmin: updated.statusManuallySetByAdmin,
+    updatedAt: updated.updatedAt?.toISOString(),
+    message: "تم فك تثبيت الحالة وإعادة التزامن التلقائي",
+  });
 });
 
 router.post("/change-code", async (req, res) => {
@@ -1070,7 +1163,12 @@ router.post("/requests/:id/select-offer", async (req, res) => {
 
       const [updated] = await tx
         .update(requestsTable)
-        .set({ status: nextStatus, selectedDriverId: driver.id, updatedAt: new Date() })
+        .set({
+          status: nextStatus,
+          selectedDriverId: driver.id,
+          statusManuallySetByAdmin: false,
+          updatedAt: new Date(),
+        })
         .where(and(eq(requestsTable.id, id), eq(requestsTable.status, "OPEN")))
         .returning();
 

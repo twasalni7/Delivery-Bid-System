@@ -94,7 +94,18 @@ export default function DriverProfile() {
         const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(uploadData.path);
         receiptUrl = urlData?.publicUrl ?? null;
       } catch {
-        // Supabase Storage not configured — save without URL
+        // Supabase Storage not configured — fall back to base64 data URL so the
+        // admin can still view the receipt image directly from the database.
+        try {
+          receiptUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(reader.error ?? new Error("FileReader failed"));
+            reader.readAsDataURL(receiptFile);
+          });
+        } catch {
+          // If even FileReader fails, proceed without a URL
+        }
       }
 
       const res = await fetch(`${API}/api/wallet-transactions`, {

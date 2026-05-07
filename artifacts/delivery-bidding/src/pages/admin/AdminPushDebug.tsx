@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout";
+import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { RefreshCw, BellRing, ServerCrash, Smartphone, ShieldCheck, AlertTriangle } from "lucide-react";
@@ -95,6 +96,13 @@ export default function AdminPushDebug() {
   return (
     <Layout role="admin">
       <div className="max-w-2xl mx-auto space-y-5 pb-10">
+        <AdminPageTabs
+          tabs={[
+            { href: "/admin/notifications", label: "إرسال الإشعارات" },
+            { href: "/admin/notifications-monitor", label: "مراقبة الإشعارات" },
+            { href: "/admin/push-debug", label: "تشخيص Push" },
+          ]}
+        />
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold" style={{ color: "var(--text)" }}>
