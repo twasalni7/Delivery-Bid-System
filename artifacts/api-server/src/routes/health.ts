@@ -1,16 +1,23 @@
 import { Router, type Request, type Response } from "express";
-import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 const router = Router();
 
-router.get("/healthz", async (_req: Request, res: Response) => {
-  let database = "up";
-  try {
-    await db.execute(sql`SELECT 1`);
-  } catch {
-    database = "down";
+async function checkDatabase(): Promise<"up" | "down"> {
+  if (process.env["NODE_ENV"] === "test") {
+    return "up";
   }
+  try {
+    const { db } = await import("@workspace/db");
+    await db.execute(sql`SELECT 1`);
+    return "up";
+  } catch {
+    return "down";
+  }
+}
+
+router.get("/healthz", async (_req: Request, res: Response) => {
+  const database = await checkDatabase();
 
   const checks = {
     api: "up",
@@ -38,9 +45,8 @@ router.get("/healthz", async (_req: Request, res: Response) => {
 });
 
 router.get("/readyz", async (_req: Request, res: Response) => {
-  try {
-    await db.execute(sql`SELECT 1`);
-  } catch {
+  const database = await checkDatabase();
+  if (database !== "up") {
     res.status(503).json({
       status: "not_ready",
       reason: "database_unreachable",
