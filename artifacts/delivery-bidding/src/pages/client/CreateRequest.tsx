@@ -340,15 +340,24 @@ export default function CreateRequest() {
       setPricingResult(undefined);
       return;
     }
+    const validShifts = buildShiftsPayload(shifts);
+    const firstReturnTime = shifts[0]?.returnTime ?? "";
     fetch(`${API}/api/pricing/calculate`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ distanceKm: maxDistanceKm, numberOfPeople: sharingCount }),
+      body: JSON.stringify({
+        distanceKm: maxDistanceKm,
+        numberOfPeople: sharingCount,
+        workingDaysPerWeek: selectedDays.length || 1,
+        numberOfShifts: validShifts.length || 1,
+        eveningTime: firstReturnTime || undefined,
+        shifts: validShifts.length > 0 ? validShifts : undefined,
+      }),
     })
       .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
       .then((data) => setPricingResult(data))
       .catch(() => setPricingResult(undefined));
-  }, [maxDistanceKm, sharingCount]);
+  }, [maxDistanceKm, sharingCount, selectedDays.length, shifts]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
