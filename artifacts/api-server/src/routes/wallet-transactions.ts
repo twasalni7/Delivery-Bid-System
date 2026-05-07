@@ -161,7 +161,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       // Unified financial ledger entry (same table as bid-fee deductions)
       await txDb.insert(transactionsTable).values({
         driverId: tx.driverId,
-        amount: creditAmount,
+        amount: String(creditAmount),
         type: "topup",
       });
 
