@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("drizzle-orm", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("drizzle-orm")>();
+  return {
+    ...actual,
+    eq: vi.fn(actual.eq),
+  };
+});
+
 vi.mock("@workspace/db", () => {
   const mockDb = {
     select: vi.fn(),
@@ -26,6 +34,7 @@ vi.mock("./logger", () => ({
 }));
 
 import { db } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { runRequestStatusSync } from "./request-status-sync";
 
 describe("request-status-sync", () => {
@@ -69,5 +78,7 @@ describe("request-status-sync", () => {
     expect(updatedCount).toBe(1);
     expect(db.update).toHaveBeenCalledTimes(1);
     expect(where).toHaveBeenCalledTimes(1);
+    expect(eq).toHaveBeenCalledWith("id", 3);
+    expect(eq).not.toHaveBeenCalledWith("id", 1);
   });
 });
