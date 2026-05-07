@@ -887,6 +887,9 @@ describe("PATCH /admin/requests/:id", () => {
       const res = await request(app).patch("/admin/requests/1").send({ status });
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ status });
+      expect(setMock).toHaveBeenCalledWith(
+        expect.objectContaining({ status, statusManuallySetByAdmin: true }),
+      );
     }
   });
 });

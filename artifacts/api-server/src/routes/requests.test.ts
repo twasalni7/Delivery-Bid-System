@@ -350,6 +350,9 @@ describe("PATCH /requests/:id/status (admin updates status)", () => {
     const res = await request(app).patch("/requests/1/status").send({ status: "ACTIVE" });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 1, status: "ACTIVE" });
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "ACTIVE", statusManuallySetByAdmin: true }),
+    );
   });
 });
 
