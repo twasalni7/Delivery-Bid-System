@@ -8,11 +8,11 @@ import {
 import { logger } from "./logger";
 
 // Delay first run briefly so startup DB work settles before sync kicks in.
-const STARTUP_DELAY_MS = 2 * 60 * 1000;
+const STARTUP_DELAY_MS = 60 * 1000;
 // Run every 30 minutes to correct inconsistencies without excessive DB churn.
 const INTERVAL_MS = 30 * 60 * 1000;
 
-async function runRequestStatusSync(): Promise<void> {
+export async function runRequestStatusSync(): Promise<number> {
   try {
     const requests = await db
       .select({
@@ -54,8 +54,10 @@ async function runRequestStatusSync(): Promise<void> {
     if (updatedCount > 0) {
       logger.info({ updatedCount }, "request status sync completed");
     }
+    return updatedCount;
   } catch (err) {
     logger.error({ err }, "request status sync failed");
+    return 0;
   }
 }
 
