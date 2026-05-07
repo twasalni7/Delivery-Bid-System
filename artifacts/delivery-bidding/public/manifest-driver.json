@@ -2,7 +2,7 @@
   "name": "توصّلني - تطبيق السائقين",
   "short_name": "سائقين",
   "description": "بوابة السائقين - استعرض طلبات التوصيل وقدّم عروضك",
-  "start_url": "/driver/login",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
