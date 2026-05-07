@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout";
+import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -221,6 +222,12 @@ export default function AdminOperations() {
   return (
     <Layout role="admin">
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-8" dir="rtl">
+        <AdminPageTabs
+          tabs={[
+            { href: "/admin", label: "Dashboard" },
+            { href: "/admin/operations", label: "Operations" },
+          ]}
+        />
 
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout";
+import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { Bell, RefreshCw, CheckCircle, XCircle, Smartphone, Users, TrendingUp, MousePointerClick } from "lucide-react";
@@ -112,6 +113,13 @@ export default function AdminNotificationsMonitor() {
   return (
     <Layout role="admin">
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6" dir="rtl">
+        <AdminPageTabs
+          tabs={[
+            { href: "/admin/notifications", label: "إرسال الإشعارات" },
+            { href: "/admin/notifications-monitor", label: "مراقبة الإشعارات" },
+            { href: "/admin/push-debug", label: "تشخيص Push" },
+          ]}
+        />
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>مراقبة الإشعارات</h1>
           <button
@@ -257,4 +265,3 @@ export default function AdminNotificationsMonitor() {
     </Layout>
   );
 }
-

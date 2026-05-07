@@ -652,82 +652,7 @@ export default function AdminDrivers() {
 
         {filteredDrivers.length > 0 && (
           <>
-            {/* Desktop table */}
-            <div className="hidden lg:block rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-              <table className="w-full" dir="rtl">
-                <thead>
-                  <tr className="border-b" style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>السائق</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الجوال</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>المركبة</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الرصيد</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الحالة</th>
-                    <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>رمز الدخول</th>
-                    <th className="text-center px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDrivers.map((d, idx) => (
-                    <tr key={d.id} className="border-b transition-colors" style={{ borderColor: "var(--border)" }}>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg shrink-0">🚗</div>
-                          <div>
-                            <p className="font-black text-base" style={{ color: "var(--text)" }}>{d.name}</p>
-                            <p className="text-xs" style={{ color: "var(--text-hint)" }}>#{d.id}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-sm font-medium" dir="ltr" style={{ color: "var(--text-muted)" }}>{d.mobile}</td>
-                      <td className="px-5 py-4 text-sm" style={{ color: "var(--text-muted)" }}>{d.carType || "—"}</td>
-                      <td className="px-5 py-4">
-                        <span className="text-sm font-black" style={{ color: d.balance >= 50 ? "var(--status-active-text)" : "var(--status-cancelled-text)" }} dir="ltr">
-                          {d.balance.toFixed(2)} ر.س
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit" style={getStatusStyle(d.status ?? "")}>
-                            {STATUS_LABEL[d.status] ?? d.status}
-                          </span>
-                          {d.warningCount > 0 && (
-                            <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-bold w-fit">{d.warningCount} تحذير</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <code className="text-sm font-mono px-2.5 py-1 rounded-lg" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>{d.loginCode}</code>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                          <Btn onClick={() => openEdit(d)} title="تعديل" icon={<Pencil size={13} />} />
-                          <Btn onClick={() => openBalance(d)} title="إضافة رصيد" icon={<Banknote size={13} />} color="green" />
-                          <Btn onClick={() => openDeduct(d)} title="خصم رصيد" icon={<MinusCircle size={13} />} color="red" />
-                          <Btn onClick={() => handleRegenCode(d)} title="رمز جديد" icon={<RefreshCw size={13} />} />
-                          <Btn onClick={() => sendWhatsApp(d)} title="إرسال بيانات الدخول للسائق عبر واتساب" icon={<MessageCircle size={13} />} color="whatsapp" />
-                          <Btn onClick={() => copyCredentials(d, toast)} title="نسخ بيانات الدخول" icon={<Copy size={13} />} />
-                          {d.status === "ACTIVE" && <>
-                            <Btn onClick={() => handleWarn(d)} title="إضافة تحذير" icon={<AlertTriangle size={13} />} color="amber" />
-                            <Btn onClick={() => handleBlock(d)} title="حظر" icon={<ShieldOff size={13} />} color="red" />
-                          </>}
-                          {d.warningCount > 0 && (
-                            <Btn onClick={() => handleRemoveWarning(d)} title="إلغاء تحذير" icon={<MinusCircle size={13} />} color="amber" />
-                          )}
-                          {d.status === "BLOCKED" && <Btn onClick={() => handleUnblock(d)} title="رفع الحظر" icon={<ShieldCheck size={13} />} color="green" />}
-                          <Btn onClick={() => handleDelete(d)} title="حذف" icon={<Trash2 size={13} />} color="red" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="px-5 py-3 text-sm" style={{ backgroundColor: "var(--surface-2)", borderTop: "1px solid var(--border)", color: "var(--text-hint)" }}>
-                يُعرض <strong style={{ color: "var(--text)" }}>{filteredDrivers.length}</strong> من <strong style={{ color: "var(--text)" }}>{drivers?.length ?? 0}</strong> سائق
-              </div>
-            </div>
-
-            {/* Mobile / tablet cards */}
-            <div className="lg:hidden space-y-3">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {filteredDrivers.map((d) => (
                 <div key={d.id} className="rounded-2xl shadow-sm p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -748,6 +673,7 @@ export default function AdminDrivers() {
                       <div className="flex flex-wrap gap-3 text-sm mr-12" style={{ color: "var(--text-hint)" }}>
                         <span>رصيد: <strong style={{ color: d.balance >= 50 ? "var(--status-active-text)" : "var(--status-cancelled-text)" }} dir="ltr">{d.balance.toFixed(2)} ر.س</strong></span>
                         {d.carType && <span>{d.carType}</span>}
+                        <span>#{d.id}</span>
                         <span className="font-mono px-2 py-0.5 rounded" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>رمز: {d.loginCode}</span>
                       </div>
                     </div>
@@ -771,6 +697,9 @@ export default function AdminDrivers() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="px-5 py-3 text-sm rounded-2xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-hint)" }}>
+              يُعرض <strong style={{ color: "var(--text)" }}>{filteredDrivers.length}</strong> من <strong style={{ color: "var(--text)" }}>{drivers?.length ?? 0}</strong> سائق
             </div>
           </>
         )}

@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useGetAdminStats, useGetAdminAnalytics, useGetAdminFinancial } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { EnablePushButton } from "@/components/enable-push-button";
 import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp, ChevronLeft } from "lucide-react";
 import {
@@ -142,6 +143,12 @@ export default function AdminDashboard() {
   return (
     <Layout role="admin">
       <div dir="rtl">
+        <AdminPageTabs
+          tabs={[
+            { href: "/admin", label: "Dashboard" },
+            { href: "/admin/operations", label: "Operations" },
+          ]}
+        />
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-2xl font-black">لوحة الإدارة</h1>
