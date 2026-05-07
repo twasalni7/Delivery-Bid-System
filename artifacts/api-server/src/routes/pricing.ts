@@ -18,6 +18,7 @@ const router = Router();
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 const DEFAULT_PRICING_ENGINE = "matrix" as const;
 const BASE_LOCATION_COUNT = 1;
+const LEGACY_ROUND_TRIP_TRIPS = 2;
 // Business rule: each extra passenger adds 50% to the base total (shared trips).
 const EXTRA_PASSENGER_FACTOR_INCREMENT = 0.5;
 
@@ -207,6 +208,11 @@ export function calculateSubscriptionPriceV2(
   };
 }
 
+/**
+ * Resolves the pricing trip type from schedule payload.
+ * Priority: explicit structured `shifts` (go/return counts) then legacy `eveningTime`,
+ * then `numberOfShifts` fallback for older payloads.
+ */
 export function getTripTypeFromShifts(
   numberOfShifts?: number | null,
   shifts?: { goTime: string; returnTime?: string; label?: string }[] | null,
@@ -222,7 +228,9 @@ export function getTripTypeFromShifts(
   // Legacy payloads may send only morning/evening scalar times instead of shifts.
   // When eveningTime exists without structured shifts, treat it as a round trip (go + return).
   const tripsFromLegacyTimes =
-    tripsFromShifts === 0 && typeof eveningTime === "string" && eveningTime.trim() !== "" ? 2 : 0;
+    tripsFromShifts === 0 && typeof eveningTime === "string" && eveningTime.trim() !== ""
+      ? LEGACY_ROUND_TRIP_TRIPS
+      : 0;
   const count =
     tripsFromShifts > 0
       ? tripsFromShifts
