@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startPushCleanupJob } from "./lib/cleanup";
+import { startRequestStatusSyncJob } from "./lib/request-status-sync";
 
 const rawPort = process.env["PORT"];
 
@@ -45,4 +46,5 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   startPushCleanupJob();
+  startRequestStatusSyncJob();
 });

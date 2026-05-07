@@ -23,6 +23,11 @@ import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
 import { getBidFee, calculatePriceForRequest } from "./pricing";
 import { withDbTransaction } from "../lib/db-transaction";
+import {
+  logRequestStatusTransition,
+  resolveRequestStatus,
+  type RequestStatus,
+} from "../lib/request-status-engine";
 
 /** Per-passenger data submitted by the client */
 interface PassengerInput {
@@ -41,15 +46,6 @@ interface PassengerInput {
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
-
-/** Convert a value that may be a numeric string (Drizzle returns numeric as string) to a JS number. */
-function toNum(val: string | number | null | undefined): number {
-  if (val == null) return 0;
-  if (typeof val === "number") return val;
-  const n = parseFloat(val);
-  return isNaN(n) ? 0 : n;
-}
-
 const ALL_STATUSES = new Set([
   "OPEN",
   "SELECTED",
@@ -59,6 +55,14 @@ const ALL_STATUSES = new Set([
   "EXPIRED",
   "FROZEN",
 ]);
+
+/** Convert a value that may be a numeric string (Drizzle returns numeric as string) to a JS number. */
+function toNum(val: string | number | null | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  const n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
+}
 
 function canSeePhone(
   req: Request,
@@ -294,6 +298,13 @@ router.post("/", requireAuth("client"), async (req, res) => {
       needsAdminReview = result.needsAdminReview;
     }
 
+    const initialStatus = resolveRequestStatus({
+      currentStatus: "OPEN",
+      selectedDriverId: null,
+      needsAdminReview,
+      event: "request_created",
+    }).status;
+
     const [created] = await db
       .insert(requestsTable)
       .values({
@@ -317,7 +328,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
         clientType: data.clientType ?? "غيره",
         monthlyPrice,
         clientId,
-        status: needsAdminReview ? "FROZEN" : "OPEN",
+        status: initialStatus,
       })
       .returning();
 
@@ -462,78 +473,67 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
     return;
   }
   try {
-    const [updated] = await db
-      .update(requestsTable)
-      .set({
-        status: parsed.data.status as typeof requestsTable.$inferSelect["status"],
-        updatedAt: new Date(),
-      })
-      .where(eq(requestsTable.id, id))
-      .returning();
-
-    if (!updated) {
+    const existing = await db.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, id),
+    });
+    if (!existing) {
       res.status(404).json({ error: "الطلب غير موجود" });
       return;
     }
 
-    await logActivity({
-      actorId:   getSessionUser(req)?.id,
-      actorRole: "admin",
-      action:    "request.status_changed",
-      entity:    "requests",
-      entityId:  id,
-      metadata:  { newStatus: parsed.data.status },
-      req,
+    if (parsed.data.status !== existing.status) {
+      logger.warn(
+        {
+          requestId: id,
+          requestedStatus: parsed.data.status,
+          currentStatus: existing.status,
+        },
+        "manual request status update ignored; endpoint now runs automatic status sync only",
+      );
+    }
+
+    const { status: resolvedStatus, reason } = resolveRequestStatus({
+      currentStatus: existing.status as RequestStatus,
+      selectedDriverId: existing.selectedDriverId,
+      needsAdminReview: existing.needsAdminReview,
+      event: "manual_status_sync_requested",
     });
 
-    // Notify the client about status change
-    if (updated.clientId) {
-      const statusMessages: Record<string, string> = {
-        ACTIVE: "🚀 طلبك أصبح نشطاً — ابدأ رحلتك مع السائق",
-        COMPLETED: "✅ تم إتمام طلبك بنجاح",
-        CANCELLED: "❌ تم إلغاء طلبك من قِبل الإدارة",
-        FROZEN: "⏸️ تم تجميد طلبك مؤقتاً",
-        EXPIRED: "⏰ انتهت صلاحية طلبك",
-      };
-      const msg = statusMessages[parsed.data.status];
-      if (msg) {
-        void notify({
-          userId: updated.clientId,
-          userRole: "client",
-          title: "تحديث حالة طلبك",
-          message: msg,
-          type: "request",
-          relatedId: updated.id,
-          url: `/client/request/${updated.id}`,
-        });
-      }
-    }
+    // Always write to the DB so the caller always receives a fresh record with
+    // a refreshed `updatedAt` timestamp (important for auditing and client
+    // cache invalidation), even when the engine resolves to the same status
+    // that is already stored.  This endpoint is explicitly a sync trigger, so
+    // the write cost is acceptable and expected.
+    const [updated] = await db
+      .update(requestsTable)
+      .set({ status: resolvedStatus, updatedAt: new Date() })
+      .where(eq(requestsTable.id, id))
+      .returning();
 
-    // Notify the driver when trip is started or completed
-    if (updated.selectedDriverId) {
-      const driverStatusMessages: Record<string, { title: string; message: string }> = {
-        ACTIVE: {
-          title: "🚀 بدء الرحلة",
-          message: "تم تفعيل الرحلة — تواصل مع العميل للانطلاق",
-        },
-        COMPLETED: {
-          title: "✅ اكتملت الرحلة",
-          message: "تم إتمام الرحلة بنجاح. شكراً على خدمتك!",
-        },
-      };
-      const driverMsg = driverStatusMessages[parsed.data.status];
-      if (driverMsg) {
-        void notify({
-          userId: updated.selectedDriverId,
-          userRole: "driver",
-          title: driverMsg.title,
-          message: driverMsg.message,
-          type: "request",
-          relatedId: updated.id,
-          url: `/driver/request/${updated.id}`,
-        });
-      }
-    }
+    // logRequestStatusTransition is a no-op when both statuses are equal,
+    // so calling it unconditionally is safe and keeps the code symmetric.
+    logRequestStatusTransition({
+      requestId: id,
+      previousStatus: existing.status as RequestStatus,
+      nextStatus: updated.status as RequestStatus,
+      reason,
+      event: "manual_status_sync_requested",
+    });
+
+    await logActivity({
+      actorId: getSessionUser(req)?.id,
+      actorRole: "admin",
+      action: "request.status_changed",
+      entity: "requests",
+      entityId: id,
+      metadata: {
+        previousStatus: existing.status,
+        newStatus: updated.status,
+        reason,
+        sourceEvent: "manual_status_sync_requested",
+      },
+      req,
+    });
 
     let driver = null;
     if (updated.selectedDriverId) {
@@ -614,9 +614,16 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         throw Object.assign(new Error("تعذر خصم الرسوم من رصيد السائق؛ قد يكون الرصيد غير كافٍ أو تغيّر أثناء التنفيذ"), { status: 400 });
       }
 
+      const { status: nextStatus, reason } = resolveRequestStatus({
+        currentStatus: existingRequest.status as RequestStatus,
+        selectedDriverId: driver.id,
+        needsAdminReview: existingRequest.needsAdminReview,
+        event: "offer_selected",
+      });
+
       const [updated] = await tx
         .update(requestsTable)
-        .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
+        .set({ status: nextStatus, selectedDriverId: driver.id, updatedAt: new Date() })
         .where(
           and(
             eq(requestsTable.id, id),
@@ -677,6 +684,14 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         }
         throw err;
       }
+
+      logRequestStatusTransition({
+        requestId: id,
+        previousStatus: existingRequest.status as RequestStatus,
+        nextStatus,
+        reason,
+        event: "offer_selected",
+      });
 
       return { existingRequest, updated, updatedDriver };
     });
@@ -803,30 +818,69 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   }
   const { status, selectedDriverId } = req.body ?? {};
   const updates: Record<string, unknown> = {};
-  if (status !== undefined) {
-    if (!ALL_STATUSES.has(status as string)) {
-      res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
-      return;
-    }
-    updates.status = status;
-    updates.updatedAt = new Date();
+  if (status !== undefined && !ALL_STATUSES.has(status as string)) {
+    res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
+    return;
   }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
 
-  if (Object.keys(updates).length === 0) {
+  // `status` is not added to `updates` here — the engine resolves it later.
+  // The check covers two rejection paths:
+  //   1. No OTHER field updates (selectedDriverId) AND
+  //   2. No `status` payload was provided either.
+  if (Object.keys(updates).length === 0 && status === undefined) {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });
     return;
   }
   try {
+    const existing = await db.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, id),
+    });
+    if (!existing) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+
+    if (status !== undefined && status !== existing.status) {
+      logger.warn(
+        { requestId: id, requestedStatus: status, currentStatus: existing.status },
+        "manual request status update ignored on admin PATCH /requests/:id",
+      );
+    }
+
+    const effectiveSelectedDriverId =
+      selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
+    const statusEvent =
+      selectedDriverId !== undefined && effectiveSelectedDriverId != null
+        ? "selected_driver_assigned"
+        : "admin_request_updated";
+    const { status: resolvedStatus, reason } = resolveRequestStatus({
+      currentStatus: existing.status as RequestStatus,
+      selectedDriverId: effectiveSelectedDriverId,
+      needsAdminReview: existing.needsAdminReview,
+      event: statusEvent,
+    });
+    updates.status = resolvedStatus;
+    updates.updatedAt = new Date();
+
     const [updated] = await db
       .update(requestsTable)
       .set(updates)
       .where(eq(requestsTable.id, id))
       .returning();
+
     if (!updated) {
       res.status(404).json({ error: "الطلب غير موجود" });
       return;
     }
+
+    logRequestStatusTransition({
+      requestId: id,
+      previousStatus: existing.status as RequestStatus,
+      nextStatus: updated.status as RequestStatus,
+      reason,
+      event: statusEvent,
+    });
 
     let driver = null;
     if (updated.selectedDriverId) {

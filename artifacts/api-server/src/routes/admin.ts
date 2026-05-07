@@ -21,6 +21,11 @@ import { getSessionUser } from "../lib/session";
 import { getBidFee, calculatePriceForRequest } from "./pricing";
 import { withDbTransaction } from "../lib/db-transaction";
 import { normalizeDriverMobile } from "./auth";
+import {
+  logRequestStatusTransition,
+  resolveRequestStatus,
+  type RequestStatus,
+} from "../lib/request-status-engine";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -672,12 +677,9 @@ router.patch("/requests/:id", async (req, res) => {
   }
   const { status, selectedDriverId, monthlyPrice, needsAdminReview } = req.body ?? {};
   const updates: Record<string, unknown> = {};
-  if (status !== undefined) {
-    if (!VALID_REQUEST_STATUSES.has(status as string)) {
-      res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
-      return;
-    }
-    updates.status = status as typeof requestsTable.$inferSelect["status"];
+  if (status !== undefined && !VALID_REQUEST_STATUSES.has(status as string)) {
+    res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
+    return;
   }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
   if (monthlyPrice !== undefined) {
@@ -690,20 +692,70 @@ router.patch("/requests/:id", async (req, res) => {
   }
   if (needsAdminReview !== undefined) updates.needsAdminReview = Boolean(needsAdminReview);
 
-  if (Object.keys(updates).length === 0) {
+  // `status` is not added to `updates` here — it is resolved by the engine
+  // later.  The check therefore covers two valid rejection paths:
+  //   1. No OTHER field updates (selectedDriverId/monthlyPrice/needsAdminReview) AND
+  //   2. No `status` payload was provided either.
+  if (Object.keys(updates).length === 0 && status === undefined) {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });
     return;
   }
 
-  const [updated] = await db
-    .update(requestsTable)
-    .set(updates)
-    .where(eq(requestsTable.id, id))
-    .returning();
-  if (!updated) {
+  // Wrap read-then-update in a transaction to prevent a race condition where
+  // the row could be mutated or deleted between the SELECT and the UPDATE.
+  const result = await withDbTransaction(async (tx) => {
+    const existing = await tx.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, id),
+    });
+    if (!existing) return null;
+
+    if (status !== undefined && status !== existing.status) {
+      logger.warn(
+        { requestId: id, requestedStatus: status, currentStatus: existing.status },
+        "manual request status update ignored on admin PATCH /requests/:id",
+      );
+    }
+
+    const effectiveSelectedDriverId =
+      selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
+    const effectiveNeedsAdminReview =
+      needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
+    const event =
+      selectedDriverId !== undefined && effectiveSelectedDriverId != null
+        ? "selected_driver_assigned"
+        : "admin_request_updated";
+    const { status: resolvedStatus, reason } = resolveRequestStatus({
+      currentStatus: existing.status as RequestStatus,
+      selectedDriverId: effectiveSelectedDriverId,
+      needsAdminReview: effectiveNeedsAdminReview,
+      event,
+    });
+    updates.status = resolvedStatus;
+
+    const [updated] = await tx
+      .update(requestsTable)
+      .set(updates)
+      .where(eq(requestsTable.id, id))
+      .returning();
+
+    return { existing, updated, event, reason };
+  });
+
+  if (!result) {
     res.status(404).json({ error: "الطلب غير موجود" });
     return;
   }
+
+  const { existing, updated, event, reason } = result;
+
+  logRequestStatusTransition({
+    requestId: id,
+    previousStatus: existing.status as RequestStatus,
+    nextStatus: updated.status as RequestStatus,
+    reason,
+    event,
+  });
+
   res.json({
     id: updated.id,
     clientId: updated.clientId,
@@ -923,7 +975,12 @@ router.post("/requests", async (req, res) => {
         monthlyPrice: parsed.data.monthlyPrice ?? calculatedMonthlyPrice,
         clientId: Number.isFinite(clientId) ? clientId : null,
         selectedDriverId: Number.isFinite(selectedDriverId) ? selectedDriverId : null,
-        status: selectedDriverId ? "SELECTED" : "OPEN",
+        status: resolveRequestStatus({
+          currentStatus: "OPEN",
+          selectedDriverId: Number.isFinite(selectedDriverId) ? selectedDriverId : null,
+          needsAdminReview,
+          event: "request_created",
+        }).status,
         createdBy: "admin",
       })
       .returning();
@@ -1004,9 +1061,16 @@ router.post("/requests/:id/select-offer", async (req, res) => {
         throw Object.assign(new Error("رصيد السائق غير كافٍ للقبول على هذا الطلب"), { status: 400 });
       }
 
+      const { status: nextStatus, reason } = resolveRequestStatus({
+        currentStatus: existingRequest.status as RequestStatus,
+        selectedDriverId: driver.id,
+        needsAdminReview: existingRequest.needsAdminReview,
+        event: "offer_selected",
+      });
+
       const [updated] = await tx
         .update(requestsTable)
-        .set({ status: "SELECTED", selectedDriverId: driver.id, updatedAt: new Date() })
+        .set({ status: nextStatus, selectedDriverId: driver.id, updatedAt: new Date() })
         .where(and(eq(requestsTable.id, id), eq(requestsTable.status, "OPEN")))
         .returning();
 
@@ -1061,6 +1125,14 @@ router.post("/requests/:id/select-offer", async (req, res) => {
         }
         throw err;
       }
+
+      logRequestStatusTransition({
+        requestId: id,
+        previousStatus: existingRequest.status as RequestStatus,
+        nextStatus,
+        reason,
+        event: "offer_selected",
+      });
 
       return { existingRequest, updated, driver };
     });
