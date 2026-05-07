@@ -61,6 +61,10 @@ export function normalizeDriverMobile(mobile: string): string {
   return digits;
 }
 
+/**
+ * Build equivalent driver mobile variants for login lookup to support both
+ * legacy 9-digit values and canonical 10-digit values with leading zero.
+ */
 function getDriverMobileLoginCandidates(mobile: string): string[] {
   const normalized = normalizeDriverMobile(mobile);
   const candidates = new Set<string>([normalized]);
