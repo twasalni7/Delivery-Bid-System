@@ -243,23 +243,27 @@ describe("PATCH /requests/:id/status (admin updates status)", () => {
       success: true,
       data: { status: "ACTIVE" },
     });
-    const returningMock = vi.fn().mockResolvedValue([]);
-    const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).patch("/requests/999/status").send({ status: "ACTIVE" });
     expect(res.status).toBe(404);
   });
 
-  it("updates status successfully", async () => {
+  it("runs automatic status sync instead of manual status set", async () => {
     (UpdateRequestStatusBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
       success: true,
       data: { status: "ACTIVE" },
     });
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1, clientId: 5, status: "SELECTED", selectedDriverId: null, needsAdminReview: false,
+      homeLocation: "Riyadh", workLocation: "KFUPM", phone: "050",
+      numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
+      morningTime: "07:00", eveningTime: null, clientType: "غيره",
+      createdAt: new Date(), updatedAt: new Date(),
+    });
     const updated = {
-      id: 1, clientId: 5, status: "ACTIVE", selectedDriverId: null,
+      id: 1, clientId: 5, status: "OPEN", selectedDriverId: null,
       homeLocation: "Riyadh", workLocation: "KFUPM", phone: "050",
       numberOfPeople: 1, workingDaysPerWeek: 5, numberOfShifts: 1,
       morningTime: "07:00", eveningTime: null, clientType: "غيره",
@@ -273,7 +277,7 @@ describe("PATCH /requests/:id/status (admin updates status)", () => {
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).patch("/requests/1/status").send({ status: "ACTIVE" });
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: 1, status: "ACTIVE" });
+    expect(res.body).toMatchObject({ id: 1, status: "OPEN" });
   });
 });
 
@@ -430,6 +434,7 @@ describe("PATCH /requests/:id (admin patch)", () => {
   });
 
   it("returns 404 when request not found", async () => {
+    (db.query.requestsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     const returningMock = vi.fn().mockResolvedValue([]);
     const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
     const setMock = vi.fn().mockReturnValue({ where: whereMock });

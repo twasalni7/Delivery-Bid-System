@@ -7,7 +7,9 @@ import {
 } from "./request-status-engine";
 import { logger } from "./logger";
 
+// Delay first run briefly so startup DB work settles before sync kicks in.
 const STARTUP_DELAY_MS = 2 * 60 * 1000;
+// Run every 30 minutes to correct inconsistencies without excessive DB churn.
 const INTERVAL_MS = 30 * 60 * 1000;
 
 async function runRequestStatusSync(): Promise<void> {

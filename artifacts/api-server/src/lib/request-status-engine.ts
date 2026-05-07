@@ -22,6 +22,8 @@ export interface ResolveRequestStatusInput {
     | "background_sync";
 }
 
+// These statuses are treated as locked because the current system has no
+// reliable event/date signals to auto-transition them safely.
 const LOCKED_STATUSES = new Set<RequestStatus>([
   "ACTIVE",
   "COMPLETED",

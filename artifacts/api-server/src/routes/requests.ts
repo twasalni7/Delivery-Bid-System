@@ -46,6 +46,15 @@ interface PassengerInput {
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+const ALL_STATUSES = new Set([
+  "OPEN",
+  "SELECTED",
+  "ACTIVE",
+  "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+  "FROZEN",
+]);
 
 /** Convert a value that may be a numeric string (Drizzle returns numeric as string) to a JS number. */
 function toNum(val: string | number | null | undefined): number {
@@ -805,6 +814,10 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
   }
   const { status, selectedDriverId } = req.body ?? {};
   const updates: Record<string, unknown> = {};
+  if (status !== undefined && !ALL_STATUSES.has(status as string)) {
+    res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
+    return;
+  }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
 
   if (Object.keys(updates).length === 0 && status === undefined) {
@@ -827,15 +840,15 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
       );
     }
 
-    const nextSelectedDriverId =
+    const effectiveSelectedDriverId =
       selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
     const statusEvent =
-      selectedDriverId !== undefined && nextSelectedDriverId != null
+      selectedDriverId !== undefined && effectiveSelectedDriverId != null
         ? "selected_driver_assigned"
         : "admin_request_updated";
     const { status: resolvedStatus, reason } = resolveRequestStatus({
       currentStatus: existing.status as RequestStatus,
-      selectedDriverId: nextSelectedDriverId,
+      selectedDriverId: effectiveSelectedDriverId,
       needsAdminReview: existing.needsAdminReview,
       event: statusEvent,
     });
@@ -847,6 +860,11 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
       .set(updates)
       .where(eq(requestsTable.id, id))
       .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
 
     logRequestStatusTransition({
       requestId: id,

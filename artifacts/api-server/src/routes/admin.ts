@@ -27,6 +27,16 @@ import {
   type RequestStatus,
 } from "../lib/request-status-engine";
 
+const VALID_REQUEST_STATUSES = new Set([
+  "OPEN",
+  "SELECTED",
+  "ACTIVE",
+  "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+  "FROZEN",
+]);
+
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 
 async function generateUniqueLoginCode(maxAttempts = 5): Promise<string> {
@@ -667,6 +677,10 @@ router.patch("/requests/:id", async (req, res) => {
   }
   const { status, selectedDriverId, monthlyPrice, needsAdminReview } = req.body ?? {};
   const updates: Record<string, unknown> = {};
+  if (status !== undefined && !VALID_REQUEST_STATUSES.has(status as string)) {
+    res.status(400).json({ error: "قيمة الحالة غير صحيحة" });
+    return;
+  }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
   if (monthlyPrice !== undefined) {
     const price = parseFloat(monthlyPrice);
@@ -678,7 +692,7 @@ router.patch("/requests/:id", async (req, res) => {
   }
   if (needsAdminReview !== undefined) updates.needsAdminReview = Boolean(needsAdminReview);
 
-  if (Object.keys(updates).length === 0) {
+  if (Object.keys(updates).length === 0 && status === undefined) {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });
     return;
   }
@@ -698,18 +712,18 @@ router.patch("/requests/:id", async (req, res) => {
     );
   }
 
-  const finalSelectedDriverId =
+  const effectiveSelectedDriverId =
     selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
-  const finalNeedsAdminReview =
+  const effectiveNeedsAdminReview =
     needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
   const event =
-    selectedDriverId !== undefined && finalSelectedDriverId != null
+    selectedDriverId !== undefined && effectiveSelectedDriverId != null
       ? "selected_driver_assigned"
       : "admin_request_updated";
   const { status: resolvedStatus, reason } = resolveRequestStatus({
     currentStatus: existing.status as RequestStatus,
-    selectedDriverId: finalSelectedDriverId,
-    needsAdminReview: finalNeedsAdminReview,
+    selectedDriverId: effectiveSelectedDriverId,
+    needsAdminReview: effectiveNeedsAdminReview,
     event,
   });
   updates.status = resolvedStatus;
