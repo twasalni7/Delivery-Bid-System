@@ -71,24 +71,18 @@ function normalizeRow(raw: Record<string, unknown>): ParsedRow {
   };
 }
 
-function parseFile(file: File): Promise<ParsedRow[]> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-        resolve(json.map(normalizeRow));
-      } catch {
-        reject(new Error("تعذّر قراءة الملف. تأكد من أنه CSV أو Excel صحيح."));
-      }
-    };
-    reader.onerror = () => reject(new Error("حدث خطأ أثناء قراءة الملف"));
-    reader.readAsBinaryString(file);
-  });
+async function parseFile(file: File): Promise<ParsedRow[]> {
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+    return json.map(normalizeRow);
+  } catch (error) {
+    console.error("Driver import file parse failed", error);
+    throw new Error("تعذّر قراءة الملف. تأكد من أنه CSV أو Excel صحيح.");
+  }
 }
 
 function ImportDriversDialog({ open, onClose, onImported }: {

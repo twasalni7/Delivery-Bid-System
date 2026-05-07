@@ -266,6 +266,40 @@ describe("POST /auth/login-driver", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 2, name: "Khaled", role: "driver", balance: 200 });
   });
+
+  it("accepts loginCode typed in lowercase (case-insensitive)", async () => {
+    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 2,
+      mobile: "0501234567",
+      loginCode: "ABCD1234",
+      name: "Khaled",
+      status: "ACTIVE",
+      balance: 200,
+    });
+    const app = createApp();
+    const res = await request(app)
+      .post("/auth/login-driver")
+      .send({ mobile: "0501234567", loginCode: "abcd1234" });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 2, name: "Khaled", role: "driver" });
+  });
+
+  it("normalizes mobile with country code prefix (+966) for login lookup", async () => {
+    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 3,
+      mobile: "0501234567",
+      loginCode: "ABCD1234",
+      name: "Fahad",
+      status: "ACTIVE",
+      balance: 0,
+    });
+    const app = createApp();
+    const res = await request(app)
+      .post("/auth/login-driver")
+      .send({ mobile: "+966501234567", loginCode: "ABCD1234" });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 3, name: "Fahad", role: "driver" });
+  });
 });
 
 describe("POST /auth/login-admin", () => {

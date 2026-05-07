@@ -61,6 +61,10 @@ export function normalizeDriverMobile(mobile: string): string {
   return digits;
 }
 
+function normalizeLoginCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
 function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) =>
     req.session.regenerate((err: unknown) =>
@@ -151,10 +155,11 @@ router.post("/login-driver", async (req, res) => {
   }
   try {
     const normalizedMobile = normalizeDriverMobile(String(mobile));
+    const normalizedLoginCode = normalizeLoginCode(String(loginCode));
     const driver = await db.query.driversTable.findFirst({
       where: eq(driversTable.mobile, normalizedMobile),
     });
-    if (!driver || driver.loginCode !== loginCode) {
+    if (!driver || normalizeLoginCode(String(driver.loginCode)) !== normalizedLoginCode) {
       res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });
       return;
     }
@@ -312,4 +317,3 @@ router.patch("/me/password", async (req, res) => {
 });
 
 export default router;
-

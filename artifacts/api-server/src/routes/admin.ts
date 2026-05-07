@@ -336,7 +336,7 @@ router.post("/drivers/import", async (req, res) => {
 
   for (const row of drivers) {
     const name = String(row.name ?? "").trim();
-    const mobile = String(row.mobile ?? "").trim();
+    const mobile = normalizeDriverMobile(String(row.mobile ?? "").trim());
 
     if (!name || !mobile) {
       results.skipped.push({ name: name || "—", mobile: mobile || "—", reason: "بيانات ناقصة (الاسم أو الجوال)" });
