@@ -297,7 +297,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
       logger.info(
         {
           context: "request.create",
-          engine: result.needsAdminReview ? "none" : undefined,
+          engine: result.engine,
           finalPrice: result.price,
           pricePerPerson: result.pricePerPerson,
           distanceKm,

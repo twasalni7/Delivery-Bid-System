@@ -38,6 +38,7 @@ const DEFAULT_FORMULA_V2_CONSTANTS: FormulaV2Constants = {
 };
 
 export type PricingEngine = "matrix" | "formula_v2";
+export const VALID_PRICING_ENGINES: readonly PricingEngine[] = ["matrix", "formula_v2"];
 
 export interface UnifiedPricingInput {
   distance: number;
@@ -94,8 +95,7 @@ async function loadPricingRuntimeConfig(): Promise<{
 }
 
 export function resolvePricingEngine(raw: string | undefined | null): PricingEngine {
-  if (raw === "formula_v2") return "formula_v2";
-  if (raw === "matrix") return "matrix";
+  if (VALID_PRICING_ENGINES.includes(raw as PricingEngine)) return raw as PricingEngine;
   return DEFAULT_PRICING_ENGINE;
 }
 
@@ -152,6 +152,8 @@ export interface MatrixPricingResult {
   needsAdminReview: boolean;
   distanceKm: number;
   numberOfPeople: number;
+  /** The pricing engine that produced this result */
+  engine: PricingEngine | "none";
 }
 
 export interface FormulaV2Result {
@@ -228,6 +230,7 @@ function toFormulaResult(distanceKm: number, persons: number, formula: FormulaV2
     needsAdminReview: false,
     distanceKm,
     numberOfPeople: persons,
+    engine: "formula_v2",
   };
 }
 
@@ -241,7 +244,7 @@ export async function getPriceFromActiveEngine(input: UnifiedPricingInput): Prom
       { engine: "none", distanceKm, persons, reason: "needs_admin_review" },
       "pricing: distance exceeds review threshold — skipping calculation"
     );
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: persons };
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: persons, engine: "none" };
   }
 
   const runtime = await loadPricingRuntimeConfig();
@@ -346,7 +349,7 @@ export async function getPriceFromMatrix(
 ): Promise<MatrixPricingResult> {
   const needsAdminReview = distanceKm > ADMIN_REVIEW_DISTANCE_KM;
   if (needsAdminReview) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers };
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers, engine: "matrix" };
   }
 
   const passengers = Math.max(1, Math.round(numPassengers));
@@ -375,6 +378,7 @@ export async function getPriceFromMatrix(
         needsAdminReview: false,
         distanceKm,
         numberOfPeople: passengers,
+        engine: "matrix",
       };
     }
   }
@@ -397,13 +401,13 @@ export async function getPriceFromMatrix(
     .limit(1);
 
   if (baseRows.length === 0) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers };
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers, engine: "matrix" };
   }
 
   const row = baseRows[0]!;
   const priceSar = row.priceSar ?? row.pricePerPerson;
   if (priceSar == null || priceSar <= 0) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers };
+    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers, engine: "matrix" };
   }
 
   const passengersMax = row.passengersMax ?? 4;
@@ -416,6 +420,7 @@ export async function getPriceFromMatrix(
     needsAdminReview: false,
     distanceKm,
     numberOfPeople: effectivePassengers,
+    engine: "matrix",
   };
 }
 
@@ -523,8 +528,8 @@ router.patch("/config", requireAuth("admin"), async (req, res) => {
 
     // Pricing engine selector
     if (engine !== undefined) {
-      if (engine !== "matrix" && engine !== "formula_v2") {
-        res.status(400).json({ error: "محرك التسعير يجب أن يكون 'matrix' أو 'formula_v2'" });
+      if (!VALID_PRICING_ENGINES.includes(engine)) {
+        res.status(400).json({ error: `محرك التسعير يجب أن يكون أحد القيم: ${VALID_PRICING_ENGINES.join(" أو ")}` });
         return;
       }
       await upsertConfig("pricing_engine", engine);
