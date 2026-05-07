@@ -12,6 +12,7 @@ vi.mock("@workspace/db", () => {
       status: "status",
       selectedDriverId: "selectedDriverId",
       needsAdminReview: "needsAdminReview",
+      statusManuallySetByAdmin: "statusManuallySetByAdmin",
       updatedAt: "updatedAt",
     },
   };
@@ -35,12 +36,25 @@ describe("request-status-sync", () => {
   it("updates inconsistent statuses and returns updated count", async () => {
     (db.select as ReturnType<typeof vi.fn>).mockReturnValue({
       from: vi.fn().mockResolvedValue([
-        { id: 1, status: "OPEN", selectedDriverId: null, needsAdminReview: true },
+        {
+          id: 1,
+          status: "OPEN",
+          selectedDriverId: null,
+          needsAdminReview: true,
+          statusManuallySetByAdmin: true,
+        },
         { id: 2, status: "OPEN", selectedDriverId: null, needsAdminReview: false },
+        {
+          id: 3,
+          status: "OPEN",
+          selectedDriverId: null,
+          needsAdminReview: true,
+          statusManuallySetByAdmin: false,
+        },
       ]),
     });
 
-    const returning = vi.fn().mockResolvedValue([{ id: 1, status: "FROZEN" }]);
+    const returning = vi.fn().mockResolvedValue([{ id: 3, status: "FROZEN" }]);
     const where = vi.fn().mockReturnValue({ returning });
     const set = vi.fn().mockReturnValue({ where });
     (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set });

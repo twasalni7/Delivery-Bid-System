@@ -22,11 +22,14 @@ export async function runRequestStatusSync(): Promise<number> {
         status: requestsTable.status,
         selectedDriverId: requestsTable.selectedDriverId,
         needsAdminReview: requestsTable.needsAdminReview,
+        statusManuallySetByAdmin: requestsTable.statusManuallySetByAdmin,
       })
       .from(requestsTable);
 
     let updatedCount = 0;
     for (const row of requests) {
+      if (row.statusManuallySetByAdmin) continue;
+
       const { status: nextStatus, reason } = resolveRequestStatus({
         currentStatus: row.status as RequestStatus,
         selectedDriverId: row.selectedDriverId,

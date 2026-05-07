@@ -38,6 +38,7 @@ export interface ResolveRequestStatusInput {
     | "request_created"
     | "offer_selected"
     | "selected_driver_assigned"
+    | "admin_manual_override"
     | "admin_request_updated"
     | "manual_status_sync_requested"
     | "background_sync";

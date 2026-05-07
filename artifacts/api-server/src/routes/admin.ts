@@ -709,28 +709,33 @@ router.patch("/requests/:id", async (req, res) => {
     });
     if (!existing) return null;
 
-    if (status !== undefined && status !== existing.status) {
-      logger.warn(
-        { requestId: id, requestedStatus: status, currentStatus: existing.status },
-        "manual request status update ignored on admin PATCH /requests/:id",
-      );
+    let reason = "admin_request_updated";
+    let event: "selected_driver_assigned" | "admin_request_updated" | "admin_manual_override" =
+      "admin_request_updated";
+    if (status !== undefined) {
+      updates.status = status;
+      updates.statusManuallySetByAdmin = true;
+      event = "admin_manual_override";
+      reason = status === existing.status ? "admin_manual_override_same_status" : "admin_manual_override";
+    } else {
+      const effectiveSelectedDriverId =
+        selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
+      const effectiveNeedsAdminReview =
+        needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
+      event =
+        selectedDriverId !== undefined && effectiveSelectedDriverId != null
+          ? "selected_driver_assigned"
+          : "admin_request_updated";
+      const resolved = resolveRequestStatus({
+        currentStatus: existing.status as RequestStatus,
+        selectedDriverId: effectiveSelectedDriverId,
+        needsAdminReview: effectiveNeedsAdminReview,
+        event,
+      });
+      updates.status = resolved.status;
+      updates.statusManuallySetByAdmin = false;
+      reason = resolved.reason;
     }
-
-    const effectiveSelectedDriverId =
-      selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
-    const effectiveNeedsAdminReview =
-      needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
-    const event =
-      selectedDriverId !== undefined && effectiveSelectedDriverId != null
-        ? "selected_driver_assigned"
-        : "admin_request_updated";
-    const { status: resolvedStatus, reason } = resolveRequestStatus({
-      currentStatus: existing.status as RequestStatus,
-      selectedDriverId: effectiveSelectedDriverId,
-      needsAdminReview: effectiveNeedsAdminReview,
-      event,
-    });
-    updates.status = resolvedStatus;
 
     const [updated] = await tx
       .update(requestsTable)
@@ -1070,7 +1075,12 @@ router.post("/requests/:id/select-offer", async (req, res) => {
 
       const [updated] = await tx
         .update(requestsTable)
-        .set({ status: nextStatus, selectedDriverId: driver.id, updatedAt: new Date() })
+        .set({
+          status: nextStatus,
+          selectedDriverId: driver.id,
+          statusManuallySetByAdmin: false,
+          updatedAt: new Date(),
+        })
         .where(and(eq(requestsTable.id, id), eq(requestsTable.status, "OPEN")))
         .returning();
 

@@ -1,0 +1,2 @@
+ALTER TABLE requests
+ADD COLUMN IF NOT EXISTS status_manually_set_by_admin BOOLEAN NOT NULL DEFAULT FALSE;

@@ -61,6 +61,7 @@ export const requestsTable = pgTable("requests", {
   needsAdminReview: boolean("needs_admin_review").notNull().default(false),
   monthlyPrice: numeric("monthly_price", { precision: 12, scale: 2 }).notNull().default("0"),
   status: requestStatusEnum("status").notNull().default("OPEN"),
+  statusManuallySetByAdmin: boolean("status_manually_set_by_admin").notNull().default(false),
   selectedDriverId: integer("selected_driver_id").references(
     () => driversTable.id
   ),
