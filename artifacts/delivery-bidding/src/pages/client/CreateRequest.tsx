@@ -334,21 +334,30 @@ export default function CreateRequest() {
     setExtraPassengers((prev) => prev.map((p, i) => (i === idx ? { ...p, ...update } : p)));
   };
 
-  // Fetch price from server whenever distance or passengers change
+  // Fetch price from server whenever distance, passengers, schedule or locations change
   useEffect(() => {
     if (maxDistanceKm === undefined) {
       setPricingResult(undefined);
       return;
     }
+    const validShiftsForPricing = shifts.filter((s) => s.goTime);
+    const validAdditionalForPricing = additionalLocations.filter((l) => l.address.trim());
     fetch(`${API}/api/pricing/calculate`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ distanceKm: maxDistanceKm, numberOfPeople: sharingCount }),
+      body: JSON.stringify({
+        distanceKm: maxDistanceKm,
+        numberOfPeople: sharingCount,
+        workingDaysPerWeek: selectedDays.length || 5,
+        numberOfShifts: validShiftsForPricing.length || 1,
+        shifts: validShiftsForPricing.length > 0 ? validShiftsForPricing : undefined,
+        additionalLocations: validAdditionalForPricing.length > 0 ? validAdditionalForPricing : undefined,
+      }),
     })
       .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
       .then((data) => setPricingResult(data))
       .catch(() => setPricingResult(undefined));
-  }, [maxDistanceKm, sharingCount]);
+  }, [maxDistanceKm, sharingCount, selectedDays, shifts, additionalLocations]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
