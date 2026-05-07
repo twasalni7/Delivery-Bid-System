@@ -61,6 +61,16 @@ export function normalizeDriverMobile(mobile: string): string {
   return digits;
 }
 
+function getDriverMobileLoginCandidates(mobile: string): string[] {
+  const normalized = normalizeDriverMobile(mobile);
+  const candidates = new Set<string>([normalized]);
+  if (normalized.startsWith("05") && normalized.length === 10) {
+    candidates.add(normalized.slice(1)); // legacy format without leading zero
+    candidates.add(`966${normalized.slice(1)}`); // legacy country-code format
+  }
+  return [...candidates];
+}
+
 function normalizeLoginCode(code: string): string {
   return code.trim().toUpperCase();
 }
@@ -154,11 +164,15 @@ router.post("/login-driver", async (req, res) => {
     return;
   }
   try {
-    const normalizedMobile = normalizeDriverMobile(String(mobile));
+    const mobileCandidates = getDriverMobileLoginCandidates(String(mobile));
     const normalizedLoginCode = normalizeLoginCode(String(loginCode));
-    const driver = await db.query.driversTable.findFirst({
-      where: eq(driversTable.mobile, normalizedMobile),
-    });
+    let driver: Awaited<ReturnType<typeof db.query.driversTable.findFirst>> = null;
+    for (const mobileCandidate of mobileCandidates) {
+      driver = await db.query.driversTable.findFirst({
+        where: eq(driversTable.mobile, mobileCandidate),
+      });
+      if (driver) break;
+    }
     if (!driver || normalizeLoginCode(String(driver.loginCode)) !== normalizedLoginCode) {
       res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });
       return;
