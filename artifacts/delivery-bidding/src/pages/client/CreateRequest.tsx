@@ -348,7 +348,7 @@ export default function CreateRequest() {
       body: JSON.stringify({
         distanceKm: maxDistanceKm,
         numberOfPeople: sharingCount,
-        workingDaysPerWeek: selectedDays.length || 1,
+        workingDaysPerWeek: selectedDays.length || 5,
         numberOfShifts: validShifts.length || 1,
         eveningTime: firstReturnTime || undefined,
         shifts: validShifts.length > 0 ? validShifts : undefined,

@@ -219,6 +219,8 @@ export function getTripTypeFromShifts(
         return sum + (hasGo ? 1 : 0) + (hasReturn ? 1 : 0);
       }, 0)
     : 0;
+  // Legacy payloads may send only morning/evening scalar times instead of shifts.
+  // When eveningTime exists without structured shifts, treat it as a round trip (go + return).
   const tripsFromLegacyTimes =
     tripsFromShifts === 0 && typeof eveningTime === "string" && eveningTime.trim() !== "" ? 2 : 0;
   const count =
