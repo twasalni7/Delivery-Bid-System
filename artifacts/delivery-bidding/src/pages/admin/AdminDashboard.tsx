@@ -1,18 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "wouter";
+import { useState } from "react";
+import { Link } from "wouter";
 import { useGetAdminStats, useGetAdminAnalytics, useGetAdminFinancial } from "@workspace/api-client-react";
 import type { AdminAnalytics } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { EnablePushButton } from "@/components/enable-push-button";
-import { Download, Banknote, Wallet, Clock, CreditCard, LifeBuoy, FileText, TrendingUp, ChevronLeft } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from "recharts";
-import { API_ORIGIN as API } from "@/lib/api-config";
-import { getAuthHeaders } from "@/lib/authed-fetch";
-import { timeAgo } from "@/lib/time-utils";
+import { Download, Banknote, Wallet } from "lucide-react";
 
 const ARABIC_MONTHS = [
   "يناير","فبراير","مارس","أبريل","مايو","يونيو",
@@ -54,30 +47,9 @@ const STAT_CARDS = [
   { key: "activeRequests", label: "نشط", bg: "var(--status-active-text)" },
 ] as const;
 
-type RecentEvent = {
-  type: "wallet" | "support" | "request" | "offer";
-  id: number;
-  description: string;
-  userName: string | null;
-  url: string;
-  createdAt: string;
-};
-
-const EVENT_TYPE_CONFIG: Record<RecentEvent["type"], { icon: React.ReactNode; label: string; color: string; style?: React.CSSProperties }> = {
-  wallet:  { icon: <CreditCard size={14} />, label: "شحن محفظة", color: "", style: { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" } },
-  support: { icon: <LifeBuoy size={14} />, label: "تذكرة دعم", color: "", style: { backgroundColor: "var(--status-open-bg)", color: "var(--status-open-text)" } },
-  request: { icon: <FileText size={14} />, label: "طلب جديد", color: "", style: { backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" } },
-  offer:   { icon: <TrendingUp size={14} />, label: "عرض سائق", color: "", style: { backgroundColor: "var(--status-active-bg)", color: "var(--status-active-text)" } },
-};
-
 export default function AdminDashboard() {
   const [selectedMonths, setSelectedMonths] = useState<3 | 6 | 12>(12);
   const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [appliedRange, setAppliedRange] = useState<{ from: string; to: string } | null>(null);
-  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
-  const [, navigate] = useLocation();
-  const eventsTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const analyticsParams = appliedRange
     ? { from: appliedRange.from, to: appliedRange.to }
@@ -87,27 +59,6 @@ export default function AdminDashboard() {
   const { data: analytics, isLoading: analyticsLoading, isFetching: analyticsFetching } = useGetAdminAnalytics(analyticsParams);
   const { data: financial, isLoading: financialLoading } = useGetAdminFinancial();
   const isLoading = statsLoading || analyticsLoading || financialLoading;
-
-  // Fetch recent events and set up auto-refresh
-  const fetchRecentEvents = async () => {
-    try {
-      const res = await fetch(`${API}/api/admin/recent-events`, { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json() as RecentEvent[];
-        setRecentEvents(data);
-      }
-    } catch {
-      // Silent
-    }
-  };
-
-  useEffect(() => {
-    void fetchRecentEvents();
-    eventsTimerRef.current = setInterval(() => { void fetchRecentEvents(); }, 30_000);
-    return () => {
-      if (eventsTimerRef.current) clearInterval(eventsTimerRef.current);
-    };
-  }, []);
 
   function handleMonthSelect(value: 3 | 6 | 12) {
     setSelectedMonths(value);
@@ -226,38 +177,6 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-            {financial.driverBalances.length > 0 && (
-              <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-sm font-black mb-3 flex items-center gap-2">
-                  <Wallet size={14} /> توزيع أرصدة السائقين
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>#</th>
-                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>السائق</th>
-                        <th className="text-right py-2 px-2 font-semibold" style={{ color: "var(--text-muted)" }}>الرصيد (ريال)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {financial.driverBalances.map((driver, index) => (
-                        <tr key={driver.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                          <td className="py-2 px-2 font-bold" style={{ color: "var(--text-muted)" }}>{index + 1}</td>
-                          <td className="py-2 px-2 font-bold">{driver.name}</td>
-                          <td className="py-2 px-2">
-                            <span className={`font-black ${driver.balance > 0 ? "text-emerald-400" : driver.balance < 0 ? "text-red-400" : ""}`}
-                              style={driver.balance === 0 ? { color: "var(--text-hint)" } : {}}>
-                              {driver.balance.toLocaleString("ar-SA")}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -405,52 +324,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* ── Recent Events ── */}
-        <div className="rounded-2xl overflow-hidden mb-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <h2 className="text-base font-black flex items-center gap-2">
-              <Clock size={16} style={{ color: "var(--brand)" }} />
-              الأحداث الأخيرة
-            </h2>
-            <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ color: "var(--text-hint)", backgroundColor: "var(--border-subtle)" }}>يُحدَّث كل 30 ث</span>
-          </div>
-          {recentEvents.length === 0 ? (
-            <div className="py-12 text-center">
-              <div className="text-3xl mb-2">📭</div>
-              <p className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>لا توجد أحداث حديثاً</p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>ستظهر هنا الأحداث الجديدة تلقائياً</p>
-            </div>
-          ) : (
-            <div>
-              {recentEvents.map((event, idx) => {
-                const cfg = EVENT_TYPE_CONFIG[event.type];
-                return (
-                  <button
-                    key={`${event.type}-${event.id}-${idx}`}
-                    onClick={() => navigate(event.url)}
-                    className="w-full flex items-center gap-3 px-5 py-3.5 transition-colors text-right group"
-                    style={{ borderBottom: "1px solid var(--border-subtle)" }}
-                  >
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black shrink-0" style={cfg.style}>
-                      {cfg.icon}
-                      {cfg.label}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate">{event.description}</p>
-                      {event.userName && (
-                        <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-muted)" }}>{event.userName}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>{timeAgo(event.createdAt)}</span>
-                      <ChevronLeft size={14} style={{ color: "var(--text-hint)" }} aria-hidden="true" />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
     </Layout>
   );
