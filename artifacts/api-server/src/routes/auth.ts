@@ -2,7 +2,7 @@ import { Router, Request } from "express";
 import { randomBytes } from "crypto";
 import { db } from "@workspace/db";
 import { clientsTable, driversTable, adminsTable, userTokensTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { hashPassword, comparePassword } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
@@ -59,6 +59,19 @@ export function normalizeDriverMobile(mobile: string): string {
   if (digits.startsWith("966") && digits.length === 12) return "0" + digits.slice(3);
   if (digits.startsWith("5") && digits.length === 9) return "0" + digits;
   return digits;
+}
+
+/**
+ * Build equivalent driver mobile variants for login lookup to support both
+ * legacy 9-digit values and canonical 10-digit values with leading zero.
+ */
+function getDriverMobileLoginCandidates(mobile: string): string[] {
+  const normalized = normalizeDriverMobile(mobile);
+  const candidates = new Set<string>([normalized]);
+  if (normalized.startsWith("05") && normalized.length === 10) {
+    candidates.add(normalized.slice(1)); // legacy format without leading zero
+  }
+  return [...candidates];
 }
 
 function normalizeLoginCode(code: string): string {
@@ -154,10 +167,10 @@ router.post("/login-driver", async (req, res) => {
     return;
   }
   try {
-    const normalizedMobile = normalizeDriverMobile(String(mobile));
+    const mobileCandidates = getDriverMobileLoginCandidates(String(mobile));
     const normalizedLoginCode = normalizeLoginCode(String(loginCode));
     const driver = await db.query.driversTable.findFirst({
-      where: eq(driversTable.mobile, normalizedMobile),
+      where: inArray(driversTable.mobile, mobileCandidates),
     });
     if (!driver || normalizeLoginCode(String(driver.loginCode)) !== normalizedLoginCode) {
       res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });

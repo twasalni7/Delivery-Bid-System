@@ -300,6 +300,25 @@ describe("POST /auth/login-driver", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 3, name: "Fahad", role: "driver" });
   });
+
+  it("accepts login when stored mobile is legacy format without leading 0", async () => {
+    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        id: 4,
+        mobile: "501234567",
+        loginCode: "ABCD1234",
+        name: "Nasser",
+        status: "ACTIVE",
+        balance: 50,
+      });
+    const app = createApp();
+    const res = await request(app)
+      .post("/auth/login-driver")
+      .send({ mobile: "0501234567", loginCode: "ABCD1234" });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 4, name: "Nasser", role: "driver" });
+    expect((db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
+  });
 });
 
 describe("POST /auth/login-admin", () => {
