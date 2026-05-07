@@ -357,7 +357,7 @@ export default function CreateRequest() {
       .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
       .then((data) => setPricingResult(data))
       .catch(() => setPricingResult(undefined));
-  }, [maxDistanceKm, sharingCount, selectedDays.length, shifts]);
+  }, [maxDistanceKm, sharingCount, selectedDays, shifts]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
