@@ -36,6 +36,8 @@ const DAYS = [
 ];
 
 const MAX_SHIFTS = 4;
+const DEFAULT_WORKING_DAYS_PER_WEEK = 5;
+const DEFAULT_NUMBER_OF_SHIFTS = 1;
 
 type ShiftEntry = { goTime: string; returnTime: string };
 
@@ -348,8 +350,8 @@ export default function CreateRequest() {
       body: JSON.stringify({
         distanceKm: maxDistanceKm,
         numberOfPeople: sharingCount,
-        workingDaysPerWeek: selectedDays.length || 5,
-        numberOfShifts: validShiftsForPricing.length || 1,
+        workingDaysPerWeek: selectedDays.length || DEFAULT_WORKING_DAYS_PER_WEEK,
+        numberOfShifts: validShiftsForPricing.length || DEFAULT_NUMBER_OF_SHIFTS,
         shifts: validShiftsForPricing.length > 0 ? validShiftsForPricing : undefined,
         additionalLocations: validAdditionalForPricing.length > 0 ? validAdditionalForPricing : undefined,
       }),

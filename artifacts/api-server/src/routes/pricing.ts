@@ -521,13 +521,12 @@ router.patch("/config", requireAuth("admin"), async (req, res) => {
 
     // Pricing engine selector
     if (engine !== undefined) {
-      const resolved = resolvePricingEngine(engine);
       if (engine !== "matrix" && engine !== "formula_v2") {
         res.status(400).json({ error: "محرك التسعير يجب أن يكون 'matrix' أو 'formula_v2'" });
         return;
       }
-      await upsertConfig("pricing_engine", resolved);
-      logger.info({ engine: resolved }, "pricing: engine switched by admin");
+      await upsertConfig("pricing_engine", engine);
+      logger.info({ engine }, "pricing: engine switched by admin");
     }
 
     if (shadowCompare !== undefined) {
