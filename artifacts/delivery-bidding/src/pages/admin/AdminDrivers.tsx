@@ -46,20 +46,39 @@ type ImportResult = {
 };
 
 function normalizeRow(raw: Record<string, unknown>): ParsedRow {
+  const normalized = new Map<string, string>();
+  const normalizeKey = (key: string) =>
+    key
+      .normalize("NFKC")
+      .replace(/\uFEFF/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, "");
+
+  for (const [key, value] of Object.entries(raw)) {
+    const normalizedKey = normalizeKey(key);
+    if (!normalizedKey) continue;
+    const text = value === undefined || value === null ? "" : String(value).trim();
+    if (!normalized.has(normalizedKey) || (normalized.get(normalizedKey) ?? "") === "") {
+      normalized.set(normalizedKey, text);
+    }
+  }
+
   const g = (...keys: string[]) => {
     for (const k of keys) {
-      const v = raw[k] ?? raw[k.toLowerCase()] ?? raw[k.toUpperCase()];
+      const normalizedKey = normalizeKey(k);
+      const v = normalized.get(normalizedKey);
       if (v !== undefined && v !== "") return String(v).trim();
     }
     return "";
   };
 
-  const name    = g("full_name", "name", "الاسم", "اسم السائق");
-  const mobile  = g("phone", "mobile", "الجوال", "رقم الجوال", "الهاتف");
+  const name    = g("full_name", "name", "full name", "الاسم", "الاسم الكامل", "اسم السائق");
+  const mobile  = g("phone", "mobile", "phone_number", "رقم الهاتف", "الجوال", "رقم الجوال", "الهاتف");
   const nationality = g("nationality", "الجنسية");
-  const carType = g("car_type", "carType", "المركبة", "نوع السيارة");
-  const carYear = g("car_year", "carYear", "سنة المركبة", "سنة السيارة");
-  const loginCode = g("pin", "loginCode", "login_code", "الرمز", "كلمة المرور");
+  const carType = g("car_type", "carType", "vehicle_type", "المركبة", "نوع المركبة", "نوع السيارة");
+  const carYear = g("car_year", "carYear", "vehicle_year", "سنة المركبة", "سنة السيارة");
+  const loginCode = g("pin", "loginCode", "login_code", "passcode", "الرمز", "كلمة المرور");
   const age     = g("age", "العمر");
   const nationalId = g("national_id", "nationalId", "رقم الهوية", "الهوية");
   const city    = g("city", "المدينة", "المنطقة");
