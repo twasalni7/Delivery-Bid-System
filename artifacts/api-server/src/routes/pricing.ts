@@ -212,6 +212,7 @@ export function calculateSubscriptionPriceV2(
  * Resolves the pricing trip type from schedule payload.
  * Priority: explicit structured `shifts` (go/return counts) then legacy `eveningTime`,
  * then `numberOfShifts` fallback for older payloads.
+ * Note: counting is based on trip legs (go + return), not just shift array length.
  */
 export function getTripTypeFromShifts(
   numberOfShifts?: number | null,
@@ -226,7 +227,7 @@ export function getTripTypeFromShifts(
       }, 0)
     : 0;
   // Legacy payloads may send only morning/evening scalar times instead of shifts.
-  // When eveningTime exists without structured shifts, treat it as a round trip (go + return).
+  // In that shape, eveningTime means the rider provided a return leg as well, so treat it as round trip.
   const tripsFromLegacyTimes =
     tripsFromShifts === 0 && typeof eveningTime === "string" && eveningTime.trim() !== ""
       ? LEGACY_ROUND_TRIP_COUNT
