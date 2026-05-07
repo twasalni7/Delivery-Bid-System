@@ -7,8 +7,10 @@ import {
 } from "./request-status-engine";
 import { logger } from "./logger";
 
-// Delay first run briefly so startup DB work settles before sync kicks in.
-const STARTUP_DELAY_MS = 60 * 1000;
+// Delay first run by this many milliseconds so startup DB work settles.
+// Override with REQUEST_STATUS_SYNC_STARTUP_DELAY_MS env var if needed
+// (e.g. set to "0" in integration tests, or "5000" for fast-cycle deploys).
+const STARTUP_DELAY_MS = Number(process.env["REQUEST_STATUS_SYNC_STARTUP_DELAY_MS"] ?? 60_000);
 // Run every 30 minutes to correct inconsistencies without excessive DB churn.
 const INTERVAL_MS = 30 * 60 * 1000;
 
@@ -63,9 +65,12 @@ export async function runRequestStatusSync(): Promise<number> {
 
 export function startRequestStatusSyncJob(): void {
   const timer = setTimeout(() => {
-    void runRequestStatusSync();
+    // Set up the recurring interval FIRST so it is guaranteed to run even if
+    // the initial sync call throws unexpectedly (runRequestStatusSync is
+    // designed to be no-throw, but we defend-in-depth here).
     const interval = setInterval(() => void runRequestStatusSync(), INTERVAL_MS);
     if (interval.unref) interval.unref();
+    void runRequestStatusSync();
   }, STARTUP_DELAY_MS);
   if (timer.unref) timer.unref();
 }

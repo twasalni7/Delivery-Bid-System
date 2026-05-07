@@ -1,5 +1,26 @@
 import { logger } from "./logger";
 
+/**
+ * Centralised request-status transition engine.
+ *
+ * Design constraints
+ * ------------------
+ * The current system does NOT store an explicit trip-start date, trip-end date,
+ * or expiry timestamp on each request row.  Without these reliable signals,
+ * auto-transitioning the following statuses would require inventing new
+ * business logic that does not yet exist in the codebase:
+ *
+ *   SELECTED → ACTIVE   (when does the driver officially start the trip?)
+ *   ACTIVE   → COMPLETED (when is the trip considered done?)
+ *   ACTIVE   → EXPIRED   (how long before we expire an unstarted trip?)
+ *   any      → CANCELLED (who cancels, and under what conditions?)
+ *
+ * These four statuses are therefore LOCKED — the engine will not change them
+ * automatically.  When the product team defines explicit events/timestamps for
+ * these transitions, the corresponding event types should be added to
+ * ResolveRequestStatusInput["event"] and handled before the LOCKED_STATUSES
+ * guard below.
+ */
 export type RequestStatus =
   | "OPEN"
   | "SELECTED"
@@ -22,8 +43,7 @@ export interface ResolveRequestStatusInput {
     | "background_sync";
 }
 
-// These statuses are treated as locked because the current system has no
-// reliable event/date signals to auto-transition them safely.
+// See module-level JSDoc above for why these statuses are locked.
 const LOCKED_STATUSES = new Set<RequestStatus>([
   "ACTIVE",
   "COMPLETED",

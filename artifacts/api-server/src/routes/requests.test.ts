@@ -52,6 +52,15 @@ vi.mock("../lib/notify", () => ({
   notifyAllDrivers: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("../lib/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 vi.mock("./pricing", () => ({
   calculatePriceForRequest: vi.fn().mockResolvedValue({ price: 1000, needsAdminReview: false }),
   getBidFee: vi.fn().mockResolvedValue(50),
@@ -60,6 +69,7 @@ vi.mock("./pricing", () => ({
 import { db } from "@workspace/db";
 import { CreateRequestBody, UpdateRequestStatusBody, SelectOfferBody } from "@workspace/api-zod";
 import { calculatePriceForRequest } from "./pricing";
+import { logger } from "../lib/logger";
 import requestsRouter from "../routes/requests";
 
 function makeSelectChain(result: unknown[]) {
@@ -340,6 +350,11 @@ describe("PATCH /requests/:id/status (admin updates status)", () => {
     const res = await request(app).patch("/requests/1/status").send({ status: "ACTIVE" });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 1, status: "OPEN" });
+    // Verify that the warning is emitted when a manual status override is attempted
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId: 1, requestedStatus: "ACTIVE", currentStatus: "SELECTED" }),
+      expect.stringContaining("manual request status update ignored"),
+    );
   });
 });
 

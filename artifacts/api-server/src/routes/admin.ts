@@ -692,47 +692,61 @@ router.patch("/requests/:id", async (req, res) => {
   }
   if (needsAdminReview !== undefined) updates.needsAdminReview = Boolean(needsAdminReview);
 
+  // `status` is not added to `updates` here — it is resolved by the engine
+  // later.  The check therefore covers two valid rejection paths:
+  //   1. No field updates (selectedDriverId/monthlyPrice/needsAdminReview) AND
+  //   2. No `status` payload was provided either.
   if (Object.keys(updates).length === 0 && status === undefined) {
     res.status(400).json({ error: "لا توجد بيانات للتحديث" });
     return;
   }
 
-  const existing = await db.query.requestsTable.findFirst({
-    where: eq(requestsTable.id, id),
+  // Wrap read-then-update in a transaction to prevent a race condition where
+  // the row could be mutated or deleted between the SELECT and the UPDATE.
+  const result = await withDbTransaction(async (tx) => {
+    const existing = await tx.query.requestsTable.findFirst({
+      where: eq(requestsTable.id, id),
+    });
+    if (!existing) return null;
+
+    if (status !== undefined && status !== existing.status) {
+      logger.warn(
+        { requestId: id, requestedStatus: status, currentStatus: existing.status },
+        "manual request status update ignored on admin PATCH /requests/:id",
+      );
+    }
+
+    const effectiveSelectedDriverId =
+      selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
+    const effectiveNeedsAdminReview =
+      needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
+    const event =
+      selectedDriverId !== undefined && effectiveSelectedDriverId != null
+        ? "selected_driver_assigned"
+        : "admin_request_updated";
+    const { status: resolvedStatus, reason } = resolveRequestStatus({
+      currentStatus: existing.status as RequestStatus,
+      selectedDriverId: effectiveSelectedDriverId,
+      needsAdminReview: effectiveNeedsAdminReview,
+      event,
+    });
+    updates.status = resolvedStatus;
+
+    const [updated] = await tx
+      .update(requestsTable)
+      .set(updates)
+      .where(eq(requestsTable.id, id))
+      .returning();
+
+    return { existing, updated, event, reason };
   });
-  if (!existing) {
+
+  if (!result) {
     res.status(404).json({ error: "الطلب غير موجود" });
     return;
   }
 
-  if (status !== undefined && status !== existing.status) {
-    logger.warn(
-      { requestId: id, requestedStatus: status, currentStatus: existing.status },
-      "manual request status update ignored on admin PATCH /requests/:id",
-    );
-  }
-
-  const effectiveSelectedDriverId =
-    selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
-  const effectiveNeedsAdminReview =
-    needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
-  const event =
-    selectedDriverId !== undefined && effectiveSelectedDriverId != null
-      ? "selected_driver_assigned"
-      : "admin_request_updated";
-  const { status: resolvedStatus, reason } = resolveRequestStatus({
-    currentStatus: existing.status as RequestStatus,
-    selectedDriverId: effectiveSelectedDriverId,
-    needsAdminReview: effectiveNeedsAdminReview,
-    event,
-  });
-  updates.status = resolvedStatus;
-
-  const [updated] = await db
-    .update(requestsTable)
-    .set(updates)
-    .where(eq(requestsTable.id, id))
-    .returning();
+  const { existing, updated, event, reason } = result;
 
   logRequestStatusTransition({
     requestId: id,
