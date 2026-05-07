@@ -64,12 +64,16 @@ describe("pricing engine mapping helpers", () => {
     expect(resolveTripsPerDay(3)).toBe(3);
   });
 
-  it("maps shifts to formula type and keeps matrix default engine", () => {
+  it("maps shifts to formula type and default engine is formula_v2", () => {
     expect(getTripTypeFromShifts(1, null)).toBe("one_way");
     expect(getTripTypeFromShifts(2, null)).toBe("round_trip");
     expect(getTripTypeFromShifts(4, null)).toBe("shift");
     expect(getTripTypeFromShifts(3, null)).toBe(3);
-    expect(resolvePricingEngine(undefined)).toBe("matrix");
+    // default engine (no config) is now formula_v2
+    expect(resolvePricingEngine(undefined)).toBe("formula_v2");
+    expect(resolvePricingEngine(null)).toBe("formula_v2");
     expect(resolvePricingEngine("formula_v2")).toBe("formula_v2");
+    // matrix can still be selected explicitly (revert capability preserved)
+    expect(resolvePricingEngine("matrix")).toBe("matrix");
   });
 });

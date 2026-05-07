@@ -16,7 +16,7 @@ import { logger } from "../lib/logger";
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
-const DEFAULT_PRICING_ENGINE = "matrix" as const;
+const DEFAULT_PRICING_ENGINE = "formula_v2" as const;
 const BASE_LOCATION_COUNT = 1;
 // Business rule: each extra passenger adds 50% to the base total (shared trips).
 const EXTRA_PASSENGER_FACTOR_INCREMENT = 0.5;
@@ -94,7 +94,9 @@ async function loadPricingRuntimeConfig(): Promise<{
 }
 
 export function resolvePricingEngine(raw: string | undefined | null): PricingEngine {
-  return raw === "formula_v2" ? "formula_v2" : DEFAULT_PRICING_ENGINE;
+  if (raw === "formula_v2") return "formula_v2";
+  if (raw === "matrix") return "matrix";
+  return DEFAULT_PRICING_ENGINE;
 }
 
 export async function loadPricingConfig(): Promise<PricingConfig> {
