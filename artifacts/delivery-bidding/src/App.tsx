@@ -10,6 +10,7 @@ import { consumePendingNotificationInteraction } from "@/lib/notification-action
 import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { PushPermissionPrompt } from "@/components/push-permission-prompt";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 import Home from "@/pages/Home";
 
@@ -455,19 +456,21 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-          <InstallBanner />
-          {/* iOS install guide + push permission soft-ask */}
-          <FlowOrchestrator />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+            <InstallBanner />
+            {/* iOS install guide + push permission soft-ask */}
+            <FlowOrchestrator />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

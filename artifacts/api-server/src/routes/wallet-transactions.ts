@@ -8,25 +8,25 @@ import { getSessionUser } from "../lib/session";
 import { notify, notifyAllAdmins } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
+import { withDbTransaction } from "../lib/db-transaction";
 
 const router = Router();
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 
+// Accept both standard https:// URLs and data: URLs (used as fallback when
+// external storage is not configured).
+const receiptUrlSchema = z
+  .string()
+  .refine(
+    (v) => v.startsWith("data:") || z.string().url().safeParse(v).success,
+    { message: "رابط الإيصال غير صحيح" }
+  );
+
 const CreateWalletTxBody = z.object({
   amount: z.number().min(0.01),
-  receiptUrl: z.string().url().optional().nullable(),
+  receiptUrl: receiptUrlSchema.optional().nullable(),
 });
-
-/** Wraps callback in a real DB transaction when available, logs a warning and falls back gracefully. */
-async function withTx<T>(cb: (tx: typeof db) => Promise<T>): Promise<T> {
-  const dbAny = db as typeof db & { transaction?: (cb: (tx: typeof db) => Promise<T>) => Promise<T> };
-  if (typeof dbAny.transaction === "function") {
-    return dbAny.transaction(cb);
-  }
-  logger.warn("withTx: db.transaction unavailable — running wallet operations without atomicity");
-  return cb(db);
-}
 
 // GET /api/wallet-transactions — driver sees own transactions, admin sees all
 router.get("/", requireAuth(), async (req, res) => {
@@ -152,7 +152,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
     const creditAmount = parseFloat(tx.amount);
 
     // Atomically: credit balance + update wallet-transaction status + insert ledger entry
-    const [updated] = await withTx(async (txDb) => {
+    const [updated] = await withDbTransaction(async (txDb) => {
       await txDb
         .update(driversTable)
         .set({ balance: sql`${driversTable.balance} + ${creditAmount}::numeric` })
@@ -161,7 +161,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       // Unified financial ledger entry (same table as bid-fee deductions)
       await txDb.insert(transactionsTable).values({
         driverId: tx.driverId,
-        amount: String(creditAmount),
+        amount: creditAmount,
         type: "topup",
       });
 
@@ -224,6 +224,16 @@ router.post("/:id/reject", requireAuth("admin"), async (req, res) => {
       .set({ status: "rejected", notes: notes ?? null, updatedAt: new Date() })
       .where(eq(walletTransactionsTable.id, tx.id))
       .returning();
+
+    await logActivity({
+      actorId:   getSessionUser(req)?.id,
+      actorRole: "admin",
+      action:    "wallet.rejected",
+      entity:    "wallet_transactions",
+      entityId:  tx.id,
+      metadata:  { driverId: tx.driverId, amount: parseFloat(tx.amount), notes: notes ?? null },
+      req,
+    });
 
     // Notify driver
     void notify({

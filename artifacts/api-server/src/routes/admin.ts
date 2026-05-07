@@ -527,6 +527,34 @@ router.post("/drivers/:id/warn", async (req, res) => {
   });
 });
 
+router.delete("/drivers/:id/warn", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  const driver = await db.query.driversTable.findFirst({
+    where: eq(driversTable.id, id),
+  });
+  if (!driver) {
+    res.status(404).json({ error: "السائق غير موجود" });
+    return;
+  }
+  if (!driver.warningCount || driver.warningCount <= 0) {
+    res.status(400).json({ error: "لا توجد تحذيرات لإلغائها" });
+    return;
+  }
+  const [updated] = await db
+    .update(driversTable)
+    .set({ warningCount: driver.warningCount - 1 })
+    .where(eq(driversTable.id, id))
+    .returning();
+  res.json({
+    message: "تم إلغاء تحذير",
+    warningCount: updated.warningCount,
+  });
+});
+
 router.post("/drivers/:id/restore", async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {

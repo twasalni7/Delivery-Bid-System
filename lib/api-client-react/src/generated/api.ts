@@ -2662,6 +2662,90 @@ export const adminWarnDriver = async (
   });
 };
 
+/**
+ * @summary Remove one warning from driver (admin only)
+ */
+export const getAdminRemoveDriverWarningUrl = (id: number) => {
+  return `/api/admin/drivers/${id}/warn`;
+};
+
+export const adminRemoveDriverWarning = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DriverActionResponse> => {
+  return customFetch<DriverActionResponse>(getAdminRemoveDriverWarningUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminRemoveDriverWarningMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRemoveDriverWarning>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRemoveDriverWarning>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminRemoveDriverWarning"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRemoveDriverWarning>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminRemoveDriverWarning(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRemoveDriverWarningMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRemoveDriverWarning>>
+>;
+
+export type AdminRemoveDriverWarningMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove one warning from driver (admin only)
+ */
+export const useAdminRemoveDriverWarning = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRemoveDriverWarning>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRemoveDriverWarning>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminRemoveDriverWarningMutationOptions(options));
+};
+
 export const getAdminWarnDriverMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
