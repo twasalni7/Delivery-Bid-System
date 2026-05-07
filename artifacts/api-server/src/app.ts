@@ -116,7 +116,7 @@ if (!isTest) {
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: (req) => {
-      const role = req.tokenUser?.role ?? req.sessionUser?.role ?? null;
+      const role = req.tokenUser?.role ?? req.session?.user?.role ?? null;
       if (role === "admin") return 1200;
       if (role === "driver" || role === "client") return 900;
       return 300;
@@ -124,7 +124,7 @@ if (!isTest) {
     keyGenerator: (req) => {
       const tokenUser = req.tokenUser;
       if (tokenUser) return `token:${tokenUser.role}:${tokenUser.id}`;
-      const sessionUser = req.sessionUser;
+      const sessionUser = req.session?.user;
       if (sessionUser) return `session:${sessionUser.role}:${sessionUser.id}`;
       return req.ip ?? "unknown-ip";
     },

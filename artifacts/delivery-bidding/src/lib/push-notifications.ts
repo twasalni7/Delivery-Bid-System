@@ -176,8 +176,18 @@ export async function subscribeToPush(role?: string): Promise<PushSubscribeResul
         console.log(LOG_PREFIX, "cached subscription no longer valid — clearing cache and re-subscribing");
         localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
       } else {
-        console.log(LOG_PREFIX, "already subscribed in browser (cache hit), ensuring server record");
-        await saveSubscription(existing, role);
+        // Best-effort: keep the server in sync with the browser subscription.
+        // If the save fails (e.g., transient network error or rate limit),
+        // log the warning but do NOT clear the cache or fall through to the
+        // full resubscription flow — that would unsubscribe the browser
+        // subscription, potentially breaking existing push delivery until the
+        // next successful save.
+        try {
+          await saveSubscription(existing, role);
+          console.log(LOG_PREFIX, "subscription re-synced with server ✓");
+        } catch (saveErr) {
+          console.warn(LOG_PREFIX, "could not sync subscription with server (will retry on next load):", saveErr);
+        }
         return "already_subscribed";
       }
     } catch (err) {
