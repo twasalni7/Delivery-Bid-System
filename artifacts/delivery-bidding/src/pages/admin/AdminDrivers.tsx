@@ -548,9 +548,9 @@ export default function AdminDrivers() {
   const handleBalance = () => {
     if (!selectedDriver) return;
     const raw = parseFloat(formBalance);
-    if (isNaN(raw) || raw === 0) { toast({ title: "مبلغ غير صحيح", variant: "destructive" }); return; }
+    if (isNaN(raw) || raw <= 0) { toast({ title: "يرجى إدخال مبلغ موجب أكبر من الصفر", variant: "destructive" }); return; }
     // For the deduct dialog, always send a negative amount
-    const amount = dialogMode === "deduct" ? -Math.abs(raw) : raw;
+    const amount = dialogMode === "deduct" ? -raw : raw;
     updateBalance.mutate(
       { id: selectedDriver.id, data: { amount } },
       { onSuccess: (d) => { refetch(); toast({ title: "تم تعديل الرصيد!", description: `الرصيد الجديد: ${d.balance.toFixed(2)} ر.س` }); setDialogMode(null); }, onError: (err: Error) => toast({ title: err.message, variant: "destructive" }) }
