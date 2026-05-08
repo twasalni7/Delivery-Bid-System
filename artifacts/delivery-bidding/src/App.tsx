@@ -198,6 +198,8 @@ const ONESIGNAL_APP_ID =
   "936a2461-9f06-4231-986e-29578e9a56d7";
 
 function getOneSignalExternalId(user: { id: number; role: "client" | "driver" | "admin" }): string {
+  // OneSignal external IDs must be globally unique in our app. IDs can overlap
+  // across roles (e.g. client #1 and driver #1), so we namespace by role.
   return `${user.role}:${user.id}`;
 }
 
