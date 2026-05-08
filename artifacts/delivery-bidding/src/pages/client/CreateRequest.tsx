@@ -57,7 +57,7 @@ function getPassengerLocationStatus(hasPickup: boolean, hasDropoff: boolean) {
   return "تم تحديد الموقعين";
 }
 
-function getDropoffInitialCenter(homeCoords: MapCoords | null, workCoords: MapCoords | null): [number, number] | undefined {
+function calculateDropoffMapCenter(homeCoords: MapCoords | null, workCoords: MapCoords | null): [number, number] | undefined {
   if (workCoords) return [workCoords.lat, workCoords.lng];
   if (homeCoords) return [homeCoords.lat, homeCoords.lng];
   return undefined;
@@ -190,7 +190,7 @@ function PassengerCard({
   const hasPickup = Boolean(homeCoords);
   const hasDropoff = Boolean(workCoords);
   const statusText = getPassengerLocationStatus(hasPickup, hasDropoff);
-  const dropoffInitialCenter = getDropoffInitialCenter(homeCoords, workCoords);
+  const dropoffInitialCenter = calculateDropoffMapCenter(homeCoords, workCoords);
 
   return (
     <div className="rounded-[1.75rem] p-5 space-y-5" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
@@ -231,7 +231,7 @@ function PassengerCard({
           <MapPicker
             value={homeCoords}
             onChange={onHomeChange}
-            placeholder="حدد نقطة الانطلاق من الخريطة"
+            placeholder="حدد موقع الانطلاق من الخريطة"
             color="var(--brand)"
             initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
             openButtonLabel="حدد موقع الانطلاق"
@@ -264,7 +264,7 @@ function PassengerCard({
               <MapPicker
                 value={workCoords}
                 onChange={onWorkChange}
-                placeholder="حدد نقطة الوصول من الخريطة"
+                placeholder="حدد موقع الوصول من الخريطة"
                 color="var(--brand)"
                 initialCenter={dropoffInitialCenter}
                 openButtonLabel="حدد موقع الوصول"
@@ -279,7 +279,7 @@ function PassengerCard({
               </div>
             </>
           ) : (
-            <div className="rounded-2xl px-4 py-4 text-sm font-black" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px dashed var(--border)" }}>
+            <div aria-disabled="true" className="rounded-2xl px-4 py-4 text-sm font-black" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px dashed var(--border)" }}>
               حدد موقع الانطلاق أولًا
             </div>
           )}
