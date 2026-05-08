@@ -51,16 +51,16 @@ type ExtraPassenger = {
   workTime: string;
 };
 
-const PASSENGER_LOCATION_STATUS = {
+const PASSENGER_LOCATION_MESSAGES = {
   start: "ابدأ بتحديد موقع الانطلاق",
   dropoff: "حدد موقع الوصول",
   complete: "تم تحديد الموقعين",
 } as const;
 
 function getPassengerLocationStatus(hasPickup: boolean, hasDropoff: boolean) {
-  if (!hasPickup) return PASSENGER_LOCATION_STATUS.start;
-  if (!hasDropoff) return PASSENGER_LOCATION_STATUS.dropoff;
-  return PASSENGER_LOCATION_STATUS.complete;
+  if (!hasPickup) return PASSENGER_LOCATION_MESSAGES.start;
+  if (!hasDropoff) return PASSENGER_LOCATION_MESSAGES.dropoff;
+  return PASSENGER_LOCATION_MESSAGES.complete;
 }
 
 function calculateDropoffMapCenter(homeCoords: MapCoords | null, workCoords: MapCoords | null): [number, number] | undefined {
@@ -215,9 +215,10 @@ function PassengerCard({
               </span>
             )}
           </div>
-          <p role="status" aria-live="polite" className="text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
-            {statusText}
-          </p>
+          <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
+            {hasDropoff && <CheckCircle2 size={14} aria-hidden="true" />}
+            <span>{statusText}</span>
+          </div>
         </div>
       </div>
 
@@ -1078,6 +1079,7 @@ export default function CreateRequest() {
                 }
               }}
               disabled={createRequest.isPending}
+              aria-label={step === 5 ? "نشر الطلب للسائقين" : `الانتقال إلى ${STEP_TITLES[step]}`}
               className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
             >
