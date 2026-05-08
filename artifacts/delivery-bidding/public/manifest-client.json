@@ -2,7 +2,7 @@
   "name": "توصّلني - تطبيق العملاء",
   "short_name": "عملاء",
   "description": "بوابة العملاء - اشترك في خدمة التوصيل الشهري",
-  "start_url": "/client/login",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#000000",

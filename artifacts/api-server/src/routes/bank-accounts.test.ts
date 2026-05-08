@@ -243,26 +243,25 @@ describe("DELETE /bank-accounts/:id (admin only)", () => {
   });
 
   it("returns 404 when account not found", async () => {
-    const returningMock = vi.fn().mockResolvedValue([]);
-    const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
-    (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
+    (db.query.bankAccountsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).delete("/bank-accounts/999");
     expect(res.status).toBe(404);
   });
 
-  it("deletes bank account successfully", async () => {
+  it("deactivates bank account successfully", async () => {
     const existing = { id: 1, bankName: "Al Rajhi", iban: "SA123", accountHolderName: "Company", isActive: true, createdAt: new Date() };
     (db.query.bankAccountsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(existing);
 
-    const returningMock = vi.fn().mockResolvedValue([{ id: 1 }]);
+    const returningMock = vi.fn().mockResolvedValue([{ ...existing, isActive: false }]);
     const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
-    (db.delete as ReturnType<typeof vi.fn>).mockReturnValue({ where: whereMock });
+    const setMock = vi.fn().mockReturnValue({ where: whereMock });
+    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: setMock });
 
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).delete("/bank-accounts/1");
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty("message");
+    expect(res.body).toEqual({ message: "تم تعطيل الحساب" });
   });
 });

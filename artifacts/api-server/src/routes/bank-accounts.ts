@@ -164,7 +164,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 /* =========================
-   DELETE ACCOUNT
+   DEACTIVATE ACCOUNT (SAFE DELETE)
 ========================= */
 router.delete("/:id", async (req, res) => {
   const id = Number(req.params["id"]);
@@ -182,24 +182,25 @@ router.delete("/:id", async (req, res) => {
       return;
     }
 
-    const deleted = await db
-      .delete(bankAccountsTable)
+    const [deactivated] = await db
+      .update(bankAccountsTable)
+      .set({ isActive: false })
       .where(eq(bankAccountsTable.id, existing.id))
       .returning();
 
-    if (!deleted.length) {
+    if (!deactivated) {
       res.status(404).json({ error: "الحساب غير موجود" });
       return;
     }
 
     void notifyAllAdmins({
-      title: "تم حذف حساب بنكي",
-      message: `تم حذف حساب ${existing.bankName} باسم ${existing.accountHolderName}`,
+      title: "تم تعطيل حساب بنكي",
+      message: `تم تعطيل حساب ${existing.bankName} باسم ${existing.accountHolderName}`,
       type: "system",
       url: "/admin/settings",
     });
 
-    res.json({ message: "تم حذف الحساب" });
+    res.json({ message: "تم تعطيل الحساب" });
   } catch (err) {
     logger.error({ err }, "bank-accounts DELETE /:id error");
     res.status(500).json({ error: SERVER_ERROR_MSG });

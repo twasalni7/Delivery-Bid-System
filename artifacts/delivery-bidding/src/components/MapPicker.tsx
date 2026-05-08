@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { MapPin, Loader2, Search, X, LocateFixed } from "lucide-react";
+import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "react";
+import { MapPin, Loader2, Search, X, LocateFixed, CheckCircle2, Expand, Navigation } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import "leaflet/dist/leaflet.css";
 
 export interface MapCoords {
@@ -52,30 +53,84 @@ const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 // Default center: Dammam, Eastern Region
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 // Debounce delays
-const SEARCH_DEBOUNCE_MS = 400;
-const GEOCODE_DEBOUNCE_MS = 1000;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "var(--brand)", initialCenter }: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
-  const geocodingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const geocodeRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const { toast } = useToast();
+
+  const [pendingSelection, setPendingSelection] = useState<MapCoords | null>(value);
 
   // Search state
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useState(value?.address ?? "");
   const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
+  const shouldRenderMap = !isMobile || isPickerOpen;
+
+  const dismissKeyboardAndSuggestions = useCallback(() => {
+    setShowResults(false);
+    searchInputRef.current?.blur();
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+  }, []);
+
+  const setMarkerAndView = useCallback((lat: number, lng: number, zoom = 16) => {
+    if (!mapRef.current) return;
+    void import("leaflet").then((L) => {
+      const Lx = L.default || L;
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      } else {
+        markerRef.current = Lx.marker([lat, lng]).addTo(mapRef.current);
+      }
+      mapRef.current.setView([lat, lng], zoom);
+    });
+  }, []);
+
+  const applySelection = useCallback(
+    (next: MapCoords) => {
+      setPendingSelection(next);
+      setSearchText(next.address);
+      onChange(next);
+    },
+    [onChange]
+  );
+
+  const resolveAddressForSelection = useCallback(
+    async (lat: number, lng: number) => {
+      const requestId = ++geocodeRequestIdRef.current;
+      setGeocoding(true);
+      const address = await reverseGeocode(lat, lng);
+      if (requestId !== geocodeRequestIdRef.current) return;
+      setGeocoding(false);
+      applySelection({ lat, lng, address });
+    },
+    [applySelection]
+  );
+
   const searchPlaces = useCallback(async (query: string) => {
-    if (query.trim().length < 2) { setSearchResults([]); setShowResults(false); return; }
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
     setSearching(true);
     try {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=ar&viewbox=${EASTERN_REGION_VIEWBOX}&bounded=1`;
@@ -86,36 +141,30 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
       setShowResults(results.length > 0);
     } catch {
       setSearchResults([]);
+      setShowResults(false);
     } finally {
       setSearching(false);
     }
   }, []);
 
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchInput = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchText(val);
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => searchPlaces(val), SEARCH_DEBOUNCE_MS);
+    searchTimerRef.current = setTimeout(() => {
+      void searchPlaces(val);
+    }, SEARCH_DEBOUNCE_MS);
   };
 
-  const selectSearchResult = async (result: NominatimResult) => {
+  const selectSearchResult = (result: NominatimResult) => {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
-    setShowResults(false);
-    setSearchText(result.display_name);
+    const next = { lat, lng, address: result.display_name };
 
-    if (mapRef.current) {
-      import("leaflet").then((L) => {
-        const Lx = L.default || L;
-        if (markerRef.current) {
-          markerRef.current.setLatLng([lat, lng]);
-        } else {
-          markerRef.current = Lx.marker([lat, lng]).addTo(mapRef.current);
-        }
-        mapRef.current.setView([lat, lng], 15);
-      });
-    }
-    onChange({ lat, lng, address: result.display_name });
+    setGpsError(null);
+    dismissKeyboardAndSuggestions();
+    applySelection(next);
+    setMarkerAndView(lat, lng, 16);
   };
 
   const clearSearch = () => {
@@ -125,100 +174,144 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   };
 
   const handleLocateMe = useCallback(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setGpsError("متصفحك لا يدعم تحديد الموقع. يمكنك تحديد الموقع يدويًا من الخريطة.");
+      return;
+    }
+
+    setGpsError(null);
     setLocating(true);
+    dismissKeyboardAndSuggestions();
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        setLocating(false);
-
-        if (mapRef.current) {
-          import("leaflet").then((L) => {
-            const Lx = L.default || L;
-            if (markerRef.current) {
-              markerRef.current.setLatLng([lat, lng]);
-            } else {
-              markerRef.current = Lx.marker([lat, lng]).addTo(mapRef.current);
-            }
-            mapRef.current.setView([lat, lng], 16);
-          });
-        }
-
         const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-        onChange({ lat, lng, address: fallbackAddress });
 
-        setGeocoding(true);
-        const address = await reverseGeocode(lat, lng);
-        setGeocoding(false);
-        setSearchText(address);
-        onChange({ lat, lng, address });
-      },
-      () => {
         setLocating(false);
+        setMarkerAndView(lat, lng, 17);
+        applySelection({ lat, lng, address: fallbackAddress });
+        await resolveAddressForSelection(lat, lng);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setGpsError("تم رفض إذن الموقع. يمكنك اختيار الموقع يدويًا من الخريطة.");
+        } else if (err.code === err.TIMEOUT) {
+          setGpsError("انتهت مهلة تحديد الموقع. جرّب مرة أخرى أو اختر يدويًا من الخريطة.");
+        } else {
+          setGpsError("تعذّر تحديد موقعك حالياً. يمكنك تحديد الموقع يدويًا من الخريطة.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
     );
-  }, [onChange]);
+  }, [applySelection, dismissKeyboardAndSuggestions, resolveAddressForSelection, setMarkerAndView]);
+
+  const handleMapTap = useCallback(async (lat: number, lng: number) => {
+    setGpsError(null);
+    dismissKeyboardAndSuggestions();
+    setMarkerAndView(lat, lng, 16);
+
+    // Update immediately with fallback, then reverse-geocode.
+    const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    applySelection({ lat, lng, address: fallbackAddress });
+    await resolveAddressForSelection(lat, lng);
+  }, [applySelection, dismissKeyboardAndSuggestions, resolveAddressForSelection, setMarkerAndView]);
+
+  const handleConfirmSelection = useCallback(() => {
+    if (!pendingSelection) return;
+    dismissKeyboardAndSuggestions();
+    onChange(pendingSelection);
+    toast({
+      title: "تم تثبيت الموقع",
+      description: "تم حفظ الموقع بنجاح",
+    });
+    if (isMobile) setIsPickerOpen(false);
+  }, [dismissKeyboardAndSuggestions, isMobile, onChange, pendingSelection, toast]);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    const media = window.matchMedia("(max-width: 768px)");
+    const apply = () => setIsMobile(media.matches);
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsPickerOpen(false);
+      return;
+    }
+    if (!value) setIsPickerOpen(true);
+  }, [isMobile, value]);
+
+  useEffect(() => {
+    if (!value) return;
+    setPendingSelection((prev) => {
+      if (prev && prev.lat === value.lat && prev.lng === value.lng && prev.address === value.address) {
+        return prev;
+      }
+      return value;
+    });
+    setSearchText((prev) => (prev === value.address ? prev : value.address));
+  }, [value]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    if (isPickerOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+  }, [isMobile, isPickerOpen]);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current || !shouldRenderMap) return;
 
     let cancelled = false;
     setLoading(true);
 
-    import("leaflet").then((L) => {
+    void import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
       const Lx = L.default || L;
       fixLeafletIcons(Lx);
 
-      const center = initialCenter ?? EASTERN_REGION_CENTER;
-      const map = Lx.map(containerRef.current!, { center, zoom: 12, zoomControl: true });
+      const center = pendingSelection
+        ? [pendingSelection.lat, pendingSelection.lng] as [number, number]
+        : initialCenter ?? EASTERN_REGION_CENTER;
+
+      const map = Lx.map(containerRef.current!, {
+        center,
+        zoom: pendingSelection ? 15 : 12,
+        zoomControl: true,
+      });
 
       Lx.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
         maxZoom: 19,
       }).addTo(map);
 
+      if (pendingSelection) {
+        markerRef.current = Lx.marker([pendingSelection.lat, pendingSelection.lng]).addTo(map);
+      }
+
       mapRef.current = map;
       setMapReady(true);
       setLoading(false);
 
-      map.on("click", async (e: any) => {
-        const { lat, lng } = e.latlng;
-
-        if (markerRef.current) {
-          markerRef.current.setLatLng([lat, lng]);
-        } else {
-          markerRef.current = Lx.marker([lat, lng]).addTo(map);
-        }
-
-        // Immediately save coordinates so they are never lost if the user
-        // navigates away before the geocoding debounce fires.
-        const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-        onChange({ lat, lng, address: fallbackAddress });
-
-        // Debounce geocoding to respect Nominatim's rate limit (1 req/sec)
-        // Clear any pending geocoding request
-        if (geocodingTimerRef.current) {
-          clearTimeout(geocodingTimerRef.current);
-        }
-
-        setGeocoding(true);
-
-        // Debounce by 1 second to avoid rapid API calls, then update address
-        geocodingTimerRef.current = setTimeout(async () => {
-          const address = await reverseGeocode(lat, lng);
-          setGeocoding(false);
-          setSearchText(address);
-          onChange({ lat, lng, address });
-        }, GEOCODE_DEBOUNCE_MS);
+      map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
+        void handleMapTap(e.latlng.lat, e.latlng.lng);
       });
+
+      // Make sure map sizes correctly in fixed full-screen container.
+      setTimeout(() => map.invalidateSize(), 0);
     });
 
     return () => {
       cancelled = true;
-      if (geocodingTimerRef.current) clearTimeout(geocodingTimerRef.current);
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
       if (mapRef.current) {
         mapRef.current.remove();
@@ -227,155 +320,258 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         setMapReady(false);
       }
     };
-    // Intentionally omit onChange and initialCenter from dependencies:
-    // - onChange: Would cause map re-initialization on every parent re-render
-    // - initialCenter: Only needed for initial map setup, not for updates
-    // The map instance is created once and persists for the component lifetime
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [shouldRenderMap, initialCenter]);
 
   useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
-    import("leaflet").then((L) => {
-      const Lx = L.default || L;
-      if (value) {
-        if (markerRef.current) {
-          markerRef.current.setLatLng([value.lat, value.lng]);
-        } else {
-          markerRef.current = Lx.marker([value.lat, value.lng]).addTo(mapRef.current);
-        }
-        mapRef.current.setView([value.lat, value.lng], 14);
-        // Sync the search-box text with the stored address (e.g. when the
-        // component remounts after the user navigates back to this step).
-        setSearchText((prev) => (prev !== "" ? prev : value.address));
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value?.lat, value?.lng, mapReady]);
+    if (!mapReady || !mapRef.current || !pendingSelection) return;
+    setMarkerAndView(pendingSelection.lat, pendingSelection.lng, 15);
+  }, [mapReady, pendingSelection, setMarkerAndView]);
 
-  return (
-    <div className="space-y-2">
-      {/* ── Hint text ── */}
-      <p className="text-xs font-bold text-center" style={{ color: "var(--text-hint)" }}>
-        ابحث عن موقعك أو حدد الموقع من الخريطة
-      </p>
+  const mapPanel = (
+    <div className="relative flex-1 min-h-0 w-full" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        style={{
+          minHeight: isMobile ? "100%" : "clamp(420px, 58vh, 560px)",
+          backgroundColor: "#161616",
+          touchAction: "pan-x pan-y",
+        }}
+      />
 
-      {/* ── Search input + locate button ── */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <div className="flex items-center gap-2 px-3 rounded-xl" style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)" }}>
-            {searching ? (
-              <Loader2 size={16} className="shrink-0 animate-spin" style={{ color: "var(--text-muted)" }} />
-            ) : (
-              <Search size={16} className="shrink-0" style={{ color: "var(--text-muted)" }} />
-            )}
-            <input
-              type="text"
-              value={searchText}
-              onChange={handleSearchInput}
-              onFocus={() => searchResults.length > 0 && setShowResults(true)}
-              placeholder="ابحث في المنطقة الشرقية..."
-              className="flex-1 bg-transparent py-3 text-sm outline-none"
-              style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none", minHeight: "auto" }}
-              dir="rtl"
-            />
-            {searchText && (
-              <button onClick={clearSearch} className="touch-compact shrink-0 p-1" style={{ minHeight: "auto", minWidth: "auto" }}>
-                <X size={14} style={{ color: "var(--text-muted)" }} />
-              </button>
-            )}
-          </div>
-
-          {/* Search results dropdown */}
-          {showResults && searchResults.length > 0 && (
-            <div
-              className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
-            >
-              {searchResults.map((r) => (
-                <button
-                  key={r.place_id}
-                  onClick={() => selectSearchResult(r)}
-                  className="w-full flex items-start gap-2 px-4 py-3 text-right transition-colors"
-                  style={{ color: "var(--text-sub)" }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--surface-2)")}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = "")}
-                  dir="rtl"
-                >
-                  <MapPin size={14} className="shrink-0 mt-0.5" style={{ color }} />
-                  <span className="text-sm line-clamp-2">{r.display_name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Locate me button */}
-        <button
-          onClick={handleLocateMe}
-          disabled={locating}
-          title="تحديد موقعي الحالي"
-          className="shrink-0 flex items-center justify-center rounded-xl transition-colors disabled:opacity-60"
-          style={{
-            width: "48px",
-            height: "48px",
-            backgroundColor: "var(--brand-subtle)",
-            border: "1px solid var(--brand-border)",
-            color: "var(--brand)",
-          }}
-        >
-          {locating ? <Loader2 size={18} className="animate-spin" /> : <LocateFixed size={18} />}
-        </button>
-      </div>
-
-      {/* Selected coordinates display */}
-      {value && (
-        <div
-          className="flex items-start gap-3 p-4 rounded-xl text-sm"
-          style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}
-        >
-          <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold line-clamp-2" style={{ color: "var(--text)" }}>{value.address}</p>
-            <p className="text-xs mt-1 font-mono" style={{ color: "var(--text-muted)" }}>
-              {value.lat.toFixed(6)}, {value.lng.toFixed(6)}
-            </p>
+      {loading && (
+        <div className="absolute inset-0 z-[1200] flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
+          <div className="flex items-center gap-3 text-white text-base font-black px-5 py-4 rounded-2xl" style={{ backgroundColor: "rgba(20,20,20,0.72)" }}>
+            <Loader2 size={22} className="animate-spin" />
+            <span>جاري تحميل الخريطة...</span>
           </div>
         </div>
       )}
 
-      {/* Map container */}
-      <div className="relative rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div
-          ref={containerRef}
-          style={{ height: "clamp(400px, 50vw, 480px)", backgroundColor: "#161616" }}
+      {geocoding && !loading && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black text-white" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
+          <Loader2 size={16} className="animate-spin" />
+          <span>جاري تحديث العنوان...</span>
+        </div>
+      )}
+
+      {!pendingSelection && !loading && (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
+          {placeholder}
+        </div>
+      )}
+    </div>
+  );
+
+  const searchBar = (
+    <div className="relative w-full">
+      <div className="flex items-center gap-2 px-3 rounded-2xl" style={{ backgroundColor: "var(--input-bg)", border: "1.5px solid var(--input-border)", minHeight: "56px" }}>
+        {searching ? (
+          <Loader2 size={20} className="shrink-0 animate-spin" style={{ color: "var(--text-muted)" }} />
+        ) : (
+          <Search size={20} className="shrink-0" style={{ color: "var(--text-muted)" }} />
+        )}
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={searchText}
+          onChange={handleSearchInput}
+          onFocus={() => searchResults.length > 0 && setShowResults(true)}
+          placeholder="ابحث عن الحي أو الشارع..."
+          className="flex-1 bg-transparent py-3 text-[1.05rem] font-bold outline-none"
+          style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none" }}
+          dir="rtl"
         />
-        
-        {/* Loading overlay */}
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.8)" }}>
-            <div className="flex items-center gap-2 text-white">
-              <Loader2 size={20} className="animate-spin" />
-              <span className="text-sm font-bold">جاري تحميل الخريطة...</span>
-            </div>
-          </div>
-        )}
-
-        {/* Geocoding indicator */}
-        {geocoding && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "rgba(0,0,0,0.8)" }}>
-            <Loader2 size={16} className="animate-spin" />
-            <span>جاري تحديد العنوان...</span>
-          </div>
-        )}
-
-        {/* Placeholder text when no selection */}
-        {!value && !loading && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-sm font-bold text-center" style={{ backgroundColor: "rgba(0,0,0,0.8)", color: "rgba(255,255,255,0.8)", maxWidth: "80%" }}>
-            {placeholder}
-          </div>
+        {searchText && (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="touch-compact shrink-0 p-2 rounded-xl"
+            style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+            aria-label="مسح البحث"
+          >
+            <X size={16} style={{ color: "var(--text-muted)" }} />
+          </button>
         )}
       </div>
+
+      {showResults && searchResults.length > 0 && (
+        <div
+          className="absolute z-[1400] w-full mt-2 rounded-2xl overflow-hidden max-h-[42dvh] overflow-y-auto"
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
+          role="listbox"
+          aria-label="نتائج البحث عن المواقع"
+        >
+          {searchResults.map((r) => (
+            <button
+              type="button"
+              key={r.place_id}
+              onClick={() => selectSearchResult(r)}
+              className="w-full flex items-start gap-3 px-4 py-4 text-right transition-colors"
+              style={{ color: "var(--text-sub)", borderBottom: "1px solid var(--border-subtle)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-2)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+              dir="rtl"
+              role="option"
+              aria-label={r.display_name}
+            >
+              <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
+              <span className="text-base font-bold line-clamp-2">{r.display_name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {isMobile ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setIsPickerOpen(true)}
+            className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 text-right"
+            style={{ border: "1px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}
+          >
+            <Expand size={20} style={{ color: "var(--brand)" }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-base font-black" style={{ color: "var(--text)" }}>
+                {pendingSelection ? "تعديل الموقع على الخريطة" : "اختيار الموقع من الخريطة"}
+              </p>
+              <p className="text-sm font-bold truncate" style={{ color: "var(--text-muted)" }}>
+                {pendingSelection?.address || "اضغط لفتح شاشة اختيار الموقع"}
+              </p>
+            </div>
+          </button>
+
+          {isPickerOpen && (
+            <div
+              className="fixed inset-0 z-[1200]"
+              style={{ backgroundColor: "var(--bg)" }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="map-picker-title"
+            >
+              <div className="h-[100dvh] w-full max-w-full flex flex-col overflow-hidden">
+                <div className="sticky top-0 z-[1300] px-3 pt-3 pb-2 space-y-2" style={{ backgroundColor: "var(--bg)", borderBottom: "1px solid var(--border-subtle)" }}>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dismissKeyboardAndSuggestions();
+                        setIsPickerOpen(false);
+                      }}
+                      className="px-3 py-2 rounded-xl font-black text-sm"
+                      style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface-2)", color: "var(--text-sub)" }}
+                    >
+                      إغلاق
+                    </button>
+                    <div className="flex-1">
+                      <p id="map-picker-title" className="text-base font-black" style={{ color: "var(--text)" }}>حددي موقعك بدقة</p>
+                      <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>اضغطي على الخريطة أو ابحثي بالعنوان</p>
+                    </div>
+                  </div>
+                  {searchBar}
+                </div>
+
+                {gpsError && (
+                  <div className="mx-3 my-2 rounded-2xl px-4 py-3 text-sm font-black" style={{ backgroundColor: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.4)", color: "#fecaca" }}>
+                    {gpsError}
+                  </div>
+                )}
+
+                {mapPanel}
+
+                <div
+                  className="sticky bottom-0 z-[1300] p-3 flex flex-col gap-2"
+                  style={{
+                    backgroundColor: "var(--bg)",
+                    borderTop: "1px solid var(--border-subtle)",
+                    paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={handleLocateMe}
+                    disabled={locating}
+                    className="w-full rounded-2xl px-4 py-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
+                    style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  >
+                    {locating ? <Loader2 size={20} className="animate-spin" /> : <Navigation size={20} />}
+                    <span>{locating ? "جاري تحديد موقعك..." : "استخدام موقعي الحالي"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleConfirmSelection}
+                    disabled={!pendingSelection || geocoding || loading}
+                    className="w-full rounded-2xl px-4 py-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
+                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                  >
+                    <CheckCircle2 size={20} />
+                    <span>تأكيد الموقع</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm font-black text-center" style={{ color: "var(--text-hint)" }}>
+            ابحث عن موقعك أو حدد الموقع مباشرة من الخريطة
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+            {searchBar}
+            <button
+              type="button"
+              onClick={handleLocateMe}
+              disabled={locating}
+              className="w-full md:w-auto rounded-2xl px-4 py-3 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", color: "var(--brand)" }}
+            >
+              {locating ? <Loader2 size={20} className="animate-spin" /> : <LocateFixed size={20} />}
+              <span>{locating ? "جاري التحديد..." : "استخدام موقعي الحالي"}</span>
+            </button>
+          </div>
+
+          {gpsError && (
+            <div className="rounded-2xl px-4 py-3 text-sm font-black" style={{ backgroundColor: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.4)", color: "#fecaca" }}>
+              {gpsError}
+            </div>
+          )}
+
+          {pendingSelection && (
+            <div
+              className="flex items-start gap-3 p-4 rounded-2xl text-sm"
+              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}
+            >
+              <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-base line-clamp-2" style={{ color: "var(--text)" }}>{pendingSelection.address}</p>
+                <p className="text-xs mt-1 font-mono" style={{ color: "var(--text-muted)" }}>
+                  {pendingSelection.lat.toFixed(6)}, {pendingSelection.lng.toFixed(6)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleConfirmSelection}
+                className="shrink-0 rounded-xl px-4 py-2 text-sm font-black"
+                style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+              >
+                تأكيد
+              </button>
+            </div>
+          )}
+
+          <div className="relative rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+            {mapPanel}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

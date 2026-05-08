@@ -6,6 +6,19 @@ import { Layout } from "@/components/layout";
 import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { EnablePushButton } from "@/components/enable-push-button";
 import { Download, Banknote, Wallet } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 
 const ARABIC_MONTHS = [
   "يناير","فبراير","مارس","أبريل","مايو","يونيو",
@@ -50,6 +63,8 @@ const STAT_CARDS = [
 export default function AdminDashboard() {
   const [selectedMonths, setSelectedMonths] = useState<3 | 6 | 12>(12);
   const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [appliedRange, setAppliedRange] = useState<{ from: string; to: string } | null>(null);
 
   const analyticsParams = appliedRange
     ? { from: appliedRange.from, to: appliedRange.to }
@@ -245,7 +260,6 @@ export default function AdminDashboard() {
               </div>
             )}
           <div className={analyticsFetching ? "opacity-40 pointer-events-none select-none" : ""}>
-          <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
               <div className="rounded-2xl p-4 lg:col-span-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-sm font-black mb-3">حجم الطلبات الشهري</p>
@@ -298,7 +312,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
-          </>
           </div>
           </div>
         )}
@@ -316,7 +329,7 @@ export default function AdminDashboard() {
               key={item.href}
               href={item.href}
               className="rounded-2xl p-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}
+             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}
             >
               <span className="text-2xl">{item.emoji}</span>
               <span className="text-sm font-black">{item.label}</span>

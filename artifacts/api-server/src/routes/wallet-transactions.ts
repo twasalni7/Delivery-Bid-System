@@ -123,6 +123,16 @@ async function findWalletTxByIntId(intId: number) {
   });
 }
 
+function resolveWalletTxWhereClause(tx: Awaited<ReturnType<typeof findWalletTxByIntId>>) {
+  if (tx?.intId != null) {
+    return eq(walletTransactionsTable.intId, tx.intId);
+  }
+  if (tx?.id != null) {
+    return eq(walletTransactionsTable.id, tx.id);
+  }
+  return null;
+}
+
 // POST /api/wallet-transactions/:id/approve — admin approves and credits the driver's balance
 router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
   const id = Number(req.params["id"]);
@@ -149,7 +159,17 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       return;
     }
 
-    const creditAmount = parseFloat(tx.amount);
+    const creditAmount = Number.parseFloat(String(tx.amount));
+    if (!Number.isFinite(creditAmount) || creditAmount <= 0) {
+      res.status(400).json({ error: "قيمة مبلغ الشحن غير صحيحة" });
+      return;
+    }
+
+    const txWhereClause = resolveWalletTxWhereClause(tx);
+    if (!txWhereClause) {
+      res.status(400).json({ error: "تعذّر تحديد معاملة الشحن" });
+      return;
+    }
 
     // Atomically: credit balance + update wallet-transaction status + insert ledger entry
     const [updated] = await withDbTransaction(async (txDb) => {
@@ -168,7 +188,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       return txDb
         .update(walletTransactionsTable)
         .set({ status: "approved", updatedAt: new Date() })
-        .where(eq(walletTransactionsTable.id, tx.id))
+        .where(txWhereClause)
         .returning();
     });
 
@@ -219,10 +239,16 @@ router.post("/:id/reject", requireAuth("admin"), async (req, res) => {
       return;
     }
 
+    const txWhereClause = resolveWalletTxWhereClause(tx);
+    if (!txWhereClause) {
+      res.status(400).json({ error: "تعذّر تحديد معاملة الشحن" });
+      return;
+    }
+
     const [updated] = await db
       .update(walletTransactionsTable)
       .set({ status: "rejected", notes: notes ?? null, updatedAt: new Date() })
-      .where(eq(walletTransactionsTable.id, tx.id))
+      .where(txWhereClause)
       .returning();
 
     await logActivity({
