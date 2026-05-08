@@ -171,6 +171,12 @@ function PassengerCard({
   onWorkChange: (coords: MapCoords) => void;
   onWorkTimeChange: (t: string) => void;
 }) {
+  const [locationStage, setLocationStage] = useState<"pickup" | "dropoff">(homeCoords ? "dropoff" : "pickup");
+
+  useEffect(() => {
+    if (!homeCoords) setLocationStage("pickup");
+  }, [homeCoords]);
+
   const distKm =
     homeCoords && workCoords
       ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
@@ -193,47 +199,91 @@ function PassengerCard({
         )}
       </div>
 
-      {/* Home map */}
-      <div className="space-y-2">
-        <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
-          <Home className="inline-block ml-1" size={14} style={{ color: "var(--brand)" }} />
-          موقع المنزل
-        </label>
-        <MapPicker
-          value={homeCoords}
-          onChange={onHomeChange}
-          placeholder="اضغط على الخريطة لتحديد موقع المنزل"
-          color="var(--brand)"
-          initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
-          collapsible
-        />
-        <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
-          <Home size={18} style={{ color: "var(--brand)" }} />
-          <span className="text-sm font-bold truncate" style={{ color: homeAddress ? "var(--text)" : "var(--text-hint)" }}>
-            {homeAddress || "لم يتم تحديد الموقع بعد"}
-          </span>
+      <div className="space-y-3 rounded-[1.5rem] p-4" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface-2)" }}>
+        <div className="flex items-center gap-2">
+          <div className="h-2 flex-1 rounded-full" style={{ backgroundColor: locationStage === "pickup" ? "var(--brand)" : "var(--brand-border)" }} />
+          <div className="h-2 flex-1 rounded-full" style={{ backgroundColor: locationStage === "dropoff" ? "var(--brand)" : "var(--border-subtle)" }} />
         </div>
-      </div>
+        <div className="flex items-center justify-between text-xs font-black" style={{ color: "var(--text-muted)" }}>
+          <span>1) موقع الانطلاق</span>
+          <span>2) موقع الوصول</span>
+        </div>
+        <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
+          {locationStage === "pickup"
+            ? "ابدأ بتثبيت موقع الانطلاق ثم اضغط التالي."
+            : "الآن حدّد موقع الوصول بنفس الطريقة ثم أكّد الاختيار."}
+        </p>
 
-      {/* Work map */}
-      <div className="space-y-2">
-        <label className="text-sm font-black pr-1" style={{ color: "var(--text-sub)" }}>
-          <Briefcase className="inline-block ml-1 text-rose-500" size={14} />
-          موقع الدوام
-        </label>
-        <MapPicker
-          value={workCoords}
-          onChange={onWorkChange}
-          placeholder="اضغط على الخريطة لتحديد موقع العمل"
-          color="var(--brand)"
-          initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
-          collapsible
-        />
-        <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
-          <Briefcase size={18} className="text-rose-500" />
-          <span className="text-sm font-bold truncate" style={{ color: workAddress ? "var(--text)" : "var(--text-hint)" }}>
-            {workAddress || "لم يتم تحديد الموقع بعد"}
-          </span>
+        {locationStage === "pickup" ? (
+          <div className="space-y-2">
+            <label className="text-base font-black pr-1" style={{ color: "var(--text)" }}>
+              <Home className="inline-block ml-1" size={16} style={{ color: "var(--brand)" }} />
+              موقع الانطلاق
+            </label>
+            <MapPicker
+              value={homeCoords}
+              onChange={onHomeChange}
+              placeholder="ابحث عن موقع الانطلاق أو حدده من الخريطة"
+              color="var(--brand)"
+              initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+              openButtonLabel="اضغط هنا لتحديد موقع الانطلاق"
+              openButtonHint="ابدأ بتحديد نقطة الانطلاق"
+              collapsible
+            />
+            <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
+              <Home size={18} style={{ color: "var(--brand)" }} />
+              <span className="text-sm font-bold truncate" style={{ color: homeAddress ? "var(--text)" : "var(--text-hint)" }}>
+                {homeAddress || "لم يتم تحديد موقع الانطلاق بعد"}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <label className="text-base font-black pr-1" style={{ color: "var(--text)" }}>
+              <Briefcase className="inline-block ml-1 text-rose-500" size={16} />
+              موقع الوصول
+            </label>
+            <MapPicker
+              value={workCoords}
+              onChange={onWorkChange}
+              placeholder="ابحث عن موقع الوصول أو حدده من الخريطة"
+              color="var(--brand)"
+              initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+              openButtonLabel="اضغط هنا لتحديد موقع الوصول"
+              openButtonHint="حدد الوجهة بعد تثبيت الانطلاق"
+              collapsible
+            />
+            <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
+              <Briefcase size={18} className="text-rose-500" />
+              <span className="text-sm font-bold truncate" style={{ color: workAddress ? "var(--text)" : "var(--text-hint)" }}>
+                {workAddress || "لم يتم تحديد موقع الوصول بعد"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          {locationStage === "dropoff" && (
+            <button
+              type="button"
+              onClick={() => setLocationStage("pickup")}
+              className="rounded-2xl px-5 py-3 text-sm font-black"
+              style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)", color: "var(--text-sub)" }}
+            >
+              رجوع للانطلاق
+            </button>
+          )}
+          {locationStage === "pickup" && (
+            <button
+              type="button"
+              onClick={() => setLocationStage("dropoff")}
+              disabled={!homeCoords}
+              className="flex-1 rounded-2xl px-5 py-3 text-sm font-black disabled:opacity-60"
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+            >
+              التالي: موقع الوصول
+            </button>
+          )}
         </div>
       </div>
 
