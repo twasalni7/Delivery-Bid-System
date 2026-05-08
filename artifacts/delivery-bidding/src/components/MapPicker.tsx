@@ -17,6 +17,8 @@ interface MapPickerProps {
   initialCenter?: [number, number];
   /** When true the map starts collapsed on desktop; user must tap a button to expand it inline. */
   collapsible?: boolean;
+  openButtonLabel?: string;
+  openButtonHint?: string;
 }
 
 function fixLeafletIcons(L: typeof import("leaflet")) {
@@ -57,7 +59,16 @@ const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 // Debounce delays
 const SEARCH_DEBOUNCE_MS = 300;
 
-export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "var(--brand)", initialCenter, collapsible = false }: MapPickerProps) {
+export default function MapPicker({
+  value,
+  onChange,
+  placeholder = "ابحث عن موقع أو اضغط على الخريطة",
+  color = "var(--brand)",
+  initialCenter,
+  collapsible = false,
+  openButtonLabel = "اضغط هنا لتحديد الموقع",
+  openButtonHint = "سيفتح لك البحث وخريطة المعاينة",
+}: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,6 +85,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   const [isMobile, setIsMobile] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isInlineExpanded, setIsInlineExpanded] = useState(!collapsible);
+  const [isDesktopZoomed, setIsDesktopZoomed] = useState(false);
   const { toast } = useToast();
 
   const [pendingSelection, setPendingSelection] = useState<MapCoords | null>(value);
@@ -110,9 +122,8 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
     (next: MapCoords) => {
       setPendingSelection(next);
       setSearchText(next.address);
-      onChange(next);
     },
-    [onChange]
+    []
   );
 
   const resolveAddressForSelection = useCallback(
@@ -242,14 +253,6 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   }, []);
 
   useEffect(() => {
-    if (!isMobile) {
-      setIsPickerOpen(false);
-      return;
-    }
-    if (!value) setIsPickerOpen(true);
-  }, [isMobile, value]);
-
-  useEffect(() => {
     if (!value) return;
     setPendingSelection((prev) => {
       if (prev && prev.lat === value.lat && prev.lng === value.lng && prev.address === value.address) {
@@ -261,7 +264,6 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   }, [value]);
 
   useEffect(() => {
-    if (!isMobile) return;
     if (isPickerOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -269,7 +271,11 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         document.body.style.overflow = previousOverflow;
       };
     }
-  }, [isMobile, isPickerOpen]);
+  }, [isPickerOpen]);
+
+  useEffect(() => {
+    if (!isInlineExpanded) setIsDesktopZoomed(false);
+  }, [isInlineExpanded]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current || !shouldRenderMap) return;
@@ -338,6 +344,9 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         className="h-full w-full"
         style={{
           minHeight: isMobile ? "100%" : "clamp(420px, 58vh, 560px)",
+          ...(collapsible && !isMobile && !isPickerOpen
+            ? { minHeight: isDesktopZoomed ? "clamp(420px, 58vh, 560px)" : "clamp(220px, 34vh, 300px)" }
+            : {}),
           backgroundColor: "#161616",
           touchAction: "pan-x pan-y",
         }}
@@ -440,14 +449,14 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           >
             <Expand size={20} style={{ color: "var(--brand)" }} />
             <div className="flex-1 min-w-0">
-              <p className="text-base font-black" style={{ color: "var(--text)" }}>
-                {pendingSelection ? "تعديل الموقع على الخريطة" : "اختيار الموقع من الخريطة"}
-              </p>
-              <p className="text-sm font-bold truncate" style={{ color: "var(--text-muted)" }}>
-                {pendingSelection?.address || "اضغط لفتح شاشة اختيار الموقع"}
-              </p>
-            </div>
-          </button>
+                <p className="text-base font-black" style={{ color: "var(--text)" }}>
+                  {pendingSelection ? "تعديل الموقع المحدد" : openButtonLabel}
+                </p>
+                <p className="text-sm font-bold truncate" style={{ color: "var(--text-muted)" }}>
+                  {pendingSelection?.address || openButtonHint}
+                </p>
+              </div>
+            </button>
 
           {isPickerOpen && (
             <div
@@ -533,10 +542,10 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
                 <Expand size={20} style={{ color: "var(--brand)" }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-black" style={{ color: "var(--text)" }}>
-                    {pendingSelection ? "تعديل الموقع على الخريطة" : "اختيار الموقع من الخريطة"}
+                    {pendingSelection ? "تعديل الموقع المحدد" : openButtonLabel}
                   </p>
                   <p className="text-sm font-bold truncate" style={{ color: "var(--text-muted)" }}>
-                    {pendingSelection?.address || "اضغط لفتح الخريطة"}
+                    {pendingSelection?.address || openButtonHint}
                   </p>
                 </div>
               </button>
@@ -559,7 +568,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
             {(!collapsible || isInlineExpanded) && (
               <>
           <p className="text-sm font-black text-center" style={{ color: "var(--text-hint)" }}>
-            ابحث عن موقعك أو حدد الموقع مباشرة من الخريطة
+            اكتب العنوان أولاً أو استخدم الخريطة المصغرة، ثم أكد الموقع للمتابعة
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
@@ -575,6 +584,29 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
               <span>{locating ? "جاري التحديد..." : "استخدام موقعي الحالي"}</span>
             </button>
           </div>
+
+          {collapsible && !isMobile && !isDesktopZoomed && (
+            <button
+              type="button"
+              onClick={() => setIsDesktopZoomed(true)}
+              className="w-full rounded-2xl px-4 py-3 font-black text-base flex items-center justify-center gap-2"
+              style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
+            >
+              <Expand size={18} />
+              <span>تكبير الخريطة</span>
+            </button>
+          )}
+
+          {collapsible && !isMobile && isDesktopZoomed && (
+            <button
+              type="button"
+              onClick={() => setIsDesktopZoomed(false)}
+              className="w-full rounded-2xl px-4 py-3 font-black text-base"
+              style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
+            >
+              تصغير الخريطة
+            </button>
+          )}
 
           {gpsError && (
             <div className="rounded-2xl px-4 py-3 text-sm font-black" style={{ backgroundColor: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.4)", color: "#fecaca" }}>
