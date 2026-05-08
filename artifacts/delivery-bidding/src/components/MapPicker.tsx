@@ -15,6 +15,8 @@ interface MapPickerProps {
   placeholder?: string;
   color?: string;
   initialCenter?: [number, number];
+  /** When true the map starts collapsed on desktop; user must tap a button to expand it inline. */
+  collapsible?: boolean;
 }
 
 function fixLeafletIcons(L: typeof import("leaflet")) {
@@ -55,7 +57,7 @@ const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 // Debounce delays
 const SEARCH_DEBOUNCE_MS = 300;
 
-export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "var(--brand)", initialCenter }: MapPickerProps) {
+export default function MapPicker({ value, onChange, placeholder = "ابحث عن موقع أو اضغط على الخريطة", color = "var(--brand)", initialCenter, collapsible = false }: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
