@@ -82,7 +82,9 @@ export default function MapPicker({
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
+  );
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isInlineExpanded, setIsInlineExpanded] = useState(!collapsible);
   const [isDesktopZoomed, setIsDesktopZoomed] = useState(false);
@@ -342,7 +344,42 @@ export default function MapPicker({
     setMarkerAndView(pendingSelection.lat, pendingSelection.lng, 15);
   }, [mapReady, pendingSelection, setMarkerAndView]);
 
-  const mapPanel = (
+  // On mobile the map fills its flex-1 parent via absolute positioning.
+  // On desktop the container height is driven by minHeight so we keep h-full w-full.
+  const mapPanel = isMobile ? (
+    <div
+      className="relative flex-1 min-h-0 overflow-hidden"
+      style={{ borderTop: "1px solid var(--border-subtle)" }}
+    >
+      <div
+        ref={containerRef}
+        className="absolute inset-0"
+        style={{ backgroundColor: "#161616", touchAction: "pan-x pan-y" }}
+      />
+
+      {loading && (
+        <div className="absolute inset-0 z-[1200] flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
+          <div className="flex items-center gap-3 text-white text-base font-black px-5 py-4 rounded-2xl" style={{ backgroundColor: "rgba(20,20,20,0.72)" }}>
+            <Loader2 size={22} className="animate-spin" />
+            <span>جاري تحميل الخريطة...</span>
+          </div>
+        </div>
+      )}
+
+      {geocoding && !loading && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black text-white" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
+          <Loader2 size={16} className="animate-spin" />
+          <span>جاري تحديث العنوان...</span>
+        </div>
+      )}
+
+      {!pendingSelection && !loading && (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
+          {placeholder}
+        </div>
+      )}
+    </div>
+  ) : (
     <div className="relative flex-1 min-h-0 w-full" style={{ borderTop: "1px solid var(--border-subtle)" }}>
       <div
         ref={containerRef}
@@ -468,21 +505,33 @@ export default function MapPicker({
               aria-modal="true"
               aria-labelledby="map-picker-title"
             >
-              <div className="h-[100dvh] w-full max-w-full flex flex-col overflow-hidden">
-                <div className="sticky top-0 z-[1300] px-3 pt-3 pb-2 space-y-2" style={{ backgroundColor: "var(--bg)", borderBottom: "1px solid var(--border-subtle)" }}>
-                  <div className="flex items-center gap-2">
+              <div className="flex flex-col" style={{ height: "100dvh" }}>
+                <div
+                  className="flex-shrink-0 z-[1300] px-3 pb-2 space-y-2"
+                  style={{
+                    paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+                    backgroundColor: "var(--bg)",
+                    borderBottom: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => {
                         dismissKeyboardAndSuggestions();
                         setIsPickerOpen(false);
                       }}
-                      className="px-3 py-2 rounded-xl font-black text-sm"
-                      style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface-2)", color: "var(--text-sub)" }}
+                      className="flex items-center gap-1.5 px-4 rounded-xl font-black text-sm flex-shrink-0"
+                      style={{
+                        minHeight: "44px",
+                        border: "1px solid var(--border)",
+                        backgroundColor: "var(--surface-2)",
+                        color: "var(--text-sub)",
+                      }}
                     >
-                      إغلاق
+                      ← رجوع
                     </button>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p id="map-picker-title" className="text-base font-black" style={{ color: "var(--text)" }}>حددي موقعك بدقة</p>
                       <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>اضغطي على الخريطة أو ابحثي بالعنوان</p>
                     </div>
@@ -491,7 +540,7 @@ export default function MapPicker({
                 </div>
 
                 {gpsError && (
-                  <div className="mx-3 my-2 rounded-2xl px-4 py-3 text-sm font-black" style={{ backgroundColor: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.4)", color: "#fecaca" }}>
+                  <div className="flex-shrink-0 mx-3 my-2 rounded-2xl px-4 py-3 text-sm font-black" style={{ backgroundColor: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.4)", color: "#fecaca" }}>
                     {gpsError}
                   </div>
                 )}
@@ -499,33 +548,33 @@ export default function MapPicker({
                 {mapPanel}
 
                 <div
-                  className="sticky bottom-0 z-[1300] p-3 flex flex-col gap-2"
+                  className="flex-shrink-0 z-[1300] p-3 flex flex-col gap-2"
                   style={{
                     backgroundColor: "var(--bg)",
                     borderTop: "1px solid var(--border-subtle)",
-                    paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
+                    paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
                   }}
                 >
                   <button
                     type="button"
                     onClick={handleLocateMe}
                     disabled={locating}
-                    className="w-full rounded-2xl px-4 py-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                    className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
+                    style={{ minHeight: "52px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
                   >
                     {locating ? <Loader2 size={20} className="animate-spin" /> : <Navigation size={20} />}
-                    <span>{locating ? "جاري تحديد موقعك..." : "استخدام موقعي الحالي"}</span>
+                    <span>{locating ? "جاري تحديد موقعك..." : "📍 تحديد موقعي الحالي"}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleConfirmSelection}
                     disabled={!pendingSelection || geocoding || loading}
-                    className="w-full rounded-2xl px-4 py-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                    className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
+                    style={{ minHeight: "56px", backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                   >
-                    <CheckCircle2 size={20} />
-                    <span>تأكيد الموقع</span>
+                    <CheckCircle2 size={22} />
+                    <span>✅ تأكيد الموقع</span>
                   </button>
                 </div>
               </div>
