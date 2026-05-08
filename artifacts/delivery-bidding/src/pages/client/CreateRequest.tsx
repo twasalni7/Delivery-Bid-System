@@ -52,7 +52,7 @@ type ExtraPassenger = {
 };
 
 function getPassengerLocationStatus(hasPickup: boolean, hasDropoff: boolean) {
-  if (!hasPickup) return "حدد موقع الانطلاق";
+  if (!hasPickup) return "ابدأ بتحديد موقع الانطلاق";
   if (!hasDropoff) return "حدد موقع الوصول";
   return "تم تحديد الموقعين";
 }
