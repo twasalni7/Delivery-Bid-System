@@ -197,6 +197,10 @@ const ONESIGNAL_APP_ID =
   (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
   "936a2461-9f06-4231-986e-29578e9a56d7";
 
+function getOneSignalExternalId(user: { id: number; role: "client" | "driver" | "admin" }): string {
+  return `${user.role}:${user.id}`;
+}
+
 // ─── FlowOrchestrator ─────────────────────────────────────────────────────────
 /**
  * Handles three responsibilities in one place:
@@ -264,9 +268,10 @@ function FlowOrchestrator() {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal) => {
       try {
-        await OneSignal.login(String(user.id));
+        await OneSignal.login(getOneSignalExternalId(user));
         // Also tag the role so segment-based pushes work
         await OneSignal.User.addTag("role", user.role);
+        await OneSignal.User.addTag("user_id", String(user.id));
       } catch { /* non-critical */ }
     });
   }, [user?.id, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
