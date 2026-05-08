@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "react";
+import { createPortal } from "react-dom";
 import { MapPin, Loader2, Search, X, LocateFixed, CheckCircle2, Expand, Navigation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import "leaflet/dist/leaflet.css";
@@ -497,7 +498,7 @@ export default function MapPicker({
               </div>
             </button>
 
-          {isPickerOpen && (
+          {isPickerOpen && createPortal(
             <div
               className="fixed inset-0 z-[1200]"
               style={{ backgroundColor: "var(--bg)" }}
@@ -505,7 +506,7 @@ export default function MapPicker({
               aria-modal="true"
               aria-labelledby="map-picker-title"
             >
-              <div className="flex flex-col" style={{ height: "100dvh" }}>
+              <div className="flex flex-col" style={{ height: "100%" }}>
                 <div
                   className="flex-shrink-0 z-[1300] px-3 pb-2 space-y-2"
                   style={{
@@ -578,7 +579,8 @@ export default function MapPicker({
                   </button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </>
       ) : (
