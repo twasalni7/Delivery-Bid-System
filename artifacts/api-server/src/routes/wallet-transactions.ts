@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
 import { walletTransactionsTable, driversTable, transactionsTable } from "@workspace/db";
@@ -71,7 +71,9 @@ router.get("/", requireAuth(), async (req, res) => {
 });
 
 // POST /api/wallet-transactions — driver submits a top-up request
-router.post("/", requireAuth("driver"), async (req, res) => {
+// Uses a 10 MB body limit to allow base64-encoded receipt images when
+// Supabase Storage is not configured (fallback: FileReader data URL).
+router.post("/", express.json({ limit: "10mb" }), requireAuth("driver"), async (req, res) => {
   const parsed = CreateWalletTxBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "يرجى إدخال مبلغ صحيح أكبر من الصفر" });
@@ -162,7 +164,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       await txDb.insert(transactionsTable).values({
         driverId: tx.driverId,
         amount: String(creditAmount),
-        type: "topup",
+        type: "credit",
       });
 
       return txDb
