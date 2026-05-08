@@ -261,6 +261,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
 function MobileLayout({ children, role }: { children: React.ReactNode; role: "client" | "driver" }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const displayName = user?.name?.trim() || "مستخدم";
+  const displayInitial = displayName.charAt(0);
 
   const navLinks: NavLink[] =
     role === "client"
@@ -300,10 +302,10 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
         <div className="mx-auto px-4 py-3 flex items-center justify-between max-w-xl">
           <Link href={role === "client" ? "/client" : "/driver/dashboard"} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black shadow-lg" style={{ background: "linear-gradient(145deg, #f5f6fa 0%, #d7d9e2 100%)", color: "#0f172a" }}>
-              {(user?.name ?? "م").charAt(0)}
+              {displayInitial}
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>مرحباً {user?.name ?? ""}</p>
+              <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>مرحباً {displayName}</p>
               <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
                 {role === "client" ? "أهلاً بك في بوابة العميل" : "لوحة السائق"}
               </p>

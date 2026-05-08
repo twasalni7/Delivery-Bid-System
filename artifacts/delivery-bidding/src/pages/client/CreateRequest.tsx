@@ -71,7 +71,6 @@ function calculateDropoffMapCenter(homeCoords: MapCoords | null, workCoords: Map
 
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
-  const steps = ["1", "2", "3", "4", "5"];
   return (
     <div className="px-3 sm:px-8 mb-7 relative">
       <div className="absolute left-8 right-8 h-[2px] top-5 -z-10 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.12)" }} />
@@ -80,16 +79,19 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
         style={{ backgroundColor: "var(--brand)", left: "2rem", width: `${((currentStep - 1) / 4) * 100}%` }}
       />
       <div className="flex justify-between items-center gap-2">
-        {steps.map((label, idx) => {
+        {STEP_TITLES.map((label, idx) => {
           const s = idx + 1;
           const active = s <= currentStep;
+          const stepState = s < currentStep ? "مكتملة" : s === currentStep ? "الحالية" : "قادمة";
           return (
             <div key={s} className="flex flex-col items-center gap-2 z-10 min-w-0">
               <div
                 className="w-8 h-8 rounded-full border transition-all duration-500 shadow-md flex items-center justify-center text-sm font-black"
                 style={active ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.18)", color: "var(--text-hint)" }}
+                aria-label={`الخطوة ${s}: ${STEP_TITLES[idx]} - ${stepState}`}
+                title={`الخطوة ${s}: ${STEP_TITLES[idx]} - ${stepState}`}
               >
-                {label}
+                {s}
               </div>
             </div>
           );
@@ -1083,12 +1085,12 @@ export default function CreateRequest() {
                 }
               }}
               disabled={createRequest.isPending}
-                aria-label={step === 5 ? "تأكيد الطلب" : `الانتقال إلى ${STEP_TITLES[step]}`}
+                aria-label={step === 5 ? "نشر الطلب للسائقين" : `الانتقال إلى ${STEP_TITLES[step]}`}
                 className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
               >
                 {step === 5 ? (
-                  createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> تأكيد الطلب</>
+                  createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>
                 ) : (
                   "التالي"
                 )}

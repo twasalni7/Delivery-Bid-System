@@ -6,7 +6,7 @@ import { EnablePushButton } from "@/components/enable-push-button";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Bell, MapPin, Clock, Users, Calendar } from "lucide-react";
+import { Bell, MapPin, Clock, Users, Calendar, Plus } from "lucide-react";
 
 const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 
@@ -88,7 +88,7 @@ export default function ClientDashboard() {
         <div className="flex items-center justify-between mb-2 px-1">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-[1.8rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكي الحالي</h1>
+              <h1 className="text-[1.8rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكاتي</h1>
               {totalUnread > 0 && (
                 <span className="inline-flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full"
                   style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
@@ -104,7 +104,7 @@ export default function ClientDashboard() {
         <Link href="/client/request/new">
           <div className="w-full mb-4 rounded-3xl px-5 py-4 flex items-center justify-center gap-2 text-lg font-black"
             style={{ background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)", boxShadow: "0 16px 34px rgba(200,16,46,0.45)" }}>
-            <span className="text-2xl leading-none">⊕</span>
+            <Plus size={21} aria-hidden="true" />
             طلب اشتراك جديد
           </div>
         </Link>
