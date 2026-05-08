@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
-import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey } from "@workspace/api-client-react";
+import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey, getListRequestsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Star, AlertCircle } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Star, AlertCircle, Pencil, Ban } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
@@ -113,6 +113,17 @@ export default function RequestDetails() {
   const [chatMessage, setChatMessage] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [confirmOffer, setConfirmOffer] = useState<Offer | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    homeLocation: "",
+    workLocation: "",
+    morningTime: "",
+    eveningTime: "",
+    numberOfPeople: 1,
+    workingDaysPerWeek: 5,
+    phone: "",
+    notes: "",
+  });
 
   const { data: request, isLoading: loadingReq } = useGetRequest(id, {
     query: { queryKey: getGetRequestQueryKey(id), enabled: !!id, refetchInterval: 10_000 },
@@ -162,6 +173,56 @@ export default function RequestDetails() {
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
 
+  const editRequest = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        homeLocation: editForm.homeLocation.trim(),
+        workLocation: editForm.workLocation.trim(),
+        morningTime: editForm.morningTime,
+        eveningTime: editForm.eveningTime || undefined,
+        numberOfPeople: editForm.numberOfPeople,
+        workingDaysPerWeek: editForm.workingDaysPerWeek,
+        phone: editForm.phone.trim(),
+        notes: editForm.notes.trim() || undefined,
+      };
+      const res = await fetch(`${API}/api/requests/${id}/client`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? "فشل تعديل الطلب");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getGetRequestOffersQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+      setIsEditing(false);
+      toast({ title: "تم تعديل الطلب بنجاح" });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
+
+  const cancelRequest = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API}/api/requests/${id}/cancel`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? "فشل إلغاء الطلب");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getGetRequestOffersQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+      toast({ title: "تم إلغاء الطلب" });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
+
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -177,6 +238,20 @@ export default function RequestDetails() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
+
+  useEffect(() => {
+    if (!request) return;
+    setEditForm({
+      homeLocation: request.homeLocation ?? "",
+      workLocation: request.workLocation ?? "",
+      morningTime: request.morningTime ?? "",
+      eveningTime: request.eveningTime ?? "",
+      numberOfPeople: request.numberOfPeople ?? 1,
+      workingDaysPerWeek: request.workingDaysPerWeek ?? 5,
+      phone: request.phone ?? "",
+      notes: ((request as any).notes as string | null | undefined) ?? "",
+    });
+  }, [request]);
 
   const selectOffer = useSelectOffer();
 
@@ -217,6 +292,7 @@ export default function RequestDetails() {
   }
 
   const isOpen = request.status === "OPEN";
+  const canModify = (request.status === "OPEN" || request.status === "FROZEN") && !request.selectedDriverId;
   const statusStyle = STATUS_GRADIENT[request.status] ?? STATUS_GRADIENT.OPEN;
   const shifts = (request as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }> | null | undefined;
   const additionalLocations = (request as any).additionalLocations as Array<{ type: string; address: string }> | null | undefined;
@@ -261,18 +337,17 @@ export default function RequestDetails() {
                   {shifts && shifts.length > 0 ? (
                     <div className="space-y-1.5 mt-1 flex-1">
                       {shifts.map((s, i) => (
-                        <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                          <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>{s.label ?? `الوردية ${i + 1}`}</span>
-                          <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
-                            {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
-                          </span>
+                        <div key={i} className="px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                          <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>{s.label ?? `الوردية ${i + 1}`}</p>
+                          <p className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>الذهاب: {formatTime12hLong(s.goTime ?? "")}</p>
+                          {s.returnTime && <p className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>العودة: {formatTime12hLong(s.returnTime)}</p>}
                         </div>
                       ))}
                     </div>
                   ) : (
                     <>
-                      <span dir="ltr">{formatTime12h(request.morningTime)}</span>
-                      {request.eveningTime && <span dir="ltr"> – {formatTime12h(request.eveningTime)}</span>}
+                      <span dir="ltr">الذهاب: {formatTime12h(request.morningTime)}</span>
+                      {request.eveningTime && <span dir="ltr"> | العودة: {formatTime12h(request.eveningTime)}</span>}
                     </>
                   )}
                 </div>
@@ -333,6 +408,106 @@ export default function RequestDetails() {
             </div>
           </div>
         </div>
+
+        {canModify && (
+          <div className="rounded-3xl p-4 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setIsEditing((prev) => !prev)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5"
+                style={{ backgroundColor: "var(--border-subtle)", color: "var(--text)" }}
+              >
+                <Pencil size={14} /> {isEditing ? "إغلاق التعديل" : "تعديل الطلب"}
+              </button>
+              <button
+                onClick={() => cancelRequest.mutate()}
+                disabled={cancelRequest.isPending}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 disabled:opacity-60"
+                style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)" }}
+              >
+                <Ban size={14} /> {cancelRequest.isPending ? "جارٍ الإلغاء..." : "إلغاء الطلب"}
+              </button>
+            </div>
+
+            {isEditing && (
+              <div className="space-y-2.5">
+                <input
+                  value={editForm.homeLocation}
+                  onChange={(e) => setEditForm((p) => ({ ...p, homeLocation: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl text-sm"
+                  style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                  placeholder="موقع الانطلاق"
+                />
+                <input
+                  value={editForm.workLocation}
+                  onChange={(e) => setEditForm((p) => ({ ...p, workLocation: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl text-sm"
+                  style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                  placeholder="موقع الوصول"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="time"
+                    value={editForm.morningTime}
+                    onChange={(e) => setEditForm((p) => ({ ...p, morningTime: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl text-sm"
+                    style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                  />
+                  <input
+                    type="time"
+                    value={editForm.eveningTime}
+                    onChange={(e) => setEditForm((p) => ({ ...p, eveningTime: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl text-sm"
+                    style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={editForm.numberOfPeople}
+                    onChange={(e) => setEditForm((p) => ({ ...p, numberOfPeople: Math.max(1, Number(e.target.value) || 1) }))}
+                    className="w-full px-3 py-2 rounded-xl text-sm"
+                    style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                    placeholder="عدد الأشخاص"
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    max={7}
+                    value={editForm.workingDaysPerWeek}
+                    onChange={(e) => setEditForm((p) => ({ ...p, workingDaysPerWeek: Math.min(7, Math.max(1, Number(e.target.value) || 1)) }))}
+                    className="w-full px-3 py-2 rounded-xl text-sm"
+                    style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                    placeholder="أيام العمل/الأسبوع"
+                  />
+                </div>
+                <input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl text-sm"
+                  style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                  placeholder="رقم الجوال"
+                />
+                <textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl text-sm min-h-[88px]"
+                  style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border)" }}
+                  placeholder="ملاحظات"
+                />
+                <button
+                  onClick={() => editRequest.mutate()}
+                  disabled={editRequest.isPending}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-black disabled:opacity-60"
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                >
+                  {editRequest.isPending ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
           <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>

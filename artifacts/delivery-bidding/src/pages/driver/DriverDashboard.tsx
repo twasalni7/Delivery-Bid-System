@@ -1,13 +1,15 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useRef, useState } from "react";
 import { useListRequests, useGetDriverMe, getGetDriverMeQueryKey, getListRequestsQueryKey } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { EnablePushButton } from "@/components/enable-push-button";
 import { AlertTriangle, Clock, Users, CheckCircle, Phone, ChevronLeft } from "lucide-react";
 import { formatTime12hLong } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import { getAuthHeaders } from "@/lib/authed-fetch";
+import { API_ORIGIN as API } from "@/lib/api-config";
 
 type TabId = "schedule" | "available";
 
@@ -23,8 +25,16 @@ export default function DriverDashboard() {
   const { data: driver } = useGetDriverMe({ query: { queryKey: getGetDriverMeQueryKey(), enabled: !!user } });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: allRequests, isLoading } = useListRequests(undefined, { query: { refetchInterval: 15_000 } as any });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: selectedRequests } = useListRequests({ status: "SELECTED" }, { query: { refetchInterval: 15_000 } as any });
+  const { data: myRequests } = useQuery({
+    queryKey: ["driver-me-requests-dashboard"],
+    queryFn: async () => {
+      const res = await fetch(`${API}/api/drivers/me/requests`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("فشل جلب طلبات السائق");
+      return res.json();
+    },
+    enabled: !!user,
+    refetchInterval: 15_000,
+  });
   const openRequests = allRequests?.filter((r) => r.status === "OPEN");
 
   const [activeTab, setActiveTab] = useState<TabId>("available");
@@ -36,8 +46,8 @@ export default function DriverDashboard() {
   }, [user, setLocation]);
 
   useEffect(() => {
-    if (!user || !selectedRequests) return;
-    const myJobs = selectedRequests.filter((r) => r.selectedDriverId === Number(user.id));
+    if (!user || !myRequests) return;
+    const myJobs = myRequests.filter((r: any) => r.selectedDriverId === Number(user.id) && (r.status === "ACTIVE" || r.status === "SELECTED"));
     const currentIds = new Set<number>(myJobs.map((j) => Number(j.id)));
     if (prevSelectedIdsRef.current === null) {
       prevSelectedIdsRef.current = currentIds;
@@ -51,13 +61,13 @@ export default function DriverDashboard() {
       });
     });
     prevSelectedIdsRef.current = currentIds;
-  }, [selectedRequests, user]);
+  }, [myRequests, user]);
 
   // Supabase Realtime — listen for new and updated ride requests and refresh instantly
   useRealtimeRefresh(
     "driver-dashboard-realtime",
     [{ table: "requests", events: ["INSERT", "UPDATE"] }],
-    [getListRequestsQueryKey()],
+    [getListRequestsQueryKey(), ["driver-me-requests-dashboard"]],
     !!user
   );
 
@@ -75,7 +85,7 @@ export default function DriverDashboard() {
   if (!user) return null;
 
   const hasEnoughBalance = driver ? driver.balance >= 50 : false;
-  const mySelectedJobs = selectedRequests?.filter((r) => r.selectedDriverId === Number(user.id)) ?? [];
+  const mySelectedJobs = (myRequests ?? []).filter((r: any) => r.selectedDriverId === Number(user.id) && (r.status === "ACTIVE" || r.status === "SELECTED"));
 
   const totalEarnings = mySelectedJobs.reduce((sum, r) => sum + ((r as any).monthlyPrice ?? 0), 0);
 
@@ -87,20 +97,10 @@ export default function DriverDashboard() {
   return (
     <Layout role="driver">
       <div dir="rtl" className="space-y-5">
-        {/* Page title */}
-        <div className="mb-3">
-          <h1 className="text-[1.85rem] font-black tracking-tight" style={{ color: "var(--text)" }}>بوابة السائق</h1>
-          <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>إدارة طلباتك واشتراكاتك اليومية</p>
-        </div>
-
         {/* Driver info card */}
         {driver && (
           <div className="rounded-3xl p-5 mb-5" style={{ background: "linear-gradient(155deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 58%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{driver.name}</p>
-                <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>سائق توصّلني</p>
-              </div>
+            <div className="flex items-center justify-end mb-5">
               <div className={`text-right px-4 py-2.5 rounded-2xl ${hasEnoughBalance ? "" : "border border-red-500/30"}`}
                 style={{ backgroundColor: hasEnoughBalance ? "var(--brand-subtle)" : "var(--status-cancelled-bg)" }}>
                 <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>الرصيد</p>
@@ -133,11 +133,6 @@ export default function DriverDashboard() {
             </div>
           </div>
         )}
-
-        {/* Push notifications opt-in */}
-        <div className="mb-5">
-          <EnablePushButton />
-        </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
@@ -237,11 +232,12 @@ export default function DriverDashboard() {
                         {(req as any).shifts && (req as any).shifts.length > 0 ? (
                           <div className="space-y-1.5">
                             {((req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }>).map((s, i) => (
-                              <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                                <span className="text-[10px] font-black" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</span>
-                                <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
-                                  {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
-                                </span>
+                              <div key={i} className="px-2.5 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                                <p className="text-[10px] font-black mb-1" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</p>
+                                <div className="space-y-1 text-xs font-bold" style={{ color: "var(--text)" }}>
+                                  <p dir="ltr">الذهاب: {formatTime12hLong(s.goTime ?? "")}</p>
+                                  {s.returnTime && <p dir="ltr">العودة: {formatTime12hLong(s.returnTime)}</p>}
+                                </div>
                               </div>
                             ))}
                             <div className="text-center rounded-xl p-2" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
@@ -351,11 +347,12 @@ export default function DriverDashboard() {
                   {(req as any).shifts && (req as any).shifts.length > 0 ? (
                     <div className="space-y-1.5 mt-4">
                       {((req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }>).map((s, i) => (
-                        <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                          <span className="text-[10px] font-black" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</span>
-                          <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
-                            {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
-                          </span>
+                        <div key={i} className="px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
+                          <p className="text-[10px] font-black mb-1" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</p>
+                          <div className="space-y-1 text-xs font-bold" style={{ color: "var(--text)" }}>
+                            <p dir="ltr">الذهاب: {formatTime12hLong(s.goTime ?? "")}</p>
+                            {s.returnTime && <p dir="ltr">العودة: {formatTime12hLong(s.returnTime)}</p>}
+                          </div>
                         </div>
                       ))}
                     </div>

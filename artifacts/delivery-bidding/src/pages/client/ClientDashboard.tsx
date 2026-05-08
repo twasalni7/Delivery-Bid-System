@@ -26,14 +26,13 @@ const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
 
-type FilterTab = "ALL" | "OPEN" | "ACTIVE_GROUP" | "COMPLETED" | "CANCELLED_GROUP";
+type FilterTab = "ALL" | "OPEN" | "ACTIVE_GROUP" | "CANCELLED_GROUP";
 
 const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
   { id: "ALL",           label: "الكل",      statuses: [] },
-  { id: "OPEN",          label: "مفتوح",     statuses: ["OPEN"] },
-  { id: "ACTIVE_GROUP",  label: "جاري",      statuses: ["SELECTED", "ACTIVE", "FROZEN"] },
-  { id: "COMPLETED",     label: "مكتمل",     statuses: ["COMPLETED"] },
-  { id: "CANCELLED_GROUP", label: "ملغي / منتهي", statuses: ["CANCELLED", "EXPIRED"] },
+  { id: "OPEN",          label: "قيد الانتظار", statuses: ["OPEN", "FROZEN"] },
+  { id: "ACTIVE_GROUP",  label: "نشط",       statuses: ["SELECTED", "ACTIVE"] },
+  { id: "CANCELLED_GROUP", label: "منتهي",   statuses: ["COMPLETED", "CANCELLED", "EXPIRED"] },
 ];
 
 export default function ClientDashboard() {

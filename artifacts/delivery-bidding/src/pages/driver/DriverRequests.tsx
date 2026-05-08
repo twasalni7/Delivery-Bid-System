@@ -22,13 +22,13 @@ const STATUS_PILL: Record<string, string> = {
   FROZEN:    "pill-frozen",
 };
 const STATUS_LABELS: Record<string, string> = {
-  OPEN:      "مفتوح",
-  SELECTED:  "تم الاختيار",
+  OPEN:      "قيد الانتظار",
+  SELECTED:  "نشط",
   ACTIVE:    "نشط",
-  COMPLETED: "مكتمل",
-  CANCELLED: "ملغي",
-  EXPIRED:   "منتهي الصلاحية",
-  FROZEN:    "مجمّد",
+  COMPLETED: "منتهي",
+  CANCELLED: "منتهي",
+  EXPIRED:   "منتهي",
+  FROZEN:    "قيد الانتظار",
 };
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
@@ -186,9 +186,9 @@ export default function DriverRequests() {
 
                 <div className="flex flex-wrap gap-3 text-xs font-black" style={{ color: "var(--text-muted)" }} dir="ltr">
                   {r.shifts && r.shifts.length > 0 ? (
-                    <span>⏰ {r.shifts.map((s) => `${formatTime12hLong(s.goTime ?? "")}${s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}`).join(" | ")}</span>
+                    <span>⏰ {r.shifts.map((s) => `الذهاب: ${formatTime12hLong(s.goTime ?? "")}${s.returnTime ? ` | العودة: ${formatTime12hLong(s.returnTime)}` : ""}`).join(" | ")}</span>
                   ) : (
-                    <span>⏰ {formatTime12hLong(r.morningTime)}{r.eveningTime ? ` – ${formatTime12hLong(r.eveningTime)}` : ""}</span>
+                    <span>⏰ الذهاب: {formatTime12hLong(r.morningTime)}{r.eveningTime ? ` | العودة: ${formatTime12hLong(r.eveningTime)}` : ""}</span>
                   )}
                   <span>👥 {r.numberOfPeople} أشخاص · {r.workingDaysPerWeek} أيام/أسبوع</span>
                 </div>
