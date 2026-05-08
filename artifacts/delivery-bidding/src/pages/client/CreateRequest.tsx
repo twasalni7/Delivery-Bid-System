@@ -53,7 +53,7 @@ type ExtraPassenger = {
 
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
-  const steps = ["النوع", "الأشخاص", "المواقع", "الوقت", "المالية"];
+  const steps = ["النوع", "الأشخاص", "المواقع", "الوقت", "التفاصيل"];
   return (
     <div className="px-4 sm:px-8 mb-8 relative">
       <div className="absolute left-8 right-8 h-1 top-1/2 -translate-y-1/2 -z-10 rounded-full" style={{ backgroundColor: "var(--border-subtle)" }} />
@@ -533,7 +533,7 @@ export default function CreateRequest() {
           </div>
 
           <div className="p-6 space-y-5">
-            <div key={`${step}-${stepDirection}`} className={stepDirection === "forward" ? "step-enter-forward space-y-5" : "step-enter-backward space-y-5"}>
+            <div key={`${step}-${stepDirection}`} className={`space-y-5 ${stepDirection === "forward" ? "step-enter-forward" : "step-enter-backward"}`}>
             {/* ── Step 1: Subscription type ── */}
             {step === 1 && (
               <div className="grid grid-cols-1 gap-3">
@@ -595,7 +595,7 @@ export default function CreateRequest() {
                     >+</button>
                   </div>
                   <p className="text-sm font-bold text-center" style={{ color: "var(--text-muted)" }}>
-                    في الخطوة التالية ستحدد مواقع {parseInt(numberOfPeople) === 1 ? "الراكب" : "جميع الركاب"} بالضغط على زر تكبير الخريطة.
+                    في الخطوة التالية ستحدد مواقع {parseInt(numberOfPeople) === 1 ? "الراكب" : "جميع الركاب"} عبر خيار اختيار الموقع من الخريطة.
                   </p>
                 </div>
               </div>

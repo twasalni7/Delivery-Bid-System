@@ -250,12 +250,6 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   }, [isMobile, value]);
 
   useEffect(() => {
-    if (!collapsible) {
-      setIsInlineExpanded(true);
-    }
-  }, [collapsible]);
-
-  useEffect(() => {
     if (!value) return;
     setPendingSelection((prev) => {
       if (prev && prev.lat === value.lat && prev.lng === value.lng && prev.address === value.address) {
