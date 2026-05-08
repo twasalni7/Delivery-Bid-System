@@ -51,6 +51,18 @@ type ExtraPassenger = {
   workTime: string;
 };
 
+function getPassengerLocationStatus(hasPickup: boolean, hasDropoff: boolean) {
+  if (!hasPickup) return "حدد موقع الانطلاق";
+  if (!hasDropoff) return "حدد موقع الوصول";
+  return "تم تحديد الموقعين";
+}
+
+function getDropoffInitialCenter(homeCoords: MapCoords | null, workCoords: MapCoords | null): [number, number] | undefined {
+  if (workCoords) return [workCoords.lat, workCoords.lng];
+  if (homeCoords) return [homeCoords.lat, homeCoords.lng];
+  return undefined;
+}
+
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
   const steps = ["النوع", "الأشخاص", "المواقع", "الوقت", "التفاصيل"];
@@ -177,15 +189,8 @@ function PassengerCard({
       : null;
   const hasPickup = Boolean(homeCoords);
   const hasDropoff = Boolean(workCoords);
-  let statusText = "حدد موقع الانطلاق";
-  if (hasPickup && !hasDropoff) statusText = "حدد موقع الوصول";
-  if (hasPickup && hasDropoff) statusText = "تم تحديد الموقعين";
-  let dropoffInitialCenter: [number, number] | undefined;
-  if (workCoords) {
-    dropoffInitialCenter = [workCoords.lat, workCoords.lng];
-  } else if (homeCoords) {
-    dropoffInitialCenter = [homeCoords.lat, homeCoords.lng];
-  }
+  const statusText = getPassengerLocationStatus(hasPickup, hasDropoff);
+  const dropoffInitialCenter = getDropoffInitialCenter(homeCoords, workCoords);
 
   return (
     <div className="rounded-[1.75rem] p-5 space-y-5" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
