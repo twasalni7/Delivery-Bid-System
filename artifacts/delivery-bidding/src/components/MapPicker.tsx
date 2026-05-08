@@ -73,6 +73,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isInlineExpanded, setIsInlineExpanded] = useState(!collapsible);
   const { toast } = useToast();
 
   const [pendingSelection, setPendingSelection] = useState<MapCoords | null>(value);
@@ -83,7 +84,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  const shouldRenderMap = !isMobile || isPickerOpen;
+  const shouldRenderMap = isMobile ? isPickerOpen : (!collapsible || isInlineExpanded);
 
   const dismissKeyboardAndSuggestions = useCallback(() => {
     setShowResults(false);
@@ -247,6 +248,12 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
     }
     if (!value) setIsPickerOpen(true);
   }, [isMobile, value]);
+
+  useEffect(() => {
+    if (!collapsible) {
+      setIsInlineExpanded(true);
+    }
+  }, [collapsible]);
 
   useEffect(() => {
     if (!value) return;
@@ -521,7 +528,42 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           )}
         </>
       ) : (
-        <div className="space-y-3">
+          <div className="space-y-3">
+            {collapsible && !isInlineExpanded ? (
+              <button
+                type="button"
+                onClick={() => setIsInlineExpanded(true)}
+                className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 text-right"
+                style={{ border: "1px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}
+              >
+                <Expand size={20} style={{ color: "var(--brand)" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-black" style={{ color: "var(--text)" }}>
+                    {pendingSelection ? "تعديل الموقع على الخريطة" : "اختيار الموقع من الخريطة"}
+                  </p>
+                  <p className="text-sm font-bold truncate" style={{ color: "var(--text-muted)" }}>
+                    {pendingSelection?.address || "اضغط لفتح الخريطة"}
+                  </p>
+                </div>
+              </button>
+            ) : null}
+
+            {collapsible && isInlineExpanded ? (
+              <button
+                type="button"
+                onClick={() => {
+                  dismissKeyboardAndSuggestions();
+                  setIsInlineExpanded(false);
+                }}
+                className="w-full rounded-xl px-3 py-2 text-sm font-black"
+                style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface-2)", color: "var(--text-sub)" }}
+              >
+                إغلاق الخريطة
+              </button>
+            ) : null}
+
+            {(!collapsible || isInlineExpanded) && (
+              <>
           <p className="text-sm font-black text-center" style={{ color: "var(--text-hint)" }}>
             ابحث عن موقعك أو حدد الموقع مباشرة من الخريطة
           </p>
@@ -572,6 +614,8 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           <div className="relative rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
             {mapPanel}
           </div>
+              </>
+            )}
         </div>
       )}
     </div>
