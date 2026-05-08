@@ -53,20 +53,31 @@ type ExtraPassenger = {
 
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
+  const steps = ["النوع", "الأشخاص", "المواقع", "الوقت", "التفاصيل"];
   return (
-    <div className="flex justify-between items-center px-8 mb-8 relative">
+    <div className="px-4 sm:px-8 mb-8 relative">
       <div className="absolute left-8 right-8 h-1 top-1/2 -translate-y-1/2 -z-10 rounded-full" style={{ backgroundColor: "var(--border-subtle)" }} />
       <div
         className="absolute right-8 h-1 top-1/2 -translate-y-1/2 -z-10 transition-all duration-700 rounded-full"
-        style={{ backgroundColor: "var(--brand)", left: "2rem", width: `${((currentStep - 1) / 3) * 100}%` }}
+        style={{ backgroundColor: "var(--brand)", left: "2rem", width: `${((currentStep - 1) / 4) * 100}%` }}
       />
-      {[1, 2, 3, 4].map((s) => (
-        <div
-          key={s}
-          className="w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md z-10"
-          style={s <= currentStep ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" } : { backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-        />
-      ))}
+      <div className="flex justify-between items-center gap-2">
+        {steps.map((label, idx) => {
+          const s = idx + 1;
+          const active = s <= currentStep;
+          return (
+            <div key={s} className="flex flex-col items-center gap-1.5 z-10 min-w-0">
+              <div
+                className="w-5 h-5 rounded-full border-4 transition-all duration-500 shadow-md"
+                style={active ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" } : { backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+              />
+              <span className="text-[10px] sm:text-xs font-black truncate" style={{ color: active ? "var(--brand)" : "var(--text-hint)" }}>
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -74,7 +85,7 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
 /** Maximum number of passengers supported per request */
 const MAX_PASSENGERS = 10;
 
-const STEP_TITLES = ["نوع الاشتراك", "تحديد المسار والركاب", "الجدول والوقت", "التفاصيل المالية"];
+const STEP_TITLES = ["نوع الاشتراك", "عدد الأشخاص", "تحديد المواقع", "الجدول والوقت", "التفاصيل المالية"];
 
 /** Single shift editor card used in Step 3 */
 function ShiftCard({
@@ -194,6 +205,7 @@ function PassengerCard({
           placeholder="اضغط على الخريطة لتحديد موقع المنزل"
           color="var(--brand)"
           initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+          collapsible
         />
         <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
           <Home size={18} style={{ color: "var(--brand)" }} />
@@ -215,6 +227,7 @@ function PassengerCard({
           placeholder="اضغط على الخريطة لتحديد موقع العمل"
           color="var(--brand)"
           initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+          collapsible
         />
         <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
           <Briefcase size={18} className="text-rose-500" />
@@ -252,6 +265,7 @@ export default function CreateRequest() {
   const createRequest = useCreateRequest();
 
   const [step, setStep] = useState(1);
+  const [stepDirection, setStepDirection] = useState<"forward" | "backward">("forward");
 
   // Step 1
   const [clientType, setClientType] = useState("موظفات");
@@ -385,7 +399,7 @@ export default function CreateRequest() {
   }, [homeCoords, workCoords, shifts]);
 
   useEffect(() => {
-    if (step === 4 && homeCoords && workCoords) {
+    if (step === 5 && homeCoords && workCoords) {
       fetchSuggestions();
     }
   }, [step, fetchSuggestions]);
@@ -406,14 +420,15 @@ export default function CreateRequest() {
 
   const canNext = () => {
     if (step === 1) return !!clientType;
-    if (step === 2) {
+    if (step === 2) return (parseInt(numberOfPeople) || 0) >= 1;
+    if (step === 3) {
       // Main passenger must have both coordinates
       if (!homeCoords || !workCoords) return false;
       // All extra passengers must also have coordinates
       if (extraPassengers.some((p) => !p.pickupCoords || !p.destCoords)) return false;
       return true;
     }
-    if (step === 3) return !!(shifts[0]?.goTime) && selectedDays.length > 0;
+    if (step === 4) return !!(shifts[0]?.goTime) && selectedDays.length > 0;
     return phone.trim().length >= 10;
   };
 
@@ -513,11 +528,12 @@ export default function CreateRequest() {
         <div className="rounded-[2.5rem] overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 24px 56px rgba(0,0,0,0.4)" }}>
           {/* Step header */}
           <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 4</p>
+            <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 5</p>
             <h2 className="text-[1.8rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>{STEP_TITLES[step - 1]}</h2>
           </div>
 
           <div className="p-6 space-y-5">
+            <div key={`${step}-${stepDirection}`} className={`space-y-5 ${stepDirection === "forward" ? "step-enter-forward" : "step-enter-backward"}`}>
             {/* ── Step 1: Subscription type ── */}
             {step === 1 && (
               <div className="grid grid-cols-1 gap-3">
@@ -552,35 +568,42 @@ export default function CreateRequest() {
               </div>
             )}
 
-            {/* ── Step 2: Route & Passengers ── */}
+            {/* ── Step 2: Number of people ── */}
             {step === 2 && (
               <div className="space-y-5">
-                {/* Number of people selector */}
-                <div className="space-y-2">
+                <div className="rounded-[1.8rem] p-5 space-y-5" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
                   <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
-                    <Users className="inline-block ml-1" size={14} style={{ color: "var(--brand)" }} />
-                    عدد الأشخاص
+                    <Users className="inline-block ml-1" size={16} style={{ color: "var(--brand)" }} />
+                    اختر عدد الأشخاص في الاشتراك
                   </label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center gap-5">
                     <button
                       onClick={() => handleSetNumberOfPeople(parseInt(numberOfPeople) - 1)}
-                      className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                      style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
+                      className="w-12 h-12 rounded-full font-black text-2xl transition-all active:scale-90"
+                      style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                     >−</button>
-                    <span className="text-[1.8rem] font-black w-10 text-center" style={{ color: "var(--brand)" }}>{numberOfPeople}</span>
+                    <div className="text-center min-w-[6rem]">
+                      <p key={numberOfPeople} className="text-[2.3rem] font-black counter-pop leading-none" style={{ color: "var(--brand)" }}>
+                        {numberOfPeople}
+                      </p>
+                      <p className="text-xs font-bold mt-1" style={{ color: "var(--text-muted)" }}>من 1 إلى {MAX_PASSENGERS}</p>
+                    </div>
                     <button
                       onClick={() => handleSetNumberOfPeople(parseInt(numberOfPeople) + 1)}
-                      className="w-10 h-10 rounded-full font-black text-xl transition-colors"
-                      style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
+                      className="w-12 h-12 rounded-full font-black text-2xl transition-all active:scale-90"
+                      style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
                     >+</button>
                   </div>
-                  {parseInt(numberOfPeople) > 1 && (
-                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
-                      يجب تحديد موقع المنزل والعمل لكل راكب على الخريطة
-                    </p>
-                  )}
+                  <p className="text-sm font-bold text-center" style={{ color: "var(--text-muted)" }}>
+                    في الخطوة التالية ستحدد مواقع {parseInt(numberOfPeople) === 1 ? "الراكب" : "جميع الركاب"} عبر خيار اختيار الموقع من الخريطة.
+                  </p>
                 </div>
+              </div>
+            )}
 
+            {/* ── Step 3: Locations ── */}
+            {step === 3 && (
+              <div className="space-y-5">
                 {/* Passenger 1 card */}
                 <PassengerCard
                   index={1}
@@ -690,8 +713,8 @@ export default function CreateRequest() {
               </div>
             )}
 
-            {/* ── Step 3: Schedule ── */}
-            {step === 3 && (
+            {/* ── Step 4: Schedule ── */}
+            {step === 4 && (
               <div className="space-y-6">
                 {/* Multi-shift editor */}
                 <div className="space-y-3">
@@ -762,8 +785,8 @@ export default function CreateRequest() {
               </div>
             )}
 
-            {/* ── Step 4: Financial & Contact ── */}
-            {step === 4 && (
+            {/* ── Step 5: Financial & Contact ── */}
+            {step === 5 && (
               <div className="space-y-5">
                 {/* Shared Subscription Suggestion */}
                 {sharedSuggestions && sharedSuggestions.count > 0 && (
@@ -856,7 +879,7 @@ export default function CreateRequest() {
                   <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                     <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
                     <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                      يرجى تحديد الموقعين على الخريطة في الخطوة الثانية لحساب السعر تلقائياً
+                      يرجى تحديد الموقعين على الخريطة في الخطوة الثالثة لحساب السعر تلقائياً
                     </p>
                   </div>
                 )}
@@ -957,13 +980,17 @@ export default function CreateRequest() {
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {/* Navigation buttons */}
           <div className="px-6 pb-6 flex gap-3">
             {step > 1 && (
               <button
-                onClick={() => setStep(step - 1)}
+                onClick={() => {
+                  setStepDirection("backward");
+                  setStep(step - 1);
+                }}
                 className="px-6 py-4 rounded-[1.5rem] font-black transition-colors"
                 style={{ border: "1px solid var(--border)", color: "var(--text-sub)", backgroundColor: "var(--surface)" }}
               >
@@ -972,14 +999,15 @@ export default function CreateRequest() {
             )}
             <button
               onClick={() => {
-                if (step < 4) {
+                if (step < 5) {
                   if (!canNext()) {
-                    const msg = step === 2
+                    const msg = step === 3
                       ? "يرجى تحديد موقع المنزل والعمل على الخريطة لجميع الركاب"
                       : "يرجى ملء الحقول المطلوبة";
                     toast({ title: msg, variant: "destructive" });
                     return;
                   }
+                  setStepDirection("forward");
                   setStep(step + 1);
                 } else {
                   if (!canNext()) {
@@ -993,7 +1021,7 @@ export default function CreateRequest() {
               className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
             >
-              {step === 4 ? (
+              {step === 5 ? (
                 createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>
               ) : (
                 <>التالي <Clock size={16} aria-hidden="true" /></>

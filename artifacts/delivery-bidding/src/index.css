@@ -293,6 +293,26 @@
   .pill-expired   { background: var(--status-expired-bg);   color: var(--status-expired-text);   border-color: var(--status-expired-border); }
   .pill-frozen    { background: var(--status-frozen-bg);    color: var(--status-frozen-text);    border-color: var(--status-frozen-border); }
 
+  /* ── Step-wizard transitions ── */
+  @keyframes stepInForward {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  @keyframes stepInBackward {
+    from { transform: translateX(-40px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+  }
+  .step-enter-forward  { animation: stepInForward  0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .step-enter-backward { animation: stepInBackward 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* ── Bounce-pop for counter ── */
+  @keyframes counterPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  .counter-pop { animation: counterPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
   /* ── Loading skeleton ── */
   .skeleton {
     background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
