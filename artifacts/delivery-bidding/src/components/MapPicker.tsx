@@ -204,7 +204,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           setGpsError("تعذّر تحديد موقعك حالياً. يمكنك تحديد الموقع يدويًا من الخريطة.");
         }
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   }, [applySelection, dismissKeyboardAndSuggestions, resolveAddressForSelection, setMarkerAndView]);
 
@@ -247,11 +247,15 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   }, [isMobile, value]);
 
   useEffect(() => {
-    if (value) {
-      setPendingSelection(value);
-      setSearchText(value.address);
-    }
-  }, [value?.lat, value?.lng, value?.address]);
+    if (!value) return;
+    setPendingSelection((prev) => {
+      if (prev && prev.lat === value.lat && prev.lng === value.lng && prev.address === value.address) {
+        return prev;
+      }
+      return value;
+    });
+    setSearchText((prev) => (prev === value.address ? prev : value.address));
+  }, [value]);
 
   useEffect(() => {
     if (!isMobile) return;
@@ -322,7 +326,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   useEffect(() => {
     if (!mapReady || !mapRef.current || !pendingSelection) return;
     setMarkerAndView(pendingSelection.lat, pendingSelection.lng, 15);
-  }, [mapReady, pendingSelection?.lat, pendingSelection?.lng, setMarkerAndView]);
+  }, [mapReady, pendingSelection, setMarkerAndView]);
 
   const mapPanel = (
     <div className="relative flex-1 min-h-0 w-full" style={{ borderTop: "1px solid var(--border-subtle)" }}>
@@ -437,7 +441,13 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           </button>
 
           {isPickerOpen && (
-            <div className="fixed inset-0 z-[1200]" style={{ backgroundColor: "var(--bg)" }}>
+            <div
+              className="fixed inset-0 z-[1200]"
+              style={{ backgroundColor: "var(--bg)" }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="map-picker-title"
+            >
               <div className="h-[100dvh] w-full max-w-full flex flex-col overflow-hidden">
                 <div className="sticky top-0 z-[1300] px-3 pt-3 pb-2 space-y-2" style={{ backgroundColor: "var(--bg)", borderBottom: "1px solid var(--border-subtle)" }}>
                   <div className="flex items-center gap-2">
@@ -453,7 +463,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
                       إغلاق
                     </button>
                     <div className="flex-1">
-                      <p className="text-base font-black" style={{ color: "var(--text)" }}>حددي موقعك بدقة</p>
+                      <p id="map-picker-title" className="text-base font-black" style={{ color: "var(--text)" }}>حددي موقعك بدقة</p>
                       <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>اضغطي على الخريطة أو ابحثي بالعنوان</p>
                     </div>
                   </div>
