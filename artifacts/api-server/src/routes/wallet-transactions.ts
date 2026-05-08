@@ -182,7 +182,7 @@ router.post("/:id/approve", requireAuth("admin"), async (req, res) => {
       await txDb.insert(transactionsTable).values({
         driverId: tx.driverId,
         amount: String(creditAmount),
-        type: "topup",
+        type: "credit",
       });
 
       return txDb

@@ -56,6 +56,8 @@ app.use(
   })
 );
 
+// 10 MB limit to support base64-encoded receipt images submitted as JSON
+// when Supabase Storage is not configured (fallback: FileReader data URL).
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 

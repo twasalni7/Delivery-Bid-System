@@ -257,6 +257,12 @@ describe("POST /wallet-transactions/:id/approve (admin only)", () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("message");
     expect(res.body).toHaveProperty("transaction");
+
+    // Ensure the ledger entry uses type "credit" (not "topup") to satisfy the
+    // transactions_type_check DB constraint.
+    expect(insertValuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "credit" })
+    );
   });
 });
 
