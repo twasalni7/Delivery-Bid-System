@@ -97,6 +97,11 @@ export default function MapPicker({
   const [showResults, setShowResults] = useState(false);
 
   const shouldRenderMap = isMobile ? isPickerOpen : (!collapsible || isInlineExpanded);
+  const mapPanelMinHeight = isMobile
+    ? "100%"
+    : collapsible && !isPickerOpen
+      ? (isDesktopZoomed ? "clamp(420px, 58vh, 560px)" : "clamp(220px, 34vh, 300px)")
+      : "clamp(420px, 58vh, 560px)";
 
   const dismissKeyboardAndSuggestions = useCallback(() => {
     setShowResults(false);
@@ -123,7 +128,7 @@ export default function MapPicker({
       setPendingSelection(next);
       setSearchText(next.address);
     },
-    []
+    [setPendingSelection, setSearchText]
   );
 
   const resolveAddressForSelection = useCallback(
@@ -343,10 +348,7 @@ export default function MapPicker({
         ref={containerRef}
         className="h-full w-full"
         style={{
-          minHeight: isMobile ? "100%" : "clamp(420px, 58vh, 560px)",
-          ...(collapsible && !isMobile && !isPickerOpen
-            ? { minHeight: isDesktopZoomed ? "clamp(420px, 58vh, 560px)" : "clamp(220px, 34vh, 300px)" }
-            : {}),
+          minHeight: mapPanelMinHeight,
           backgroundColor: "#161616",
           touchAction: "pan-x pan-y",
         }}
@@ -614,28 +616,31 @@ export default function MapPicker({
             </div>
           )}
 
-          {pendingSelection && (
-            <div
-              className="flex items-start gap-3 p-4 rounded-2xl text-sm"
-              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}
-            >
-              <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
-              <div className="flex-1 min-w-0">
-                <p className="font-black text-base line-clamp-2" style={{ color: "var(--text)" }}>{pendingSelection.address}</p>
+          <div
+            className="flex items-start gap-3 p-4 rounded-2xl text-sm"
+            style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}
+          >
+            <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-base line-clamp-2" style={{ color: "var(--text)" }}>
+                {pendingSelection?.address || "حدّد نقطة على الخريطة أو من البحث ثم اضغط تأكيد"}
+              </p>
+              {pendingSelection && (
                 <p className="text-xs mt-1 font-mono" style={{ color: "var(--text-muted)" }}>
                   {pendingSelection.lat.toFixed(6)}, {pendingSelection.lng.toFixed(6)}
                 </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleConfirmSelection}
-                className="shrink-0 rounded-xl px-4 py-2 text-sm font-black"
-                style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-              >
-                تأكيد
-              </button>
+              )}
             </div>
-          )}
+            <button
+              type="button"
+              onClick={handleConfirmSelection}
+              disabled={!pendingSelection || geocoding || loading}
+              className="shrink-0 rounded-xl px-4 py-2 text-sm font-black disabled:opacity-60"
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+            >
+              تأكيد الموقع
+            </button>
+          </div>
 
           <div className="relative rounded-[1.5rem] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
             {mapPanel}
