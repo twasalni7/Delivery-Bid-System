@@ -177,11 +177,14 @@ function PassengerCard({
       : null;
   const hasPickup = Boolean(homeCoords);
   const hasDropoff = Boolean(workCoords);
-  const statusText = !hasPickup
-    ? "حدد موقع الانطلاق"
-    : !hasDropoff
-      ? "حدد موقع الوصول"
-      : "تم تحديد الموقعين";
+  let statusText = "حدد موقع الانطلاق";
+  if (hasPickup && !hasDropoff) statusText = "حدد موقع الوصول";
+  if (hasPickup && hasDropoff) statusText = "تم تحديد الموقعين";
+  const dropoffInitialCenter = workCoords
+    ? [workCoords.lat, workCoords.lng] as [number, number]
+    : homeCoords
+      ? [homeCoords.lat, homeCoords.lng] as [number, number]
+      : undefined;
 
   return (
     <div className="rounded-[1.75rem] p-5 space-y-5" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
@@ -257,7 +260,7 @@ function PassengerCard({
                 onChange={onWorkChange}
                 placeholder="حدد نقطة الوصول من الخريطة"
                 color="var(--brand)"
-                initialCenter={workCoords ? [workCoords.lat, workCoords.lng] : [homeCoords!.lat, homeCoords!.lng]}
+                initialCenter={dropoffInitialCenter}
                 openButtonLabel="حدد موقع الوصول"
                 openButtonHint="لم يتم تحديد الموقع بعد"
                 collapsible
