@@ -51,6 +51,24 @@ type ExtraPassenger = {
   workTime: string;
 };
 
+const PASSENGER_LOCATION_MESSAGES = {
+  start: "ابدأ بتحديد موقع الانطلاق",
+  dropoff: "حدد موقع الوصول",
+  complete: "تم تحديد الموقعين",
+} as const;
+
+function getPassengerLocationStatus(hasPickup: boolean, hasDropoff: boolean) {
+  if (!hasPickup) return PASSENGER_LOCATION_MESSAGES.start;
+  if (!hasDropoff) return PASSENGER_LOCATION_MESSAGES.dropoff;
+  return PASSENGER_LOCATION_MESSAGES.complete;
+}
+
+function calculateDropoffMapCenter(homeCoords: MapCoords | null, workCoords: MapCoords | null): [number, number] | undefined {
+  if (workCoords) return [workCoords.lat, workCoords.lng];
+  if (homeCoords) return [homeCoords.lat, homeCoords.lng];
+  return undefined;
+}
+
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
   const steps = ["النوع", "الأشخاص", "المواقع", "الوقت", "التفاصيل"];
@@ -171,118 +189,106 @@ function PassengerCard({
   onWorkChange: (coords: MapCoords) => void;
   onWorkTimeChange: (t: string) => void;
 }) {
-  const [locationStage, setLocationStage] = useState<"pickup" | "dropoff">(homeCoords ? "dropoff" : "pickup");
-
-  useEffect(() => {
-    if (!homeCoords) setLocationStage("pickup");
-  }, [homeCoords]);
-
   const distKm =
     homeCoords && workCoords
       ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
       : null;
+  const hasPickup = Boolean(homeCoords);
+  const hasDropoff = Boolean(workCoords);
+  const statusText = getPassengerLocationStatus(hasPickup, hasDropoff);
+  const dropoffInitialCenter = calculateDropoffMapCenter(homeCoords, workCoords);
 
   return (
-    <div className="rounded-[2rem] p-4 space-y-4" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
-      {/* Passenger header */}
-      <div className="flex items-center gap-2 pb-2" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
+    <div className="rounded-[1.75rem] p-5 space-y-5" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
+      <div className="flex items-start gap-3 pb-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shrink-0" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
           {index}
         </div>
-        <span className="font-black" style={{ color: "var(--text)" }}>
-          {index === 1 ? "الراكب الأول (أنت)" : `الراكب ${index}`}
-        </span>
-        {distKm !== null && (
-          <span className="mr-auto text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-            {distKm.toFixed(1)} كم
-          </span>
-        )}
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-black" style={{ color: "var(--text)" }}>
+              {index === 1 ? "الراكب الأول (أنت)" : `الراكب ${index}`}
+            </span>
+            {distKm !== null && (
+              <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                {distKm.toFixed(1)} كم
+              </span>
+            )}
+          </div>
+          <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
+            {hasDropoff && <CheckCircle2 size={14} aria-hidden="true" />}
+            <span>{statusText}</span>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-3 rounded-[1.5rem] p-4" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface-2)" }}>
-        <div className="flex items-center gap-2">
-          <div className="h-2 flex-1 rounded-full" style={{ backgroundColor: locationStage === "pickup" ? "var(--brand)" : "var(--brand-border)" }} />
-          <div className="h-2 flex-1 rounded-full" style={{ backgroundColor: locationStage === "dropoff" ? "var(--brand)" : "var(--border-subtle)" }} />
-        </div>
-        <div className="flex items-center justify-between text-xs font-black" style={{ color: "var(--text-muted)" }}>
-          <span>1) موقع الانطلاق</span>
-          <span>2) موقع الوصول</span>
-        </div>
-        <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>
-          {locationStage === "pickup"
-            ? "ابدأ بتثبيت موقع الانطلاق ثم اضغط التالي."
-            : "الآن حدّد موقع الوصول بنفس الطريقة ثم أكّد الاختيار."}
-        </p>
-
-        {locationStage === "pickup" ? (
-          <div className="space-y-2">
+      <div className="space-y-5">
+        <div className="space-y-3 pb-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+          <div className="flex items-center justify-between gap-3">
             <label className="text-base font-black pr-1" style={{ color: "var(--text)" }}>
               <Home className="inline-block ml-1" size={16} style={{ color: "var(--brand)" }} />
               موقع الانطلاق
             </label>
-            <MapPicker
-              value={homeCoords}
-              onChange={onHomeChange}
-              placeholder="ابحث عن موقع الانطلاق أو حدده من الخريطة"
-              color="var(--brand)"
-              initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
-              openButtonLabel="اضغط هنا لتحديد موقع الانطلاق"
-              openButtonHint="ابدأ بتحديد نقطة الانطلاق"
-              collapsible
-            />
-            <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
-              <Home size={18} style={{ color: "var(--brand)" }} />
-              <span className="text-sm font-bold truncate" style={{ color: homeAddress ? "var(--text)" : "var(--text-hint)" }}>
-                {homeAddress || "لم يتم تحديد موقع الانطلاق بعد"}
+            {hasPickup && (
+              <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                تم التحديد
               </span>
-            </div>
+            )}
           </div>
-        ) : (
-          <div className="space-y-2">
+          <MapPicker
+            value={homeCoords}
+            onChange={onHomeChange}
+            placeholder="حدد موقع الانطلاق من الخريطة"
+            color="var(--brand)"
+            initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+            openButtonLabel="حدد موقع الانطلاق"
+            openButtonHint="لم يتم تحديد الموقع بعد"
+            collapsible
+          />
+          <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)", color: homeAddress ? "var(--text)" : "var(--text-sub)" }}>
+            <Home size={18} style={{ color: "var(--brand)" }} />
+            <span className="text-sm font-black truncate">
+              {homeAddress || "لم يتم تحديد الموقع بعد"}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
             <label className="text-base font-black pr-1" style={{ color: "var(--text)" }}>
-              <Briefcase className="inline-block ml-1 text-rose-500" size={16} />
+              <Briefcase className="inline-block ml-1" size={16} style={{ color: "var(--brand)" }} />
               موقع الوصول
             </label>
-            <MapPicker
-              value={workCoords}
-              onChange={onWorkChange}
-              placeholder="ابحث عن موقع الوصول أو حدده من الخريطة"
-              color="var(--brand)"
-              initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
-              openButtonLabel="اضغط هنا لتحديد موقع الوصول"
-              openButtonHint="حدد الوجهة بعد تثبيت الانطلاق"
-              collapsible
-            />
-            <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
-              <Briefcase size={18} className="text-rose-500" />
-              <span className="text-sm font-bold truncate" style={{ color: workAddress ? "var(--text)" : "var(--text-hint)" }}>
-                {workAddress || "لم يتم تحديد موقع الوصول بعد"}
+            {hasDropoff && (
+              <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                تم التحديد
               </span>
-            </div>
+            )}
           </div>
-        )}
 
-        <div className="flex gap-2">
-          {locationStage === "dropoff" && (
-            <button
-              type="button"
-              onClick={() => setLocationStage("pickup")}
-              className="rounded-2xl px-5 py-3 text-sm font-black"
-              style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)", color: "var(--text-sub)" }}
-            >
-              رجوع للانطلاق
-            </button>
-          )}
-          {locationStage === "pickup" && (
-            <button
-              type="button"
-              onClick={() => setLocationStage("dropoff")}
-              disabled={!homeCoords}
-              className="flex-1 rounded-2xl px-5 py-3 text-sm font-black disabled:opacity-60"
-              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-            >
-              التالي: موقع الوصول
-            </button>
+          {hasPickup ? (
+            <>
+              <MapPicker
+                value={workCoords}
+                onChange={onWorkChange}
+                placeholder="حدد موقع الوصول من الخريطة"
+                color="var(--brand)"
+                initialCenter={dropoffInitialCenter}
+                openButtonLabel="حدد موقع الوصول"
+                openButtonHint="لم يتم تحديد الموقع بعد"
+                collapsible
+              />
+              <div className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)", color: workAddress ? "var(--text)" : "var(--text-sub)" }}>
+                <Briefcase size={18} style={{ color: "var(--brand)" }} />
+                <span className="text-sm font-black truncate">
+                  {workAddress || "لم يتم تحديد الموقع بعد"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div role="note" className="rounded-2xl px-4 py-4 text-sm font-black" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px dashed var(--border)" }}>
+              حدد موقع الانطلاق أولًا
+            </div>
           )}
         </div>
       </div>
@@ -577,8 +583,7 @@ export default function CreateRequest() {
 
         <div className="rounded-[2.5rem] overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 24px 56px rgba(0,0,0,0.4)" }}>
           {/* Step header */}
-          <div className="text-center px-8 pt-8 pb-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: "var(--text-hint)" }}>المرحلة {step} من 5</p>
+          <div className="text-center px-6 pt-6 pb-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
             <h2 className="text-[1.8rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>{STEP_TITLES[step - 1]}</h2>
           </div>
 
@@ -654,6 +659,12 @@ export default function CreateRequest() {
             {/* ── Step 3: Locations ── */}
             {step === 3 && (
               <div className="space-y-5">
+                <div className="rounded-[1.5rem] px-4 py-3" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
+                  <p className="text-sm font-black" style={{ color: "var(--text)" }}>
+                    ابدأ بتحديد موقع الانطلاق، ثم أضف موقع الوصول.
+                  </p>
+                </div>
+
                 {/* Passenger 1 card */}
                 <PassengerCard
                   index={1}
@@ -1052,7 +1063,7 @@ export default function CreateRequest() {
                 if (step < 5) {
                   if (!canNext()) {
                     const msg = step === 3
-                      ? "يرجى تحديد موقع المنزل والعمل على الخريطة لجميع الركاب"
+                      ? "يرجى تحديد موقعي الانطلاق والوصول لجميع الركاب"
                       : "يرجى ملء الحقول المطلوبة";
                     toast({ title: msg, variant: "destructive" });
                     return;
@@ -1068,13 +1079,14 @@ export default function CreateRequest() {
                 }
               }}
               disabled={createRequest.isPending}
+              aria-label={step === 5 ? "نشر الطلب للسائقين" : `الانتقال إلى ${STEP_TITLES[step]}`}
               className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
             >
               {step === 5 ? (
                 createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>
               ) : (
-                <>التالي <Clock size={16} aria-hidden="true" /></>
+                "التالي"
               )}
             </button>
           </div>
