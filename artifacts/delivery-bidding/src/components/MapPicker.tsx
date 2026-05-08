@@ -283,7 +283,6 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         center,
         zoom: pendingSelection ? 15 : 12,
         zoomControl: true,
-        tap: true,
       });
 
       Lx.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
