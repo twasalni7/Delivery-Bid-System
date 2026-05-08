@@ -13,13 +13,13 @@ export const ALL_STATUSES: RequestStatus[] = [
 
 export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    OPEN: "مفتوح",
-    SELECTED: "تم الاختيار",
+    OPEN: "قيد الانتظار",
+    SELECTED: "نشط",
     ACTIVE: "نشط",
-    COMPLETED: "مكتمل",
-    CANCELLED: "ملغي",
+    COMPLETED: "منتهي",
+    CANCELLED: "منتهي",
     EXPIRED: "منتهي",
-    FROZEN: "مجمّد",
+    FROZEN: "قيد الانتظار",
   };
   return labels[status] ?? status;
 }

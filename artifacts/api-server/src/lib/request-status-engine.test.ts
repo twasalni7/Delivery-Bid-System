@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveRequestStatus } from "./request-status-engine";
 
 describe("request-status-engine", () => {
-  it("resolves request_created to OPEN/FROZEN/SELECTED", () => {
+  it("resolves request_created to OPEN/FROZEN/ACTIVE", () => {
     expect(
       resolveRequestStatus({
         currentStatus: "OPEN",
@@ -28,10 +28,10 @@ describe("request-status-engine", () => {
         needsAdminReview: true,
         event: "request_created",
       }).status,
-    ).toBe("SELECTED");
+    ).toBe("ACTIVE");
   });
 
-  it("forces SELECTED on offer_selected and selected_driver_assigned", () => {
+  it("forces ACTIVE on offer_selected and selected_driver_assigned", () => {
     expect(
       resolveRequestStatus({
         currentStatus: "OPEN",
@@ -39,7 +39,7 @@ describe("request-status-engine", () => {
         needsAdminReview: false,
         event: "offer_selected",
       }).status,
-    ).toBe("SELECTED");
+    ).toBe("ACTIVE");
 
     expect(
       resolveRequestStatus({
@@ -48,7 +48,7 @@ describe("request-status-engine", () => {
         needsAdminReview: true,
         event: "selected_driver_assigned",
       }).status,
-    ).toBe("SELECTED");
+    ).toBe("ACTIVE");
   });
 
   it("keeps locked statuses unchanged for sync/update events", () => {
@@ -91,7 +91,7 @@ describe("request-status-engine", () => {
           needsAdminReview: true,
           event,
         }).status,
-      ).toBe("SELECTED");
+      ).toBe("ACTIVE");
     }
   });
 });

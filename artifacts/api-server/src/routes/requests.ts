@@ -484,6 +484,192 @@ router.get("/:id", requireAuth(), async (req, res) => {
   }
 });
 
+router.patch("/:id/client", requireAuth("client"), async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+
+  const parsed = CreateRequestBody.partial().safeParse(req.body);
+  if (!parsed.success || Object.keys(parsed.data).length === 0) {
+    res.status(400).json({ error: "بيانات التعديل غير صحيحة" });
+    return;
+  }
+
+  try {
+    const clientId = getSessionUser(req)!.id;
+    const existing = await db.query.requestsTable.findFirst({ where: eq(requestsTable.id, id) });
+    if (!existing) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+    if (existing.clientId == null || existing.clientId !== clientId) {
+      res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
+      return;
+    }
+    if (existing.selectedDriverId != null || (existing.status !== "OPEN" && existing.status !== "FROZEN")) {
+      res.status(400).json({ error: "لا يمكن تعديل الطلب بعد اختيار سائق" });
+      return;
+    }
+
+    const next = { ...existing, ...parsed.data };
+    let distanceKm: number | null = next.distanceKm ?? null;
+    if (
+      next.homeLat != null &&
+      next.homeLng != null &&
+      next.destLat != null &&
+      next.destLng != null
+    ) {
+      distanceKm = haversineKm(next.homeLat, next.homeLng, next.destLat, next.destLng);
+    }
+
+    let monthlyPrice = toNum(existing.monthlyPrice);
+    let needsAdminReview = Boolean(existing.needsAdminReview);
+    if (distanceKm != null) {
+      const pricing = await calculatePriceForRequest({
+        distanceKm,
+        numberOfPeople: next.numberOfPeople ?? 1,
+        workingDaysPerWeek: next.workingDaysPerWeek ?? 5,
+        numberOfShifts: next.numberOfShifts ?? 1,
+        eveningTime: next.eveningTime ?? null,
+        shifts: (next.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
+        additionalLocations:
+          (next.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
+      });
+      monthlyPrice = pricing.price;
+      needsAdminReview = pricing.needsAdminReview;
+    }
+
+    const resolved = resolveRequestStatus({
+      currentStatus: existing.status as RequestStatus,
+      selectedDriverId: existing.selectedDriverId,
+      needsAdminReview,
+      event: "background_sync",
+    });
+
+    const [updated] = await db
+      .update(requestsTable)
+      .set({
+        homeLocation: next.homeLocation,
+        workLocation: next.workLocation,
+        homeLat: next.homeLat ?? null,
+        homeLng: next.homeLng ?? null,
+        destLat: next.destLat ?? null,
+        destLng: next.destLng ?? null,
+        distanceKm,
+        additionalLocations:
+          (next.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
+        shifts: (next.shifts as { label?: string; goTime?: string; returnTime?: string }[] | undefined) ?? null,
+        phone: next.phone,
+        numberOfPeople: next.numberOfPeople,
+        workingDaysPerWeek: next.workingDaysPerWeek,
+        numberOfShifts: next.numberOfShifts ?? 1,
+        morningTime: next.morningTime,
+        eveningTime: next.eveningTime ?? null,
+        notes: next.notes ?? null,
+        clientType: next.clientType ?? existing.clientType,
+        monthlyPrice,
+        needsAdminReview,
+        status: resolved.status,
+        statusManuallySetByAdmin: false,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(requestsTable.id, id), eq(requestsTable.clientId, clientId)))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+
+    logRequestStatusTransition({
+      requestId: id,
+      previousStatus: existing.status as RequestStatus,
+      nextStatus: updated.status as RequestStatus,
+      reason: resolved.reason,
+      event: "background_sync",
+    });
+
+    await logActivity({
+      actorId: clientId,
+      actorRole: "client",
+      action: "request.updated_by_client",
+      entity: "requests",
+      entityId: id,
+      metadata: { previousStatus: existing.status, newStatus: updated.status },
+      req,
+    });
+
+    res.json(formatRequest(req, updated, null));
+  } catch (err) {
+    logger.error({ err }, "requests PATCH /:id/client error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
+});
+
+router.post("/:id/cancel", requireAuth("client"), async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  try {
+    const clientId = getSessionUser(req)!.id;
+    const existing = await db.query.requestsTable.findFirst({ where: eq(requestsTable.id, id) });
+    if (!existing) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+    if (existing.clientId == null || existing.clientId !== clientId) {
+      res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
+      return;
+    }
+    if (existing.selectedDriverId != null || (existing.status !== "OPEN" && existing.status !== "FROZEN")) {
+      res.status(400).json({ error: "لا يمكن إلغاء الطلب بعد اختيار سائق" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(requestsTable)
+      .set({
+        status: "CANCELLED",
+        statusManuallySetByAdmin: false,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(requestsTable.id, id), eq(requestsTable.clientId, clientId)))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+
+    logRequestStatusTransition({
+      requestId: id,
+      previousStatus: existing.status as RequestStatus,
+      nextStatus: "CANCELLED",
+      reason: "client_cancelled_before_driver_selection",
+      event: "background_sync",
+    });
+
+    await logActivity({
+      actorId: clientId,
+      actorRole: "client",
+      action: "request.cancelled_by_client",
+      entity: "requests",
+      entityId: id,
+      metadata: { previousStatus: existing.status, newStatus: "CANCELLED" },
+      req,
+    });
+
+    res.json(formatRequest(req, updated, null));
+  } catch (err) {
+    logger.error({ err }, "requests POST /:id/cancel error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
+});
+
 router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {

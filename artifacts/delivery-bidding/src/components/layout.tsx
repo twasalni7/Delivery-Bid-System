@@ -342,14 +342,16 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
               <div className="rounded-xl p-0.5" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <NotificationsBell />
               </div>
-              <button
-                onClick={logout}
-                className="touch-compact p-2 rounded-xl transition-colors"
-                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
-                title="تسجيل خروج"
-              >
-                <LogOut size={16} />
-              </button>
+              {role === "client" && (
+                <button
+                  onClick={logout}
+                  className="touch-compact p-2 rounded-xl transition-colors"
+                  style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
+                  title="تسجيل خروج"
+                >
+                  <LogOut size={16} />
+                </button>
+              )}
             </div>
           )}
         </div>

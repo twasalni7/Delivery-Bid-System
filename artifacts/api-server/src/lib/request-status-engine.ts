@@ -57,14 +57,14 @@ export function resolveRequestStatus(input: ResolveRequestStatusInput): {
 } {
   if (input.event === "offer_selected" || input.event === "selected_driver_assigned") {
     return {
-      status: "SELECTED",
-      reason: "driver_selected_event",
+      status: "ACTIVE",
+      reason: "driver_selected_and_activated",
     };
   }
 
   if (input.event === "request_created") {
     if (input.selectedDriverId != null) {
-      return { status: "SELECTED", reason: "created_with_selected_driver" };
+      return { status: "ACTIVE", reason: "created_with_selected_driver" };
     }
     if (Boolean(input.needsAdminReview)) {
       return { status: "FROZEN", reason: "created_with_admin_review_required" };
@@ -77,7 +77,7 @@ export function resolveRequestStatus(input: ResolveRequestStatusInput): {
   }
 
   if (input.selectedDriverId != null) {
-    return { status: "SELECTED", reason: "selected_driver_present" };
+    return { status: "ACTIVE", reason: "selected_driver_present" };
   }
   if (Boolean(input.needsAdminReview)) {
     return { status: "FROZEN", reason: "admin_review_required" };
