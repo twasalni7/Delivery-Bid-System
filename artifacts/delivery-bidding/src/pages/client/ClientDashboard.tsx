@@ -83,12 +83,12 @@ export default function ClientDashboard() {
 
   return (
     <Layout role="client">
-      <div dir="rtl">
+      <div dir="rtl" className="space-y-5">
         {/* Page title */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-2 px-1">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكاتي</h1>
+              <h1 className="text-[1.8rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكي الحالي</h1>
               {totalUnread > 0 && (
                 <span className="inline-flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full"
                   style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
@@ -96,20 +96,21 @@ export default function ClientDashboard() {
                 </span>
               )}
             </div>
-            <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>اشتراكات التوصيل الشهري</p>
+            <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>لوحة متابعة الاشتراكات الشهرية</p>
           </div>
         </div>
 
         {/* CTA button */}
         <Link href="/client/request/new">
-          <div className="w-full mb-6 btn-primary">
-            <span className="text-2xl leading-none">+</span>
-            اشتراك شهري جديد
+          <div className="w-full mb-4 rounded-3xl px-5 py-4 flex items-center justify-center gap-2 text-lg font-black"
+            style={{ background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)", boxShadow: "0 16px 34px rgba(200,16,46,0.45)" }}>
+            <span className="text-2xl leading-none">⊕</span>
+            طلب اشتراك جديد
           </div>
         </Link>
 
         {/* Push notifications opt-in */}
-        <div className="mb-5">
+        <div className="mb-3">
           <EnablePushButton />
         </div>
 
@@ -166,7 +167,7 @@ export default function ClientDashboard() {
         )}
 
         {filteredRequests.length > 0 && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {filteredRequests.map((req) => {
               const offerCount = req.offerCount ?? 0;
               const unread = unreadMap[req.id] ?? 0;
@@ -177,7 +178,7 @@ export default function ClientDashboard() {
               return (
                 <Link key={req.id} href={`/client/request/${req.id}`}>
                   <div className="rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
-                    style={{ backgroundColor: "var(--surface)", border: `1px solid ${unread > 0 ? "var(--brand-border)" : "var(--border-subtle)"}` }}>
+                    style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: `1px solid ${unread > 0 ? "var(--brand-border)" : "rgba(255,255,255,0.1)"}` }}>
                     {/* Status header */}
                     <div className="p-5" style={{ backgroundColor: statusStyle.bg, borderBottom: `1px solid ${statusStyle.border}` }}>
                       <div className="flex items-start justify-between">
@@ -278,7 +279,7 @@ export default function ClientDashboard() {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                         <span className="text-sm font-black" style={{ color: "var(--brand)" }}>
                           {req.status === "SELECTED" || req.status === "ACTIVE"
                             ? "عرض تفاصيل الرحلات اليومية ‹"

@@ -265,9 +265,9 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
   const navLinks: NavLink[] =
     role === "client"
       ? [
-          { href: "/client",         label: "اشتراكاتي", icon: Home },
-          { href: "/client/support", label: "الدعم",      icon: LifeBuoy },
-          { href: "/client/profile", label: "حسابي",      icon: User },
+          { href: "/client/profile", label: "الحساب",   icon: User },
+          { href: "/client",         label: "الرئيسية", icon: Home },
+          { href: "/client/support", label: "المزيد",   icon: LifeBuoy },
         ]
       : [
           { href: "/driver/dashboard", label: "الطلبات",   icon: Home },
@@ -288,36 +288,41 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
         minHeight: "100dvh",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "var(--bg-page)",
+        background: "radial-gradient(120% 120% at 12% 10%, rgba(32,71,122,0.24) 0%, rgba(10,10,16,0.98) 38%, #06080d 100%)",
         fontFamily: "var(--font-arabic)",
       }}
     >
       {/* Header */}
       <header
         className="sticky top-0 z-30"
-        style={{ backgroundColor: "var(--header-bg)", borderBottom: "1px solid var(--header-border)", height: "var(--header-height)" }}
+        style={{ background: "linear-gradient(180deg, rgba(5,8,15,0.96) 0%, rgba(5,8,15,0.78) 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(8px)" }}
       >
-        <div className="mx-auto px-4 h-full flex items-center justify-between max-w-xl">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand)" }}>
-              <MapPin size={18} style={{ color: "var(--brand-fg)" }} strokeWidth={2.5} />
+        <div className="mx-auto px-4 py-3 flex items-center justify-between max-w-xl">
+          <Link href={role === "client" ? "/client" : "/driver/dashboard"} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black shadow-lg" style={{ background: "linear-gradient(145deg, #f5f6fa 0%, #d7d9e2 100%)", color: "#0f172a" }}>
+              {(user?.name ?? "م").charAt(0)}
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-bold text-base leading-none" style={{ color: "var(--brand)" }}>توصّلني</span>
-              <span className="text-xs hidden sm:block" style={{ color: "var(--text-muted)" }}>اشتراكات التوصيل الشهري</span>
+            <div className="leading-tight">
+              <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>مرحباً {user?.name ?? ""}</p>
+              <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                {role === "client" ? "أهلاً بك في بوابة العميل" : "لوحة السائق"}
+              </p>
             </div>
           </Link>
 
           {/* Right side actions */}
           {user && (
             <div className="flex items-center gap-1.5">
-              <ThemeToggle />
-              <NotificationsBell />
+              <div className="hidden sm:block">
+                <ThemeToggle />
+              </div>
+              <div className="rounded-xl p-0.5" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <NotificationsBell />
+              </div>
               <button
                 onClick={logout}
                 className="touch-compact p-2 rounded-xl transition-colors"
-                style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)", minHeight: "auto", minWidth: "auto" }}
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
                 title="تسجيل خروج"
               >
                 <LogOut size={16} />
@@ -328,40 +333,37 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
       </header>
 
       {/* Content */}
-      <main className="flex-1 mx-auto w-full px-4 py-6 max-w-xl pb-32">
+      <main className="flex-1 mx-auto w-full px-4 py-5 max-w-xl pb-32">
         {children}
       </main>
 
       {/* Bottom tab nav */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-30 flex"
+        className="fixed bottom-0 inset-x-0 z-30 px-3 pb-2"
         style={{
-          backgroundColor: "var(--header-bg)",
-          borderTop: "1px solid var(--border)",
-          paddingBottom: "env(safe-area-inset-bottom)",
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)",
         }}
       >
-        {navLinks.map((link) => {
-          const Icon = link.icon;
-          const active = isActive(link.href);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] font-semibold transition-colors"
-              style={active ? { color: "var(--brand)" } : { color: "var(--text-hint)" }}
-            >
-              <div
-                className="p-1.5 rounded-xl transition-all"
-                style={active ? { backgroundColor: "var(--brand-subtle)" } : {}}
+        <div
+          className="mx-auto max-w-xl w-full rounded-[1.4rem] border px-1 py-1.5 flex"
+          style={{ background: "linear-gradient(180deg, rgba(13,18,29,0.96) 0%, rgba(9,12,20,0.98) 100%)", borderColor: "rgba(255,255,255,0.1)", boxShadow: "0 18px 45px rgba(0,0,0,0.55)" }}
+        >
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors rounded-xl"
+                style={active ? { color: "var(--brand-fg)", background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)" } : { color: "var(--text-hint)" }}
               >
-                <Icon size={20} style={{ color: active ? "var(--brand)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.75} />
-              </div>
-              <span>{link.label}</span>
-            </Link>
-          );
-        })}
+                <Icon size={19} style={{ color: active ? "var(--brand-fg)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.8} />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

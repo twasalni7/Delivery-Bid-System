@@ -485,7 +485,7 @@ export default function MapPicker({
             type="button"
             onClick={() => setIsPickerOpen(true)}
             className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 text-right"
-            style={{ border: "1px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}
+            style={{ border: "1px solid rgba(255,255,255,0.14)", background: "linear-gradient(130deg, rgba(17,28,46,0.85) 0%, rgba(8,13,23,0.95) 100%)" }}
           >
             <Expand size={20} style={{ color: "var(--brand)" }} />
             <div className="flex-1 min-w-0">
@@ -501,7 +501,7 @@ export default function MapPicker({
           {isPickerOpen && createPortal(
             <div
               className="fixed inset-0 z-[1200]"
-              style={{ backgroundColor: "var(--bg)" }}
+              style={{ background: "radial-gradient(120% 120% at 12% 10%, rgba(32,71,122,0.25) 0%, rgba(9,13,22,0.98) 42%, #05070c 100%)" }}
               role="dialog"
               aria-modal="true"
               aria-labelledby="map-picker-title"
@@ -511,8 +511,8 @@ export default function MapPicker({
                   className="flex-shrink-0 z-[1300] px-3 pb-2 space-y-2"
                   style={{
                     paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
-                    backgroundColor: "var(--bg)",
-                    borderBottom: "1px solid var(--border-subtle)",
+                    background: "linear-gradient(180deg, rgba(5,8,15,0.94) 0%, rgba(5,8,15,0.85) 100%)",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -525,8 +525,8 @@ export default function MapPicker({
                       className="flex items-center gap-1.5 px-4 rounded-xl font-black text-sm flex-shrink-0"
                       style={{
                         minHeight: "44px",
-                        border: "1px solid var(--border)",
-                        backgroundColor: "var(--surface-2)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        backgroundColor: "rgba(255,255,255,0.05)",
                         color: "var(--text-sub)",
                       }}
                     >
@@ -551,8 +551,8 @@ export default function MapPicker({
                 <div
                   className="flex-shrink-0 z-[1300] p-3 flex flex-col gap-2"
                   style={{
-                    backgroundColor: "var(--bg)",
-                    borderTop: "1px solid var(--border-subtle)",
+                    background: "linear-gradient(180deg, rgba(5,8,15,0.9) 0%, rgba(5,8,15,0.98) 100%)",
+                    borderTop: "1px solid rgba(255,255,255,0.08)",
                     paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
                   }}
                 >
@@ -561,7 +561,7 @@ export default function MapPicker({
                     onClick={handleLocateMe}
                     disabled={locating}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "52px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                    style={{ minHeight: "52px", backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text)" }}
                   >
                     {locating ? <Loader2 size={20} className="animate-spin" /> : <Navigation size={20} />}
                     <span>{locating ? "جاري تحديد موقعك..." : "📍 تحديد موقعي الحالي"}</span>
@@ -572,7 +572,7 @@ export default function MapPicker({
                     onClick={handleConfirmSelection}
                     disabled={!pendingSelection || geocoding || loading}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "56px", backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                    style={{ minHeight: "56px", background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)" }}
                   >
                     <CheckCircle2 size={22} />
                     <span>✅ تأكيد الموقع</span>
@@ -590,7 +590,7 @@ export default function MapPicker({
                 type="button"
                 onClick={() => setIsInlineExpanded(true)}
                 className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 text-right"
-                style={{ border: "1px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}
+                style={{ border: "1px solid rgba(255,255,255,0.14)", background: "linear-gradient(130deg, rgba(17,28,46,0.85) 0%, rgba(8,13,23,0.95) 100%)" }}
               >
                 <Expand size={20} style={{ color: "var(--brand)" }} />
                 <div className="flex-1 min-w-0">
