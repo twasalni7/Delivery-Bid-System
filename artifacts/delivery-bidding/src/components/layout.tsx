@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LogOut, Menu, Home, FileText, User, LifeBuoy, Settings,
   Users, Car, BarChart2, ClipboardList, DollarSign, Activity,
-  MapPin, Search, ChevronRight, Sun, Moon, Coffee, Bell, Database,
+  MapPin, Search, ChevronRight, Sun, Moon, Coffee, Bell, Database, MoreHorizontal,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme, Theme } from "@/contexts/theme-context";
@@ -261,20 +261,31 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
 function MobileLayout({ children, role }: { children: React.ReactNode; role: "client" | "driver" }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [driverSideMenuOpen, setDriverSideMenuOpen] = useState(false);
+  const displayName = user?.name?.trim() || "مستخدم";
+  const displayInitial = displayName.charAt(0);
 
   const navLinks: NavLink[] =
     role === "client"
       ? [
-          { href: "/client",         label: "اشتراكاتي", icon: Home },
-          { href: "/client/support", label: "الدعم",      icon: LifeBuoy },
-          { href: "/client/profile", label: "حسابي",      icon: User },
+          { href: "/client/profile", label: "الحساب",   icon: User },
+          { href: "/client",         label: "الرئيسية", icon: Home },
+          { href: "/client/support", label: "المزيد",   icon: LifeBuoy },
         ]
       : [
-          { href: "/driver/dashboard", label: "الطلبات",   icon: Home },
-          { href: "/driver/requests",  label: "الاتفاقات", icon: ClipboardList },
-          { href: "/driver/support",   label: "الدعم",     icon: LifeBuoy },
-          { href: "/driver/profile",   label: "حسابي",     icon: User },
+          { href: "/driver/profile",   label: "الحساب",    icon: User },
+          { href: "/driver/dashboard", label: "طلباتي",    icon: Home },
+          { href: "/driver/requests",  label: "اشتراكاتي", icon: ClipboardList },
+          { href: "/driver/support",   label: "المزيد",    icon: MoreHorizontal },
         ];
+
+  const driverSideLinks: NavLink[] = [
+    { href: "/driver/dashboard", label: "الرئيسية", icon: Home },
+    { href: "/driver/requests", label: "طلباتي", icon: ClipboardList },
+    { href: "/driver/profile", label: "الملف الشخصي", icon: User },
+    { href: "/driver/support", label: "المساعدة والدعم", icon: LifeBuoy },
+    { href: "/driver/notifications", label: "الإشعارات", icon: Bell },
+  ];
 
   const isActive = (href: string) =>
     href === "/client" || href === "/driver/dashboard"
@@ -288,36 +299,53 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
         minHeight: "100dvh",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "var(--bg-page)",
+        background: "radial-gradient(120% 120% at 12% 10%, rgba(32,71,122,0.24) 0%, rgba(10,10,16,0.98) 38%, #06080d 100%)",
         fontFamily: "var(--font-arabic)",
       }}
     >
       {/* Header */}
       <header
         className="sticky top-0 z-30"
-        style={{ backgroundColor: "var(--header-bg)", borderBottom: "1px solid var(--header-border)", height: "var(--header-height)" }}
+        style={{ background: "linear-gradient(180deg, rgba(5,8,15,0.96) 0%, rgba(5,8,15,0.78) 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(8px)" }}
       >
-        <div className="mx-auto px-4 h-full flex items-center justify-between max-w-xl">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand)" }}>
-              <MapPin size={18} style={{ color: "var(--brand-fg)" }} strokeWidth={2.5} />
+        <div className="mx-auto px-4 py-3 flex items-center justify-between max-w-xl">
+          <div className="flex items-center gap-2.5">
+            {role === "driver" && (
+              <button
+                onClick={() => setDriverSideMenuOpen(true)}
+                className="touch-compact p-2 rounded-xl transition-colors"
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
+                title="القائمة"
+              >
+                <Menu size={16} />
+              </button>
+            )}
+            <Link href={role === "client" ? "/client" : "/driver/dashboard"} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black shadow-lg" style={{ background: "linear-gradient(145deg, #f5f6fa 0%, #d7d9e2 100%)", color: "#0f172a" }}>
+              {displayInitial}
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-bold text-base leading-none" style={{ color: "var(--brand)" }}>توصّلني</span>
-              <span className="text-xs hidden sm:block" style={{ color: "var(--text-muted)" }}>اشتراكات التوصيل الشهري</span>
+            <div className="leading-tight">
+              <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>مرحباً {displayName}</p>
+              <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                {role === "client" ? "أهلاً بك في بوابة العميل" : "لوحة السائق"}
+              </p>
             </div>
-          </Link>
+            </Link>
+          </div>
 
           {/* Right side actions */}
           {user && (
             <div className="flex items-center gap-1.5">
-              <ThemeToggle />
-              <NotificationsBell />
+              <div className="hidden sm:block">
+                <ThemeToggle />
+              </div>
+              <div className="rounded-xl p-0.5" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <NotificationsBell />
+              </div>
               <button
                 onClick={logout}
                 className="touch-compact p-2 rounded-xl transition-colors"
-                style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)", minHeight: "auto", minWidth: "auto" }}
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
                 title="تسجيل خروج"
               >
                 <LogOut size={16} />
@@ -327,41 +355,107 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
         </div>
       </header>
 
+      {role === "driver" && driverSideMenuOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="إغلاق القائمة"
+            onClick={() => setDriverSideMenuOpen(false)}
+            className="fixed inset-0 z-40"
+            style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+          />
+          <aside
+            className="fixed top-0 right-0 z-50 h-full w-[82%] max-w-[320px] p-4"
+            style={{ background: "linear-gradient(160deg, rgba(16,24,39,0.97) 0%, rgba(5,9,18,0.98) 100%)", borderLeft: "1px solid rgba(255,255,255,0.1)", boxShadow: "-20px 0 45px rgba(0,0,0,0.5)" }}
+          >
+            <div className="h-full rounded-3xl px-4 py-5 flex flex-col" style={{ background: "linear-gradient(180deg, rgba(17,28,46,0.55) 0%, rgba(7,11,19,0.75) 100%)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center justify-between pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black" style={{ background: "linear-gradient(145deg, #f5f6fa 0%, #d7d9e2 100%)", color: "#0f172a" }}>
+                    {displayInitial}
+                  </div>
+                  <div>
+                    <p className="font-black text-base" style={{ color: "var(--text)" }}>{displayName}</p>
+                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>سائق نشط</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDriverSideMenuOpen(false)}
+                  className="touch-compact p-2 rounded-xl transition-colors"
+                  style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
+                  title="إغلاق"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+              <div className="flex-1 py-4 space-y-1.5">
+                {driverSideLinks.map((link) => {
+                  const Icon = link.icon;
+                  const active = isActive(link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setDriverSideMenuOpen(false)}
+                      className="w-full flex items-center justify-between gap-3 px-3 py-3 rounded-2xl text-sm font-black"
+                      style={active
+                        ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
+                        : { color: "var(--text-sub)" }}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Icon size={17} />
+                        {link.label}
+                      </span>
+                      <ChevronRight size={14} style={{ transform: "scaleX(-1)" }} />
+                    </Link>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => { setDriverSideMenuOpen(false); logout(); }}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-black"
+                style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.35)" }}
+              >
+                <LogOut size={15} />
+                تسجيل الخروج
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
+
       {/* Content */}
-      <main className="flex-1 mx-auto w-full px-4 py-6 max-w-xl pb-32">
+      <main className="flex-1 mx-auto w-full px-4 py-5 max-w-xl pb-32">
         {children}
       </main>
 
       {/* Bottom tab nav */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-30 flex"
+        className="fixed bottom-0 inset-x-0 z-30 px-3 pb-2"
         style={{
-          backgroundColor: "var(--header-bg)",
-          borderTop: "1px solid var(--border)",
-          paddingBottom: "env(safe-area-inset-bottom)",
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)",
         }}
       >
-        {navLinks.map((link) => {
-          const Icon = link.icon;
-          const active = isActive(link.href);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] font-semibold transition-colors"
-              style={active ? { color: "var(--brand)" } : { color: "var(--text-hint)" }}
-            >
-              <div
-                className="p-1.5 rounded-xl transition-all"
-                style={active ? { backgroundColor: "var(--brand-subtle)" } : {}}
+        <div
+          className="mx-auto max-w-xl w-full rounded-[1.4rem] border px-1 py-1.5 flex"
+          style={{ background: "linear-gradient(180deg, rgba(13,18,29,0.96) 0%, rgba(9,12,20,0.98) 100%)", borderColor: "rgba(255,255,255,0.1)", boxShadow: "0 18px 45px rgba(0,0,0,0.55)" }}
+        >
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors rounded-xl"
+                style={active ? { color: "var(--brand-fg)", background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)" } : { color: "var(--text-hint)" }}
               >
-                <Icon size={20} style={{ color: active ? "var(--brand)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.75} />
-              </div>
-              <span>{link.label}</span>
-            </Link>
-          );
-        })}
+                <Icon size={19} style={{ color: active ? "var(--brand-fg)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.8} />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );
