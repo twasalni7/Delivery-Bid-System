@@ -46,6 +46,7 @@ const nativeExternals = [
   "firebase-admin",
   "@parcel/watcher",
   "@sentry/profiling-node",
+  "@sentry/*",
   "@tree-sitter/*",
   "aws-sdk",
   "classic-level",
