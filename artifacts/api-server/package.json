@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@sentry/node": "^10.52.0",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/express-session": "^1.18.2",
     "@workspace/api-zod": "workspace:*",

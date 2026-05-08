@@ -1,4 +1,5 @@
 import express, { type ErrorRequestHandler } from "express";
+import * as Sentry from "@sentry/node";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -7,6 +8,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
 import { csrfProtection } from "./middleware/csrfProtection";
+import { errorLogger } from "./middleware/errorLogger";
 import { resolveTokenUser } from "./middleware/resolveTokenUser";
 
 const app = express();
@@ -145,6 +147,10 @@ app.get("/", (_req, res) => {
 
 app.use("/api", router);
 
+app.get("/debug-sentry", (_req, _res) => {
+  throw new Error("My first Sentry error!");
+});
+
 // Global error handler — returns JSON instead of the default HTML error page
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
@@ -157,6 +163,8 @@ const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     ...(isProduction ? {} : { stack: (err as Error)?.stack }),
   });
 };
+Sentry.setupExpressErrorHandler(app);
+app.use(errorLogger);
 app.use(globalErrorHandler);
 
 export default app;
