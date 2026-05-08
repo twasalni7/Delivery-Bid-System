@@ -86,16 +86,16 @@ export default function DriverDashboard() {
 
   return (
     <Layout role="driver">
-      <div dir="rtl">
+      <div dir="rtl" className="space-y-5">
         {/* Page title */}
-        <div className="mb-6">
-          <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>لوحة السائق</h1>
-          <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>الاشتراكات والطلبات</p>
+        <div className="mb-3">
+          <h1 className="text-[1.85rem] font-black tracking-tight" style={{ color: "var(--text)" }}>بوابة السائق</h1>
+          <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>إدارة طلباتك واشتراكاتك اليومية</p>
         </div>
 
         {/* Driver info card */}
         {driver && (
-          <div className="rounded-3xl p-5 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <div className="rounded-3xl p-5 mb-5" style={{ background: "linear-gradient(155deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 58%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
             <div className="flex items-center justify-between mb-5">
               <div>
                 <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{driver.name}</p>
@@ -123,7 +123,7 @@ export default function DriverDashboard() {
 
         {/* Low balance warning */}
         {!hasEnoughBalance && driver && (
-          <div className="flex items-start gap-3 rounded-2xl px-5 py-4 mb-6" style={{ backgroundColor: "var(--status-open-bg)", border: "1px solid var(--status-open-border)" }}>
+          <div className="flex items-start gap-3 rounded-2xl px-5 py-4 mb-5" style={{ backgroundColor: "rgba(217,119,6,0.18)", border: "1px solid rgba(217,119,6,0.35)" }}>
             <AlertTriangle size={18} className="text-amber-400 mt-0.5 shrink-0" />
             <div>
               <p className="font-black text-amber-300 text-sm">رصيد غير كافٍ</p>
@@ -140,15 +140,15 @@ export default function DriverDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black whitespace-nowrap transition-all"
               style={activeTab === tab.id
-                ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}
+                ? { background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)", color: "var(--brand-fg)" }
+                : { backgroundColor: "rgba(255,255,255,0.05)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.1)" }}
             >
               <span>{tab.icon}</span>
               {tab.label}
@@ -182,9 +182,9 @@ export default function DriverDashboard() {
                   const emoji = CLIENT_TYPE_EMOJI[clientTypeLabel] ?? "📦";
                   const offerCount = (req as any).offerCount ?? 0;
                   return (
-                    <div key={req.id} className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+                    <div key={req.id} className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
                       {/* Card header */}
-                      <div className="p-5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+                      <div className="p-5" style={{ backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <span className="text-3xl">{emoji}</span>
@@ -193,7 +193,7 @@ export default function DriverDashboard() {
                               <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>REQ-{String(req.id).padStart(3, "0")}</p>
                             </div>
                           </div>
-                          <div className="rounded-2xl px-4 py-2 text-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                          <div className="rounded-2xl px-4 py-2 text-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", minWidth: "88px" }}>
                             {(req as any).numberOfPeople > 1 ? (
                               <>
                                 <p className="font-black text-2xl" style={{ color: "var(--brand)" }} dir="ltr">
@@ -287,7 +287,7 @@ export default function DriverDashboard() {
                           </div>
                         )}
 
-                        <div className="pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                        <div className="pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                           {hasEnoughBalance ? (
                             <Link href={`/driver/request/${req.id}`}>
                               <div className="btn-primary w-full">
@@ -328,8 +328,8 @@ export default function DriverDashboard() {
               </div>
             )}
             {mySelectedJobs.map((req) => (
-              <div key={req.id} className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>
-                <div className="p-5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div key={req.id} className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid var(--brand-border)" }}>
+                <div className="p-5" style={{ backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <CheckCircle size={16} style={{ color: "var(--brand)" }} />

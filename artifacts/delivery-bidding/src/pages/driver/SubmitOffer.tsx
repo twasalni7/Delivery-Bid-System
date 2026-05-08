@@ -65,14 +65,14 @@ export default function SubmitOffer() {
   return (
     <Layout role="driver">
       <div dir="rtl" className="pb-6">
-        <Link href="/driver/dashboard" className="inline-flex items-center gap-1 text-sm font-bold transition-colors mb-5"
-          style={{ color: "var(--text-muted)" }}>
+        <Link href="/driver/dashboard" className="inline-flex items-center gap-1 text-sm font-bold transition-colors mb-5 px-3 py-2 rounded-xl"
+          style={{ color: "var(--text-muted)", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <ArrowRight size={14} /> العودة للوحة السائق
         </Link>
 
         {/* Request Card */}
-        <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <div className="p-5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+        <div className="rounded-3xl overflow-hidden mb-5" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div className="p-5" style={{ backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-black px-3 py-1 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>مفتوح</span>
               <span className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>REQ-{String(request.id).padStart(3, "0")}</span>
@@ -168,7 +168,7 @@ export default function SubmitOffer() {
             </div>
           </div>
 
-          <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+          <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex gap-1.5 flex-wrap">
               {DAYS_AR.map((d, i) => {
                 const active = i < (request.workingDaysPerWeek ?? 5);
@@ -186,7 +186,7 @@ export default function SubmitOffer() {
         </div>
 
         {/* Monthly Price */}
-        <div className="rounded-3xl p-6 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+        <div className="rounded-3xl p-6 mb-5" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
           <p className="text-sm font-bold mb-3 text-center" style={{ color: "var(--text-muted)" }}>السعر الشهري المحدد من العميل</p>
           {(request as any).numberOfPeople > 1 ? (
             <div className="flex items-end justify-between gap-4">
@@ -214,8 +214,8 @@ export default function SubmitOffer() {
         </div>
 
         {/* Accept Button */}
-        <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+        <div className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
             <h2 className="font-black" style={{ color: "var(--text)" }}>هل تقبل هذا الطلب؟</h2>
             <p className="text-xs mt-0.5 font-bold" style={{ color: "var(--text-muted)" }}>بالقبول ستظهر في قائمة اختيارات العميل</p>
           </div>
@@ -223,14 +223,15 @@ export default function SubmitOffer() {
             <button
               onClick={handleAccept}
               disabled={createOffer.isPending}
-              className="w-full btn-primary disabled:opacity-50"
+              className="w-full disabled:opacity-50 rounded-2xl py-3.5 font-black text-base flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)" }}
             >
               <CheckCircle size={20} />
               {createOffer.isPending ? "جاري القبول..." : "قبول الطلب"}
             </button>
             <Link href="/driver/dashboard">
               <div className="w-full py-3.5 rounded-2xl text-center font-bold text-sm cursor-pointer"
-                style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+                style={{ backgroundColor: "rgba(255,255,255,0.05)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 تجاهل
               </div>
             </Link>

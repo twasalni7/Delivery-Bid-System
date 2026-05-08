@@ -117,9 +117,9 @@ export default function DriverRequests() {
 
   return (
     <Layout role="driver">
-      <div dir="rtl">
-        <div className="mb-7">
-          <h1 className="text-[1.9rem] font-black tracking-tight" style={{ color: "var(--text)" }}>قائمة الاتفاقات</h1>
+      <div dir="rtl" className="space-y-4">
+        <div className="mb-3">
+          <h1 className="text-[1.85rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكاتي</h1>
           <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>الطلبات التي تم اختيارك فيها</p>
         </div>
 
@@ -128,8 +128,8 @@ export default function DriverRequests() {
             <button key={f} onClick={() => setFilter(f)}
               className="px-5 py-2.5 rounded-full text-sm font-black transition-all"
               style={filter === f
-                ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                ? { background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)", color: "var(--brand-fg)" }
+                : { backgroundColor: "rgba(255,255,255,0.05)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {label}
             </button>
           ))}
@@ -154,10 +154,10 @@ export default function DriverRequests() {
 
         <div className="space-y-5">
           {filtered.map((r) => (
-            <div key={r.id} className="rounded-3xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div key={r.id} className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {/* Card header */}
               <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-2"
-                style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+                style={{ backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>طلب #{r.id}</span>
                 <span className={`text-xs px-3 py-1 rounded-full font-black ${STATUS_PILL[r.status] ?? "pill-completed"}`}>
                   {STATUS_LABELS[r.status] ?? r.status}
@@ -249,7 +249,7 @@ export default function DriverRequests() {
               </div>
 
               {/* Actions */}
-              <div className="px-5 pb-5 pt-3 space-y-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+              <div className="px-5 pb-5 pt-3 space-y-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                 {r.phone && (
                   <div className="flex items-center justify-between gap-3">
                     <a href={`tel:${r.phone}`} className="font-black text-sm" style={{ color: "var(--text-sub)" }} dir="ltr">{r.phone}</a>
