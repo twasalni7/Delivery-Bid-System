@@ -180,11 +180,12 @@ function PassengerCard({
   let statusText = "حدد موقع الانطلاق";
   if (hasPickup && !hasDropoff) statusText = "حدد موقع الوصول";
   if (hasPickup && hasDropoff) statusText = "تم تحديد الموقعين";
-  const dropoffInitialCenter = workCoords
-    ? [workCoords.lat, workCoords.lng] as [number, number]
-    : homeCoords
-      ? [homeCoords.lat, homeCoords.lng] as [number, number]
-      : undefined;
+  let dropoffInitialCenter: [number, number] | undefined;
+  if (workCoords) {
+    dropoffInitialCenter = [workCoords.lat, workCoords.lng];
+  } else if (homeCoords) {
+    dropoffInitialCenter = [homeCoords.lat, homeCoords.lng];
+  }
 
   return (
     <div className="rounded-[1.75rem] p-5 space-y-5" style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }}>
@@ -203,7 +204,7 @@ function PassengerCard({
               </span>
             )}
           </div>
-          <p className="text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
+          <p aria-live="polite" className="text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
             {statusText}
           </p>
         </div>
