@@ -99,6 +99,42 @@ router.get("/vapid-public-key", (_req, res) => {
 });
 
 /**
+ * GET /api/push/status
+ * Returns whether the current authenticated user has an active push subscription in DB.
+ */
+router.get("/status", requireAuth, async (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const row = await db.query.pushSubscriptionsTable.findFirst({
+      where: and(
+        eq(pushSubscriptionsTable.userId, user.id),
+        eq(pushSubscriptionsTable.userRole, user.role as "client" | "driver" | "admin")
+      ),
+      columns: { id: true },
+    });
+
+    res.json({ hasSubscription: !!row });
+  } catch (err) {
+    try {
+      const result = await pool.query(
+        `SELECT id FROM push_subscriptions WHERE user_id = $1 LIMIT 1`,
+        [user.id]
+      );
+      res.json({ hasSubscription: result.rows.length > 0 });
+    } catch {
+      logger.warn({ err, userId: user.id }, "push/status: DB query failed");
+      res.json({ hasSubscription: false });
+    }
+  }
+});
+
+
+/**
  * Normalizes any common PushSubscription shape received from browsers or
  * client code into the canonical form expected by the server:
  *   { endpoint: string, expirationTime: number|null, keys: { p256dh, auth } }

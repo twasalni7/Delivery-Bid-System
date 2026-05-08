@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { logout as callLogoutApi } from "@workspace/api-client-react";
 import type { AuthUser } from "@workspace/api-client-react";
 import { subscribeToPush, clearPushSubscriptionCache } from "@/lib/push-notifications";
 
 const LS_USER_KEY = "auth_user";
 const LS_TOKEN_KEY = "auth_token";
+const LS_PUSH_KEY = "push_subscribed"; // ← المفتاح اللي يسبب المشكلة
 
 function readStoredUser(): AuthUser | null {
   try {
@@ -27,6 +28,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(readStoredUser);
+  // نحتاج ref عشان نعرف إذا الـ user تغير من null إلى قيمة (تسجيل دخول جديد)
+  const prevUserIdRef = useRef<number | string | null>(null);
 
   const login = useCallback((data: AuthUser) => {
     const { token, ...userData } = data;
@@ -53,20 +56,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { currentToken = localStorage.getItem(LS_TOKEN_KEY); } catch { /* ignore */ }
     try { localStorage.removeItem(LS_TOKEN_KEY); } catch { /* ignore */ }
     try { localStorage.removeItem(LS_USER_KEY); } catch { /* ignore */ }
+    // ✅ الإصلاح: امسح push_subscribed عند تسجيل الخروج
+    // بهذا لما يسجل المستخدم دخول من جديد، يُعاد تسجيل الـ push token
+    try { localStorage.removeItem(LS_PUSH_KEY); } catch { /* ignore */ }
     setUser(null);
+    prevUserIdRef.current = null;
     // Fire server-side logout with the captured token so the DB record is deleted.
     void callLogoutApi(
       currentToken ? { headers: { Authorization: `Bearer ${currentToken}` } } : undefined
     ).catch(() => { /* non-critical */ });
   }, []);
 
-  // Only auto-subscribe when the user already granted permission in a previous session.
-  // Calling Notification.requestPermission() from a useEffect (non-user-gesture context)
-  // causes Chrome to show only a quiet address-bar chip which users often miss, effectively
-  // "using up" the prominent dialog before they can click the manual enable button.
+  // ✅ الإصلاح: عند تسجيل الدخول، تحقق من الـ push subscription وأعد تسجيلها إذا لزم
+  // هذا يحل مشكلة "يظهر الزر مرة واحدة فقط" لأننا نعيد التسجيل تلقائياً عند كل دخول
   useEffect(() => {
-    if (user && "Notification" in window && Notification.permission === "granted") {
+    if (!user) {
+      prevUserIdRef.current = null;
+      return;
+    }
+
+    const isNewLogin = prevUserIdRef.current !== user.id;
+    prevUserIdRef.current = user.id;
+
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission === "granted") {
+      // إذا الإذن ممنوح، اعد التسجيل دائماً عند تغيير المستخدم
+      // subscribeToPush ذكية: لو الـ subscription موجودة وصالحة، تعمل sync مع السيرفر فقط
       void subscribeToPush(user.role);
+    } else if (isNewLogin && Notification.permission === "default") {
+      // المستخدم جديد أو لم يمنح الإذن بعد — امسح الكاش عشان يظهر الزر من جديد
+      try { localStorage.removeItem(LS_PUSH_KEY); } catch { /* ignore */ }
     }
   }, [user]);
 

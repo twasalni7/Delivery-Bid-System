@@ -6,13 +6,8 @@ const PUSH_SUBSCRIBED_KEY = "push_subscribed";
 /**
  * usePushNotifications
  *
- * Hook يتحقق من إذن الإشعارات وحالة الاشتراك، ويوفر دالة لتفعيل
- * إشعارات الدفع للمستخدم الحالي.
- *
- * يتحقق أيضاً من أن الاشتراك المخزن لا يزال صالحاً في المتصفح؛
- * إذا انتهت صلاحيته يُعاد تعيين الكاش ويظهر الزر مجدداً.
- *
- * @param role - دور المستخدم ("driver" | "client" | "admin") لتوجيه الاشتراك للجدول الصحيح.
+ * ✅ الإصلاح: يتحقق من الـ backend أيضاً وليس فقط من localStorage
+ * هذا يحل مشكلة "الزر لا يظهر مرة ثانية" بعد انتهاء صلاحية الـ subscription
  */
 export function usePushNotifications(role?: string) {
   const [showNotificationButton, setShowNotificationButton] = useState(false);
@@ -25,22 +20,48 @@ export function usePushNotifications(role?: string) {
         setIsChecking(false);
         return;
       }
+
       const permission = Notification.permission;
+
+      // إذا المستخدم رفض الإشعارات من إعدادات المتصفح — لا داعي للزر
+      if (permission === "denied") {
+        setShowNotificationButton(false);
+        setIsChecking(false);
+        return;
+      }
+
       const isSubscribedLocal = localStorage.getItem(PUSH_SUBSCRIBED_KEY);
 
       if (permission === "granted" && isSubscribedLocal === "1") {
-        // Verify the browser-side subscription is still active.
-        // If the user cleared site data or the subscription expired, the cache
-        // will be stale — clear it so the enable button reappears.
+        // تحقق من أن الـ subscription في المتصفح لا تزال صالحة
         if ("serviceWorker" in navigator && "PushManager" in window) {
           try {
             const reg = await navigator.serviceWorker.ready;
             const existing = await reg.pushManager.getSubscription();
             if (!existing) {
+              // ✅ الـ subscription انتهت — أعد تعيين الكاش وأظهر الزر
               localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
               setShowNotificationButton(true);
               setIsChecking(false);
               return;
+            }
+            // ✅ الـ subscription موجودة في المتصفح — تأكد إنها مسجلة في السيرفر
+            // هذا يصلح حالة: المستخدم عنده subscription في المتصفح لكنها حُذفت من DB
+            try {
+              const { getAuthHeaders } = await import("@/lib/authed-fetch");
+              const { API_ORIGIN } = await import("@/lib/api-config");
+              const res = await fetch(`${API_ORIGIN}/api/push/status`, {
+                headers: getAuthHeaders(),
+              });
+              if (res.ok) {
+                const data = await res.json() as { hasSubscription?: boolean };
+                if (!data.hasSubscription) {
+                  // السيرفر ما عنده subscription — أعد التسجيل بصمت
+                  void subscribeToPush(role);
+                }
+              }
+            } catch {
+              // السيرفر غير متاح — نتجاهل ونكمل
             }
           } catch {
             // Cannot verify — optimistically hide the button
@@ -48,12 +69,13 @@ export function usePushNotifications(role?: string) {
         }
         setShowNotificationButton(false);
       } else {
+        // permission === "default" أو ما في كاش — أظهر الزر
         setShowNotificationButton(true);
       }
       setIsChecking(false);
     };
     void checkSubscription();
-  }, []);
+  }, [role]);
 
   const subscribeUserToPush = async (): Promise<PushSubscribeResult> => {
     setLastError(null);
