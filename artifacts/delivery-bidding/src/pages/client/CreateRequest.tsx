@@ -51,10 +51,16 @@ type ExtraPassenger = {
   workTime: string;
 };
 
+const PASSENGER_LOCATION_STATUS = {
+  start: "ابدأ بتحديد موقع الانطلاق",
+  dropoff: "حدد موقع الوصول",
+  complete: "تم تحديد الموقعين",
+} as const;
+
 function getPassengerLocationStatus(hasPickup: boolean, hasDropoff: boolean) {
-  if (!hasPickup) return "ابدأ بتحديد موقع الانطلاق";
-  if (!hasDropoff) return "حدد موقع الوصول";
-  return "تم تحديد الموقعين";
+  if (!hasPickup) return PASSENGER_LOCATION_STATUS.start;
+  if (!hasDropoff) return PASSENGER_LOCATION_STATUS.dropoff;
+  return PASSENGER_LOCATION_STATUS.complete;
 }
 
 function calculateDropoffMapCenter(homeCoords: MapCoords | null, workCoords: MapCoords | null): [number, number] | undefined {
@@ -209,7 +215,7 @@ function PassengerCard({
               </span>
             )}
           </div>
-          <p aria-live="polite" className="text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
+          <p role="status" aria-live="polite" className="text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
             {statusText}
           </p>
         </div>
@@ -279,7 +285,7 @@ function PassengerCard({
               </div>
             </>
           ) : (
-            <div aria-disabled="true" className="rounded-2xl px-4 py-4 text-sm font-black" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px dashed var(--border)" }}>
+            <div role="note" className="rounded-2xl px-4 py-4 text-sm font-black" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px dashed var(--border)" }}>
               حدد موقع الانطلاق أولًا
             </div>
           )}
