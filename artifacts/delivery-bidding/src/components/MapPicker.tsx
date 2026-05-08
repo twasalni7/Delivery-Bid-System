@@ -70,7 +70,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
   const [locating, setLocating] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [isPickerOpen, setIsPickerOpen] = useState(!value);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const { toast } = useToast();
 
   const [pendingSelection, setPendingSelection] = useState<MapCoords | null>(value);
@@ -204,7 +204,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
           setGpsError("تعذّر تحديد موقعك حالياً. يمكنك تحديد الموقع يدويًا من الخريطة.");
         }
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
     );
   }, [applySelection, dismissKeyboardAndSuggestions, resolveAddressForSelection, setMarkerAndView]);
 
@@ -385,6 +385,7 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         />
         {searchText && (
           <button
+            type="button"
             onClick={clearSearch}
             className="touch-compact shrink-0 p-2 rounded-xl"
             style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
@@ -399,9 +400,12 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
         <div
           className="absolute z-[1400] w-full mt-2 rounded-2xl overflow-hidden max-h-[42dvh] overflow-y-auto"
           style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
+          role="listbox"
+          aria-label="نتائج البحث عن المواقع"
         >
           {searchResults.map((r) => (
             <button
+              type="button"
               key={r.place_id}
               onClick={() => selectSearchResult(r)}
               className="w-full flex items-start gap-3 px-4 py-4 text-right transition-colors"
@@ -409,6 +413,8 @@ export default function MapPicker({ value, onChange, placeholder = "ابحث ع�
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-2)")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
               dir="rtl"
+              role="option"
+              aria-label={r.display_name}
             >
               <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
               <span className="text-base font-bold line-clamp-2">{r.display_name}</span>
