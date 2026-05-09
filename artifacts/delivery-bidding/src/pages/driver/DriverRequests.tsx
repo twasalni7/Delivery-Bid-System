@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { MessageCircle, Send, X } from "lucide-react";
 import { MapButtons } from "@/components/MapButtons";
-import { shortLocation } from "@/lib/location-utils";
+import { LocationDisplay } from "@/components/LocationDisplay";
 import { formatTime12hLong } from "@/lib/time-utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { useToast } from "@/hooks/use-toast";
@@ -174,14 +174,14 @@ export default function DriverRequests() {
                     <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
                     <div>
                       <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الانطلاق</p>
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(r.homeLocation)}</p>
+                      <LocationDisplay value={r.homeLocation} className="text-sm font-black" style={{ color: "var(--text)" }} />
                     </div>
                   </div>
                   <div className="flex items-start gap-4 relative z-10">
                     <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
                     <div>
                       <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الوصول</p>
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(r.workLocation)}</p>
+                      <LocationDisplay value={r.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} />
                     </div>
                   </div>
                 </div>
