@@ -299,14 +299,14 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
         minHeight: "100dvh",
         display: "flex",
         flexDirection: "column",
-        background: "radial-gradient(120% 120% at 12% 10%, rgba(32,71,122,0.24) 0%, rgba(10,10,16,0.98) 38%, #06080d 100%)",
+        background: "var(--bg-page)",
         fontFamily: "var(--font-arabic)",
       }}
     >
       {/* Header */}
       <header
         className="sticky top-0 z-30"
-        style={{ background: "linear-gradient(180deg, rgba(5,8,15,0.96) 0%, rgba(5,8,15,0.78) 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(8px)" }}
+        style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--header-border)", backdropFilter: "blur(8px)" }}
       >
         <div className="mx-auto px-4 py-3 flex items-center justify-between max-w-xl">
           <div className="flex items-center gap-2.5">
@@ -325,7 +325,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
               {displayInitial}
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>مرحباً {displayName}</p>
+              <p className="text-sm font-bold" style={{ color: "var(--text)" }}>مرحباً {displayName}</p>
               <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
                 {role === "client" ? "أهلاً بك في بوابة العميل" : "لوحة السائق"}
               </p>
@@ -336,10 +336,10 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
           {/* Right side actions */}
           {user && (
             <div className="flex items-center gap-1.5">
-              <div className="hidden sm:block">
+              <div>
                 <ThemeToggle />
               </div>
-              <div className="rounded-xl p-0.5" style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-xl p-0.5" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
                 <NotificationsBell />
               </div>
               {role === "client" && (
@@ -364,14 +364,14 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
             aria-label="إغلاق القائمة"
             onClick={() => setDriverSideMenuOpen(false)}
             className="fixed inset-0 z-40"
-            style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+            style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
           />
           <aside
             className="fixed top-0 right-0 z-50 h-full w-[82%] max-w-[320px] p-4"
-            style={{ background: "linear-gradient(160deg, rgba(16,24,39,0.97) 0%, rgba(5,9,18,0.98) 100%)", borderLeft: "1px solid rgba(255,255,255,0.1)", boxShadow: "-20px 0 45px rgba(0,0,0,0.5)" }}
+            style={{ background: "var(--surface)", borderLeft: "1px solid var(--border)", boxShadow: "var(--shadow-xl)" }}
           >
-            <div className="h-full rounded-3xl px-4 py-5 flex flex-col" style={{ background: "linear-gradient(180deg, rgba(17,28,46,0.55) 0%, rgba(7,11,19,0.75) 100%)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center justify-between pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="h-full rounded-3xl px-4 py-5 flex flex-col" style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
+              <div className="flex items-center justify-between pb-4" style={{ borderBottom: "1px solid var(--border)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black" style={{ background: "linear-gradient(145deg, #f5f6fa 0%, #d7d9e2 100%)", color: "#0f172a" }}>
                     {displayInitial}
@@ -416,7 +416,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
               <button
                 onClick={() => { setDriverSideMenuOpen(false); logout(); }}
                 className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-black"
-                style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.35)" }}
+                style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)" }}
               >
                 <LogOut size={15} />
                 تسجيل الخروج
@@ -440,7 +440,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
       >
         <div
           className="mx-auto max-w-xl w-full rounded-[1.4rem] border px-1 py-1.5 flex"
-          style={{ background: "linear-gradient(180deg, rgba(13,18,29,0.96) 0%, rgba(9,12,20,0.98) 100%)", borderColor: "rgba(255,255,255,0.1)", boxShadow: "0 18px 45px rgba(0,0,0,0.55)" }}
+          style={{ background: "var(--header-bg)", borderColor: "var(--header-border)", boxShadow: "var(--shadow-lg)" }}
         >
           {navLinks.map((link) => {
             const Icon = link.icon;
