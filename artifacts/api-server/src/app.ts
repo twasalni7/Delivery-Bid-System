@@ -147,9 +147,6 @@ app.get("/", (_req, res) => {
 
 app.use("/api", router);
 
-app.get("/debug-sentry", (_req, _res) => {
-  throw new Error("My first Sentry error!");
-});
 
 // Global error handler — returns JSON instead of the default HTML error page
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -168,3 +165,4 @@ app.use(errorLogger);
 app.use(globalErrorHandler);
 
 export default app;
+
