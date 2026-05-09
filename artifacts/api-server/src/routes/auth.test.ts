@@ -37,7 +37,18 @@ vi.mock("../lib/auth", () => ({
   generateLoginCode: vi.fn().mockReturnValue("ABCD1234"),
 }));
 
+// Capture logger.warn calls so regression tests can inspect log content
+vi.mock("../lib/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 import { db } from "@workspace/db";
+import { logger } from "../lib/logger";
 import authRouter from "../routes/auth";
 
 function createApp(options?: { regenerateError?: Error }) {
@@ -192,6 +203,18 @@ describe("POST /auth/login-client", () => {
     expect(res.body).toMatchObject({ id: 1, name: "Ali", role: "client" });
     expect(typeof res.body.token).toBe("string");
     expect(res.body.token.length).toBeGreaterThan(0);
+
+    // Verify warning is emitted with safe fields only — no mobile, password, or full err object.
+    // logActivity may also emit warn in tests (missing mock table), so find our specific call.
+    const warnCalls = (logger.warn as ReturnType<typeof vi.fn>).mock.calls as Array<[Record<string, unknown>, string]>;
+    const regenerateWarn = warnCalls.find(([payload]) => payload && typeof payload === "object" && "route" in payload);
+    expect(regenerateWarn).toBeDefined();
+    const [logPayload] = regenerateWarn!;
+    expect(logPayload).toHaveProperty("route", "login-client");
+    expect(logPayload).toHaveProperty("errMessage");
+    expect(logPayload).not.toHaveProperty("err"); // full error object must not be logged
+    expect(logPayload).not.toHaveProperty("mobile");
+    expect(logPayload).not.toHaveProperty("password");
   });
 });
 
