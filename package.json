@@ -101,6 +101,12 @@
       "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0",
       "esbuild": "0.27.3",
       "vite": "7.3.2"
-    }
+    },
+    "approvedBuilds": [
+      "@swc/core",
+      "esbuild",
+      "msw",
+      "unrs-resolver"
+    ]
   }
 }
