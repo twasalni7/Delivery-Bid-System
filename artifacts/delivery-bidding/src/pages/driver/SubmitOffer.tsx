@@ -99,33 +99,41 @@ export default function SubmitOffer() {
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
                 <LocationDisplay value={request.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} />
               </div>
-              <div className="flex items-center gap-4 mt-1">
-                <div className="flex-1">
-                  {request.shifts && request.shifts.length > 0 ? (
-                    <div className="space-y-2 mt-2">
-                      {request.shifts.map((s, i) => (
-                        <div key={i} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                          <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>
-                            {s.label ?? `الوردية ${i + 1}`}
-                          </span>
-                          <span className="text-xs font-bold" dir="ltr" style={{ color: "var(--text)" }}>
-                            {formatTime12hLong(s.goTime ?? "")}{s.returnTime ? ` ← ${formatTime12hLong(s.returnTime)}` : ""}
-                          </span>
+              {/* ── الأوقات الموحدة ── */}
+              {(() => {
+                const shifts = request.shifts as Array<{ label?: string; goTime?: string; returnTime?: string }> | null;
+                const hasShifts = shifts && shifts.length > 0;
+                const shiftRows = hasShifts
+                  ? shifts!.map((s, i) => ({ label: s.label ?? `الوردية ${i + 1}`, go: s.goTime ?? "", back: s.returnTime ?? "" }))
+                  : [{ label: "الوردية الأولى", go: request.morningTime, back: request.eveningTime ?? "" }];
+                return (
+                  <div className="space-y-2 mt-3">
+                    {shiftRows.map((s, i) => (
+                      <div key={i} className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <div className="px-3 py-1.5 text-center" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                          <p className="text-[10px] font-black tracking-wide" style={{ color: "var(--text-hint)" }}>{s.label}</p>
                         </div>
-                      ))}
+                        <div className="grid gap-px" style={{ gridTemplateColumns: s.back ? "1fr 1fr" : "1fr", backgroundColor: "rgba(255,255,255,0.06)" }}>
+                          <div className="px-4 py-3 text-right" style={{ backgroundColor: "var(--surface)" }}>
+                            <p className="text-[9px] font-black mb-1" style={{ color: "var(--text-hint)" }}>الذهاب</p>
+                            <p className="text-sm font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.go)}</p>
+                          </div>
+                          {s.back && (
+                            <div className="px-4 py-3 text-right" style={{ backgroundColor: "var(--surface)" }}>
+                              <p className="text-[9px] font-black mb-1" style={{ color: "var(--text-hint)" }}>العودة</p>
+                              <p className="text-sm font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.back)}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="rounded-2xl px-5 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <p className="text-xs font-black" style={{ color: "var(--text-hint)" }}>عدد الأشخاص</p>
+                      <p className="text-xl font-black" style={{ color: "var(--text)" }}>{request.numberOfPeople}</p>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-xs font-bold mt-2" style={{ color: "var(--text-muted)" }}>
-                      <Clock size={11} />
-                      <span dir="ltr">{formatTime12hLong(request.morningTime)}{request.eveningTime ? ` ← ${formatTime12hLong(request.eveningTime)}` : ""}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "var(--text-muted)" }}>
-                  <Users size={11} />
-                  <span>{request.numberOfPeople} أشخاص</span>
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
               {request.additionalLocations && request.additionalLocations.length > 0 && (
                 <div className="mt-2 space-y-1">
                   {request.additionalLocations.map((loc, idx) => (
