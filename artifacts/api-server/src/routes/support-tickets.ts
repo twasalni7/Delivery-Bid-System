@@ -211,7 +211,7 @@ router.patch("/:id", requireAuth("admin"), async (req, res) => {
           message: `ردّت الإدارة على تذكرتك: "${String(adminReply).trim().substring(0, 80)}${String(adminReply).trim().length > 80 ? "..." : ""}"`,
           type: "support",
           relatedId: updated.id,
-          url: "/driver/profile",
+          url: "/driver/support",
         });
       }
     }
