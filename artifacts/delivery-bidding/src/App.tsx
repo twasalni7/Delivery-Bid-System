@@ -195,7 +195,7 @@ function InstallBanner() {
 
 const ONESIGNAL_APP_ID =
   (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
-  "936a2461-9f06-4231-986e-29578e9a56d7";
+  "ed8315eb-36d7-4028-ab7d-a5114eaa4061";
 
 function getOneSignalExternalId(user: { id: number; role: "client" | "driver" | "admin" }): string {
   // OneSignal external IDs must be globally unique in our app. IDs can overlap
@@ -482,3 +482,4 @@ function App() {
 }
 
 export default App;
+
