@@ -205,9 +205,15 @@ describe("POST /auth/login-client", () => {
     expect(res.body.token.length).toBeGreaterThan(0);
 
     // Verify warning is emitted with safe fields only — no mobile, password, or full err object.
-    // logActivity may also emit warn in tests (missing mock table), so find our specific call.
+    // logActivity may also emit warn in tests (missing mock table), so find our specific call
+    // by requiring both `route` and `errMessage` which are unique to the regenerate warning.
     const warnCalls = (logger.warn as ReturnType<typeof vi.fn>).mock.calls as Array<[Record<string, unknown>, string]>;
-    const regenerateWarn = warnCalls.find(([payload]) => payload && typeof payload === "object" && "route" in payload);
+    const regenerateWarn = warnCalls.find(
+      ([payload, msg]) =>
+        payload && typeof payload === "object" &&
+        "route" in payload && "errMessage" in payload &&
+        typeof msg === "string" && msg.includes("session regeneration failed"),
+    );
     expect(regenerateWarn).toBeDefined();
     const [logPayload] = regenerateWarn!;
     expect(logPayload).toHaveProperty("route", "login-client");

@@ -95,7 +95,7 @@ async function regenerateSessionBestEffort(req: Request, route: string): Promise
     logger.warn(
       {
         route,
-        errCode: (err as NodeJS.ErrnoException).code,
+        errCode: (err as NodeJS.ErrnoException).code ?? "UNKNOWN",
         errMessage: (err as Error).message,
       },
       "auth: session regeneration failed; login continues via bearer token",
