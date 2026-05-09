@@ -78,12 +78,20 @@ function normalizeLoginCode(code: string): string {
   return code.trim().toUpperCase();
 }
 
-function regenerateSession(req: Request): Promise<void> {
-  return new Promise((resolve, reject) =>
+async function regenerateSession(req: Request): Promise<void> {
+  await new Promise<void>((resolve, reject) =>
     req.session.regenerate((err: unknown) =>
       err ? reject(err) : resolve()
     )
   );
+}
+
+async function regenerateSessionBestEffort(req: Request): Promise<void> {
+  try {
+    await regenerateSession(req);
+  } catch (err) {
+    logger.warn({ err }, "auth: session regeneration failed; continuing with token auth");
+  }
 }
 
 router.post("/register-client", async (req, res) => {
@@ -109,7 +117,7 @@ router.post("/register-client", async (req, res) => {
       .insert(clientsTable)
       .values({ name, mobile, passwordHash })
       .returning();
-    await regenerateSession(req);
+    await regenerateSessionBestEffort(req);
     const token = await createAuthToken(client.id, "client", client.name);
     await logActivity({ actorId: client.id, actorRole: "client", action: "client.registered", entity: "clients", entityId: client.id, req });
     res.status(201).json({
@@ -144,7 +152,7 @@ router.post("/login-client", async (req, res) => {
       res.status(401).json({ error: "رقم الجوال أو كلمة المرور غير صحيحة" });
       return;
     }
-    await regenerateSession(req);
+    await regenerateSessionBestEffort(req);
     const token = await createAuthToken(client.id, "client", client.name);
     await logActivity({ actorId: client.id, actorRole: "client", action: "auth.login", entity: "clients", entityId: client.id, req });
     res.json({
@@ -186,7 +194,7 @@ router.post("/login-driver", async (req, res) => {
       res.status(403).json({ error: "هذا الحساب غير متاح" });
       return;
     }
-    await regenerateSession(req);
+    await regenerateSessionBestEffort(req);
     const token = await createAuthToken(driver.id, "driver", driver.name);
     await logActivity({ actorId: driver.id, actorRole: "driver", action: "auth.login", entity: "drivers", entityId: driver.id, req });
     res.json({
@@ -218,7 +226,7 @@ router.post("/login-admin", async (req, res) => {
       res.status(401).json({ error: "رمز الدخول غير صحيح" });
       return;
     }
-    await regenerateSession(req);
+    await regenerateSessionBestEffort(req);
     const token = await createAuthToken(admin.id, "admin", admin.name);
     await logActivity({ actorId: admin.id, actorRole: "admin", action: "auth.login", entity: "admins", entityId: admin.id, req });
     res.json({

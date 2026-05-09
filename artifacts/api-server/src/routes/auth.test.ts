@@ -40,7 +40,7 @@ vi.mock("../lib/auth", () => ({
 import { db } from "@workspace/db";
 import authRouter from "../routes/auth";
 
-function createApp() {
+function createApp(options?: { regenerateError?: Error }) {
   const app = express();
   app.use(express.json());
   // Minimal session mock middleware
@@ -48,7 +48,7 @@ function createApp() {
     req.session = req.session ?? {
       user: undefined,
       destroy: (cb: () => void) => cb(),
-      regenerate: (cb: (err?: Error | null) => void) => cb(),
+      regenerate: (cb: (err?: Error | null) => void) => cb(options?.regenerateError ?? null),
     };
     next();
   });
@@ -168,6 +168,23 @@ describe("POST /auth/login-client", () => {
       name: "Ali",
     });
     const app = createApp();
+    const res = await request(app)
+      .post("/auth/login-client")
+      .send({ mobile: "0501234567", password: "pass123" });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 1, name: "Ali", role: "client" });
+  });
+
+  it("returns 200 even when session regenerate fails", async () => {
+    const { comparePassword } = await import("../lib/auth");
+    (comparePassword as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+    (db.query.clientsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1,
+      mobile: "0501234567",
+      passwordHash: "hashed.salt",
+      name: "Ali",
+    });
+    const app = createApp({ regenerateError: new Error("session store down") });
     const res = await request(app)
       .post("/auth/login-client")
       .send({ mobile: "0501234567", password: "pass123" });
