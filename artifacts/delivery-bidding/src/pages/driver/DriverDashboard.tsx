@@ -196,22 +196,18 @@ export default function DriverDashboard() {
                               <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>REQ-{String(req.id).padStart(3, "0")}</p>
                             </div>
                           </div>
-                          <div className="rounded-2xl px-4 py-2 text-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", minWidth: "88px" }}>
-                            {(req as any).numberOfPeople > 1 ? (
-                              <>
-                                <p className="font-black text-2xl" style={{ color: "var(--brand)" }} dir="ltr">
+                          <div className="rounded-2xl px-4 py-3 text-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", minWidth: "96px" }}>
+                            <p className="font-black text-3xl leading-none" style={{ color: "var(--brand)" }} dir="ltr">
+                              {((req as any).monthlyPrice ?? 0).toFixed(0)}
+                            </p>
+                            <p className="text-[10px] font-bold mt-0.5" style={{ color: "var(--brand)" }}>ر.س / شهر</p>
+                            {(req as any).numberOfPeople > 1 && (
+                              <div className="mt-1.5 pt-1.5" style={{ borderTop: "1px solid rgba(222,255,154,0.2)" }}>
+                                <p className="font-black text-sm leading-none" style={{ color: "var(--text)" }} dir="ltr">
                                   {((req as any).monthlyPrice / (req as any).numberOfPeople).toFixed(0)}
                                 </p>
-                                <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>ر.س/شخص/شهر</p>
-                                <p className="text-[10px] font-black mt-0.5" style={{ color: "var(--text-muted)" }} dir="ltr">
-                                  إجمالي: {(req as any).monthlyPrice?.toFixed(0) ?? "—"} ر.س
-                                </p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="font-black text-2xl" style={{ color: "var(--brand)" }} dir="ltr">{(req as any).monthlyPrice?.toFixed(0) ?? "—"}</p>
-                                <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>ريال/شهر</p>
-                              </>
+                                <p className="text-[9px] font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>ر.س / شخص</p>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -236,44 +232,41 @@ export default function DriverDashboard() {
                           </div>
                         </div>
 
-                        {/* Shift / time display */}
-                        {(req as any).shifts && (req as any).shifts.length > 0 ? (
-                          <div className="space-y-1.5">
-                            {((req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }>).map((s, i) => (
-                              <div key={i} className="px-2.5 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                                <p className="text-[10px] font-black mb-1" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</p>
-                                <div className="space-y-1 text-xs font-bold" style={{ color: "var(--text)" }}>
-                                  <p dir="ltr">الذهاب: {formatTime12hLong(s.goTime ?? "")}</p>
-                                  {s.returnTime && <p dir="ltr">العودة: {formatTime12hLong(s.returnTime)}</p>}
+                        {/* ── الأوقات الموحدة ── */}
+                        {(() => {
+                          const shifts = (req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }> | null;
+                          const hasShifts = shifts && shifts.length > 0;
+                          const shiftRows = hasShifts
+                            ? shifts!.map((s, i) => ({ label: s.label ?? `الوردية ${i + 1}`, go: s.goTime ?? "", back: s.returnTime ?? "" }))
+                            : [{ label: "الوردية الأولى", go: req.morningTime, back: req.eveningTime ?? "" }];
+                          return (
+                            <div className="space-y-2">
+                              {shiftRows.map((s, i) => (
+                                <div key={i} className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                                  <div className="px-3 py-1.5 text-center" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+                                    <p className="text-[10px] font-black tracking-wide" style={{ color: "var(--text-hint)" }}>{s.label}</p>
+                                  </div>
+                                  <div className="grid gap-px" style={{ gridTemplateColumns: s.back ? "1fr 1fr" : "1fr", backgroundColor: "rgba(255,255,255,0.06)" }}>
+                                    <div className="px-4 py-3 text-right" style={{ backgroundColor: "var(--surface)" }}>
+                                      <p className="text-[9px] font-black mb-1" style={{ color: "var(--text-hint)" }}>الذهاب</p>
+                                      <p className="text-sm font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.go)}</p>
+                                    </div>
+                                    {s.back && (
+                                      <div className="px-4 py-3 text-right" style={{ backgroundColor: "var(--surface)" }}>
+                                        <p className="text-[9px] font-black mb-1" style={{ color: "var(--text-hint)" }}>العودة</p>
+                                        <p className="text-sm font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.back)}</p>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
+                              ))}
+                              <div className="rounded-2xl px-5 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                                <p className="text-xs font-black" style={{ color: "var(--text-hint)" }}>عدد الأشخاص</p>
+                                <p className="text-xl font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
                               </div>
-                            ))}
-                            <div className="text-center rounded-xl p-2" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                              <p className="text-xs font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
-                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>أشخاص</p>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                              <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Clock size={12} /></div>
-                              <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.morningTime)}</p>
-                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الذهاب</p>
-                            </div>
-                            {req.eveningTime && (
-                              <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                                <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Clock size={12} /></div>
-                                <p className="text-xs font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.eveningTime)}</p>
-                                <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>العودة</p>
-                              </div>
-                            )}
-                            <div className="text-center rounded-xl p-2.5" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                              <div className="flex items-center justify-center gap-1 mb-0.5" style={{ color: "var(--text-hint)" }}><Users size={12} /></div>
-                              <p className="text-xs font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
-                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>أشخاص</p>
-                            </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         <div className="flex gap-1.5 flex-wrap">
                           {DAYS_FULL.slice(0, req.workingDaysPerWeek ?? 5).map((d) => (
@@ -443,4 +436,5 @@ export default function DriverDashboard() {
     </Layout>
   );
 }
+
 
