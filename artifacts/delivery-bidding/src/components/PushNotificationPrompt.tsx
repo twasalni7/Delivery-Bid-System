@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { usePushNotifications } from "@/hooks/use-Push-Notifications";
+import { usePushNotifications } from "from "@/hooks/use-push-notifications";
 
 /**
  * PushNotificationPrompt
