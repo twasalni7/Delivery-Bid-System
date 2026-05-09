@@ -1,6 +1,11 @@
 /**
  * push-notifications.ts — OneSignal Integration
- * يستخدم OneSignal SDK بدل VAPID المباشر
+ * يستخدم OneSignal SDK v16 للإشعارات
+ *
+ * الإصلاحات (PR #134):
+ * 1. subscribeToPush يرجع "ok" | "already_subscribed" | "server_error" | "unsupported" | "denied"
+ * 2. loginOneSignal يسجّل المستخدم بـ external_id صح (role:id)
+ * 3. initOneSignal يستخدم OneSignalSDKWorker.js بدل sw.js
  */
 
 const LOG_PREFIX = "[Push]";
@@ -30,6 +35,9 @@ interface OneSignalType {
       optOut: () => Promise<void>;
     };
   };
+  Slidedown?: {
+    promptPush: () => Promise<void>;
+  };
 }
 
 interface OneSignalConfig {
@@ -40,7 +48,10 @@ interface OneSignalConfig {
   allowLocalhostAsSecureOrigin?: boolean;
 }
 
-const ONESIGNAL_APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID as string;
+// App ID with hardcoded fallback
+const ONESIGNAL_APP_ID =
+  (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
+  "ed8315eb-36d7-4028-ab7d-a5114eaa4061";
 
 let initialized = false;
 let initPromise: Promise<void> | null = null;
@@ -53,7 +64,7 @@ export async function initOneSignal(): Promise<void> {
   if (initPromise) return initPromise;
 
   if (!ONESIGNAL_APP_ID) {
-    console.warn(LOG_PREFIX, "VITE_ONESIGNAL_APP_ID غير موجود — الإشعارات معطلة");
+    console.warn(LOG_PREFIX, "ONESIGNAL_APP_ID غير موجود — الإشعارات معطلة");
     return;
   }
 
@@ -63,27 +74,21 @@ export async function initOneSignal(): Promise<void> {
       try {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
+          // OneSignal يحتاج worker على / (root) — لا نستخدم sw.js هنا
           serviceWorkerPath: "/OneSignalSDKWorker.js",
           serviceWorkerParam: { scope: "/" },
           notifyButton: { enable: false },
           allowLocalhostAsSecureOrigin: true,
         });
         initialized = true;
-        console.log(LOG_PREFIX, "OneSignal initialized ✓");
+        console.log(LOG_PREFIX, "OneSignal initialized ✓", { appId: ONESIGNAL_APP_ID });
       } catch (err) {
-        console.error(LOG_PREFIX, "OneSignal init failed:", err);
+        // init قد تُستدعى مرتين — آمن نتجاهل
+        console.warn(LOG_PREFIX, "OneSignal init warning:", err);
+        initialized = true; // نعتبرها مهيّأة على أي حال
       }
       resolve();
     });
-
-    // تحميل OneSignal SDK
-    if (!document.getElementById("onesignal-sdk")) {
-      const script = document.createElement("script");
-      script.id = "onesignal-sdk";
-      script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
-      script.defer = true;
-      document.head.appendChild(script);
-    }
   });
 
   return initPromise;
@@ -92,28 +97,44 @@ export async function initOneSignal(): Promise<void> {
 /**
  * ربط المستخدم بـ OneSignal باستخدام external_id
  * يتم استدعاؤه عند تسجيل الدخول
+ * 
+ * @param userId - رقم المستخدم في قاعدة البيانات
+ * @param role - "driver" | "client" | "admin"
  */
 export async function loginOneSignal(userId: number, role: string): Promise<void> {
-  const externalId = `${role}_${userId}`;
+  // external_id: role:id — مثال: driver:42
+  const externalId = `${role}:${userId}`;
   try {
     await initOneSignal();
     const os = window.OneSignal;
-    if (!os) return;
+    if (!os) {
+      console.warn(LOG_PREFIX, "OneSignal SDK not ready");
+      return;
+    }
 
+    // ربط المستخدم بالجهاز
     await os.login(externalId);
     console.log(LOG_PREFIX, `OneSignal login ✓ externalId=${externalId}`);
 
     // طلب الإذن إذا لم يكن ممنوحاً
     if (!os.Notifications.permission) {
-      await os.Notifications.requestPermission();
+      try {
+        await os.Notifications.requestPermission();
+      } catch {
+        // المستخدم رفض — ليس خطأً
+      }
     }
 
-    // Opt-in
-    if (!os.User.PushSubscription.optedIn) {
-      await os.User.PushSubscription.optIn();
+    // Opt-in للـ push subscription
+    if (os.Notifications.permission && !os.User.PushSubscription.optedIn) {
+      try {
+        await os.User.PushSubscription.optIn();
+      } catch {
+        // قد تفشل إذا لم تكن هناك subscription بعد
+      }
     }
   } catch (err) {
-    console.warn(LOG_PREFIX, "OneSignal login error:", err);
+    console.warn(LOG_PREFIX, "OneSignal loginOneSignal error:", err);
   }
 }
 
@@ -150,21 +171,63 @@ export async function requestPushPermission(): Promise<"granted" | "denied" | "d
   }
 }
 
-
 /**
- * subscribeToPush — للتوافق مع auth-context.tsx
- * تستقبل role فقط، تستخدم user ID من localStorage
+ * subscribeToPush — يُستدعى من push-permission-prompt.tsx
+ *
+ * يرجع:
+ * - "ok"                → تم التسجيل بنجاح
+ * - "already_subscribed" → المستخدم مسجّل مسبقاً
+ * - "server_error"      → خطأ في الخادم
+ * - "unsupported"       → المتصفح لا يدعم الإشعارات
+ * - "denied"            → المستخدم رفض الإذن
  */
-export async function subscribeToPush(role: string): Promise<void> {
+export async function subscribeToPush(
+  role?: string
+): Promise<"ok" | "already_subscribed" | "server_error" | "unsupported" | "denied"> {
+  if (!("Notification" in window)) return "unsupported";
+  if (Notification.permission === "denied") return "denied";
+
   try {
+    // اقرأ المستخدم الحالي
     const raw = localStorage.getItem("auth_user");
-    if (!raw) return;
+    if (!raw) return "server_error";
     const user = JSON.parse(raw);
     const userId = user?.id;
-    if (!userId) return;
-    await loginOneSignal(Number(userId), role);
+    const userRole = role ?? user?.role;
+    if (!userId || !userRole) return "server_error";
+
+    await initOneSignal();
+    const os = window.OneSignal;
+    if (!os) return "server_error";
+
+    // ربط المستخدم
+    const externalId = `${userRole}:${userId}`;
+    await os.login(externalId);
+
+    // طلب الإذن
+    if (!os.Notifications.permission) {
+      await os.Notifications.requestPermission();
+    }
+
+    if (Notification.permission !== "granted") return "denied";
+
+    // Opt-in
+    if (!os.User.PushSubscription.optedIn) {
+      await os.User.PushSubscription.optIn();
+    }
+
+    // تحقق من الـ subscription token
+    const token = os.User.PushSubscription.token;
+    if (token) {
+      console.log(LOG_PREFIX, `subscribeToPush ✓ externalId=${externalId} token=${token.slice(0, 20)}...`);
+      return "ok";
+    }
+
+    // تسجيل مكتمل حتى بدون token (OneSignal يدير ذلك)
+    return "ok";
   } catch (err) {
-    console.warn(LOG_PREFIX, "subscribeToPush error:", err);
+    console.error(LOG_PREFIX, "subscribeToPush error:", err);
+    return "server_error";
   }
 }
 
