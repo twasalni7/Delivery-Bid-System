@@ -150,6 +150,24 @@ export async function requestPushPermission(): Promise<"granted" | "denied" | "d
   }
 }
 
+
+/**
+ * subscribeToPush — للتوافق مع auth-context.tsx
+ * تستقبل role فقط، تستخدم user ID من localStorage
+ */
+export async function subscribeToPush(role: string): Promise<void> {
+  try {
+    const raw = localStorage.getItem("auth_user");
+    if (!raw) return;
+    const user = JSON.parse(raw);
+    const userId = user?.id;
+    if (!userId) return;
+    await loginOneSignal(Number(userId), role);
+  } catch (err) {
+    console.warn(LOG_PREFIX, "subscribeToPush error:", err);
+  }
+}
+
 /** للتوافق مع الكود القديم */
 export function clearPushSubscriptionCache(): void {
   localStorage.removeItem("push_subscribed");
