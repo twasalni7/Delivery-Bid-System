@@ -37,10 +37,21 @@ vi.mock("../lib/auth", () => ({
   generateLoginCode: vi.fn().mockReturnValue("ABCD1234"),
 }));
 
+// Capture logger.warn calls so regression tests can inspect log content
+vi.mock("../lib/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 import { db } from "@workspace/db";
+import { logger } from "../lib/logger";
 import authRouter from "../routes/auth";
 
-function createApp() {
+function createApp(options?: { regenerateError?: Error }) {
   const app = express();
   app.use(express.json());
   // Minimal session mock middleware
@@ -48,7 +59,7 @@ function createApp() {
     req.session = req.session ?? {
       user: undefined,
       destroy: (cb: () => void) => cb(),
-      regenerate: (cb: (err?: Error | null) => void) => cb(),
+      regenerate: (cb: (err?: Error | null) => void) => cb(options?.regenerateError ?? null),
     };
     next();
   });
@@ -174,7 +185,53 @@ describe("POST /auth/login-client", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 1, name: "Ali", role: "client" });
   });
+
+  it("returns 200 even when session regenerate fails", async () => {
+    const { comparePassword } = await import("../lib/auth");
+    (comparePassword as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+    (db.query.clientsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1,
+      mobile: "0501234567",
+      passwordHash: "hashed.salt",
+      name: "Ali",
+    });
+    const app = createApp({ regenerateError: new Error("session store down") });
+    const res = await request(app)
+      .post("/auth/login-client")
+      .send({ mobile: "0501234567", password: "pass123" });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 1, name: "Ali", role: "client" });
+    expect(typeof res.body.token).toBe("string");
+    expect(res.body.token.length).toBeGreaterThan(0);
+
+    // Verify warning is emitted with safe fields only — no mobile, password, or full err object.
+    // logActivity may also emit warn in tests (missing mock table), so find our specific call
+    // by requiring both `route` and `errMessage` which are unique to the regenerate warning.
+    const logPayload = findSessionRegenerationWarn();
+    expect(logPayload).toBeDefined();
+    expect(logPayload).toHaveProperty("route", "login-client");
+    expect(logPayload).toHaveProperty("errMessage");
+    expect(logPayload).not.toHaveProperty("err"); // full error object must not be logged
+    expect(logPayload).not.toHaveProperty("mobile");
+    expect(logPayload).not.toHaveProperty("password");
+  });
 });
+
+function findSessionRegenerationWarn(): Record<string, unknown> | undefined {
+  const warnCalls = (logger.warn as ReturnType<typeof vi.fn>).mock.calls as Array<unknown[]>;
+  const match = warnCalls.find((call) => {
+    const [payload, msg] = call;
+    return (
+      payload !== null &&
+      typeof payload === "object" &&
+      "route" in (payload as object) &&
+      "errMessage" in (payload as object) &&
+      typeof msg === "string" &&
+      msg.includes("session regeneration failed")
+    );
+  });
+  return match ? (match[0] as Record<string, unknown>) : undefined;
+}
 
 describe("POST /auth/login-driver", () => {
   it("returns 400 when mobile is missing", async () => {
