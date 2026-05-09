@@ -7,7 +7,7 @@ import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Clock, Users, CheckCircle } from "lucide-react";
 import { MapButtons } from "@/components/MapButtons";
-import { shortLocation } from "@/lib/location-utils";
+import { LocationDisplay } from "@/components/LocationDisplay";
 import { formatTime12hLong } from "@/lib/time-utils";
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
@@ -93,11 +93,11 @@ export default function SubmitOffer() {
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
-                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(request.homeLocation)}</p>
+                <LocationDisplay value={request.homeLocation} className="text-sm font-black" style={{ color: "var(--text)" }} />
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
-                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(request.workLocation)}</p>
+                <LocationDisplay value={request.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} />
               </div>
               <div className="flex items-center gap-4 mt-1">
                 <div className="flex-1">
