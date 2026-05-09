@@ -207,22 +207,8 @@ describe("POST /auth/login-client", () => {
     // Verify warning is emitted with safe fields only — no mobile, password, or full err object.
     // logActivity may also emit warn in tests (missing mock table), so find our specific call
     // by requiring both `route` and `errMessage` which are unique to the regenerate warning.
-    const warnCalls = (logger.warn as ReturnType<typeof vi.fn>).mock.calls as Array<unknown[]>;
-    const regenerateWarn = warnCalls.find(
-      (call) => {
-        const [payload, msg] = call;
-        return (
-          payload !== null &&
-          typeof payload === "object" &&
-          "route" in (payload as object) &&
-          "errMessage" in (payload as object) &&
-          typeof msg === "string" &&
-          msg.includes("session regeneration failed")
-        );
-      },
-    );
-    expect(regenerateWarn).toBeDefined();
-    const logPayload = regenerateWarn![0] as Record<string, unknown>;
+    const logPayload = findSessionRegenerationWarn();
+    expect(logPayload).toBeDefined();
     expect(logPayload).toHaveProperty("route", "login-client");
     expect(logPayload).toHaveProperty("errMessage");
     expect(logPayload).not.toHaveProperty("err"); // full error object must not be logged
@@ -230,6 +216,22 @@ describe("POST /auth/login-client", () => {
     expect(logPayload).not.toHaveProperty("password");
   });
 });
+
+function findSessionRegenerationWarn(): Record<string, unknown> | undefined {
+  const warnCalls = (logger.warn as ReturnType<typeof vi.fn>).mock.calls as Array<unknown[]>;
+  const match = warnCalls.find((call) => {
+    const [payload, msg] = call;
+    return (
+      payload !== null &&
+      typeof payload === "object" &&
+      "route" in (payload as object) &&
+      "errMessage" in (payload as object) &&
+      typeof msg === "string" &&
+      msg.includes("session regeneration failed")
+    );
+  });
+  return match ? (match[0] as Record<string, unknown>) : undefined;
+}
 
 describe("POST /auth/login-driver", () => {
   it("returns 400 when mobile is missing", async () => {
