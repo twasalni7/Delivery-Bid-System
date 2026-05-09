@@ -7,7 +7,7 @@ import { Layout } from "@/components/layout";
 import { EnablePushButton } from "@/components/enable-push-button";
 import { AlertTriangle, Clock, Users, CheckCircle, Phone, ChevronLeft } from "lucide-react";
 import { MapButtons } from "@/components/MapButtons";
-import { shortLocation } from "@/lib/location-utils";
+import { LocationDisplay } from "@/components/LocationDisplay";
 import { formatTime12hLong } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
@@ -224,14 +224,14 @@ export default function DriverDashboard() {
                             <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
                             <div>
                               <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>من (المنطلق)</p>
-                              <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(req.homeLocation)}</p>
+                              <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.homeLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
                             </div>
                           </div>
                           <div className="flex items-start gap-3 relative z-10">
                             <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
                             <div>
                               <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
-                              <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(req.workLocation)}</p>
+                              <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
                             </div>
                           </div>
                         </div>
@@ -352,11 +352,11 @@ export default function DriverDashboard() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "var(--brand)" }} />
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(req.homeLocation)}</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.homeLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(req.workLocation)}</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
                     </div>
                   </div>
                   {/* Shift / time display for active job */}
