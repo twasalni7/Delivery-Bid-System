@@ -130,8 +130,12 @@ if (!isTest) {
       if (tokenUser) return `token:${tokenUser.role}:${tokenUser.id}`;
       const sessionUser = req.session?.user;
       if (sessionUser) return `session:${sessionUser.role}:${sessionUser.id}`;
-      return req.ip ?? "unknown-ip";
+      // Normalize IP — strip IPv6-mapped IPv4 prefix (::ffff:x.x.x.x) to avoid ERR_ERL_KEY_GEN_IPV6
+      const raw = req.ip ?? "unknown";
+      const normalized = raw.startsWith("::ffff:") ? raw.slice(7) : raw;
+      return normalized;
     },
+    validate: { xForwardedForHeader: false },
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => req.path === "/healthz" || req.path === "/readyz",
