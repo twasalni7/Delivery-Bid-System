@@ -2,10 +2,10 @@
  * push-notifications.ts — OneSignal Integration
  * يستخدم OneSignal SDK v16 للإشعارات
  *
- * الإصلاحات (PR #134):
- * 1. subscribeToPush يرجع "ok" | "already_subscribed" | "server_error" | "unsupported" | "denied"
- * 2. loginOneSignal يسجّل المستخدم بـ external_id صح (role:id)
- * 3. initOneSignal يستخدم OneSignalSDKWorker.js بدل sw.js
+ * الإصلاحات (PR #135):
+ * 1. external_id format: role:id (مطابق للبكند)
+ * 2. إضافة role tag عند loginOneSignal لدعم notifyAllDrivers/Admins
+ * 3. initOneSignal يستخدم OneSignalSDKWorker.js
  */
 
 const LOG_PREFIX = "[Push]";
@@ -34,6 +34,8 @@ interface OneSignalType {
       optIn: () => Promise<void>;
       optOut: () => Promise<void>;
     };
+    addTag: (key: string, value: string) => void;
+    addTags: (tags: Record<string, string>) => void;
   };
   Slidedown?: {
     promptPush: () => Promise<void>;
@@ -74,7 +76,6 @@ export async function initOneSignal(): Promise<void> {
       try {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
-          // OneSignal يحتاج worker على / (root) — لا نستخدم sw.js هنا
           serviceWorkerPath: "/OneSignalSDKWorker.js",
           serviceWorkerParam: { scope: "/" },
           notifyButton: { enable: false },
@@ -83,9 +84,8 @@ export async function initOneSignal(): Promise<void> {
         initialized = true;
         console.log(LOG_PREFIX, "OneSignal initialized ✓", { appId: ONESIGNAL_APP_ID });
       } catch (err) {
-        // init قد تُستدعى مرتين — آمن نتجاهل
         console.warn(LOG_PREFIX, "OneSignal init warning:", err);
-        initialized = true; // نعتبرها مهيّأة على أي حال
+        initialized = true;
       }
       resolve();
     });
@@ -96,13 +96,11 @@ export async function initOneSignal(): Promise<void> {
 
 /**
  * ربط المستخدم بـ OneSignal باستخدام external_id
- * يتم استدعاؤه عند تسجيل الدخول
- * 
- * @param userId - رقم المستخدم في قاعدة البيانات
- * @param role - "driver" | "client" | "admin"
+ * الصيغة: role:id (مثال: driver:42, client:7, admin:1)
+ * يُضيف role tag لدعم إشعارات المجموعة (notifyAllDrivers/Admins)
  */
 export async function loginOneSignal(userId: number, role: string): Promise<void> {
-  // external_id: role:id — مثال: driver:42
+  // external_id: role:id — يجب أن يطابق buildExternalId() في البكند
   const externalId = `${role}:${userId}`;
   try {
     await initOneSignal();
@@ -115,6 +113,14 @@ export async function loginOneSignal(userId: number, role: string): Promise<void
     // ربط المستخدم بالجهاز
     await os.login(externalId);
     console.log(LOG_PREFIX, `OneSignal login ✓ externalId=${externalId}`);
+
+    // إضافة role tag لدعم notifyAllDrivers / notifyAllAdmins
+    try {
+      os.User.addTags({ role, userId: String(userId) });
+      console.log(LOG_PREFIX, `Tags added ✓ role=${role}`);
+    } catch {
+      // addTags اختيارية — لا توقف التسجيل
+    }
 
     // طلب الإذن إذا لم يكن ممنوحاً
     if (!os.Notifications.permission) {
@@ -173,13 +179,6 @@ export async function requestPushPermission(): Promise<"granted" | "denied" | "d
 
 /**
  * subscribeToPush — يُستدعى من push-permission-prompt.tsx
- *
- * يرجع:
- * - "ok"                → تم التسجيل بنجاح
- * - "already_subscribed" → المستخدم مسجّل مسبقاً
- * - "server_error"      → خطأ في الخادم
- * - "unsupported"       → المتصفح لا يدعم الإشعارات
- * - "denied"            → المستخدم رفض الإذن
  */
 export async function subscribeToPush(
   role?: string
@@ -188,7 +187,6 @@ export async function subscribeToPush(
   if (Notification.permission === "denied") return "denied";
 
   try {
-    // اقرأ المستخدم الحالي
     const raw = localStorage.getItem("auth_user");
     if (!raw) return "server_error";
     const user = JSON.parse(raw);
@@ -200,9 +198,16 @@ export async function subscribeToPush(
     const os = window.OneSignal;
     if (!os) return "server_error";
 
-    // ربط المستخدم
+    // ربط المستخدم بـ external_id الصحيح (role:id)
     const externalId = `${userRole}:${userId}`;
     await os.login(externalId);
+
+    // إضافة role tag
+    try {
+      os.User.addTags({ role: userRole, userId: String(userId) });
+    } catch {
+      // اختيارية
+    }
 
     // طلب الإذن
     if (!os.Notifications.permission) {
@@ -216,14 +221,11 @@ export async function subscribeToPush(
       await os.User.PushSubscription.optIn();
     }
 
-    // تحقق من الـ subscription token
     const token = os.User.PushSubscription.token;
     if (token) {
       console.log(LOG_PREFIX, `subscribeToPush ✓ externalId=${externalId} token=${token.slice(0, 20)}...`);
-      return "ok";
     }
 
-    // تسجيل مكتمل حتى بدون token (OneSignal يدير ذلك)
     return "ok";
   } catch (err) {
     console.error(LOG_PREFIX, "subscribeToPush error:", err);

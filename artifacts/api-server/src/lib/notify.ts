@@ -8,8 +8,16 @@ const ONESIGNAL_REST_API_KEY = process.env["ONESIGNAL_REST_API_KEY"] || "";
 const ONESIGNAL_API = "https://onesignal.com/api/v1/notifications";
 
 /**
+ * تنسيق external_id — يطابق loginOneSignal() في الفرونت
+ * الصيغة: role:id (مثال: driver:42, client:7, admin:1)
+ */
+function buildExternalId(role: string, userId: number): string {
+  return `${role}:${userId}`;
+}
+
+/**
  * إرسال إشعار عبر OneSignal REST API
- * يستخدم external_user_id لاستهداف المستخدم المحدد
+ * يستخدم external_id لاستهداف المستخدم المحدد
  */
 async function sendOneSignalNotification(params: {
   externalUserId: string;
@@ -74,7 +82,8 @@ export async function sendPushToUser(
   role: "client" | "driver" | "admin",
   params: { title: string; body: string; url?: string; tag?: string }
 ): Promise<{ sent: boolean }> {
-  const externalUserId = `${role}_${userId}`;
+  // إصلاح: role:id بدل role_id لمطابقة الفرونت
+  const externalUserId = buildExternalId(role, userId);
   const result = await sendOneSignalNotification({
     externalUserId,
     title: params.title,
@@ -133,8 +142,8 @@ export async function notify(params: {
     return;
   }
 
-  // إرسال عبر OneSignal
-  const externalUserId = `${params.userRole}_${params.userId}`;
+  // إصلاح: توحيد external_id مع الفرونت (role:id)
+  const externalUserId = buildExternalId(params.userRole, params.userId);
   const result = await sendOneSignalNotification({
     externalUserId,
     title: params.title,
@@ -158,6 +167,8 @@ export async function notify(params: {
 
 /**
  * إرسال إشعار لجميع السائقين النشطين
+ * يستخدم included_segments: ["All"] بدل filters/tags
+ * (لأن tags تُضاف لاحقاً بعد تسجيل الدخول في الفرونت)
  */
 export async function notifyAllDrivers(params: {
   title: string;
@@ -173,7 +184,7 @@ export async function notifyAllDrivers(params: {
 
   const payload = {
     app_id: ONESIGNAL_APP_ID,
-    filters: [{ field: "tag", key: "role", relation: "=", value: "driver" }],
+    included_segments: ["All"],
     headings: { ar: params.title, en: params.title },
     contents: { ar: params.message, en: params.message },
     url: params.url ?? "/driver/dashboard",
@@ -189,8 +200,12 @@ export async function notifyAllDrivers(params: {
       },
       body: JSON.stringify(payload),
     });
-    const data = await res.json() as { id?: string; recipients?: number };
-    logger.info({ id: data.id, recipients: data.recipients }, "[OneSignal] notifyAllDrivers sent ✓");
+    const data = await res.json() as { id?: string; recipients?: number; errors?: unknown };
+    if (data.errors) {
+      logger.warn({ errors: data.errors }, "[OneSignal] notifyAllDrivers had errors");
+    } else {
+      logger.info({ id: data.id, recipients: data.recipients }, "[OneSignal] notifyAllDrivers sent ✓");
+    }
   } catch (err) {
     logger.error({ err }, "[OneSignal] notifyAllDrivers failed");
   }
@@ -213,7 +228,7 @@ export async function notifyAllAdmins(params: {
 
   const payload = {
     app_id: ONESIGNAL_APP_ID,
-    filters: [{ field: "tag", key: "role", relation: "=", value: "admin" }],
+    included_segments: ["All"],
     headings: { ar: params.title, en: params.title },
     contents: { ar: params.message, en: params.message },
     url: params.url ?? "/admin/dashboard",
@@ -229,8 +244,12 @@ export async function notifyAllAdmins(params: {
       },
       body: JSON.stringify(payload),
     });
-    const data = await res.json() as { id?: string; recipients?: number };
-    logger.info({ id: data.id, recipients: data.recipients }, "[OneSignal] notifyAllAdmins sent ✓");
+    const data = await res.json() as { id?: string; recipients?: number; errors?: unknown };
+    if (data.errors) {
+      logger.warn({ errors: data.errors }, "[OneSignal] notifyAllAdmins had errors");
+    } else {
+      logger.info({ id: data.id, recipients: data.recipients }, "[OneSignal] notifyAllAdmins sent ✓");
+    }
   } catch (err) {
     logger.error({ err }, "[OneSignal] notifyAllAdmins failed");
   }
