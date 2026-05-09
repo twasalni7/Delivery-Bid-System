@@ -5,7 +5,9 @@ import { useGetRequest, useCreateOffer, getGetRequestQueryKey } from "@workspace
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, MapPin, Clock, Users, CheckCircle, ExternalLink } from "lucide-react";
+import { ArrowRight, Clock, Users, CheckCircle } from "lucide-react";
+import { MapButtons } from "@/components/MapButtons";
+import { shortLocation } from "@/lib/location-utils";
 import { formatTime12hLong } from "@/lib/time-utils";
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
@@ -91,11 +93,11 @@ export default function SubmitOffer() {
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
-                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{request.homeLocation}</p>
+                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(request.homeLocation)}</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
-                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{request.workLocation}</p>
+                <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(request.workLocation)}</p>
               </div>
               <div className="flex items-center gap-4 mt-1">
                 <div className="flex-1">
@@ -138,33 +140,13 @@ export default function SubmitOffer() {
                 <p className="text-xs mt-1 font-bold" style={{ color: "var(--text-muted)" }}>📝 {request.notes}</p>
               )}
 
-              {/* Google Maps buttons */}
-              {(request.homeLat && request.homeLng) || (request.destLat && request.destLng) ? (
-                <div className="flex gap-2 flex-wrap pt-1" dir="rtl">
-                  {request.homeLat && request.homeLng && (
-                    <a
-                      href={`https://www.google.com/maps?q=${request.homeLat},${request.homeLng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                      style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}
-                    >
-                      <ExternalLink size={11} /> خريطة الانطلاق
-                    </a>
-                  )}
-                  {request.destLat && request.destLng && (
-                    <a
-                      href={`https://www.google.com/maps?q=${request.destLat},${request.destLng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                      style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
-                    >
-                      <ExternalLink size={11} /> خريطة الوصول
-                    </a>
-                  )}
-                </div>
-              ) : null}
+              {/* أزرار الخريطة الموحدة */}
+              <MapButtons
+                homeLat={request.homeLat}
+                homeLng={request.homeLng}
+                destLat={request.destLat}
+                destLng={request.destLng}
+              />
             </div>
           </div>
 
@@ -241,3 +223,4 @@ export default function SubmitOffer() {
     </Layout>
   );
 }
+
