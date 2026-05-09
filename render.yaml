@@ -4,8 +4,8 @@ services:
     env: node
     plan: standard
     branch: main
-    buildCommand: pnpm install --no-frozen-lockfile --prod=false && pnpm run build
-    startCommand: pnpm --dir artifacts/api-server run start
+    buildCommand: corepack pnpm install --frozen-lockfile --prod=false && corepack pnpm run build
+    startCommand: corepack pnpm --dir artifacts/api-server run start
     healthCheckPath: /api/healthz
     envVars:
       - key: NODE_ENV
@@ -35,7 +35,7 @@ services:
     name: delivery-bid-frontend
     env: static
     branch: main
-    buildCommand: BASE_PATH=/ pnpm --filter @workspace/delivery-bidding run build
+    buildCommand: BASE_PATH=/ corepack pnpm --filter @workspace/delivery-bidding run build
     staticPublishPath: artifacts/delivery-bidding/dist/public
     routes:
       - type: rewrite
