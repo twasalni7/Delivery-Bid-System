@@ -1,12 +1,9 @@
 /**
- * Push subscription cleanup job
+ * Cleanup jobs — run periodic housekeeping tasks on the database.
  *
- * Runs once per day (starting 5 minutes after server boot).
- * Clears push_subscription for users who have not had a successfully
- * delivered push notification in the last STALE_DAYS days.
- *
- * This supplements the organic cleanup that fires whenever a push
- * attempt receives a 404/410 response.
+ * Jobs:
+ *   1. Push subscription cleanup  — daily, removes stale push tokens
+ *   2. Expired user_tokens cleanup — daily, removes expired auth tokens
  */
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
@@ -15,13 +12,12 @@ const STALE_DAYS = 30;
 const INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const STARTUP_DELAY_MS = 5 * 60 * 1000;  // 5 minutes after boot
 
-async function runCleanup(): Promise<void> {
+// ─── Job 1: Push subscription cleanup ────────────────────────────────────────
+
+async function runPushCleanup(): Promise<void> {
   logger.info("push cleanup: starting stale subscription cleanup");
 
   try {
-    // Clear push_subscription for clients whose last successfully delivered
-    // notification is older than STALE_DAYS, or who have never received one
-    // but have a subscription stored.
     const clientResult = await pool.query<{ id: number }>(
       `UPDATE clients
           SET push_subscription = NULL
@@ -86,13 +82,41 @@ async function runCleanup(): Promise<void> {
   }
 }
 
+// ─── Job 2: Expired user_tokens cleanup ──────────────────────────────────────
+
+async function runTokenCleanup(): Promise<void> {
+  logger.info("token cleanup: removing expired auth tokens");
+  try {
+    const result = await pool.query<{ count: string }>(
+      `WITH deleted AS (
+         DELETE FROM user_tokens
+          WHERE expires_at < NOW()
+         RETURNING id
+       )
+       SELECT COUNT(*)::text AS count FROM deleted`
+    );
+    const deleted = result.rows[0]?.count ?? "0";
+    if (parseInt(deleted) > 0) {
+      logger.info({ deleted }, "token cleanup: removed expired tokens");
+    } else {
+      logger.info("token cleanup: no expired tokens found");
+    }
+  } catch (err) {
+    logger.error({ err }, "token cleanup: failed");
+  }
+}
+
+// ─── Scheduler ───────────────────────────────────────────────────────────────
+
 export function startPushCleanupJob(): void {
-  // Delay first run so the server has time to finish startup
   const timer = setTimeout(() => {
-    void runCleanup();
-    setInterval(() => void runCleanup(), INTERVAL_MS);
+    void runPushCleanup();
+    void runTokenCleanup();
+    setInterval(() => {
+      void runPushCleanup();
+      void runTokenCleanup();
+    }, INTERVAL_MS);
   }, STARTUP_DELAY_MS);
 
-  // Allow the process to exit even if the timer is pending
   if (timer.unref) timer.unref();
 }
