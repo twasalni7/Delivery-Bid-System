@@ -109,6 +109,10 @@ router.post("/register-client", async (req, res) => {
     res.status(400).json({ error: "يرجى إدخال الاسم والجوال وكلمة المرور" });
     return;
   }
+  if (String(password).length < 6) {
+    res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
+    return;
+  }
   if (!validateMobile(mobile)) {
     res.status(400).json({ error: "رقم الجوال غير صحيح" });
     return;

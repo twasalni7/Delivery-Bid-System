@@ -5,7 +5,7 @@ import { eq, desc, isNotNull, count, isNull } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
-import { notify, sendPushToUser } from "../lib/notify";
+import { notify, sendPushToUser, notifyAllDrivers, notifyAllAdmins } from "../lib/notify";
 import { z } from "zod";
 
 const router = Router();
@@ -30,7 +30,7 @@ const sendRequestSchema = z.object({
  * GET /api/push/status
  * OneSignal يدير الـ subscriptions — نرجع دائماً true لأن OneSignal يتولى الأمر
  */
-router.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth(), async (req, res) => {
   const user = getSessionUser(req);
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
@@ -88,22 +88,26 @@ router.post("/send", requireAuth("admin"), async (req, res) => {
       });
       res.json({ ok: true, sent: 1 });
     } else if (audience.mode === "roles") {
-      // إرسال لدور معين
+      // إرسال جماعي لدور محدد عبر OneSignal filters
       let sent = 0;
       for (const role of audience.roles) {
-        await notify({
-          userId: 0, // سيتم تجاهله
-          userRole: role,
-          title,
-          message,
-          type,
-          url,
-        });
-        sent++;
+        if (role === "driver") {
+          await notifyAllDrivers({ title, message, type, url });
+          sent++;
+        } else if (role === "admin") {
+          await notifyAllAdmins({ title, message, type, url });
+          sent++;
+        } else if (role === "client") {
+          // TODO: notifyAllClients — إضافة مستقبلاً
+          logger.warn({ role }, "push/send: broadcast to clients not yet implemented");
+        }
       }
       res.json({ ok: true, sent });
     } else {
-      res.json({ ok: true, message: "Use OneSignal dashboard for bulk sends" });
+      // mode === "all": إرسال لكل الأدوار
+      await notifyAllDrivers({ title, message, type, url });
+      await notifyAllAdmins({ title, message, type, url });
+      res.json({ ok: true, message: "Broadcast sent to all roles" });
     }
   } catch (err) {
     logger.error({ err }, "push/send: failed");
