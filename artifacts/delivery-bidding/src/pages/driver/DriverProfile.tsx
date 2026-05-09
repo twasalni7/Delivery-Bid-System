@@ -5,6 +5,7 @@ import { useGetDriverMe, getGetDriverMeQueryKey, useListRequests } from "@worksp
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { Wallet, Upload, CheckCircle2, Clock, X, Landmark, User, Phone, Car, Globe, CreditCard, AlertTriangle, TrendingUp } from "lucide-react";
+import { EnablePushButton } from "@/components/enable-push-button";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { getSupabase } from "@/lib/supabase";
@@ -143,6 +144,21 @@ export default function DriverProfile() {
   return (
     <Layout role="driver">
       <div dir="rtl" className="space-y-5">
+
+        {/* ── إشعارات الدفع ── */}
+        <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+              🔔
+            </div>
+            <div>
+              <p className="font-black text-base" style={{ color: "var(--text)" }}>الإشعارات الفورية</p>
+              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>تلقّ تنبيهات عند وصول طلبات جديدة</p>
+            </div>
+          </div>
+          <EnablePushButton />
+        </div>
 
         {/* ── Hero Balance Card ── */}
         {driver && (
