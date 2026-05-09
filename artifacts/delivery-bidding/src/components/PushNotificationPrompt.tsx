@@ -1,4 +1,3 @@
-import { Loader2 } from "lucide-react";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 export function PushNotificationPrompt({ role }: { role?: string }) {
@@ -28,4 +27,3 @@ export function PushNotificationPrompt({ role }: { role?: string }) {
     </div>
   );
 }
-```
