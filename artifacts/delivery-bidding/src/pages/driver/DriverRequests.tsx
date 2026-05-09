@@ -3,7 +3,9 @@ import { useLocation, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
-import { MessageCircle, Send, X, MapPin } from "lucide-react";
+import { MessageCircle, Send, X } from "lucide-react";
+import { MapButtons } from "@/components/MapButtons";
+import { shortLocation } from "@/lib/location-utils";
 import { formatTime12hLong } from "@/lib/time-utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
 import { useToast } from "@/hooks/use-toast";
@@ -172,14 +174,14 @@ export default function DriverRequests() {
                     <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
                     <div>
                       <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الانطلاق</p>
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{r.homeLocation}</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(r.homeLocation)}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 relative z-10">
                     <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
                     <div>
                       <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الوصول</p>
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{r.workLocation}</p>
+                      <p className="text-sm font-black" style={{ color: "var(--text)" }}>{shortLocation(r.workLocation)}</p>
                     </div>
                   </div>
                 </div>
@@ -193,33 +195,13 @@ export default function DriverRequests() {
                   <span>👥 {r.numberOfPeople} أشخاص · {r.workingDaysPerWeek} أيام/أسبوع</span>
                 </div>
 
-                {/* Google Maps buttons */}
-                {(r.homeLat && r.homeLng) || (r.destLat && r.destLng) ? (
-                  <div className="flex gap-2 flex-wrap" dir="rtl">
-                    {r.homeLat && r.homeLng && (
-                      <a
-                        href={`https://www.google.com/maps?q=${r.homeLat},${r.homeLng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}
-                      >
-                        <MapPin size={12} /> موقع الانطلاق
-                      </a>
-                    )}
-                    {r.destLat && r.destLng && (
-                      <a
-                        href={`https://www.google.com/maps?q=${r.destLat},${r.destLng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                        style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
-                      >
-                        <MapPin size={12} /> موقع الوصول
-                      </a>
-                    )}
-                  </div>
-                ) : null}
+                {/* أزرار الخريطة الموحدة */}
+                <MapButtons
+                  homeLat={r.homeLat}
+                  homeLng={r.homeLng}
+                  destLat={r.destLat}
+                  destLng={r.destLng}
+                />
 
                 {/* Price breakdown */}
                 {(r as any).monthlyPrice != null && (r as any).monthlyPrice > 0 && (
@@ -323,3 +305,4 @@ export default function DriverRequests() {
     </Layout>
   );
 }
+
