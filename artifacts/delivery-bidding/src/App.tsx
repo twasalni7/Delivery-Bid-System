@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import NotFound from "@/pages/not-found";
-import { useInstallAndPushFlow } from "@/hooks/use-install-and-push-flow";
+import { useInstallAndPushFlow, markOneSignalLinked, clearOneSignalLinked } from "@/hooks/use-install-and-push-flow";
 import { consumePendingNotificationInteraction } from "@/lib/notification-actions";
 import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
@@ -193,7 +193,7 @@ function FlowOrchestrator() {
     dismissIOSPrompt,
     dismissPushPrompt,
     markPushEnabled,
-  } = useInstallAndPushFlow(canPromptForPush);
+  } = useInstallAndPushFlow(canPromptForPush, user?.id as number | undefined);
 
   // ── OneSignal init (once on mount) ────────────────────────────────────────
   useEffect(() => {
@@ -213,12 +213,16 @@ function FlowOrchestrator() {
     if (!user) {
       // User logged out — unlink from OneSignal
       void logoutOneSignal();
+      clearOneSignalLinked();
       return;
     }
 
     // User logged in — link device to their account
     // external_id format: role:id (e.g. "driver:42", "client:7")
-    void loginOneSignal(user.id as number, user.role);
+    void loginOneSignal(user.id as number, user.role).then(() => {
+      // ✅ سجّل أن OneSignal تم ربطه بهذا المستخدم
+      markOneSignalLinked(user.id as number);
+    });
 
     // Handle pending notification tap (if app was opened from a notification)
     const pending = consumePendingNotificationInteraction();
