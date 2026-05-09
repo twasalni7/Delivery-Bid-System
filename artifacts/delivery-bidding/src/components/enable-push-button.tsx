@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Bell, BellOff, BellRing, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
-import type { PushSubscribeResult } from "@/lib/push-notifications";
+import type { PushSubscribeResult } from "@/hooks/use-push-notifications";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 

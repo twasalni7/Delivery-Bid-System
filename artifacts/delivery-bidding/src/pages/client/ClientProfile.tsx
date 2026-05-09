@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { EnablePushButton } from "@/components/enable-push-button";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -61,6 +62,21 @@ export default function ClientProfile() {
         <div className="mb-6">
           <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>ملفي الشخصي</h1>
           <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>تحديث بياناتك الشخصية</p>
+        </div>
+
+        {/* ── إشعارات الدفع ── */}
+        <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+              🔔
+            </div>
+            <div>
+              <p className="font-black text-base" style={{ color: "var(--text)" }}>الإشعارات الفورية</p>
+              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>تلقّ تنبيهات عند وصول عروض جديدة</p>
+            </div>
+          </div>
+          <EnablePushButton />
         </div>
 
         <div className="rounded-3xl p-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
