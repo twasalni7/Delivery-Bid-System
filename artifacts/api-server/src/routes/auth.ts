@@ -79,7 +79,7 @@ function normalizeLoginCode(code: string): string {
 }
 
 async function regenerateSession(req: Request): Promise<void> {
-  await new Promise<void>((resolve, reject) =>
+  return new Promise<void>((resolve, reject) =>
     req.session.regenerate((err: unknown) =>
       err ? reject(err) : resolve()
     )

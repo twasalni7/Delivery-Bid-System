@@ -190,6 +190,8 @@ describe("POST /auth/login-client", () => {
       .send({ mobile: "0501234567", password: "pass123" });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: 1, name: "Ali", role: "client" });
+    expect(typeof res.body.token).toBe("string");
+    expect(res.body.token.length).toBeGreaterThan(0);
   });
 });
 
