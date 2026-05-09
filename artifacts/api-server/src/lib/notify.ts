@@ -195,3 +195,43 @@ export async function notifyAllDrivers(params: {
     logger.error({ err }, "[OneSignal] notifyAllDrivers failed");
   }
 }
+
+/**
+ * إرسال إشعار لجميع الأدمن
+ */
+export async function notifyAllAdmins(params: {
+  title: string;
+  message: string;
+  type: "offer" | "request" | "system" | "support";
+  relatedId?: number;
+  url?: string;
+}) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+    logger.warn("[OneSignal] Cannot notify all admins — keys not configured");
+    return;
+  }
+
+  const payload = {
+    app_id: ONESIGNAL_APP_ID,
+    filters: [{ field: "tag", key: "role", relation: "=", value: "admin" }],
+    headings: { ar: params.title, en: params.title },
+    contents: { ar: params.message, en: params.message },
+    url: params.url ?? "/admin/dashboard",
+    ttl: 86400,
+  };
+
+  try {
+    const res = await fetch(ONESIGNAL_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json() as { id?: string; recipients?: number };
+    logger.info({ id: data.id, recipients: data.recipients }, "[OneSignal] notifyAllAdmins sent ✓");
+  } catch (err) {
+    logger.error({ err }, "[OneSignal] notifyAllAdmins failed");
+  }
+}
