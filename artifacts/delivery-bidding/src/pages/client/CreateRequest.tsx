@@ -400,26 +400,49 @@ export default function CreateRequest() {
     const firstReturnTime = shifts[0]?.returnTime ?? "";
     const validAdditionalForPricing = additionalLocations.filter((l) => l.address.trim());
     setIsPricingLoading(true);
-    fetch(`${API}/api/maps/route`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      signal: controller.signal,
-      body: JSON.stringify({
-        points: [
-          { lat: homeCoords.lat, lng: homeCoords.lng, address: homeCoords.address, type: "pickup" },
-          { lat: workCoords.lat, lng: workCoords.lng, address: workCoords.address, type: "dropoff" },
-        ],
-      }),
-    })
-      .then((r) => { if (!r.ok) throw new Error(`route: ${r.status}`); return r.json(); })
-      .then((route) => {
-        setRouteSummary(route);
+    const fetchRoute = (points: Array<{ lat: number; lng: number; address: string; type: "pickup" | "dropoff" }>) =>
+      fetch(`${API}/api/maps/route`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        signal: controller.signal,
+        body: JSON.stringify({ points }),
+      }).then((r) => {
+        if (!r.ok) throw new Error(`route: ${r.status}`);
+        return r.json() as Promise<{ distanceKm: number; durationMinutes: number; routePolyline: string }>;
+      });
+
+    const routeTasks: Array<Promise<{ distanceKm: number; durationMinutes: number; routePolyline: string }>> = [
+      fetchRoute([
+        { lat: homeCoords.lat, lng: homeCoords.lng, address: homeCoords.address, type: "pickup" },
+        { lat: workCoords.lat, lng: workCoords.lng, address: workCoords.address, type: "dropoff" },
+      ]),
+    ];
+    for (const p of extraPassengers) {
+      if (!p.pickupCoords || !p.destCoords) continue;
+      routeTasks.push(
+        fetchRoute([
+          { lat: p.pickupCoords.lat, lng: p.pickupCoords.lng, address: p.pickupCoords.address, type: "pickup" },
+          { lat: p.destCoords.lat, lng: p.destCoords.lng, address: p.destCoords.address, type: "dropoff" },
+        ])
+      );
+    }
+
+    Promise.all(routeTasks)
+      .then((routes) => {
+        const primaryRoute = routes[0];
+        const distanceKm = Math.max(...routes.map((r) => r.distanceKm));
+        const durationMinutes = Math.max(...routes.map((r) => r.durationMinutes));
+        setRouteSummary({
+          distanceKm,
+          durationMinutes,
+          routePolyline: primaryRoute?.routePolyline ?? "",
+        });
         return fetch(`${API}/api/pricing/calculate`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...getAuthHeaders() },
           signal: controller.signal,
           body: JSON.stringify({
-            distanceKm: route.distanceKm,
+            distanceKm,
             numberOfPeople: sharingCount,
             workingDaysPerWeek: selectedDays.length || DEFAULT_WORKING_DAYS_PER_WEEK,
             numberOfShifts: validShifts.length || 1,
@@ -439,7 +462,7 @@ export default function CreateRequest() {
         }
       });
     return () => controller.abort();
-  }, [homeCoords, workCoords, sharingCount, selectedDays, shifts, additionalLocations]);
+  }, [homeCoords, workCoords, extraPassengers, sharingCount, selectedDays, shifts, additionalLocations]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
