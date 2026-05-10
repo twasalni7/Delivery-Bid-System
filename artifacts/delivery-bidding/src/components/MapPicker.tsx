@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "reac
 import { createPortal } from "react-dom";
 import { MapPin, Loader2, Search, X, LocateFixed, CheckCircle2, Expand, Navigation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import "leaflet/dist/leaflet.css";
 
 export interface MapCoords {
@@ -34,23 +36,22 @@ function fixLeafletIcons(L: typeof import("leaflet")) {
 
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ar`,
-      { headers: { "Accept-Language": "ar" } }
-    );
+    const res = await fetch(`${API}/api/maps/reverse?lat=${lat}&lng=${lng}`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    const data = await res.json() as { display_name?: string };
-    return data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    const data = await res.json() as { address?: string };
+    return data.address ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   } catch {
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   }
 }
 
-type NominatimResult = {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
+type SearchResult = {
+  id: number | string;
+  address: string;
+  lat: number;
+  lng: number;
 };
 
 // Eastern Region bounding box: SW(25.5, 49.4) → NE(27.6, 50.7)
@@ -63,7 +64,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 export default function MapPicker({
   value,
   onChange,
-  placeholder = "ابحث عن موقع أو اضغط على الخريطة",
+  placeholder = "ابحث عن موقع أو حرّك الخريطة",
   color = "var(--brand)",
   initialCenter,
   collapsible = false,
@@ -74,8 +75,6 @@ export default function MapPicker({
   const searchInputRef = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const markerRef = useRef<any>(null);
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const geocodeRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
@@ -95,7 +94,7 @@ export default function MapPicker({
 
   // Search state
   const [searchText, setSearchText] = useState(value?.address ?? "");
-  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
@@ -115,15 +114,7 @@ export default function MapPicker({
 
   const setMarkerAndView = useCallback((lat: number, lng: number, zoom = 16) => {
     if (!mapRef.current) return;
-    void import("leaflet").then((L) => {
-      const Lx = L.default || L;
-      if (markerRef.current) {
-        markerRef.current.setLatLng([lat, lng]);
-      } else {
-        markerRef.current = Lx.marker([lat, lng]).addTo(mapRef.current);
-      }
-      mapRef.current.setView([lat, lng], zoom);
-    });
+    mapRef.current.setView([lat, lng], zoom);
   }, []);
 
   const applySelection = useCallback(
@@ -155,10 +146,10 @@ export default function MapPicker({
 
     setSearching(true);
     try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=ar&viewbox=${EASTERN_REGION_VIEWBOX}&bounded=1`;
-      const res = await fetch(url, { headers: { "Accept-Language": "ar" } });
+      const url = `${API}/api/maps/search?q=${encodeURIComponent(query)}&limit=6&viewbox=${EASTERN_REGION_VIEWBOX}`;
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) return;
-      const results = await res.json() as NominatimResult[];
+      const results = await res.json() as SearchResult[];
       setSearchResults(results);
       setShowResults(results.length > 0);
     } catch {
@@ -178,10 +169,10 @@ export default function MapPicker({
     }, SEARCH_DEBOUNCE_MS);
   };
 
-  const selectSearchResult = (result: NominatimResult) => {
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    const next = { lat, lng, address: result.display_name };
+  const selectSearchResult = (result: SearchResult) => {
+    const lat = result.lat;
+    const lng = result.lng;
+    const next = { lat, lng, address: result.address };
 
     setGpsError(null);
     dismissKeyboardAndSuggestions();
@@ -240,6 +231,12 @@ export default function MapPicker({
     applySelection({ lat, lng, address: fallbackAddress });
     await resolveAddressForSelection(lat, lng);
   }, [applySelection, dismissKeyboardAndSuggestions, resolveAddressForSelection, setMarkerAndView]);
+
+  const handleMapMoveStop = useCallback(async () => {
+    if (!mapRef.current) return;
+    const center = mapRef.current.getCenter();
+    await handleMapTap(center.lat, center.lng);
+  }, [handleMapTap]);
 
   const handleConfirmSelection = useCallback(() => {
     if (!pendingSelection) return;
@@ -311,16 +308,12 @@ export default function MapPicker({
         maxZoom: 19,
       }).addTo(map);
 
-      if (pendingSelection) {
-        markerRef.current = Lx.marker([pendingSelection.lat, pendingSelection.lng]).addTo(map);
-      }
-
       mapRef.current = map;
       setMapReady(true);
       setLoading(false);
 
-      map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
-        void handleMapTap(e.latlng.lat, e.latlng.lng);
+      map.on("moveend", () => {
+        void handleMapMoveStop();
       });
 
       // Make sure map sizes correctly in fixed full-screen container.
@@ -333,12 +326,11 @@ export default function MapPicker({
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
-        markerRef.current = null;
         setMapReady(false);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldRenderMap, initialCenter]);
+  }, [shouldRenderMap, initialCenter, handleMapMoveStop]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !pendingSelection) return;
@@ -374,6 +366,13 @@ export default function MapPicker({
         </div>
       )}
 
+      <div className="pointer-events-none absolute inset-0 z-[1150] flex items-center justify-center">
+        <div className="flex flex-col items-center -translate-y-5">
+          <MapPin size={36} style={{ color }} className="drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]" />
+          <div className="mt-1 h-2.5 w-2.5 rounded-full border-2 border-white" style={{ backgroundColor: color }} />
+        </div>
+      </div>
+
       {!pendingSelection && !loading && (
         <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
           {placeholder}
@@ -407,6 +406,13 @@ export default function MapPicker({
           <span>جاري تحديث العنوان...</span>
         </div>
       )}
+
+      <div className="pointer-events-none absolute inset-0 z-[1150] flex items-center justify-center">
+        <div className="flex flex-col items-center -translate-y-5">
+          <MapPin size={34} style={{ color }} className="drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]" />
+          <div className="mt-1 h-2.5 w-2.5 rounded-full border-2 border-white" style={{ backgroundColor: color }} />
+        </div>
+      </div>
 
       {!pendingSelection && !loading && (
         <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
@@ -458,7 +464,7 @@ export default function MapPicker({
           {searchResults.map((r) => (
             <button
               type="button"
-              key={r.place_id}
+              key={r.id}
               onClick={() => selectSearchResult(r)}
               className="w-full flex items-start gap-3 px-4 py-4 text-right transition-colors"
               style={{ color: "var(--text-sub)", borderBottom: "1px solid var(--border-subtle)" }}
@@ -466,10 +472,10 @@ export default function MapPicker({
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
               dir="rtl"
               role="option"
-              aria-label={r.display_name}
+              aria-label={r.address}
             >
               <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
-              <span className="text-base font-bold line-clamp-2">{r.display_name}</span>
+              <span className="text-base font-bold line-clamp-2">{r.address}</span>
             </button>
           ))}
         </div>
@@ -534,7 +540,7 @@ export default function MapPicker({
                     </button>
                     <div className="flex-1 min-w-0">
                       <p id="map-picker-title" className="text-base font-black" style={{ color: "var(--text)" }}>حددي موقعك بدقة</p>
-                      <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>اضغطي على الخريطة أو ابحثي بالعنوان</p>
+                      <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>حرّكي الخريطة حتى يصبح الدبوس الثابت فوق المكان المطلوب</p>
                     </div>
                   </div>
                   {searchBar}
@@ -621,7 +627,7 @@ export default function MapPicker({
             {(!collapsible || isInlineExpanded) && (
               <>
           <p className="text-sm font-black text-center" style={{ color: "var(--text-hint)" }}>
-            اكتب العنوان أولاً أو استخدم الخريطة المصغرة، ثم أكد الموقع للمتابعة
+            ابحثي بالعنوان أو حرّكي الخريطة، ثم أكدي الموقع للمتابعة
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">

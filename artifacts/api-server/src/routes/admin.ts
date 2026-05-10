@@ -9,7 +9,9 @@ import {
   transactionsTable,
   walletTransactionsTable,
   supportTicketsTable,
-  haversineKm,
+  notificationsTable,
+  activityLogsTable,
+  requestStopsTable,
 } from "@workspace/db";
 import { eq, count, ne, desc, sql, sum, inArray, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
@@ -19,7 +21,7 @@ import { logger } from "../lib/logger";
 import { CreateRequestBody } from "@workspace/api-zod";
 import { notify } from "../lib/notify";
 import { getSessionUser } from "../lib/session";
-import { getBidFee, calculatePriceForRequest } from "./pricing";
+import { getBidFee } from "./pricing";
 import { withDbTransaction } from "../lib/db-transaction";
 import { normalizeDriverMobile } from "./auth";
 import {
@@ -27,6 +29,7 @@ import {
   resolveRequestStatus,
   type RequestStatus,
 } from "../lib/request-status-engine";
+import { resolveRequestRoutingAndPricing } from "../lib/request-routing";
 
 const VALID_REQUEST_STATUSES = new Set([
   "OPEN",
@@ -37,8 +40,14 @@ const VALID_REQUEST_STATUSES = new Set([
   "EXPIRED",
   "FROZEN",
 ]);
+const TERMINAL_STATUSES = new Set<RequestStatus>(["COMPLETED", "CANCELLED"]);
 
 const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
+
+function buildArchivedAt(status: RequestStatus, current?: Date | null) {
+  if (!TERMINAL_STATUSES.has(status)) return null;
+  return current ?? new Date();
+}
 
 async function generateUniqueLoginCode(maxAttempts = 5): Promise<string> {
   for (let i = 0; i < maxAttempts; i++) {
@@ -699,6 +708,108 @@ router.get("/requests", async (_req, res) => {
   );
 });
 
+router.get("/requests/archive", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: requestsTable.id,
+      status: requestsTable.status,
+      homeLocation: requestsTable.homeLocation,
+      workLocation: requestsTable.workLocation,
+      monthlyPrice: requestsTable.monthlyPrice,
+      archivedAt: requestsTable.archivedAt,
+      createdAt: requestsTable.createdAt,
+      clientId: requestsTable.clientId,
+      clientName: clientsTable.name,
+      clientMobile: clientsTable.mobile,
+    })
+    .from(requestsTable)
+    .leftJoin(clientsTable, eq(clientsTable.id, requestsTable.clientId))
+    .where(sql`${requestsTable.archivedAt} IS NOT NULL`)
+    .orderBy(desc(requestsTable.archivedAt));
+
+  res.json(
+    rows.map((row) => ({
+      ...row,
+      monthlyPrice: row.monthlyPrice != null ? parseFloat(String(row.monthlyPrice)) : 0,
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+      createdAt: row.createdAt?.toISOString() ?? null,
+      client: row.clientId
+        ? {
+            id: row.clientId,
+            name: row.clientName,
+            mobile: row.clientMobile,
+          }
+        : null,
+    }))
+  );
+});
+
+router.get("/requests/:id/context", async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+
+  const requestRow = await db.query.requestsTable.findFirst({
+    where: eq(requestsTable.id, id),
+  });
+  if (!requestRow) {
+    res.status(404).json({ error: "الطلب غير موجود" });
+    return;
+  }
+
+  const [client, events, notifications, stops] = await Promise.all([
+    requestRow.clientId
+      ? db.query.clientsTable.findFirst({ where: eq(clientsTable.id, requestRow.clientId) })
+      : Promise.resolve(null),
+    db
+      .select()
+      .from(activityLogsTable)
+      .where(and(eq(activityLogsTable.entity, "requests"), eq(activityLogsTable.entityId, id)))
+      .orderBy(desc(activityLogsTable.createdAt)),
+    db
+      .select()
+      .from(notificationsTable)
+      .where(and(eq(notificationsTable.relatedId, id), eq(notificationsTable.type, "request")))
+      .orderBy(desc(notificationsTable.createdAt)),
+    db
+      .select()
+      .from(requestStopsTable)
+      .where(eq(requestStopsTable.requestId, id))
+      .orderBy(requestStopsTable.stopOrder),
+  ]);
+
+  res.json({
+    request: {
+      ...requestRow,
+      monthlyPrice: requestRow.monthlyPrice != null ? parseFloat(String(requestRow.monthlyPrice)) : 0,
+      createdAt: requestRow.createdAt?.toISOString() ?? null,
+      updatedAt: requestRow.updatedAt?.toISOString() ?? null,
+      archivedAt: requestRow.archivedAt?.toISOString() ?? null,
+    },
+    client: client
+      ? {
+          id: client.id,
+          name: client.name,
+          mobile: client.mobile,
+          createdAt: client.createdAt?.toISOString() ?? null,
+        }
+      : null,
+    events: events.map((event) => ({
+      ...event,
+      createdAt: event.createdAt?.toISOString() ?? null,
+    })),
+    notifications: notifications.map((notification) => ({
+      ...notification,
+      createdAt: notification.createdAt?.toISOString() ?? null,
+      deliveredAt: notification.deliveredAt?.toISOString() ?? null,
+      readAt: notification.readAt?.toISOString() ?? null,
+    })),
+    stops,
+  });
+});
+
 router.patch("/requests/:id", async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {
@@ -712,15 +823,10 @@ router.patch("/requests/:id", async (req, res) => {
     return;
   }
   if (selectedDriverId !== undefined) updates.selectedDriverId = selectedDriverId;
-  if (monthlyPrice !== undefined) {
-    const price = parseFloat(monthlyPrice);
-    if (isNaN(price) || price < 0) {
-      res.status(400).json({ error: "السعر الشهري غير صحيح" });
-      return;
-    }
-    updates.monthlyPrice = price;
+  if (monthlyPrice !== undefined || needsAdminReview !== undefined) {
+    res.status(400).json({ error: "تمت إزالة التسعير اليدوي من النظام" });
+    return;
   }
-  if (needsAdminReview !== undefined) updates.needsAdminReview = Boolean(needsAdminReview);
 
   // `status` is not added to `updates` here — it is resolved by the engine
   // later.  The check therefore covers two valid rejection paths:
@@ -750,8 +856,6 @@ router.patch("/requests/:id", async (req, res) => {
     } else {
       const effectiveSelectedDriverId =
         selectedDriverId !== undefined ? (selectedDriverId as number | null) : existing.selectedDriverId;
-      const effectiveNeedsAdminReview =
-        needsAdminReview !== undefined ? Boolean(needsAdminReview) : existing.needsAdminReview;
       event =
         selectedDriverId !== undefined && effectiveSelectedDriverId != null
           ? "selected_driver_assigned"
@@ -759,17 +863,24 @@ router.patch("/requests/:id", async (req, res) => {
       const resolved = resolveRequestStatus({
         currentStatus: existing.status as RequestStatus,
         selectedDriverId: effectiveSelectedDriverId,
-        needsAdminReview: effectiveNeedsAdminReview,
+        needsAdminReview: false,
         event,
       });
       updates.status = resolved.status;
       updates.statusManuallySetByAdmin = false;
+      updates.archivedAt = buildArchivedAt(resolved.status as RequestStatus, existing.archivedAt);
       reason = resolved.reason;
     }
 
     const [updated] = await tx
       .update(requestsTable)
-      .set(updates)
+      .set({
+        ...updates,
+        archivedAt:
+          updates.status !== undefined
+            ? buildArchivedAt(updates.status as RequestStatus, existing.archivedAt)
+            : (updates.archivedAt as Date | null | undefined) ?? existing.archivedAt ?? null,
+      })
       .where(eq(requestsTable.id, id))
       .returning();
 
@@ -790,6 +901,30 @@ router.patch("/requests/:id", async (req, res) => {
     reason,
     event,
   });
+
+  if (updated.clientId) {
+    void notify({
+      userId: updated.clientId,
+      userRole: "client",
+      title: "تحديث من الإدارة",
+      message: `تم تحديث حالة الطلب #${updated.id} إلى ${updated.status}`,
+      type: "request",
+      relatedId: updated.id,
+      url: `/client/request/${updated.id}`,
+    });
+  }
+
+  if (updated.selectedDriverId) {
+    void notify({
+      userId: updated.selectedDriverId,
+      userRole: "driver",
+      title: "تحديث من الإدارة",
+      message: `تم تحديث حالة الطلب #${updated.id} إلى ${updated.status}`,
+      type: "request",
+      relatedId: updated.id,
+      url: `/driver/request/${updated.id}`,
+    });
+  }
 
   res.json({
     id: updated.id,
@@ -854,13 +989,18 @@ router.post("/requests/:id/unlock-status", async (req, res) => {
     const { status: resolvedStatus, reason } = resolveRequestStatus({
       currentStatus: existing.status as RequestStatus,
       selectedDriverId: existing.selectedDriverId,
-      needsAdminReview: existing.needsAdminReview,
+      needsAdminReview: false,
       event: "admin_request_updated",
     });
 
     const [updated] = await tx
       .update(requestsTable)
-      .set({ status: resolvedStatus, statusManuallySetByAdmin: false, updatedAt: new Date() })
+      .set({
+        status: resolvedStatus,
+        statusManuallySetByAdmin: false,
+        archivedAt: buildArchivedAt(resolvedStatus, existing.archivedAt),
+        updatedAt: new Date(),
+      })
       .where(eq(requestsTable.id, id))
       .returning();
 
@@ -1018,32 +1158,25 @@ router.post("/requests", async (req, res) => {
     req.body?.selectedDriverId != null ? Number(req.body.selectedDriverId) : null;
 
   try {
-    let distanceKm: number | null = parsed.data.distanceKm ?? null;
-    if (
-      distanceKm == null &&
-      parsed.data.homeLat != null &&
-      parsed.data.homeLng != null &&
-      parsed.data.destLat != null &&
-      parsed.data.destLng != null
-    ) {
-      distanceKm = haversineKm(parsed.data.homeLat, parsed.data.homeLng, parsed.data.destLat, parsed.data.destLng);
-    }
+    const routing = await resolveRequestRoutingAndPricing({
+      homeLat: parsed.data.homeLat ?? null,
+      homeLng: parsed.data.homeLng ?? null,
+      homeLocation: parsed.data.homeLocation,
+      destLat: parsed.data.destLat ?? null,
+      destLng: parsed.data.destLng ?? null,
+      workLocation: parsed.data.workLocation,
+      additionalLocations:
+        (parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
+      numberOfPeople: parsed.data.numberOfPeople ?? 1,
+      workingDaysPerWeek: parsed.data.workingDaysPerWeek ?? 5,
+      numberOfShifts: parsed.data.numberOfShifts ?? 1,
+      eveningTime: parsed.data.eveningTime ?? null,
+      shifts: (parsed.data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
+    });
 
-    let needsAdminReview = false;
-    let calculatedMonthlyPrice = 0;
-    if (distanceKm != null) {
-      const pricing = await calculatePriceForRequest({
-        distanceKm,
-        numberOfPeople: parsed.data.numberOfPeople ?? 1,
-        workingDaysPerWeek: parsed.data.workingDaysPerWeek ?? 5,
-        numberOfShifts: parsed.data.numberOfShifts ?? 1,
-        shifts: (parsed.data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
-        additionalLocations:
-          (parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
-      });
-      needsAdminReview = pricing.needsAdminReview;
-      calculatedMonthlyPrice = pricing.price;
-    }
+    const distanceKm = routing.distanceKm;
+    const calculatedMonthlyPrice = routing.pricing?.price ?? 0;
+    const needsAdminReview = false;
 
     const [created] = await db
       .insert(requestsTable)
@@ -1054,7 +1187,11 @@ router.post("/requests", async (req, res) => {
         homeLng: parsed.data.homeLng ?? null,
         destLat: parsed.data.destLat ?? null,
         destLng: parsed.data.destLng ?? null,
-        distanceKm: distanceKm,
+        distanceKm,
+        durationMinutes: routing.durationMinutes,
+        coordinates: routing.coordinates,
+        routePolyline: routing.routePolyline,
+        pricingSnapshot: routing.pricingSnapshot,
         needsAdminReview,
         phone: parsed.data.phone,
         numberOfPeople: parsed.data.numberOfPeople,
@@ -1066,13 +1203,13 @@ router.post("/requests", async (req, res) => {
         additionalLocations: parsed.data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined,
         notes: parsed.data.notes,
         clientType: parsed.data.clientType ?? "غيره",
-        monthlyPrice: parsed.data.monthlyPrice ?? calculatedMonthlyPrice,
+        monthlyPrice: calculatedMonthlyPrice,
         clientId: Number.isFinite(clientId) ? clientId : null,
         selectedDriverId: Number.isFinite(selectedDriverId) ? selectedDriverId : null,
         status: resolveRequestStatus({
           currentStatus: "OPEN",
           selectedDriverId: Number.isFinite(selectedDriverId) ? selectedDriverId : null,
-          needsAdminReview,
+          needsAdminReview: false,
           event: "request_created",
         }).status,
         createdBy: "admin",

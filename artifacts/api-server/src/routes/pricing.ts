@@ -7,7 +7,6 @@ import {
   type PricingConfig,
   type PricingTier,
   type SharingDiscount,
-  ADMIN_REVIEW_DISTANCE_KM,
 } from "@workspace/db/utils/pricing";
 import { eq, and, lte, gt, gte } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
@@ -262,15 +261,6 @@ function toFormulaResult(distanceKm: number, persons: number, formula: FormulaV2
 export async function getPriceFromActiveEngine(input: UnifiedPricingInput): Promise<MatrixPricingResult> {
   const distanceKm = Math.max(0, Number(input.distance) || 0);
   const persons = Math.max(1, Math.round(Number(input.persons) || 1));
-  const needsAdminReview = distanceKm > ADMIN_REVIEW_DISTANCE_KM;
-
-  if (needsAdminReview) {
-    logger.info(
-      { engine: "none", distanceKm, persons, reason: "needs_admin_review" },
-      "pricing: distance exceeds review threshold — skipping calculation"
-    );
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: persons, engine: "none" };
-  }
 
   const runtime = await loadPricingRuntimeConfig();
   const formulaResult = calculateSubscriptionPriceV2({ ...input, distance: distanceKm, persons }, runtime.formulaConstants);
@@ -373,11 +363,6 @@ export async function getPriceFromMatrix(
   distanceKm: number,
   numPassengers: number,
 ): Promise<MatrixPricingResult> {
-  const needsAdminReview = distanceKm > ADMIN_REVIEW_DISTANCE_KM;
-  if (needsAdminReview) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: numPassengers, engine: "matrix" };
-  }
-
   const passengers = Math.max(1, Math.round(numPassengers));
 
   // First: try to find a specific row for this passenger count range
@@ -427,13 +412,27 @@ export async function getPriceFromMatrix(
     .limit(1);
 
   if (baseRows.length === 0) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers, engine: "matrix" };
+    return toFormulaResult(
+      distanceKm,
+      passengers,
+      calculateSubscriptionPriceV2(
+        { distance: distanceKm, daysPerWeek: 5, type: "round_trip", persons: passengers, locations: 1 },
+        DEFAULT_FORMULA_V2_CONSTANTS
+      )
+    );
   }
 
   const row = baseRows[0]!;
   const priceSar = row.priceSar ?? row.pricePerPerson;
   if (priceSar == null || priceSar <= 0) {
-    return { pricePerPerson: 0, price: 0, needsAdminReview: true, distanceKm, numberOfPeople: passengers, engine: "matrix" };
+    return toFormulaResult(
+      distanceKm,
+      passengers,
+      calculateSubscriptionPriceV2(
+        { distance: distanceKm, daysPerWeek: 5, type: "round_trip", persons: passengers, locations: 1 },
+        DEFAULT_FORMULA_V2_CONSTANTS
+      )
+    );
   }
 
   const passengersMax = row.passengersMax ?? 4;
@@ -722,30 +721,7 @@ router.get("/suggestions", requireAuth("client"), async (req, res) => {
 // Admin: list requests that need admin review (distance > 40km)
 
 router.get("/review-requests", requireAuth("admin"), async (_req, res) => {
-  try {
-    const rows = await db
-      .select()
-      .from(requestsTable)
-      .where(eq(requestsTable.needsAdminReview, true));
-
-    res.json(
-      rows.map((r) => ({
-        id: r.id,
-        clientId: r.clientId,
-        homeLocation: r.homeLocation,
-        workLocation: r.workLocation,
-        distanceKm: r.distanceKm,
-        numberOfPeople: r.numberOfPeople,
-        morningTime: r.morningTime,
-        status: r.status,
-        monthlyPrice: r.monthlyPrice != null ? parseFloat(String(r.monthlyPrice)) : 0,
-        createdAt: r.createdAt?.toISOString(),
-      }))
-    );
-  } catch (err) {
-    logger.error({ err }, "pricing GET /review-requests error");
-    res.status(500).json({ error: SERVER_ERROR_MSG });
-  }
+  res.json([]);
 });
 
 // ─── Legacy endpoints (keep for backward compat) ─────────────────────────────

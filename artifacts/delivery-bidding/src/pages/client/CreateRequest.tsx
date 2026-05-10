@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h, formatTime12hLong, buildShiftsPayload, SHIFT_LABELS } from "@/lib/time-utils";
-import { haversineKm } from "@/lib/pricing";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
@@ -190,10 +189,6 @@ function PassengerCard({
   onWorkChange: (coords: MapCoords) => void;
   onWorkTimeChange: (t: string) => void;
 }) {
-  const distKm =
-    homeCoords && workCoords
-      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
-      : null;
   const hasPickup = Boolean(homeCoords);
   const hasDropoff = Boolean(workCoords);
   const statusText = getPassengerLocationStatus(hasPickup, hasDropoff);
@@ -210,11 +205,6 @@ function PassengerCard({
             <span className="font-black" style={{ color: "var(--text)" }}>
               {index === 1 ? "الراكب الأول (أنت)" : `الراكب ${index}`}
             </span>
-            {distKm !== null && (
-              <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-                {distKm.toFixed(1)} كم
-              </span>
-            )}
           </div>
           <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm font-black" style={{ color: hasDropoff ? "var(--brand)" : "var(--text-sub)" }}>
             {hasDropoff && <CheckCircle2 size={14} aria-hidden="true" />}
@@ -359,21 +349,12 @@ export default function CreateRequest() {
     distanceKm: number;
     numberOfPeople: number;
   } | undefined>(undefined);
+  const [routeSummary, setRouteSummary] = useState<{
+    distanceKm: number;
+    durationMinutes: number;
+    routePolyline: string;
+  } | undefined>(undefined);
   const [isPricingLoading, setIsPricingLoading] = useState(false);
-
-  // Compute per-passenger distances, then take the max for pricing
-  const passengerDistances: (number | null)[] = [
-    homeCoords && workCoords
-      ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
-      : null,
-    ...extraPassengers.map((p) =>
-      p.pickupCoords && p.destCoords
-        ? haversineKm(p.pickupCoords.lat, p.pickupCoords.lng, p.destCoords.lat, p.destCoords.lng)
-        : null
-    ),
-  ];
-  const validDistances = passengerDistances.filter((d): d is number => d !== null);
-  const maxDistanceKm = validDistances.length > 0 ? Math.max(...validDistances) : undefined;
 
   // Number of people for pricing: for shared subscription, add suggestion count
   const sharingCount =
@@ -407,9 +388,10 @@ export default function CreateRequest() {
     setExtraPassengers((prev) => prev.map((p, i) => (i === idx ? { ...p, ...update } : p)));
   };
 
-  // Fetch price from server whenever distance, passengers, schedule or locations change
+  // Fetch route summary + price from backend whenever locations or schedule change
   useEffect(() => {
-    if (maxDistanceKm === undefined) {
+    if (!homeCoords || !workCoords) {
+      setRouteSummary(undefined);
       setPricingResult(undefined);
       return;
     }
@@ -418,25 +400,46 @@ export default function CreateRequest() {
     const firstReturnTime = shifts[0]?.returnTime ?? "";
     const validAdditionalForPricing = additionalLocations.filter((l) => l.address.trim());
     setIsPricingLoading(true);
-    fetch(`${API}/api/pricing/calculate`, {
+    fetch(`${API}/api/maps/route`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       signal: controller.signal,
       body: JSON.stringify({
-        distanceKm: maxDistanceKm,
-        numberOfPeople: sharingCount,
-        workingDaysPerWeek: selectedDays.length || DEFAULT_WORKING_DAYS_PER_WEEK,
-        numberOfShifts: validShifts.length || 1,
-        eveningTime: firstReturnTime || undefined,
-        shifts: validShifts.length > 0 ? validShifts : undefined,
-        additionalLocations: validAdditionalForPricing.length > 0 ? validAdditionalForPricing : undefined,
+        points: [
+          { lat: homeCoords.lat, lng: homeCoords.lng, address: homeCoords.address, type: "pickup" },
+          { lat: workCoords.lat, lng: workCoords.lng, address: workCoords.address, type: "dropoff" },
+        ],
       }),
     })
+      .then((r) => { if (!r.ok) throw new Error(`route: ${r.status}`); return r.json(); })
+      .then((route) => {
+        setRouteSummary(route);
+        return fetch(`${API}/api/pricing/calculate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+          signal: controller.signal,
+          body: JSON.stringify({
+            distanceKm: route.distanceKm,
+            numberOfPeople: sharingCount,
+            workingDaysPerWeek: selectedDays.length || DEFAULT_WORKING_DAYS_PER_WEEK,
+            numberOfShifts: validShifts.length || 1,
+            eveningTime: firstReturnTime || undefined,
+            shifts: validShifts.length > 0 ? validShifts : undefined,
+            additionalLocations: validAdditionalForPricing.length > 0 ? validAdditionalForPricing : undefined,
+          }),
+        });
+      })
       .then((r) => { if (!r.ok) throw new Error(`pricing: ${r.status}`); return r.json(); })
       .then((data) => { setPricingResult(data); setIsPricingLoading(false); })
-      .catch((err) => { if (err?.name !== "AbortError") { setPricingResult(undefined); setIsPricingLoading(false); } });
+      .catch((err) => {
+        if (err?.name !== "AbortError") {
+          setRouteSummary(undefined);
+          setPricingResult(undefined);
+          setIsPricingLoading(false);
+        }
+      });
     return () => controller.abort();
-  }, [maxDistanceKm, sharingCount, selectedDays, shifts, additionalLocations]);
+  }, [homeCoords, workCoords, sharingCount, selectedDays, shifts, additionalLocations]);
 
   // Fetch shared subscription suggestions whenever coordinates + time are set
   const fetchSuggestions = useCallback(() => {
@@ -513,10 +516,6 @@ export default function CreateRequest() {
         destinationAddress: workLocation || workCoords?.address || null,
         workTime: firstGoTime || null,
         daysPerWeek: selectedDays.length,
-        distanceKm:
-          homeCoords && workCoords
-            ? haversineKm(homeCoords.lat, homeCoords.lng, workCoords.lat, workCoords.lng)
-            : null,
       },
       ...extraPassengers.map((p, idx) => ({
         passengerIndex: idx + 2,
@@ -528,10 +527,6 @@ export default function CreateRequest() {
         destinationAddress: p.destAddress || p.destCoords?.address || null,
         workTime: p.workTime || firstGoTime || null,
         daysPerWeek: selectedDays.length,
-        distanceKm:
-          p.pickupCoords && p.destCoords
-            ? haversineKm(p.pickupCoords.lat, p.pickupCoords.lng, p.destCoords.lat, p.destCoords.lng)
-            : null,
       })),
     ];
 
@@ -545,7 +540,7 @@ export default function CreateRequest() {
           homeLng: homeCoords?.lng,
           destLat: workCoords?.lat,
           destLng: workCoords?.lng,
-          distanceKm: maxDistanceKm,
+          distanceKm: routeSummary?.distanceKm,
           additionalLocations: validAdditional.length > 0 ? validAdditional : undefined,
           phone: phone.trim(),
           numberOfPeople: parseInt(numberOfPeople) || 1,
@@ -711,30 +706,17 @@ export default function CreateRequest() {
                 ))}
 
                 {/* Max distance summary */}
-                {maxDistanceKm !== undefined && (
+                {routeSummary && (
                   <div className="p-4 rounded-[1.5rem]" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                     <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>
-                      أقصى مسافة:{" "}
+                      المسافة عبر الطرق:{" "}
                       <span className="font-black" style={{ color: "var(--text)" }}>
-                        {maxDistanceKm.toFixed(1)} كم
+                        {routeSummary.distanceKm.toFixed(1)} كم
                       </span>
-                      {parseInt(numberOfPeople) > 1 && (
-                        <span className="text-xs mr-2" style={{ color: "var(--text-hint)" }}>
-                          (تُستخدم لحساب السعر الإجمالي)
-                        </span>
-                      )}
                     </p>
-                    {parseInt(numberOfPeople) > 1 && (
-                      <div className="mt-2 space-y-0.5">
-                        {passengerDistances.map((d, i) => (
-                          d !== null && (
-                            <p key={i} className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
-                              الراكب {i + 1}: {d.toFixed(1)} كم
-                            </p>
-                          )
-                        ))}
-                      </div>
-                    )}
+                    <p className="mt-2 text-xs font-bold" style={{ color: "var(--text-hint)" }}>
+                      زمن الرحلة التقريبي: {routeSummary.durationMinutes.toFixed(0)} دقيقة
+                    </p>
                   </div>
                 )}
 
@@ -930,17 +912,12 @@ export default function CreateRequest() {
                     {/* Pricing breakdown */}
                     <div className="pt-2 space-y-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                       <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
-                        أقصى مسافة: {maxDistanceKm?.toFixed(1)} كم
+                        المسافة عبر الطرق: {routeSummary?.distanceKm?.toFixed(1) ?? "—"} كم
+                      </p>
+                      <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
+                        ETA: {routeSummary?.durationMinutes?.toFixed(0) ?? "—"} دقيقة
                       </p>
                     </div>
-                  </div>
-                ) : pricingResult?.needsAdminReview ? (
-                  <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
-                    <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري</p>
-                    <p className="text-base font-black" style={{ color: "var(--brand)" }}>يتطلب مراجعة الإدارة</p>
-                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
-                      المسافة ({maxDistanceKm?.toFixed(1)} كم) تتجاوز 40 كم — سيتواصل معك فريقنا لتحديد السعر
-                    </p>
                   </div>
                 ) : (
                   <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>

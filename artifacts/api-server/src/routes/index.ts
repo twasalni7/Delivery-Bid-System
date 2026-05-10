@@ -15,6 +15,7 @@ import pricingRouter from "./pricing";
 import activityLogsRouter from "./activity-logs";
 import serviceAreasRouter from "./service-areas";
 import operationsRouter from "./operations";
+import mapsRouter from "./maps";
 
 const router: IRouter = Router();
 
@@ -36,6 +37,7 @@ router.use("/wallet-transactions", walletTransactionsRouter);
 router.use("/push", pushRouter);
 router.use("/messages", messagesRouter);
 router.use("/pricing", pricingRouter);
+router.use("/maps", mapsRouter);
 router.use("/activity-logs", activityLogsRouter);
 router.use("/admin/activity-logs", activityLogsRouter);
 router.use("/service-areas", serviceAreasRouter);

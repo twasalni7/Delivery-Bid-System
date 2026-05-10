@@ -25,6 +25,7 @@ import CreateRequest from "@/pages/client/CreateRequest";
 import RequestDetails from "@/pages/client/RequestDetails";
 import ClientProfile from "@/pages/client/ClientProfile";
 import ClientSupport from "@/pages/client/ClientSupport";
+import ClientArchive from "@/pages/client/ClientArchive";
 
 import DriverLogin from "@/pages/driver/DriverLogin";
 import DriverDashboard from "@/pages/driver/DriverDashboard";
@@ -32,6 +33,7 @@ import SubmitOffer from "@/pages/driver/SubmitOffer";
 import DriverProfile from "@/pages/driver/DriverProfile";
 import DriverRequests from "@/pages/driver/DriverRequests";
 import DriverSupport from "@/pages/driver/DriverSupport";
+import DriverArchive from "@/pages/driver/DriverArchive";
 
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
@@ -48,6 +50,7 @@ import AdminServiceAreas from "@/pages/admin/AdminServiceAreas";
 import AdminPushDebug from "@/pages/admin/AdminPushDebug";
 import AdminOperations from "@/pages/admin/AdminOperations";
 import AdminNotificationsMonitor from "@/pages/admin/AdminNotificationsMonitor";
+import AdminArchive from "@/pages/admin/AdminArchive";
 import AdminDatabaseMonitor from "@/pages/admin/AdminDatabaseMonitor";
 import AdminNotificationComposer from "@/pages/admin/AdminNotificationComposer";
 import NotificationsCenter from "@/pages/notifications/NotificationsCenter";
@@ -311,6 +314,9 @@ function Router() {
         <Route path="/client/support">
           <ClientGuard><ClientSupport /></ClientGuard>
         </Route>
+        <Route path="/client/archive">
+          <ClientGuard><ClientArchive /></ClientGuard>
+        </Route>
         <Route path="/client/notifications">
           <ClientGuard><NotificationsCenter /></ClientGuard>
         </Route>
@@ -331,6 +337,9 @@ function Router() {
         </Route>
         <Route path="/driver/support">
           <DriverGuard><DriverSupport /></DriverGuard>
+        </Route>
+        <Route path="/driver/archive">
+          <DriverGuard><DriverArchive /></DriverGuard>
         </Route>
         <Route path="/driver/notifications">
           <DriverGuard><NotificationsCenter /></DriverGuard>
@@ -381,6 +390,9 @@ function Router() {
         </Route>
         <Route path="/admin/notifications">
           <AdminGuard><AdminNotificationsMonitor /></AdminGuard>
+        </Route>
+        <Route path="/admin/archive">
+          <AdminGuard><AdminArchive /></AdminGuard>
         </Route>
         <Route path="/admin/database">
           <AdminGuard><AdminDatabaseMonitor /></AdminGuard>

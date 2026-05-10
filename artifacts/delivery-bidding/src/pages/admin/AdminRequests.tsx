@@ -47,7 +47,7 @@ export default function AdminRequests() {
       if (q) {
         const hay = [
           r.homeLocation, r.workLocation, r.phone ?? "",
-          r.selectedDriver?.name ?? "", String(r.id),
+          r.selectedDriver?.name ?? "", (r as any).client?.name ?? "", (r as any).client?.mobile ?? "", String(r.id),
         ].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
@@ -216,6 +216,7 @@ export default function AdminRequests() {
                         {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
                           <p key={i} className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                         ))}
+                        {(req as any).client && <p className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>👤 {(req as any).client.name} — {(req as any).client.mobile}</p>}
                         {req.phone && <p className="text-xs mt-0.5" dir="ltr" style={{ color: "var(--text-hint)" }}>📞 {req.phone}</p>}
                         {(req as any).notes && <p className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>📝 {(req as any).notes}</p>}
                       </td>
@@ -255,7 +256,7 @@ export default function AdminRequests() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          <Link href={`/admin/request/${req.id}`}>
+                          <Link href={`/admin/requests/${req.id}`}>
                             <button className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
                               <Eye size={14} style={{ color: "var(--brand)" }} />
                             </button>
@@ -294,7 +295,7 @@ export default function AdminRequests() {
                       {req.selectedDriver && <span className="text-sm px-2.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--brand-border)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>}
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <Link href={`/admin/request/${req.id}`}>
+                      <Link href={`/admin/requests/${req.id}`}>
                         <button className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}><Eye size={14} style={{ color: "var(--brand)" }} /></button>
                       </Link>
                       <button onClick={() => handleDelete(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}><Trash2 size={14} style={{ color: "var(--status-cancelled-text)" }} /></button>

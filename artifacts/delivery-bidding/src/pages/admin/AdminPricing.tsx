@@ -3,22 +3,8 @@ import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
-import { formatTime12h } from "@/lib/time-utils";
-import { Plus, Trash2, Save, RefreshCw, AlertTriangle, MapPin, Clock, Users, Settings2 } from "lucide-react";
+import { Plus, Trash2, Save, RefreshCw, MapPin, Clock, Users, Settings2 } from "lucide-react";
 import type { PricingConfig, PricingTier, SharingDiscount } from "@/lib/pricing";
-
-type ReviewRequest = {
-  id: number;
-  clientId: number | null;
-  homeLocation: string;
-  workLocation: string;
-  distanceKm: number | null;
-  numberOfPeople: number;
-  morningTime: string;
-  status: string;
-  monthlyPrice: number;
-  createdAt: string;
-};
 
 export default function AdminPricing() {
   const { toast } = useToast();
@@ -33,11 +19,6 @@ export default function AdminPricing() {
   const [proximityWorkKm, setProximityWorkKm] = useState("2");
   const [proximityTimeMinutes, setProximityTimeMinutes] = useState("30");
 
-  const [reviewRequests, setReviewRequests] = useState<ReviewRequest[]>([]);
-  const [loadingReview, setLoadingReview] = useState(true);
-  const [settingPrice, setSettingPrice] = useState<number | null>(null);
-  const [customPrices, setCustomPrices] = useState<Record<number, string>>({});
-
   useEffect(() => {
     fetch(`${API}/api/pricing/config`, { headers: getAuthHeaders() })
       .then((r) => r.json())
@@ -51,12 +32,6 @@ export default function AdminPricing() {
       })
       .catch(() => toast({ title: "فشل تحميل إعدادات التسعير", variant: "destructive" }))
       .finally(() => setLoading(false));
-
-    fetch(`${API}/api/pricing/review-requests`, { headers: getAuthHeaders() })
-      .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d)) setReviewRequests(d); })
-      .catch(() => {})
-      .finally(() => setLoadingReview(false));
   }, []);
 
   const handleSave = async () => {
@@ -97,30 +72,6 @@ export default function AdminPricing() {
 
   const addDiscount = () => setDiscounts((prev) => [...prev, { people: 0, factor: 1.0 }]);
   const removeDiscount = (idx: number) => setDiscounts((prev) => prev.filter((_, i) => i !== idx));
-
-  const handleSetReviewPrice = async (requestId: number) => {
-    const price = parseFloat(customPrices[requestId] ?? "");
-    if (isNaN(price) || price <= 0) {
-      toast({ title: "يرجى إدخال سعر صحيح", variant: "destructive" });
-      return;
-    }
-    setSettingPrice(requestId);
-    try {
-      const res = await fetch(`${API}/api/admin/requests/${requestId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ monthlyPrice: price, needsAdminReview: false }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "فشل التحديث");
-      setReviewRequests((prev) => prev.filter((r) => r.id !== requestId));
-      toast({ title: `✅ تم تحديد السعر ${price} ريال للطلب #${requestId}` });
-    } catch (err: unknown) {
-      toast({ title: (err as Error).message, variant: "destructive" });
-    } finally {
-      setSettingPrice(null);
-    }
-  };
 
   if (loading) {
     return (
@@ -381,76 +332,20 @@ export default function AdminPricing() {
           )}
         </div>
 
-        {/* ── Admin Review Requests ── */}
+        {/* ── Automatic pricing note ── */}
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center gap-3 p-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
-              <AlertTriangle size={18} style={{ color: "var(--status-cancelled-text)" }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+              <Settings2 size={18} style={{ color: "var(--brand)" }} />
             </div>
             <div className="flex-1">
-              <p className="font-black" style={{ color: "var(--text)" }}>طلبات تحتاج مراجعة الإدارة</p>
-              <p className="text-xs" style={{ color: "var(--text-hint)" }}>طلبات تتجاوز المسافة 40 كم — يجب تحديد السعر يدوياً</p>
+              <p className="font-black" style={{ color: "var(--text)" }}>التسعير الآن تلقائي بالكامل</p>
+              <p className="text-xs" style={{ color: "var(--text-hint)" }}>جميع الطلبات تُسعّر مباشرة من الخادم اعتماداً على المسافة الفعلية عبر الطرق دون أي مراجعة يدوية</p>
             </div>
-            {reviewRequests.length > 0 && (
-              <span className="px-3 py-1 rounded-full text-xs font-black" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>
-                {reviewRequests.length} طلب
-              </span>
-            )}
           </div>
-
-          {loadingReview ? (
-            <div className="py-12 text-center">
-              <div className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin mx-auto" style={{ borderColor: "var(--border)", borderTopColor: "var(--brand)" }} />
-            </div>
-          ) : reviewRequests.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-3xl mb-2">✅</p>
-              <p className="font-bold" style={{ color: "var(--text-muted)" }}>لا توجد طلبات تحتاج مراجعة</p>
-            </div>
-          ) : (
-            <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
-              {reviewRequests.map((r) => (
-                <div key={r.id} className="p-5 space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" }}>
-                          طلب #{r.id}
-                        </span>
-                        <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
-                          {r.distanceKm ? `${r.distanceKm.toFixed(1)} كم` : "—"} · {r.numberOfPeople} أشخاص
-                        </span>
-                      </div>
-                      <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>من: {r.homeLocation}</p>
-                      <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>إلى: {r.workLocation}</p>
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        وقت الذهاب: {formatTime12h(r.morningTime)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="number"
-                      placeholder="السعر الشهري (ريال)"
-                      value={customPrices[r.id] ?? ""}
-                      onChange={(e) => setCustomPrices((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                      className="flex-1 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
-                      style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
-                      min="0"
-                    />
-                    <button
-                      onClick={() => handleSetReviewPrice(r.id)}
-                      disabled={settingPrice === r.id}
-                      className="px-4 py-3 rounded-xl font-black text-sm disabled:opacity-50 active:scale-95 transition-transform"
-                      style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-                    >
-                      {settingPrice === r.id ? "..." : "تحديد السعر"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="p-5 text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+            تمت إزالة تحويل الطلبات الطويلة إلى مراجعة الإدارة. إذا تغيّرت مواقع الطلب يُعاد احتساب السعر فوراً من الخادم وتُحفظ لقطة التسعير داخل الطلب نفسه.
+          </div>
         </div>
 
       </div>
