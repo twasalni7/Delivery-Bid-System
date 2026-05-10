@@ -435,7 +435,7 @@ export default function CreateRequest() {
         setRouteSummary({
           distanceKm,
           durationMinutes,
-          routePolyline: primaryRoute?.routePolyline ?? "",
+          routePolyline: primaryRoute.routePolyline,
         });
         return fetch(`${API}/api/pricing/calculate`, {
           method: "POST",

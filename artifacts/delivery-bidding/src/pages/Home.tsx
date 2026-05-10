@@ -31,7 +31,7 @@ export default function Home() {
             <div className="bg-emerald-900/60 p-3 rounded-2xl text-emerald-300 shrink-0"><ShieldCheck size={18} /></div>
             <div>
               <h3 className="font-black text-white mb-1">خصوصية تامة</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">رقمك مخفي تماماً. أنت تختارين/تختار السائق المناسب.</p>
+              <p className="text-sm text-slate-300 leading-relaxed">رقمك مخفي تماماً. أنت من يختار السائق المناسب.</p>
             </div>
           </div>
 
@@ -39,7 +39,7 @@ export default function Home() {
             <div className="bg-blue-900/60 p-3 rounded-2xl text-blue-300 shrink-0"><Wallet size={18} /></div>
             <div>
               <h3 className="font-black text-white mb-1">سعر ثابت، الدفع لاحقاً</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">لا تدفعين شيء بالتطبيق. الدفع مع السائق بعد تقديم الخدمة.</p>
+              <p className="text-sm text-slate-300 leading-relaxed">لا تدفع شيئاً بالتطبيق. الدفع مع السائق بعد تقديم الخدمة.</p>
             </div>
           </div>
 
