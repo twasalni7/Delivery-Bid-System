@@ -711,7 +711,7 @@ router.post("/:id/archive", requireAuth("client"), async (req, res) => {
     const [updated] = await db
       .update(requestsTable)
       .set({
-        archivedAt: existing.archivedAt ?? new Date(),
+        archivedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(and(eq(requestsTable.id, id), eq(requestsTable.clientId, clientId)))

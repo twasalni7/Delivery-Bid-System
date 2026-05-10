@@ -60,6 +60,9 @@ const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 // Debounce delays
 const SEARCH_DEBOUNCE_MS = 300;
+const MOVE_END_DEBOUNCE_MS = 350;
+const PROGRAMMATIC_MOVE_GUARD_MS = 150;
+const COORDINATE_EPSILON = 0.00005;
 
 export default function MapPicker({
   value,
@@ -121,7 +124,7 @@ export default function MapPicker({
     mapRef.current.setView([lat, lng], zoom);
     window.setTimeout(() => {
       programmaticMoveRef.current = false;
-    }, 150);
+    }, PROGRAMMATIC_MOVE_GUARD_MS);
   }, []);
 
   const applySelection = useCallback(
@@ -248,12 +251,12 @@ export default function MapPicker({
     const previous = pendingSelectionRef.current;
     const almostSamePoint =
       previous &&
-      Math.abs(previous.lat - center.lat) < 0.00005 &&
-      Math.abs(previous.lng - center.lng) < 0.00005;
+      Math.abs(previous.lat - center.lat) < COORDINATE_EPSILON &&
+      Math.abs(previous.lng - center.lng) < COORDINATE_EPSILON;
     if (almostSamePoint) return;
     moveEndTimerRef.current = setTimeout(() => {
       void updateSelectionFromCoordinates(center.lat, center.lng, { recenter: false });
-    }, 350);
+    }, MOVE_END_DEBOUNCE_MS);
   }, [updateSelectionFromCoordinates]);
 
   const handleConfirmSelection = useCallback(() => {

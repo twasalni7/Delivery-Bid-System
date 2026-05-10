@@ -33,10 +33,10 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 type FilterTab = "PENDING" | "ACCEPTED" | "COMPLETED" | "ARCHIVED";
 
 const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
-  { id: "PENDING", label: "pending", statuses: ["OPEN", "FROZEN"] },
-  { id: "ACCEPTED", label: "accepted", statuses: ["SELECTED", "ACTIVE"] },
-  { id: "COMPLETED", label: "completed", statuses: ["COMPLETED", "CANCELLED", "EXPIRED"] },
-  { id: "ARCHIVED", label: "archived", statuses: [] },
+  { id: "PENDING", label: "قيد الانتظار", statuses: ["OPEN", "FROZEN"] },
+  { id: "ACCEPTED", label: "مقبول", statuses: ["SELECTED", "ACTIVE"] },
+  { id: "COMPLETED", label: "مكتمل", statuses: ["COMPLETED", "CANCELLED", "EXPIRED"] },
+  { id: "ARCHIVED", label: "مؤرشف", statuses: [] },
 ];
 
 export default function ClientDashboard() {
@@ -220,7 +220,7 @@ export default function ClientDashboard() {
             <p className="text-4xl mb-3">🔍</p>
             <p className="text-lg font-black" style={{ color: "var(--text)" }}>لا توجد نتائج</p>
             <button onClick={() => setActiveFilter("PENDING")} className="mt-4 text-sm font-bold" style={{ color: "var(--brand)" }}>
-              العودة إلى pending
+              العودة إلى قيد الانتظار
             </button>
           </div>
         )}
