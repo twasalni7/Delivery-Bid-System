@@ -114,10 +114,7 @@ export function usePushNotifications(role?: string) {
       }
 
       if (Notification.permission !== "granted") {
-        const perm = Notification.permission as NotificationPermission;
-        const result: PushSubscribeResult = perm === "denied"
-          ? "permission_denied"
-          : "permission_default";
+        const result: PushSubscribeResult = "permission_default";
         setLastError(result);
         return result;
       }

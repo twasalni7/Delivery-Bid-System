@@ -370,9 +370,6 @@ function Router() {
         <Route path="/admin/activity">
           <AdminGuard><AdminActivityLogs /></AdminGuard>
         </Route>
-        <Route path="/admin/activity">
-          <AdminGuard><AdminActivityLogs /></AdminGuard>
-        </Route>
         <Route path="/admin/service-areas">
           <AdminGuard><AdminServiceAreas /></AdminGuard>
         </Route>
