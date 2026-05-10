@@ -53,52 +53,52 @@ html.light {
   color-scheme: light;
 
   /* Page & surfaces */
-  --bg:          #F4F4F5;
-  --bg-page:     #F4F4F5;
+  --bg:          #F3F6FB;
+  --bg-page:     #EEF2F8;
   --surface:     #FFFFFF;
-  --surface-2:   #FAFAFA;
-  --surface-3:   #F4F4F5;
-  --surface-4:   #EBEBEB;
+  --surface-2:   #F7F9FC;
+  --surface-3:   #EFF3FA;
+  --surface-4:   #E6ECF7;
 
   /* Text */
-  --text:        #111827;
-  --text-sub:    #374151;
-  --text-muted:  #4B5563;
-  --text-hint:   #6B7280;
+  --text:        #0F172A;
+  --text-sub:    #1E293B;
+  --text-muted:  #334155;
+  --text-hint:   #475569;
 
   /* Borders */
-  --border:        #E5E7EB;
-  --border-subtle: rgba(0, 0, 0, 0.06);
-  --border-strong: rgba(0, 0, 0, 0.14);
+  --border:        #D6DEEA;
+  --border-subtle: rgba(15, 23, 42, 0.10);
+  --border-strong: rgba(15, 23, 42, 0.20);
 
   /* Header */
   --header-bg:     #FFFFFF;
-  --header-border: #E5E7EB;
+  --header-border: #D6DEEA;
   --header-height: 64px;
 
   /* Sidebar */
   --sidebar-bg:          #FFFFFF;
-  --sidebar-border:      #E5E7EB;
-  --sidebar-text:        #6B7280;
-  --sidebar-text-hover:  #374151;
+  --sidebar-border:      #D6DEEA;
+  --sidebar-text:        #475569;
+  --sidebar-text-hover:  #1E293B;
   --sidebar-active-bg:   rgba(200, 16, 46, 0.07);
   --sidebar-active-text: #C8102E;
-  --sidebar-hover-bg:    #F4F4F5;
-  --sidebar-icon-color:  #9CA3AF;
+  --sidebar-hover-bg:    #EFF3FA;
+  --sidebar-icon-color:  #64748B;
 
   /* Inputs */
   --input-bg:        #FFFFFF;
-  --input-border:    #D1D5DB;
+  --input-border:    #B8C4D9;
   --input-border-focus: #C8102E;
   --input-text:      #111827;
-  --input-placeholder: #9CA3AF;
+  --input-placeholder: #64748B;
   --input-ring:      rgba(200, 16, 46, 0.15);
 
   /* Shadows */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg:  0 12px 32px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.05);
-  --shadow-xl:  0 24px 48px rgba(0,0,0,0.12);
+  --shadow-sm:  0 1px 2px rgba(15,23,42,0.07), 0 1px 1px rgba(15,23,42,0.05);
+  --shadow-md:  0 8px 20px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.05);
+  --shadow-lg:  0 16px 36px rgba(15,23,42,0.12);
+  --shadow-xl:  0 24px 56px rgba(15,23,42,0.18);
 
   /* ── Status tokens ── */
   --status-open-bg:      rgba(234, 88, 12, 0.08);

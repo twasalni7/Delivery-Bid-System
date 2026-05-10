@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useListRequests, getListRequestsQueryKey } from "@workspace/api-client-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { EnablePushButton } from "@/components/enable-push-button";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
+import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Bell, MapPin, Clock, Users, Calendar, Plus } from "lucide-react";
+import { Bell, Clock, Users, Calendar, Plus, Archive } from "lucide-react";
+import { API_ORIGIN as API } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
+import { useToast } from "@/hooks/use-toast";
 
 const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 
@@ -26,18 +31,30 @@ const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
 
-type FilterTab = "ALL" | "OPEN" | "ACTIVE_GROUP" | "CANCELLED_GROUP";
+type FilterTab = "PENDING" | "ACCEPTED" | "COMPLETED" | "ARCHIVED";
 
 const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
-  { id: "ALL",           label: "الكل",      statuses: [] },
-  { id: "OPEN",          label: "قيد الانتظار", statuses: ["OPEN", "FROZEN"] },
-  { id: "ACTIVE_GROUP",  label: "نشط",       statuses: ["SELECTED", "ACTIVE"] },
-  { id: "CANCELLED_GROUP", label: "منتهي",   statuses: ["COMPLETED", "CANCELLED", "EXPIRED"] },
+  { id: "PENDING", label: "قيد الانتظار", statuses: ["OPEN", "FROZEN"] },
+  { id: "ACCEPTED", label: "مقبول", statuses: ["SELECTED", "ACTIVE"] },
+  { id: "COMPLETED", label: "مكتمل", statuses: ["COMPLETED", "CANCELLED", "EXPIRED"] },
+  { id: "ARCHIVED", label: "مؤرشف", statuses: [] },
 ];
+const KNOWN_STATUSES = new Set(FILTER_TABS.flatMap((tab) => tab.statuses));
 
 export default function ClientDashboard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: requests, isLoading } = useListRequests(undefined, {
     query: { queryKey: getListRequestsQueryKey(), refetchInterval: 15_000 },
+  });
+  const { data: archivedData } = useQuery({
+    queryKey: [...getListRequestsQueryKey(), "archived"],
+    queryFn: async () => {
+      const res = await fetch(`${API}/api/requests?archived=true`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("failed");
+      return res.json();
+    },
+    refetchInterval: 30_000,
   });
 
   // Real-time: refresh when any request changes status or a new offer arrives
@@ -51,12 +68,33 @@ export default function ClientDashboard() {
   );
 
   const [unreadMap, setUnreadMap] = useState<Record<number, number>>({});
-  const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");
+  const [activeFilter, setActiveFilter] = useState<FilterTab>("PENDING");
+
+  const activeRequests = (requests ?? []).filter((req) => !hasArchivedTimestamp(req));
+  const archivedRequests = Array.isArray(archivedData) ? archivedData : [];
+
+  const archiveRequest = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`${API}/api/requests/${id}/archive`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? "تعذرت أرشفة الطلب");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+      toast({ title: "تمت أرشفة الطلب" });
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
 
   useEffect(() => {
     if (!requests) return;
     const map: Record<number, number> = {};
     for (const req of requests) {
+      if (hasArchivedTimestamp(req)) continue;
       if (req.status !== "OPEN") continue;
       const currentCount = req.offerCount ?? 0;
       const seenCount = parseInt(localStorage.getItem(SEEN_KEY(req.id)) ?? "0", 10);
@@ -66,18 +104,29 @@ export default function ClientDashboard() {
     setUnreadMap(map);
   }, [requests]);
 
+  useEffect(() => {
+    if (!requests) return;
+    const unknownStatuses = [...new Set(requests.map((r) => r.status).filter((status) => !KNOWN_STATUSES.has(status)))];
+    if (unknownStatuses.length > 0) {
+      console.warn("[ClientDashboard] Unknown request statuses:", unknownStatuses);
+    }
+  }, [requests]);
+
   const totalUnread = Object.values(unreadMap).reduce((sum, n) => sum + n, 0);
 
-  const filteredRequests = requests?.filter((req) => {
-    const tab = FILTER_TABS.find((t) => t.id === activeFilter);
-    if (!tab || tab.statuses.length === 0) return true;
-    return tab.statuses.includes(req.status);
-  }) ?? [];
+  const filteredRequests = activeFilter === "ARCHIVED"
+    ? archivedRequests
+    : activeRequests.filter((req) => {
+        const tab = FILTER_TABS.find((t) => t.id === activeFilter);
+        if (!tab || tab.statuses.length === 0) return false;
+        // Keep unknown statuses visible under "pending" so no request disappears from the client view.
+        if (activeFilter === "PENDING" && !KNOWN_STATUSES.has(req.status)) return true;
+        return tab.statuses.includes(req.status);
+      });
 
   const getTabCount = (tab: typeof FILTER_TABS[0]) => {
-    if (!requests) return 0;
-    if (tab.statuses.length === 0) return requests.length;
-    return requests.filter((r) => tab.statuses.includes(r.status)).length;
+    if (tab.id === "ARCHIVED") return archivedRequests.length;
+    return activeRequests.filter((r) => tab.statuses.includes(r.status)).length;
   };
 
   return (
@@ -114,7 +163,7 @@ export default function ClientDashboard() {
         </div>
 
         {/* Status filter tabs */}
-        {!isLoading && requests && requests.length > 0 && (
+        {!isLoading && (activeRequests.length > 0 || archivedRequests.length > 0) && (
           <div className="flex gap-1.5 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
             {FILTER_TABS.map((tab) => {
               const count = getTabCount(tab);
@@ -143,11 +192,22 @@ export default function ClientDashboard() {
           </div>
         )}
 
+        <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <p className="text-sm font-black mb-2" style={{ color: "var(--text)" }}>رحلة الطلب</p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+            {["إنشاء الطلب", "تعيين السائق", "تنفيذ المشوار", "الإغلاق", "الفوترة الشهرية"].map((step) => (
+              <div key={step} className="rounded-xl px-2 py-2 text-xs font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border-subtle)" }}>
+                {step}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {isLoading && (
           <div className="text-center py-20 font-bold text-base" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
         )}
 
-        {!isLoading && (!requests || requests.length === 0) && (
+        {!isLoading && activeRequests.length === 0 && activeFilter !== "ARCHIVED" && (
           <div className="text-center py-24 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-5xl mb-4">📦</p>
             <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد اشتراكات بعد</p>
@@ -155,17 +215,29 @@ export default function ClientDashboard() {
           </div>
         )}
 
-        {!isLoading && requests && requests.length > 0 && filteredRequests.length === 0 && (
+        {!isLoading && activeFilter === "ARCHIVED" && (
+          <div className="rounded-3xl p-6 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <p className="font-black text-lg mb-2" style={{ color: "var(--text)" }}>الطلبات المؤرشفة</p>
+            <p className="text-sm font-bold mb-4" style={{ color: "var(--text-muted)" }}>لمراجعة الأرشيف الكامل ادخل صفحة الأرشيف.</p>
+            <Link href="/client/archive">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
+                <Archive size={14} /> فتح الأرشيف
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {!isLoading && activeFilter !== "ARCHIVED" && activeRequests.length > 0 && filteredRequests.length === 0 && (
           <div className="text-center py-16 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-4xl mb-3">🔍</p>
             <p className="text-lg font-black" style={{ color: "var(--text)" }}>لا توجد نتائج</p>
-            <button onClick={() => setActiveFilter("ALL")} className="mt-4 text-sm font-bold" style={{ color: "var(--brand)" }}>
-              عرض الكل
+            <button onClick={() => setActiveFilter("PENDING")} className="mt-4 text-sm font-bold" style={{ color: "var(--brand)" }}>
+              العودة إلى قيد الانتظار
             </button>
           </div>
         )}
 
-        {filteredRequests.length > 0 && (
+        {filteredRequests.length > 0 && activeFilter !== "ARCHIVED" && (
           <div className="space-y-4">
             {filteredRequests.map((req) => {
               const offerCount = req.offerCount ?? 0;
@@ -177,7 +249,7 @@ export default function ClientDashboard() {
               return (
                 <Link key={req.id} href={`/client/request/${req.id}`}>
                   <div className="rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
-                    style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: `1px solid ${unread > 0 ? "var(--brand-border)" : "rgba(255,255,255,0.1)"}` }}>
+                    style={{ backgroundColor: "var(--surface)", boxShadow: "var(--shadow-sm)", border: `1px solid ${unread > 0 ? "var(--brand-border)" : "var(--border-subtle)"}` }}>
                     {/* Status header */}
                     <div className="p-5" style={{ backgroundColor: statusStyle.bg, borderBottom: `1px solid ${statusStyle.border}` }}>
                       <div className="flex items-start justify-between">
@@ -278,12 +350,24 @@ export default function ClientDashboard() {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-center pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div className="flex items-center justify-between gap-2 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                         <span className="text-sm font-black" style={{ color: "var(--brand)" }}>
-                          {req.status === "SELECTED" || req.status === "ACTIVE"
-                            ? "عرض تفاصيل الرحلات اليومية ‹"
-                            : "عرض تفاصيل العروض ‹"}
+                          {req.status === "SELECTED" || req.status === "ACTIVE" ? "عرض تفاصيل الرحلات اليومية ‹" : "عرض تفاصيل العروض ‹"}
                         </span>
+                        <button
+                          type="button"
+                          className="text-xs px-3 py-1.5 rounded-full font-black flex items-center gap-1"
+                          style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-sub)" }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            archiveRequest.mutate(req.id);
+                          }}
+                          disabled={archiveRequest.isPending}
+                        >
+                          <Archive size={12} />
+                          أرشفة
+                        </button>
                       </div>
                     </div>
                   </div>

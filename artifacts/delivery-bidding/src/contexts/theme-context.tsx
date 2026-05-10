@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-export type Theme = "light" | "dark" | "creamy";
+export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "tw_theme";
 
@@ -24,7 +24,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-      if (stored === "dark" || stored === "creamy" || stored === "light") return stored;
+      if (stored === "dark" || stored === "light") return stored;
+      if (stored === "creamy") return "dark";
     } catch {}
     return "light";
   });

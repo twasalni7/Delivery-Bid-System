@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LogOut, Menu, Home, FileText, User, LifeBuoy, Settings,
   Users, Car, BarChart2, ClipboardList, DollarSign, Activity,
-  MapPin, Search, ChevronRight, Sun, Moon, Coffee, Bell, Database, MoreHorizontal,
+  MapPin, Search, ChevronRight, Sun, Moon, Bell, Database, MoreHorizontal,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme, Theme } from "@/contexts/theme-context";
@@ -15,25 +15,25 @@ type NavGroup = { label: string; links: NavLink[] };
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const options: { value: Theme; icon: typeof Sun; label: string }[] = [
-    { value: "light",  icon: Sun,    label: "فاتح" },
-    { value: "dark",   icon: Moon,   label: "داكن" },
-    { value: "creamy", icon: Coffee, label: "كريمي" },
+    { value: "light", icon: Sun, label: "الوضع الفاتح" },
+    { value: "dark", icon: Moon, label: "الوضع الداكن" },
   ];
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
+    <div className="flex items-center gap-1.5 p-1.5 rounded-2xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
       {options.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
           onClick={() => setTheme(value)}
-          title={label}
-          className="touch-compact p-1.5 rounded-lg transition-all"
+          aria-label={label}
+          className="touch-compact px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 font-black text-xs sm:text-sm"
           style={
             theme === value
-              ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)", minHeight: "auto", minWidth: "auto" }
-              : { color: "var(--text-muted)", minHeight: "auto", minWidth: "auto" }
+              ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)", minHeight: "auto" }
+              : { color: "var(--text-muted)", minHeight: "auto", border: "1px solid var(--border-subtle)" }
           }
         >
-          <Icon size={13} />
+          <Icon size={15} />
+          <span>{label}</span>
         </button>
       ))}
     </div>

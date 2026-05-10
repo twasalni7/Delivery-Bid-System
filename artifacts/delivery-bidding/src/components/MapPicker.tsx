@@ -60,6 +60,11 @@ const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 // Debounce delays
 const SEARCH_DEBOUNCE_MS = 300;
+const MOVE_END_DEBOUNCE_MS = 350;
+const PROGRAMMATIC_MOVE_GUARD_MS = 150;
+// ~4-6 meters in our target region (latitude-dependent): enough to ignore tiny map jitters while dragging.
+// Increase only if geocoding triggers too frequently; decrease only if very small deliberate drags are missed.
+const COORDINATE_EPSILON = 0.00005;
 
 export default function MapPicker({
   value,
@@ -76,7 +81,11 @@ export default function MapPicker({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const moveEndTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const programmaticMoveTimerRef = useRef<number | null>(null);
   const geocodeRequestIdRef = useRef(0);
+  const programmaticMoveRef = useRef(false);
+  const pendingSelectionRef = useRef<MapCoords | null>(value);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -114,11 +123,17 @@ export default function MapPicker({
 
   const setMarkerAndView = useCallback((lat: number, lng: number, zoom = 16) => {
     if (!mapRef.current) return;
+    programmaticMoveRef.current = true;
     mapRef.current.setView([lat, lng], zoom);
+    if (programmaticMoveTimerRef.current) window.clearTimeout(programmaticMoveTimerRef.current);
+    programmaticMoveTimerRef.current = window.setTimeout(() => {
+      programmaticMoveRef.current = false;
+    }, PROGRAMMATIC_MOVE_GUARD_MS);
   }, []);
 
   const applySelection = useCallback(
     (next: MapCoords) => {
+      pendingSelectionRef.current = next;
       setPendingSelection(next);
       setSearchText(next.address);
     },
@@ -169,14 +184,24 @@ export default function MapPicker({
     }, SEARCH_DEBOUNCE_MS);
   };
 
+  const updateSelectionFromCoordinates = useCallback(
+    async (lat: number, lng: number, options?: { recenter?: boolean; zoom?: number }) => {
+      const recenter = options?.recenter ?? true;
+      const zoom = options?.zoom ?? 16;
+      if (recenter) setMarkerAndView(lat, lng, zoom);
+      const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      applySelection({ lat, lng, address: fallbackAddress });
+      await resolveAddressForSelection(lat, lng);
+    },
+    [applySelection, resolveAddressForSelection, setMarkerAndView]
+  );
+
   const selectSearchResult = (result: SearchResult) => {
     const lat = result.lat;
     const lng = result.lng;
-    const next = { lat, lng, address: result.address };
-
     setGpsError(null);
     dismissKeyboardAndSuggestions();
-    applySelection(next);
+    applySelection({ lat, lng, address: result.address });
     setMarkerAndView(lat, lng, 16);
   };
 
@@ -200,12 +225,8 @@ export default function MapPicker({
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-
         setLocating(false);
-        setMarkerAndView(lat, lng, 17);
-        applySelection({ lat, lng, address: fallbackAddress });
-        await resolveAddressForSelection(lat, lng);
+        await updateSelectionFromCoordinates(lat, lng, { recenter: true, zoom: 17 });
       },
       (err) => {
         setLocating(false);
@@ -219,24 +240,29 @@ export default function MapPicker({
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
     );
-  }, [applySelection, dismissKeyboardAndSuggestions, resolveAddressForSelection, setMarkerAndView]);
+  }, [dismissKeyboardAndSuggestions, updateSelectionFromCoordinates]);
 
   const handleMapTap = useCallback(async (lat: number, lng: number) => {
     setGpsError(null);
     dismissKeyboardAndSuggestions();
-    setMarkerAndView(lat, lng, 16);
-
-    // Update immediately with fallback, then reverse-geocode.
-    const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    applySelection({ lat, lng, address: fallbackAddress });
-    await resolveAddressForSelection(lat, lng);
-  }, [applySelection, dismissKeyboardAndSuggestions, resolveAddressForSelection, setMarkerAndView]);
+    await updateSelectionFromCoordinates(lat, lng, { recenter: true, zoom: 16 });
+  }, [dismissKeyboardAndSuggestions, updateSelectionFromCoordinates]);
 
   const handleMapMoveStop = useCallback(async () => {
     if (!mapRef.current) return;
+    if (programmaticMoveRef.current) return;
+    if (moveEndTimerRef.current) clearTimeout(moveEndTimerRef.current);
     const center = mapRef.current.getCenter();
-    await handleMapTap(center.lat, center.lng);
-  }, [handleMapTap]);
+    const previous = pendingSelectionRef.current;
+    const almostSamePoint =
+      previous &&
+      Math.abs(previous.lat - center.lat) < COORDINATE_EPSILON &&
+      Math.abs(previous.lng - center.lng) < COORDINATE_EPSILON;
+    if (almostSamePoint) return;
+    moveEndTimerRef.current = setTimeout(() => {
+      void updateSelectionFromCoordinates(center.lat, center.lng, { recenter: false });
+    }, MOVE_END_DEBOUNCE_MS);
+  }, [updateSelectionFromCoordinates]);
 
   const handleConfirmSelection = useCallback(() => {
     if (!pendingSelection) return;
@@ -263,6 +289,7 @@ export default function MapPicker({
       if (prev && prev.lat === value.lat && prev.lng === value.lng && prev.address === value.address) {
         return prev;
       }
+      pendingSelectionRef.current = value;
       return value;
     });
     setSearchText((prev) => (prev === value.address ? prev : value.address));
@@ -323,6 +350,8 @@ export default function MapPicker({
     return () => {
       cancelled = true;
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      if (moveEndTimerRef.current) clearTimeout(moveEndTimerRef.current);
+      if (programmaticMoveTimerRef.current) window.clearTimeout(programmaticMoveTimerRef.current);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
