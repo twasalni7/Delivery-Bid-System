@@ -31,7 +31,7 @@ export default function Home() {
             <div className="bg-emerald-900/60 p-3 rounded-2xl text-emerald-300 shrink-0"><ShieldCheck size={18} /></div>
             <div>
               <h3 className="font-black text-white mb-1">خصوصية تامة</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">رقمك مخفي تماماً. أنت من يختار السائق المناسب.</p>
+              <p className="text-sm text-slate-300 leading-relaxed">رقمك مخفي تماماً. أنت تختارين/تختار السائق المناسب.</p>
             </div>
           </div>
 
@@ -39,13 +39,13 @@ export default function Home() {
             <div className="bg-blue-900/60 p-3 rounded-2xl text-blue-300 shrink-0"><Wallet size={18} /></div>
             <div>
               <h3 className="font-black text-white mb-1">سعر ثابت، الدفع لاحقاً</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">لا تدفعين شيء بالتطبيق. الدفع مع السائق حسب الاتفاق.</p>
+              <p className="text-sm text-slate-300 leading-relaxed">لا تدفعين شيء بالتطبيق. الدفع مع السائق بعد تقديم الخدمة.</p>
             </div>
           </div>
 
           <div className="space-y-3 pt-2">
             <Link href="/client/login" className="w-full bg-violet-700 hover:bg-violet-600 active:scale-[0.99] text-white font-black text-[2rem] py-4 rounded-[1.6rem] shadow-2xl shadow-violet-950/80 transition-all flex justify-center items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">
-              <span>تصفح التطبيق / دخول العميل</span><ArrowLeft size={28} aria-hidden="true" />
+              <span>تصفح التطبيق (دخول العميل)</span><ArrowLeft size={28} aria-hidden="true" />
             </Link>
             <div className="grid grid-cols-2 gap-3">
               <Link href="/driver/login" aria-label="الانتقال إلى دخول السائق">
