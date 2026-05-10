@@ -35,16 +35,16 @@ export default function Home() {
 
           <div className="space-y-3 pt-2">
             <Link href="/client/login">
-              <div className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-violet-200 transition-all flex justify-center items-center gap-3 cursor-pointer">
+              <div className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-violet-200 transition-all flex justify-center items-center gap-3">
                 <span>دخول العميل</span><ArrowLeft size={18} />
               </div>
             </Link>
             <div className="grid grid-cols-2 gap-3">
               <Link href="/driver/login">
-                <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white border border-slate-200 text-slate-700 cursor-pointer">دخول السائق</div>
+                <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white border border-slate-200 text-slate-700">دخول السائق</div>
               </Link>
               <Link href="/admin/login">
-                <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white border border-slate-200 text-slate-700 cursor-pointer">دخول الإدارة</div>
+                <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white border border-slate-200 text-slate-700">دخول الإدارة</div>
               </Link>
             </div>
           </div>

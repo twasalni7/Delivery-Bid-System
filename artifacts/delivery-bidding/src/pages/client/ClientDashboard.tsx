@@ -149,7 +149,7 @@ export default function ClientDashboard() {
             </div>
             <p className="font-bold text-sm text-violet-100">جاهز لمشوارك القادم؟ أضف طلب اشتراك جديد خلال ثوانٍ.</p>
             <Link href="/client/request/new">
-              <div className="w-full rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 text-base font-black bg-white text-violet-700 cursor-pointer">
+              <div className="w-full rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 text-base font-black bg-white text-violet-700">
                 <Plus size={19} aria-hidden="true" />
                 طلب اشتراك جديد
               </div>

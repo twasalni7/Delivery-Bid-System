@@ -75,13 +75,11 @@ export default function ClientProfile() {
         <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <p className="text-sm font-black mb-4" style={{ color: "var(--text)" }}>الإعدادات والمساعدة</p>
           <div className="space-y-2">
-            <div className="rounded-2xl px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)" }}>
+            <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)" }}>
               <span className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>الأسئلة الشائعة</span>
-              <span style={{ color: "var(--text-hint)" }}>⌄</span>
             </div>
-            <div className="rounded-2xl px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)" }}>
+            <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)" }}>
               <span className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>رفع شكوى</span>
-              <span style={{ color: "var(--text-hint)" }}>⌄</span>
             </div>
           </div>
         </div>
