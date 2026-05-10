@@ -111,6 +111,7 @@ export default function ClientDashboard() {
     : activeRequests.filter((req) => {
         const tab = FILTER_TABS.find((t) => t.id === activeFilter);
         if (!tab || tab.statuses.length === 0) return false;
+        // Keep unknown statuses visible under "pending" so no request disappears from the client view.
         if (activeFilter === "PENDING" && !KNOWN_STATUSES.has(req.status)) return true;
         return tab.statuses.includes(req.status);
       });
