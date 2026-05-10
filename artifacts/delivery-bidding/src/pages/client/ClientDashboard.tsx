@@ -92,7 +92,8 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!requests) return;
     const map: Record<number, number> = {};
-    for (const req of activeRequests) {
+    for (const req of requests) {
+      if ((req as any).archivedAt) continue;
       if (req.status !== "OPEN") continue;
       const currentCount = req.offerCount ?? 0;
       const seenCount = parseInt(localStorage.getItem(SEEN_KEY(req.id)) ?? "0", 10);
@@ -100,7 +101,7 @@ export default function ClientDashboard() {
       if (unread > 0) map[req.id] = unread;
     }
     setUnreadMap(map);
-  }, [activeRequests]);
+  }, [requests]);
 
   const totalUnread = Object.values(unreadMap).reduce((sum, n) => sum + n, 0);
 

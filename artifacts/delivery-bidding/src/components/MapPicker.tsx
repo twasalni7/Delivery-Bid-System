@@ -129,6 +129,7 @@ export default function MapPicker({
 
   const applySelection = useCallback(
     (next: MapCoords) => {
+      pendingSelectionRef.current = next;
       setPendingSelection(next);
       setSearchText(next.address);
     },
@@ -284,14 +285,11 @@ export default function MapPicker({
       if (prev && prev.lat === value.lat && prev.lng === value.lng && prev.address === value.address) {
         return prev;
       }
+      pendingSelectionRef.current = value;
       return value;
     });
     setSearchText((prev) => (prev === value.address ? prev : value.address));
   }, [value]);
-
-  useEffect(() => {
-    pendingSelectionRef.current = pendingSelection;
-  }, [pendingSelection]);
 
   useEffect(() => {
     if (isPickerOpen) {
