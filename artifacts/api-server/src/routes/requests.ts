@@ -58,6 +58,8 @@ function toNum(val: string | number | null | undefined): number {
 }
 
 function buildArchivedAt(status: RequestStatus, current?: Date | null) {
+  // Preserve the first archive timestamp so repeated terminal-state updates do not
+  // keep moving the request around the archive timeline.
   if (!TERMINAL_STATUSES.has(status)) return null;
   return current ?? new Date();
 }

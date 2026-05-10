@@ -513,6 +513,7 @@ export async function notify(params: {
   });
 }
 
+/** Use for direct recipient targeting without repeating role wiring at call sites. */
 export async function sendToUser(
   userId: number,
   userRole: "client" | "driver" | "admin",
@@ -521,6 +522,7 @@ export async function sendToUser(
   return notify({ userId, userRole, ...params });
 }
 
+/** Admin-specific helper used by the unified notification engine. */
 export async function sendToAdmin(
   adminId: number,
   params: Omit<Parameters<typeof notify>[0], "userId" | "userRole">
@@ -528,6 +530,7 @@ export async function sendToAdmin(
   return sendToUser(adminId, "admin", params);
 }
 
+/** Driver-specific helper used by the unified notification engine. */
 export async function sendToDriver(
   driverId: number,
   params: Omit<Parameters<typeof notify>[0], "userId" | "userRole">
@@ -535,6 +538,7 @@ export async function sendToDriver(
   return sendToUser(driverId, "driver", params);
 }
 
+/** Broadcast helper for role-wide notifications while keeping one entrypoint. */
 export async function sendBroadcast(params: {
   target: "admins" | "drivers";
 } & Omit<Parameters<typeof notifyAllAdmins>[0], never>) {

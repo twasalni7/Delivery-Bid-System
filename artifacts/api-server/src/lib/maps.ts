@@ -1,5 +1,6 @@
 import { logger } from "./logger";
 
+// Verified against the OpenRouteService v2 directions API on 2026-05-10.
 const DEFAULT_ORS_API_URL = "https://api.openrouteservice.org/v2";
 const DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org";
 const DEFAULT_LANGUAGE = "ar";
