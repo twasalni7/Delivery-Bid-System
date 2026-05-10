@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { subscribeToPush, type PushSubscribeResult } from "@/lib/push-notifications";
+import { getAuthHeaders } from "@/lib/authed-fetch";
+import { API_ORIGIN } from "@/lib/api-config";
 
 const PUSH_SUBSCRIBED_KEY = "push_subscribed";
 
@@ -48,8 +50,6 @@ export function usePushNotifications(role?: string) {
             // ✅ الـ subscription موجودة في المتصفح — تأكد إنها مسجلة في السيرفر
             // هذا يصلح حالة: المستخدم عنده subscription في المتصفح لكنها حُذفت من DB
             try {
-              const { getAuthHeaders } = await import("@/lib/authed-fetch");
-              const { API_ORIGIN } = await import("@/lib/api-config");
               const res = await fetch(`${API_ORIGIN}/api/push/status`, {
                 headers: getAuthHeaders(),
               });
