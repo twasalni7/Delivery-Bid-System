@@ -12,7 +12,7 @@ export default function Home() {
               <Navigation className="text-violet-700 w-10 h-10" />
             </div>
             <h1 className="text-4xl font-extrabold mb-3">توصلني</h1>
-            <p className="text-violet-100 text-lg leading-relaxed max-w-xs">مشاويرك الشهرية بأمان، سهولة، وتسعيرة ثابتة.</p>
+            <p className="text-violet-100 text-lg leading-relaxed max-w-xs">مشاويرك الشهرية بأمان، سهولة، وبتسعيرة ثابتة.</p>
           </div>
         </div>
 
