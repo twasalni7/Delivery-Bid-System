@@ -8,7 +8,7 @@ import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
 import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Bell, Clock, Users, Calendar, Plus, Archive } from "lucide-react";
+import { Bell, Clock, Users, Calendar, Plus, Archive, Map as MapIcon } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -208,7 +208,7 @@ export default function ClientDashboard() {
         {!isLoading && activeRequests.length === 0 && activeFilter !== "ARCHIVED" && (
           <div className="text-center py-16 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: "var(--surface-2)" }}>
-              <span className="text-4xl" aria-hidden="true">📋</span>
+              <MapIcon className="w-9 h-9" style={{ color: "var(--text-hint)" }} aria-hidden="true" />
             </div>
             <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد طلبات نشطة</p>
             <p className="font-bold text-sm mt-1 px-5" style={{ color: "var(--text-hint)" }}>ابدأ بطلب اشتراك شهري وسنحدد لك السعر العادل ونربطك بأفضل السائقين.</p>
