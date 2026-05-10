@@ -76,13 +76,13 @@ export default function ClientProfile() {
         <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <p className="text-sm font-black mb-4" style={{ color: "var(--text)" }}>الإعدادات والمساعدة</p>
           <div className="space-y-2">
-            <Link href="/client/support?topic=faq" aria-label="الانتقال إلى الأسئلة الشائعة" className="block rounded-2xl px-4 py-3 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300" style={{ backgroundColor: "var(--surface-2)" }}>
+            <Link href="/client/support?topic=faq" aria-label="الانتقال إلى الأسئلة الشائعة" className="block rounded-2xl px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300" style={{ backgroundColor: "var(--surface-2)" }}>
               <span className="flex items-center justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                 <span>الأسئلة الشائعة</span>
                 <span aria-hidden="true">‹</span>
               </span>
             </Link>
-            <Link href="/client/support?topic=complaint" aria-label="الانتقال إلى رفع شكوى" className="block rounded-2xl px-4 py-3 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300" style={{ backgroundColor: "var(--surface-2)" }}>
+            <Link href="/client/support?topic=complaint" aria-label="الانتقال إلى رفع شكوى" className="block rounded-2xl px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300" style={{ backgroundColor: "var(--surface-2)" }}>
               <span className="flex items-center justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
                 <span>رفع شكوى</span>
                 <span aria-hidden="true">‹</span>
