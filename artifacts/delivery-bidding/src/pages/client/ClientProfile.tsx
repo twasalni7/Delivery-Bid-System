@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
@@ -59,12 +60,37 @@ export default function ClientProfile() {
   return (
     <Layout role="client">
       <div dir="rtl" className="max-w-lg mx-auto space-y-5">
-        <div className="mb-6">
-          <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>ملفي الشخصي</h1>
-          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>تحديث بياناتك الشخصية</p>
+        <div className="rounded-b-[2.2rem] rounded-t-3xl p-6 text-white"
+          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)" }}>
+          <div className="flex items-center gap-4 mt-2">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black border border-white/40 bg-white/20">
+              {user?.name?.[0] ?? "أ"}
+            </div>
+            <div>
+              <h1 className="text-xl font-black">{user?.name ?? "العميل"}</h1>
+              <p className="text-xs text-violet-200">حساب العميل</p>
+            </div>
+          </div>
         </div>
 
-        {/* ── إشعارات الدفع ── */}
+        <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <p className="text-sm font-black mb-4" style={{ color: "var(--text)" }}>الإعدادات والمساعدة</p>
+          <div className="space-y-2">
+            <Link href="/client/support?topic=faq" aria-label="الانتقال إلى الأسئلة الشائعة" className="block rounded-2xl px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300" style={{ backgroundColor: "var(--surface-2)" }}>
+              <span className="flex items-center justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+                <span>الأسئلة الشائعة</span>
+                <span aria-hidden="true">‹</span>
+              </span>
+            </Link>
+            <Link href="/client/support?topic=complaint" aria-label="الانتقال إلى رفع شكوى" className="block rounded-2xl px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300" style={{ backgroundColor: "var(--surface-2)" }}>
+              <span className="flex items-center justify-between text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+                <span>رفع شكوى</span>
+                <span aria-hidden="true">‹</span>
+              </span>
+            </Link>
+          </div>
+        </div>
+
         <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
