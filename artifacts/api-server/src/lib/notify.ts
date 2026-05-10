@@ -17,9 +17,12 @@ function getVapidConfig(): { public: string; private: string; subject: string } 
   return { public: pub, private: priv, subject };
 }
 
-// Initialize VAPID at module load if keys are available.
-// sendPushToUser() will throw if keys are absent when it is called.
+// Initialize VAPID at module load only when legacy web-push fallback is used.
 (function initVapid() {
+  if (isOneSignalConfigured()) {
+    logger.info("[push] OneSignal is configured — skipping legacy web-push VAPID initialization");
+    return;
+  }
   const vapid = getVapidConfig();
   if (vapid) {
     webpush.setVapidDetails(vapid.subject, vapid.public, vapid.private);
@@ -272,6 +275,13 @@ async function sendWebPush(
   icon?: string,
   badge?: string
 ): Promise<void> {
+  if (isOneSignalConfigured()) {
+    logger.info(
+      { userId, userRole, notificationId },
+      "notify: skipping legacy web push because OneSignal is configured"
+    );
+    return;
+  }
   const pushDebug = process.env["PUSH_DEBUG"] === "true";
   const vapid = getVapidConfig();
   if (!vapid) {

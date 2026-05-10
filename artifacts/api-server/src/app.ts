@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/node";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
@@ -130,10 +130,8 @@ if (!isTest) {
       if (tokenUser) return `token:${tokenUser.role}:${tokenUser.id}`;
       const sessionUser = req.session?.user;
       if (sessionUser) return `session:${sessionUser.role}:${sessionUser.id}`;
-      // Normalize IP — strip IPv6-mapped IPv4 prefix (::ffff:x.x.x.x) to avoid ERR_ERL_KEY_GEN_IPV6
-      const raw = req.ip ?? "unknown";
-      const normalized = raw.startsWith("::ffff:") ? raw.slice(7) : raw;
-      return normalized;
+      if (req.ip) return ipKeyGenerator(req.ip);
+      return "unknown";
     },
     validate: { xForwardedForHeader: false },
     standardHeaders: true,
@@ -169,4 +167,3 @@ app.use(errorLogger);
 app.use(globalErrorHandler);
 
 export default app;
-
