@@ -9,7 +9,7 @@ import {
   requestPassengersTable,
   clientsTable,
 } from "@workspace/db";
-import { eq, and, count, inArray, ne, sql, isNull } from "drizzle-orm";
+import { eq, and, count, inArray, ne, sql, isNull, isNotNull } from "drizzle-orm";
 import { notify, notifyAllAdmins, notifyAllDrivers } from "../lib/notify";
 import {
   CreateRequestBody,
@@ -165,7 +165,7 @@ router.get("/", requireAuth(), async (req, res) => {
   try {
     const parsed = ListRequestsQueryParams.safeParse(req.query);
     const status = parsed.success ? parsed.data.status : undefined;
-    const includeArchived = String(req.query["archived"] ?? "").toLowerCase() === "true";
+    const archivedOnly = String(req.query["archived"] ?? "").toLowerCase() === "true";
     const sessionUser = getSessionUser(req);
     const isClient = sessionUser?.role === "client";
     const isDriver = sessionUser?.role === "driver";
@@ -185,7 +185,11 @@ router.get("/", requireAuth(), async (req, res) => {
     if (isClient) conditions.push(eq(requestsTable.clientId, sessionUser!.id));
     // Drivers see only OPEN requests (plus their own accepted ones handled by /drivers/me/requests)
     if (isDriver) conditions.push(eq(requestsTable.status, "OPEN"));
-    if (!includeArchived) conditions.push(isNull(requestsTable.archivedAt));
+    if (archivedOnly) {
+      conditions.push(isNotNull(requestsTable.archivedAt));
+    } else {
+      conditions.push(isNull(requestsTable.archivedAt));
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const rows = await db
@@ -682,6 +686,57 @@ router.post("/:id/cancel", requireAuth("client"), async (req, res) => {
     res.json(formatRequest(req, updated, null));
   } catch (err) {
     logger.error({ err }, "requests POST /:id/cancel error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
+});
+
+router.post("/:id/archive", requireAuth("client"), async (req, res) => {
+  const id = Number(req.params["id"]);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "معرّف غير صحيح" });
+    return;
+  }
+  try {
+    const clientId = getSessionUser(req)!.id;
+    const existing = await db.query.requestsTable.findFirst({ where: eq(requestsTable.id, id) });
+    if (!existing) {
+      res.status(404).json({ error: "الطلب غير موجود" });
+      return;
+    }
+    if (existing.clientId == null || existing.clientId !== clientId) {
+      res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(requestsTable)
+      .set({
+        archivedAt: existing.archivedAt ?? new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(requestsTable.id, id), eq(requestsTable.clientId, clientId)))
+      .returning();
+
+    let driver = null;
+    if (updated?.selectedDriverId) {
+      driver = await db.query.driversTable.findFirst({
+        where: eq(driversTable.id, updated.selectedDriverId),
+      });
+    }
+
+    await logActivity({
+      actorId: clientId,
+      actorRole: "client",
+      action: "request.archived_by_client",
+      entity: "requests",
+      entityId: id,
+      metadata: { status: updated?.status ?? existing.status },
+      req,
+    });
+
+    res.json(formatRequest(req, updated ?? existing, driver));
+  } catch (err) {
+    logger.error({ err }, "requests POST /:id/archive error");
     res.status(500).json({ error: SERVER_ERROR_MSG });
   }
 });

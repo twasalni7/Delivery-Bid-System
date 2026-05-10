@@ -1,85 +1,50 @@
 import { Link } from "wouter";
-import { Navigation } from "lucide-react";
+import { Navigation, Route, CreditCard, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-5" dir="rtl" style={{ fontFamily: "var(--font-arabic)", backgroundColor: "var(--bg)" }}>
-      {/* Hero Header */}
-      <div className="text-center mb-10">
-        <div
-          className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] mb-5 shadow-2xl rotate-[-3deg]"
-          style={{ background: "linear-gradient(135deg, var(--brand-hover) 0%, var(--brand) 100%)", boxShadow: "0 24px 60px var(--brand-border)" }}
-        >
-          <Navigation size={36} strokeWidth={3} style={{ color: "var(--brand-fg)" }} />
-        </div>
-        <h1 className="text-[2.2rem] font-black tracking-tighter italic leading-none" style={{ color: "var(--brand)" }}>توصّلني</h1>
-        <p className="font-bold text-sm mt-2" style={{ color: "var(--text-muted)" }}>نظام اشتراكات التوصيل الشهري</p>
+    <div className="min-h-screen p-5 md:p-8" dir="rtl" style={{ fontFamily: "var(--font-arabic)", backgroundColor: "var(--bg-page)" }}>
+      <div className="max-w-5xl mx-auto space-y-6">
+        <section className="rounded-3xl p-6 md:p-8" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl" style={{ background: "linear-gradient(135deg, var(--brand-hover) 0%, var(--brand) 100%)" }}>
+              <Navigation size={26} strokeWidth={2.7} style={{ color: "var(--brand-fg)" }} />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: "var(--brand)" }}>توصّلني</h1>
+              <p className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>منصة إدارة اشتراكات النقل الشهري بثقة ووضوح</p>
+            </div>
+          </div>
+          <p className="text-base leading-7 font-semibold" style={{ color: "var(--text-sub)" }}>
+            ننظم رحلة العميل من إنشاء الطلب حتى الإغلاق والفوترة الشهرية، مع متابعة واضحة للحالة وسجل محفوظ لكل طلب.
+          </p>
+        </section>
+
+        <section className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center gap-2 mb-3"><Route size={18} style={{ color: "var(--brand)" }} /><h2 className="text-lg font-black">رحلة الطلب</h2></div>
+            <div className="space-y-2 text-sm font-bold" style={{ color: "var(--text-sub)" }}>
+              {["1) إنشاء الطلب", "2) استقبال عروض السائقين", "3) اختيار السائق وتثبيت المسار", "4) تنفيذ المشاوير اليومية", "5) الإغلاق والمتابعة الشهرية"].map((step) => (
+                <div key={step} className="flex items-center gap-2"><CheckCircle2 size={14} style={{ color: "var(--status-active-text)" }} />{step}</div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2"><CreditCard size={18} style={{ color: "var(--brand)" }} /><h2 className="text-lg font-black">نظام الدفع</h2></div>
+              <p className="text-sm font-bold leading-7" style={{ color: "var(--text-sub)" }}>الدفع يكون بنظام شهري مجمّع في نهاية كل شهر، مع وضوح كامل لحالة الطلب وقيمته.</p>
+              <div className="flex items-center gap-2"><ShieldCheck size={18} style={{ color: "var(--status-active-text)" }} /><h2 className="text-lg font-black">الثقة والاطمئنان</h2></div>
+              <p className="text-sm font-bold leading-7" style={{ color: "var(--text-sub)" }}>كل خطوة موثقة داخل النظام: الحالة، الأرشفة، وسجل الطلب، لضمان تجربة مستقرة ومفهومة للعميل.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid md:grid-cols-3 gap-3">
+          <Link href="/client/login"><div className="rounded-2xl p-4 cursor-pointer text-center font-black" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)", color: "var(--text)" }}>دخول العميل</div></Link>
+          <Link href="/driver/login"><div className="rounded-2xl p-4 cursor-pointer text-center font-black" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--status-active-border)", color: "var(--text)" }}>دخول السائق</div></Link>
+          <Link href="/admin/login"><div className="rounded-2xl p-4 cursor-pointer text-center font-black" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}>دخول الإدارة</div></Link>
+        </section>
       </div>
-
-      <div className="w-full max-w-sm space-y-4">
-        {/* Client */}
-        <Link href="/client/login">
-          <div
-            className="p-6 rounded-[2.5rem] cursor-pointer active:scale-[0.98] transition-transform border"
-            style={{ backgroundColor: "var(--surface)", borderColor: "var(--brand-border)", boxShadow: "0 24px 48px rgba(0,0,0,0.35)" }}
-          >
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 shadow-inner" style={{ backgroundColor: "var(--brand-subtle)" }}>
-                📦
-              </div>
-              <div style={{ color: "var(--text)" }} className="flex-1">
-                <p className="text-[1.5rem] font-black tracking-tight leading-none">عميل</p>
-                <p className="text-sm font-bold mt-0.5" style={{ color: "var(--brand)" }}>Customer</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-sub)" }}>اطلب توصيلاً واستعرض عروض السائقين</p>
-              </div>
-              <div className="text-2xl" style={{ color: "var(--brand)" }}>‹</div>
-            </div>
-          </div>
-        </Link>
-
-        {/* Driver */}
-        <Link href="/driver/login">
-          <div
-            className="p-6 rounded-[2.5rem] cursor-pointer active:scale-[0.98] transition-transform border"
-            style={{ backgroundColor: "var(--surface)", borderColor: "var(--status-active-border)", boxShadow: "var(--shadow-md)" }}
-          >
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 shadow-inner" style={{ backgroundColor: "var(--status-active-bg)" }}>
-                🚗
-              </div>
-              <div style={{ color: "var(--text)" }} className="flex-1">
-                <p className="text-[1.5rem] font-black tracking-tight leading-none">سائق</p>
-                <p className="text-sm font-bold mt-0.5" style={{ color: "var(--status-active-text)" }}>Driver</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-sub)" }}>استلم طلبات وقدّم عروضك</p>
-              </div>
-              <div className="text-2xl" style={{ color: "var(--status-active-text)" }}>‹</div>
-            </div>
-          </div>
-        </Link>
-
-        {/* Admin */}
-        <Link href="/admin/login">
-          <div
-            className="p-6 rounded-[2.5rem] cursor-pointer active:scale-[0.98] transition-transform border"
-            style={{ backgroundColor: "var(--surface)", borderColor: "var(--border-subtle)", boxShadow: "0 24px 48px rgba(0,0,0,0.35)" }}
-          >
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 shadow-sm"
-                style={{ backgroundColor: "var(--surface-3)" }}>
-                🛡️
-              </div>
-              <div className="flex-1">
-                <p className="text-[1.5rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>إدارة</p>
-                <p className="text-sm font-bold mt-0.5" style={{ color: "var(--text-sub)" }}>Admin</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>إدارة النظام والمستخدمين</p>
-              </div>
-              <div className="text-2xl" style={{ color: "var(--text-hint)" }}>‹</div>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      <p className="font-bold text-xs mt-10" style={{ color: "var(--text-hint)" }}>اختر نوع الحساب للدخول إلى النظام</p>
     </div>
   );
 }

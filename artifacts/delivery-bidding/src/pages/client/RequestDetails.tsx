@@ -5,7 +5,7 @@ import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryK
 import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Star, AlertCircle, Pencil, Ban } from "lucide-react";
+import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Star, AlertCircle, Pencil, Ban, Archive } from "lucide-react";
 import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
@@ -219,6 +219,25 @@ export default function RequestDetails() {
       queryClient.invalidateQueries({ queryKey: getGetRequestOffersQueryKey(id) });
       queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
       toast({ title: "تم إلغاء الطلب" });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
+
+  const archiveRequest = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API}/api/requests/${id}/archive`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? "فشل أرشفة الطلب");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getGetRequestOffersQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+      toast({ title: "تمت أرشفة الطلب بنجاح" });
     },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
@@ -506,6 +525,20 @@ export default function RequestDetails() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {!request.archivedAt && (
+          <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <button
+              onClick={() => archiveRequest.mutate()}
+              disabled={archiveRequest.isPending}
+              className="w-full px-4 py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border)" }}
+            >
+              <Archive size={14} />
+              {archiveRequest.isPending ? "جارٍ الأرشفة..." : "أرشفة الطلب"}
+            </button>
           </div>
         )}
 

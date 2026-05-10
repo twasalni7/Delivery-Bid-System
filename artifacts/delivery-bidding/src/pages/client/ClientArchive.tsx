@@ -12,7 +12,10 @@ export default function ClientArchive() {
   useEffect(() => {
     fetch(`${API}/api/requests?archived=true`, { headers: getAuthHeaders() })
       .then((r) => r.json())
-      .then((data) => setItems(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        setItems(list.filter((item: ArchivedRequest) => Boolean(item.archivedAt)));
+      })
       .catch(() => setItems([]));
   }, []);
 
@@ -21,7 +24,7 @@ export default function ClientArchive() {
       <div dir="rtl" className="space-y-4">
         <div>
           <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>الأرشيف</h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>طلباتك القديمة المكتملة أو الملغاة</p>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>تعرض هذه الصفحة الطلبات المؤرشفة فقط</p>
         </div>
         <div className="space-y-3">
           {items.map((item) => (
