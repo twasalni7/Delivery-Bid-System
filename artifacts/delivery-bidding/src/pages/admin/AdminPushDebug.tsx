@@ -12,6 +12,9 @@ type DebugDevice = {
 };
 
 type DebugData = {
+  provider?: "onesignal" | "vapid" | "none";
+  oneSignalConfigured?: boolean;
+  oneSignalAppId?: string | null;
   vapidConfigured: boolean;
   vapidPublicKey: string | null;
   subscriptions: {
@@ -182,21 +185,21 @@ export default function AdminPushDebug() {
           </div>
         </div>
 
-        {/* VAPID status */}
+        {/* Provider status */}
         {data && (
           <div
             className="rounded-2xl p-4 space-y-3"
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <h2 className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
-              حالة VAPID (الخادم)
+              حالة مزود الإشعارات (الخادم)
             </h2>
             <div className="flex items-center gap-2.5">
               <ShieldCheck
                 size={16}
                 className="shrink-0"
                 style={{
-                  color: data.vapidConfigured
+                  color: data.oneSignalConfigured || data.vapidConfigured
                     ? "var(--status-active-text)"
                     : "var(--status-cancelled-text)",
                 }}
@@ -204,20 +207,32 @@ export default function AdminPushDebug() {
               <span
                 className="text-sm font-medium"
                 style={{
-                  color: data.vapidConfigured
+                  color: data.oneSignalConfigured || data.vapidConfigured
                     ? "var(--status-active-text)"
                     : "var(--status-cancelled-text)",
                 }}
               >
-                {data.vapidConfigured ? "VAPID مُهيَّأ ✓" : "VAPID غير مُهيَّأ — الإشعارات معطّلة"}
+                {data.provider === "onesignal"
+                  ? "OneSignal مُهيَّأ ✓"
+                  : data.vapidConfigured
+                    ? "VAPID مُهيَّأ ✓"
+                    : "لا يوجد مزود إشعارات مُهيَّأ"}
               </span>
             </div>
-            {data.vapidPublicKey && (
+            {data.oneSignalAppId && (
               <p
                 className="text-xs font-mono break-all rounded-lg px-3 py-2"
                 style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}
               >
-                {data.vapidPublicKey.slice(0, 40)}…
+                OneSignal App ID: {data.oneSignalAppId}
+              </p>
+            )}
+            {!data.oneSignalAppId && data.vapidPublicKey && (
+              <p
+                className="text-xs font-mono break-all rounded-lg px-3 py-2"
+                style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}
+              >
+                VAPID: {data.vapidPublicKey.slice(0, 40)}…
               </p>
             )}
           </div>
@@ -230,7 +245,7 @@ export default function AdminPushDebug() {
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <h2 className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
-              عدد الاشتراكات النشطة
+              عدد الاشتراكات المخزنة محلياً
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {(

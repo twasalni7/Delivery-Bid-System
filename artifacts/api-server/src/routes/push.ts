@@ -13,6 +13,7 @@ import {
   type NotificationAudience,
   type NotificationUserRole,
 } from "../lib/notification-targeting";
+import { getOneSignalConfig, isOneSignalConfigured } from "../lib/onesignal";
 import { z } from "zod";
 
 const router = Router();
@@ -341,6 +342,7 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
  * a summary of endpoints currently registered.
  */
 router.get("/debug", requireAuth("admin"), async (_req, res) => {
+  const oneSignalConfig = getOneSignalConfig();
   const vapidConfigured = Boolean(
     process.env["VAPID_PUBLIC_KEY"] && process.env["VAPID_PRIVATE_KEY"]
   );
@@ -384,6 +386,9 @@ router.get("/debug", requireAuth("admin"), async (_req, res) => {
     }));
 
     res.json({
+      provider: isOneSignalConfigured() ? "onesignal" : vapidConfigured ? "vapid" : "none",
+      oneSignalConfigured: Boolean(oneSignalConfig),
+      oneSignalAppId: oneSignalConfig?.appId ?? null,
       vapidConfigured,
       vapidPublicKey: process.env["VAPID_PUBLIC_KEY"] ?? null,
       subscriptions: {

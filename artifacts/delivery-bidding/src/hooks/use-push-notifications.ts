@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { subscribeToPush, type PushSubscribeResult } from "@/lib/push-notifications";
-import { getAuthHeaders } from "@/lib/authed-fetch";
-import { API_ORIGIN } from "@/lib/api-config";
-
-const PUSH_SUBSCRIBED_KEY = "push_subscribed";
+import {
+  isPushEnabled,
+  subscribeToPush,
+  type PushSubscribeResult,
+} from "@/lib/push-notifications";
 
 /**
  * usePushNotifications
@@ -32,49 +32,22 @@ export function usePushNotifications(role?: string) {
         return;
       }
 
-      const isSubscribedLocal = localStorage.getItem(PUSH_SUBSCRIBED_KEY);
-
-      if (permission === "granted" && isSubscribedLocal === "1") {
-        // تحقق من أن الـ subscription في المتصفح لا تزال صالحة
-        if ("serviceWorker" in navigator && "PushManager" in window) {
-          try {
-            const reg = await navigator.serviceWorker.ready;
-            const existing = await reg.pushManager.getSubscription();
-            if (!existing) {
-              // ✅ الـ subscription انتهت — أعد تعيين الكاش وأظهر الزر
-              localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
-              setShowNotificationButton(true);
-              setIsChecking(false);
-              return;
-            }
-            // ✅ الـ subscription موجودة في المتصفح — تأكد إنها مسجلة في السيرفر
-            // هذا يصلح حالة: المستخدم عنده subscription في المتصفح لكنها حُذفت من DB
-            try {
-              const res = await fetch(`${API_ORIGIN}/api/push/status`, {
-                headers: getAuthHeaders(),
-              });
-              if (res.ok) {
-                const data = await res.json() as { hasSubscription?: boolean };
-                if (!data.hasSubscription) {
-                  // السيرفر ما عنده subscription — أعد التسجيل بصمت
-                  void subscribeToPush(role);
-                }
-              }
-            } catch {
-              // السيرفر غير متاح — نتجاهل ونكمل
-            }
-          } catch {
-            // Cannot verify — optimistically hide the button
-          }
-        }
-        setShowNotificationButton(false);
+      if (permission === "granted") {
+        const enabled = await isPushEnabled();
+        setShowNotificationButton(!enabled);
       } else {
-        // permission === "default" أو ما في كاش — أظهر الزر
         setShowNotificationButton(true);
       }
       setIsChecking(false);
     };
+
+    const handleStatusChange = () => {
+      void checkSubscription();
+    };
+
     void checkSubscription();
+    window.addEventListener("push-status-changed", handleStatusChange);
+    return () => window.removeEventListener("push-status-changed", handleStatusChange);
   }, [role]);
 
   const subscribeUserToPush = async (): Promise<PushSubscribeResult> => {

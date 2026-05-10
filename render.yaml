@@ -18,11 +18,17 @@ services:
           property: connectionString
       - key: SESSION_SECRET
         generateValue: true
+      - key: APP_URL
+        value: https://sharq.it.com
       - key: LOG_LEVEL
         value: info
       - key: TRUST_PROXY
         value: "1"
       - key: CORS_ORIGIN
+        sync: false
+      - key: ONESIGNAL_APP_ID
+        sync: false
+      - key: ONESIGNAL_REST_API_KEY
         sync: false
       - key: VAPID_PUBLIC_KEY
         sync: false
@@ -37,6 +43,9 @@ services:
     branch: main
     buildCommand: BASE_PATH=/ corepack pnpm --filter @workspace/delivery-bidding run build
     staticPublishPath: artifacts/delivery-bidding/dist/public
+    envVars:
+      - key: VITE_ONESIGNAL_APP_ID
+        sync: false
     routes:
       - type: rewrite
         source: /*

@@ -139,7 +139,7 @@ export default function AdminNotificationsMonitor() {
           </div>
         ) : (
           <>
-            {/* Push / VAPID status banner */}
+            {/* Push / OneSignal status banner */}
             <div
               className="flex items-center gap-3 rounded-2xl p-4"
               style={{
@@ -153,11 +153,11 @@ export default function AdminNotificationsMonitor() {
               />
               <div>
                 <div className="font-medium text-sm" style={{ color: "var(--text)" }}>
-                  {data?.pushStatus === "configured" ? "مفاتيح VAPID مضبوطة ✓ — الإشعارات الفورية تعمل" : "مفاتيح VAPID غير مضبوطة"}
+                  {data?.pushStatus === "configured" ? "OneSignal مُهيّأ ✓ — الإشعارات الخارجية تعمل" : "OneSignal غير مُهيّأ"}
                 </div>
                 {data?.pushStatus !== "configured" && (
                   <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    يرجى إضافة VAPID_PUBLIC_KEY و VAPID_PRIVATE_KEY في متغيرات البيئة
+                    يرجى إضافة ONESIGNAL_APP_ID و ONESIGNAL_REST_API_KEY في متغيرات البيئة
                   </div>
                 )}
               </div>

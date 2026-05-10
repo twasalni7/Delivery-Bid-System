@@ -3,6 +3,11 @@ import { db, pool } from "@workspace/db";
 import { notificationsTable, pushSubscriptionsTable, driversTable, adminsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { logger } from "./logger";
+import {
+  buildOneSignalExternalId,
+  isOneSignalConfigured,
+  sendOneSignalPush,
+} from "./onesignal";
 
 function getVapidConfig(): { public: string; private: string; subject: string } | null {
   const pub = process.env["VAPID_PUBLIC_KEY"];
@@ -84,6 +89,73 @@ async function getLegacyPushSubscription(userId: number): Promise<string | null>
 }
 
 const PUSH_RETRY_DELAY_MS = 2000;
+const DEFAULT_APP_URL = "https://sharq.it.com";
+
+function getAppOrigin(): string {
+  const configured =
+    process.env["APP_URL"] ??
+    process.env["PUBLIC_APP_URL"] ??
+    process.env["SITE_URL"] ??
+    DEFAULT_APP_URL;
+  return configured.replace(/\/+$/, "");
+}
+
+function getNotificationLandingPath(userRole: "client" | "driver" | "admin"): string {
+  if (userRole === "admin") return "/admin/notifications-center";
+  if (userRole === "driver") return "/driver/notifications";
+  return "/client/notifications";
+}
+
+function buildPushTrackingUrl(params: {
+  userRole: "client" | "driver" | "admin";
+  notificationId?: number;
+  url?: string;
+  actionType?: "open_url" | "emit_event";
+  actionPayload?: Record<string, unknown> | null;
+}): string {
+  const rawTarget = params.url?.trim() || getNotificationLandingPath(params.userRole);
+  const safeTarget =
+    rawTarget.startsWith("/") ? rawTarget : getNotificationLandingPath(params.userRole);
+  const targetUrl = new URL(safeTarget, getAppOrigin());
+
+  if (params.notificationId !== undefined) {
+    targetUrl.searchParams.set("notificationId", String(params.notificationId));
+    targetUrl.searchParams.set("notificationSource", "push");
+    targetUrl.searchParams.set(
+      "notificationAction",
+      params.actionType === "emit_event" ? "action" : "open"
+    );
+  }
+
+  const eventName =
+    params.actionType === "emit_event" &&
+    typeof params.actionPayload?.["eventName"] === "string"
+      ? params.actionPayload["eventName"]
+      : null;
+
+  if (eventName) {
+    targetUrl.searchParams.set("notificationEvent", eventName);
+    targetUrl.searchParams.set(
+      "notificationPayload",
+      JSON.stringify(params.actionPayload ?? null)
+    );
+  }
+
+  return `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+}
+
+async function markNotificationDelivered(notificationId: number | undefined) {
+  if (notificationId === undefined) return;
+
+  try {
+    await db
+      .update(notificationsTable)
+      .set({ deliveredAt: new Date() })
+      .where(eq(notificationsTable.id, notificationId));
+  } catch (err) {
+    logger.warn({ err, notificationId }, "notify: failed to update delivered_at");
+  }
+}
 
 export async function clearExpiredSubscription(userId: number, userRole: "client" | "driver" | "admin") {
   try {
@@ -319,6 +391,39 @@ export async function notify(params: {
     logger.error({ err, params }, "notify: failed to insert notification record");
   }
 
+  const deliveryUrl = buildPushTrackingUrl({
+    userRole: params.userRole,
+    notificationId,
+    url: params.url,
+    actionType: params.actionType,
+    actionPayload: params.actionPayload ?? null,
+  });
+
+  if (isOneSignalConfigured()) {
+    void sendOneSignalPush({
+      externalIds: [buildOneSignalExternalId(params.userId, params.userRole)],
+      title: params.title,
+      message: params.message,
+      url: `${getAppOrigin()}${deliveryUrl}`,
+      data: {
+        notificationId: notificationId ?? null,
+        userRole: params.userRole,
+        type: params.type,
+        url: deliveryUrl,
+        actionType: params.actionType ?? "open_url",
+        actionPayload: params.actionPayload ?? null,
+      },
+    }).then(async (result) => {
+      if (!result.ok) return;
+      await markNotificationDelivered(notificationId);
+      logger.info(
+        { userId: params.userId, userRole: params.userRole, notificationId, response: result.response },
+        "notify: OneSignal delivery accepted"
+      );
+    });
+    return;
+  }
+
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
       logger.info({ userId: params.userId, userRole: params.userRole, notificationId }, "notify: push subscription found");
@@ -327,14 +432,14 @@ export async function notify(params: {
         params.userRole,
         sub,
         notificationId,
-          params.title,
-          params.message,
-          params.url,
-          params.actionType,
-          params.actionPayload ?? null,
-          params.icon,
-          params.badge
-        );
+        params.title,
+        params.message,
+        deliveryUrl,
+        params.actionType,
+        params.actionPayload ?? null,
+        params.icon,
+        params.badge
+      );
       return;
     }
     logger.info({ userId: params.userId, userRole: params.userRole, notificationId }, "notify: no push subscription stored for recipient");
@@ -399,6 +504,17 @@ export async function sendPushToUser(
   role: "client" | "driver" | "admin",
   params: { title: string; body: string; url?: string; tag?: string }
 ): Promise<{ sent: boolean }> {
+  if (isOneSignalConfigured()) {
+    const result = await sendOneSignalPush({
+      externalIds: [buildOneSignalExternalId(userId, role)],
+      title: params.title,
+      message: params.body,
+      url: `${getAppOrigin()}${buildPushTrackingUrl({ userRole: role, url: params.url })}`,
+      data: { tag: params.tag ?? "push-test", userRole: role },
+    });
+    return { sent: result.ok };
+  }
+
   const vapid = getVapidConfig();
   if (!vapid) {
     const msg = "[push] VAPID keys are not configured — cannot send push notification";

@@ -11,25 +11,13 @@ interface PushPermissionPromptProps {
   onDismiss: () => void;
 }
 
-/**
- * PushPermissionPrompt
- *
- * Soft-ask UI shown before the native browser permission dialog.
- * Explains the value of notifications, then calls:
- *   1. OneSignal.Slidedown.promptPush()  — if the SDK is loaded
- *   2. subscribeToPush(role)             — VAPID subscription (always called
- *                                          after permission is granted so
- *                                          our own server push system is
- *                                          also registered)
- *
- * onEnabled() is called ONLY when the subscription is confirmed saved on
- * the server (result "ok" or "already_subscribed").  On server_error the
- * prompt stays open with a retry banner so the user can try again without
- * burning their dismissal counter.
- *
- * Smart dismissal: the hook (useInstallAndPushFlow) increments a counter
- * and records a timestamp so we back-off exponentially.
- */
+  /**
+   * PushPermissionPrompt
+   *
+   * Soft-ask UI shown before requesting browser push permission through
+   * OneSignal. onEnabled() is called only after the browser/device is
+   * actually opted in so we can hide future prompts safely.
+   */
 export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
   role,
   onEnabled,
@@ -42,41 +30,13 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
     setLoading(true);
     setSaveError(false);
     try {
-      // ── Try OneSignal slidedown first (better UX) ──────────────────────
-      const OS = window.OneSignal;
-      if (OS?.Slidedown) {
-        try {
-          await OS.Slidedown.promptPush();
-        } catch {
-          // Slidedown may throw if already subscribed or blocked — fall through
-        }
-      } else {
-        // ── OneSignal not ready — use native Notification.requestPermission ─
-        if ("Notification" in window && Notification.permission === "default") {
-          await Notification.requestPermission();
-        }
-      }
-
-      if (Notification.permission !== "granted") {
-        onDismiss();
-        return;
-      }
-
-      // ── Wire up our VAPID push subscription ────────────────────────────
       const result = await subscribeToPush(role);
 
       if (result === "ok" || result === "already_subscribed") {
-        // Subscription confirmed saved on the server — mark as permanently enabled.
         onEnabled();
-      } else if (result === "server_error") {
-        // Browser subscription created successfully but the server failed to save
-        // it.  Show a retry banner so the user can try again.  We intentionally
-        // do NOT call onEnabled() here because doing so would permanently set
-        // PUSH_ENABLED_KEY and prevent future retries.
+      } else if (result === "subscribe_error" || result === "sdk_unavailable") {
         setSaveError(true);
       } else {
-        // Permission denied, unsupported, no VAPID key, etc. — dismiss without
-        // incrementing the dismissal counter so we can offer again later.
         onDismiss();
       }
     } catch (err) {
@@ -144,7 +104,7 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
             ابقَ على اطلاع فوري بطلباتك وعروض السائقين ورسائل التطبيق
           </p>
 
-          {/* Server-save error banner */}
+          {/* Subscription error banner */}
           {saveError && (
             <div
               className="flex items-start gap-2 rounded-xl px-3 py-2.5 mb-4 text-sm"
@@ -155,7 +115,7 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
               }}
             >
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
-              <span>تم تفعيل الإشعارات في المتصفح، لكن فشل الحفظ في الخادم. يرجى المحاولة مجددًا.</span>
+              <span>تعذر إكمال تفعيل الإشعارات الآن. تأكد من تحميل OneSignal ثم حاول مرة أخرى.</span>
             </div>
           )}
 
