@@ -147,7 +147,7 @@ export default function ClientDashboard() {
                 </span>
               )}
             </div>
-            <p className="font-bold text-sm text-violet-100">جاهزة لمشوارك القادم؟ أضيفي طلب اشتراك جديد خلال ثوانٍ.</p>
+            <p className="font-bold text-sm text-violet-100">جاهز لمشوارك القادم؟ أضف طلب اشتراك جديد خلال ثوانٍ.</p>
             <Link href="/client/request/new">
               <div className="w-full rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 text-base font-black bg-white text-violet-700 cursor-pointer">
                 <Plus size={19} aria-hidden="true" />
@@ -213,7 +213,7 @@ export default function ClientDashboard() {
               <span className="text-4xl">🗺️</span>
             </div>
             <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد طلبات نشطة</p>
-            <p className="font-bold text-sm mt-1 px-5" style={{ color: "var(--text-hint)" }}>ابدئي بطلب اشتراك شهري وسنحدد لك السعر العادل ونربطك بأفضل السائقين.</p>
+            <p className="font-bold text-sm mt-1 px-5" style={{ color: "var(--text-hint)" }}>ابدأ بطلب اشتراك شهري وسنحدد لك السعر العادل ونربطك بأفضل السائقين.</p>
           </div>
         )}
 
