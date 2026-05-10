@@ -32,14 +32,22 @@ The React app is served as a static site and the Express API runs as a Vercel Se
    | `SUPABASE_DATABASE_URL` | Supabase Transaction Pooler connection string (port **6543**) | `postgresql://postgres:[password]@db.[ref].supabase.co:6543/postgres` |
    | `SESSION_SECRET` | A long random secret for signing session cookies | `openssl rand -hex 32` output |
    | `NODE_ENV` | Set to `production` | `production` |
+   | `OPENROUTESERVICE_API_KEY` | **Required** for distance calculation and auto-pricing | Get from [openrouteservice.org](https://openrouteservice.org) |
    | `VITE_SENTRY_DSN` | (Optional) Sentry DSN for frontend error monitoring | `https://...@sentry.io/...` |
 
    > **Sentry (optional):** create a React project at https://sentry.io, copy the DSN, and add it as `VITE_SENTRY_DSN`.
    > If not set, Sentry is silently disabled — no errors are thrown.
 
-   > **Where to find `SUPABASE_DATABASE_URL`:**  
-   > Supabase dashboard → your project → **Settings** → **Database** → **Connection string** → **Transaction Pooler** → copy the connection string.  
+   > **Where to find `SUPABASE_DATABASE_URL`:**
+   > Supabase dashboard → your project → **Settings** → **Database** → **Connection string** → **Transaction Pooler** → copy the connection string.
    > Replace `[YOUR-PASSWORD]` with your database password.
+
+   > **Where to get `OPENROUTESERVICE_API_KEY`:**
+   > 1. Go to [openrouteservice.org](https://openrouteservice.org)
+   > 2. Sign Up (free account)
+   > 3. Dashboard → Tokens → Request a token (Free plan: 2000 requests/day)
+   > 4. Copy the API key
+   > **Without this key, distance calculation and auto-pricing will NOT work!**
 
 6. **Deploy** — click **Deploy**. Vercel will build and deploy the project.
 
@@ -133,9 +141,10 @@ If you prefer to host the API separately on Render:
 2. Click **New → Web Service** and connect the GitHub repository.
 3. Render picks up the `render.yaml` configuration automatically.
 4. Add the same environment variables in the Render dashboard:
-   - `SUPABASE_DATABASE_URL`
-   - `SESSION_SECRET`
+   - `SUPABASE_DATABASE_URL` (Transaction Pooler, port 6543)
+   - `SESSION_SECRET` (from `openssl rand -hex 32`)
    - `NODE_ENV` = `production`
+   - `OPENROUTESERVICE_API_KEY` (**required** for distance & pricing)
 5. Click **Create Web Service**.
 
 ---
