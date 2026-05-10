@@ -45,7 +45,7 @@ export default function Home() {
 
           <div className="space-y-3 pt-2">
             <Link href="/client/login" className="w-full bg-violet-700 hover:bg-violet-600 active:scale-[0.99] text-white font-black text-[2rem] py-4 rounded-[1.6rem] shadow-2xl shadow-violet-950/80 transition-all flex justify-center items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">
-              <span>تصفح التطبيق</span><ArrowLeft size={28} aria-hidden="true" />
+              <span>تصفح التطبيق / دخول العميل</span><ArrowLeft size={28} aria-hidden="true" />
             </Link>
             <div className="grid grid-cols-2 gap-3">
               <Link href="/driver/login" aria-label="الانتقال إلى دخول السائق">
