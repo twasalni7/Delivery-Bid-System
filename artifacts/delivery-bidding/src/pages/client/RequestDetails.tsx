@@ -528,7 +528,7 @@ export default function RequestDetails() {
           </div>
         )}
 
-        {!request.archivedAt && (
+        {!((request as any).archivedAt) && (
           <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <button
               onClick={() => archiveRequest.mutate()}

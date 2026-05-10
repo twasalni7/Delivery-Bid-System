@@ -68,7 +68,7 @@ export default function ClientDashboard() {
   const [unreadMap, setUnreadMap] = useState<Record<number, number>>({});
   const [activeFilter, setActiveFilter] = useState<FilterTab>("PENDING");
 
-  const activeRequests = (requests ?? []).filter((req) => !req.archivedAt);
+  const activeRequests = (requests ?? []).filter((req) => !(req as any).archivedAt);
   const archivedRequests = ((Array.isArray(archivedData) ? archivedData : []) as Array<{ archivedAt?: string | null }>)
     .filter((req) => Boolean(req.archivedAt));
 
