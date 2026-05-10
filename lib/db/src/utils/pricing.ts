@@ -81,15 +81,8 @@ export function calculateMonthlyPrice(
   numberOfPeople?: number | null,
 ): MonthlyPriceResult {
   const tier = DEFAULT_DISTANCE_TIERS.find((t) => distanceKm <= t.max);
-  if (!tier) {
-    const fallbackTier = DEFAULT_DISTANCE_TIERS[DEFAULT_DISTANCE_TIERS.length - 1];
-    if (!fallbackTier) return { price: 0, needsAdminReview: false };
-    const overflowFactor = Math.max(1, Math.ceil(distanceKm / fallbackTier.max));
-    const overflowPrice = fallbackTier.base * overflowFactor;
-    return { price: Math.round(overflowPrice), needsAdminReview: false };
-  }
-
-  let base = tier.base;
+  const fallbackTier = DEFAULT_DISTANCE_TIERS[DEFAULT_DISTANCE_TIERS.length - 1];
+  let base = tier?.base ?? (fallbackTier ? fallbackTier.base * (distanceKm / fallbackTier.max) : 0);
 
   // Round-trip (2 shifts) doubles the base fare
   if (tripType === "round_trip") {

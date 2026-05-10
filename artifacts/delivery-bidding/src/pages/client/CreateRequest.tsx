@@ -516,7 +516,6 @@ export default function CreateRequest() {
         destinationAddress: workLocation || workCoords?.address || null,
         workTime: firstGoTime || null,
         daysPerWeek: selectedDays.length,
-        distanceKm: null,
       },
       ...extraPassengers.map((p, idx) => ({
         passengerIndex: idx + 2,
@@ -528,7 +527,6 @@ export default function CreateRequest() {
         destinationAddress: p.destAddress || p.destCoords?.address || null,
         workTime: p.workTime || firstGoTime || null,
         daysPerWeek: selectedDays.length,
-        distanceKm: null,
       })),
     ];
 

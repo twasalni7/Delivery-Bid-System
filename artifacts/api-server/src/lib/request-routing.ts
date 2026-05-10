@@ -24,7 +24,7 @@ export interface StopRoutingInput {
 function hasCoords(
   lat?: number | null,
   lng?: number | null
-): lat is number {
+): boolean {
   return Number.isFinite(lat) && Number.isFinite(lng);
 }
 

@@ -3,6 +3,7 @@ import { logger } from "./logger";
 const DEFAULT_ORS_API_URL = "https://api.openrouteservice.org/v2";
 const DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org";
 const DEFAULT_LANGUAGE = "ar";
+const GEO_CACHE_LIMIT = 200;
 const geoCache = new Map<string, unknown>();
 
 export type RoutePoint = {
@@ -39,6 +40,10 @@ function getCached<T>(key: string): T | null {
 }
 
 function setCached<T>(key: string, value: T): T {
+  if (!geoCache.has(key) && geoCache.size >= GEO_CACHE_LIMIT) {
+    const oldestKey = geoCache.keys().next().value;
+    if (oldestKey) geoCache.delete(oldestKey);
+  }
   geoCache.set(key, value);
   return value;
 }

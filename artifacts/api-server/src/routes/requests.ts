@@ -366,6 +366,9 @@ router.post("/", requireAuth("client"), async (req, res) => {
     // Insert per-passenger records if provided
     if (hasPassengers) {
       const passengers = passengersInput!;
+      const passengerRouteMap = new Map(
+        routing.passengerRoutes.map((route) => [route.passengerIndex, route.route.distanceKm])
+      );
       await db.insert(requestPassengersTable).values(
         passengers.map((p) => ({
           requestId: created.id,
@@ -378,8 +381,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
           destinationAddress: p.destinationAddress ?? null,
           workTime: p.workTime ?? null,
           daysPerWeek: p.daysPerWeek ?? null,
-            distanceKm:
-              routing.passengerRoutes.find((route) => route.passengerIndex === p.passengerIndex)?.route.distanceKm ?? null,
+            distanceKm: passengerRouteMap.get(p.passengerIndex) ?? null,
          }))
        );
      }

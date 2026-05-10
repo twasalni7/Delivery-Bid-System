@@ -375,7 +375,7 @@ export default function MapPicker({
 
       {!pendingSelection && !loading && (
         <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
-          حرّك الخريطة حتى يصبح الدبوس فوق الموقع المطلوب
+          {placeholder}
         </div>
       )}
     </div>
@@ -416,7 +416,7 @@ export default function MapPicker({
 
       {!pendingSelection && !loading && (
         <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
-          حرّك الخريطة حتى يصبح الدبوس فوق الموقع المطلوب
+          {placeholder}
         </div>
       )}
     </div>
