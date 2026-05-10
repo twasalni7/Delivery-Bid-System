@@ -64,7 +64,7 @@ export default function ClientProfile() {
           style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)" }}>
           <div className="flex items-center gap-4 mt-2">
             <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black border border-white/40 bg-white/20">
-              {(user?.name ?? "أ").charAt(0)}
+              {user?.name?.[0] ?? "أ"}
             </div>
             <div>
               <h1 className="text-xl font-black">{user?.name ?? "العميل"}</h1>

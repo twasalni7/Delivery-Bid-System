@@ -38,10 +38,10 @@ export default function Home() {
               <span>دخول العميل</span><ArrowLeft size={18} />
             </Link>
             <div className="grid grid-cols-2 gap-3">
-              <Link href="/driver/login">
+              <Link href="/driver/login" aria-label="الانتقال إلى دخول السائق">
                 <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white border border-slate-200 text-slate-700">دخول السائق</div>
               </Link>
-              <Link href="/admin/login">
+              <Link href="/admin/login" aria-label="الانتقال إلى دخول الإدارة">
                 <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white border border-slate-200 text-slate-700">دخول الإدارة</div>
               </Link>
             </div>
