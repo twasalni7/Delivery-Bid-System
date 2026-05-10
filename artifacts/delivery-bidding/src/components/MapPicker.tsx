@@ -62,6 +62,7 @@ const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 const SEARCH_DEBOUNCE_MS = 300;
 const MOVE_END_DEBOUNCE_MS = 350;
 const PROGRAMMATIC_MOVE_GUARD_MS = 150;
+// ~5-6 meters at the equator: enough to ignore tiny map jitters while dragging.
 const COORDINATE_EPSILON = 0.00005;
 
 export default function MapPicker({
@@ -80,6 +81,7 @@ export default function MapPicker({
   const mapRef = useRef<any>(null);
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const moveEndTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const programmaticMoveTimerRef = useRef<number | null>(null);
   const geocodeRequestIdRef = useRef(0);
   const programmaticMoveRef = useRef(false);
   const pendingSelectionRef = useRef<MapCoords | null>(value);
@@ -122,7 +124,8 @@ export default function MapPicker({
     if (!mapRef.current) return;
     programmaticMoveRef.current = true;
     mapRef.current.setView([lat, lng], zoom);
-    window.setTimeout(() => {
+    if (programmaticMoveTimerRef.current) window.clearTimeout(programmaticMoveTimerRef.current);
+    programmaticMoveTimerRef.current = window.setTimeout(() => {
       programmaticMoveRef.current = false;
     }, PROGRAMMATIC_MOVE_GUARD_MS);
   }, []);
@@ -347,6 +350,7 @@ export default function MapPicker({
       cancelled = true;
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
       if (moveEndTimerRef.current) clearTimeout(moveEndTimerRef.current);
+      if (programmaticMoveTimerRef.current) window.clearTimeout(programmaticMoveTimerRef.current);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;

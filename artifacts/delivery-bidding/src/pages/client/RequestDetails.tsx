@@ -10,6 +10,7 @@ import type { Offer } from "@workspace/api-client-react";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-utils";
+import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 
@@ -18,13 +19,6 @@ const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
-
-function hasArchivedTimestamp(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  if (!("archivedAt" in value)) return false;
-  const archivedAt = (value as { archivedAt?: unknown }).archivedAt;
-  return typeof archivedAt === "string" && archivedAt.length > 0;
-}
 
 /** Confirmation dialog shown before finalizing a driver selection */
 function DriverConfirmDialog({

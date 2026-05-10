@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout";
 import { EnablePushButton } from "@/components/enable-push-button";
 import { getStatusLabel } from "@/lib/status-utils";
 import { formatTime12h } from "@/lib/time-utils";
+import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { Bell, Clock, Users, Calendar, Plus, Archive } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
@@ -30,13 +31,6 @@ const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
 
-function hasArchivedTimestamp(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  if (!("archivedAt" in value)) return false;
-  const archivedAt = (value as { archivedAt?: unknown }).archivedAt;
-  return typeof archivedAt === "string" && archivedAt.length > 0;
-}
-
 type FilterTab = "PENDING" | "ACCEPTED" | "COMPLETED" | "ARCHIVED";
 
 const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
@@ -45,6 +39,7 @@ const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
   { id: "COMPLETED", label: "مكتمل", statuses: ["COMPLETED", "CANCELLED", "EXPIRED"] },
   { id: "ARCHIVED", label: "مؤرشف", statuses: [] },
 ];
+const KNOWN_STATUSES = new Set(FILTER_TABS.flatMap((tab) => tab.statuses));
 
 export default function ClientDashboard() {
   const { toast } = useToast();
@@ -116,6 +111,7 @@ export default function ClientDashboard() {
     : activeRequests.filter((req) => {
         const tab = FILTER_TABS.find((t) => t.id === activeFilter);
         if (!tab || tab.statuses.length === 0) return false;
+        if (activeFilter === "PENDING" && !KNOWN_STATUSES.has(req.status)) return true;
         return tab.statuses.includes(req.status);
       });
 
