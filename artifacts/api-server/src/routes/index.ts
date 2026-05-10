@@ -37,6 +37,7 @@ router.use("/push", pushRouter);
 router.use("/messages", messagesRouter);
 router.use("/pricing", pricingRouter);
 router.use("/activity-logs", activityLogsRouter);
+router.use("/admin/activity-logs", activityLogsRouter);
 router.use("/service-areas", serviceAreasRouter);
 
 export default router;

@@ -11,6 +11,7 @@ import {
 import { systemErrorsTable, systemAlertsTable } from "@workspace/db";
 import { requireAuth } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
+import { isOneSignalConfigured } from "../lib/onesignal";
 import { eq, and, gte, lte, desc, count, isNotNull, isNull, sql, ne } from "drizzle-orm";
 
 const router = Router();
@@ -72,11 +73,10 @@ router.get("/system-health", async (_req, res) => {
   services.push({ name: "Database", nameAr: "قاعدة البيانات", status: dbStatus, lastCheck: now });
   services.push({ name: "Auth", nameAr: "نظام التوثيق", status: "healthy", lastCheck: now });
 
-  const vapidPublic = process.env["VAPID_PUBLIC_KEY"] ?? process.env["NEXT_PUBLIC_VAPID_PUBLIC_KEY"];
   services.push({
     name: "Push Notifications",
     nameAr: "الإشعارات",
-    status: vapidPublic ? "healthy" : "warning",
+    status: isOneSignalConfigured() ? "healthy" : "warning",
     lastCheck: now,
   });
 
@@ -244,9 +244,6 @@ router.get("/notifications-monitor", async (_req, res) => {
       Number(subsByRole.find((r) => r.role === role)?.count ?? 0);
     const totalSubscriptions = subsByRole.reduce((s, r) => s + Number(r.count ?? 0), 0);
 
-    const vapidPublic = process.env["VAPID_PUBLIC_KEY"];
-    const vapidPrivate = process.env["VAPID_PRIVATE_KEY"];
-
     const total = Number(notifCountResult?.count ?? 0);
     const delivered = Number(deliveredResult?.count ?? 0);
     const clicked = Number(clickedResult?.count ?? 0);
@@ -269,7 +266,7 @@ router.get("/notifications-monitor", async (_req, res) => {
         clickRate: delivered > 0 ? `${((clicked / delivered) * 100).toFixed(1)}%` : "0%",
       },
       recentNotifications: recentNotifs,
-      pushStatus: (vapidPublic && vapidPrivate) ? "configured" : "not_configured",
+      pushStatus: isOneSignalConfigured() ? "configured" : "not_configured",
     });
   } catch (err) {
     logger.error({ err }, "notifications-monitor error");

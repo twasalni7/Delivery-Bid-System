@@ -10,46 +10,6 @@
 
 const LOG_PREFIX = "[Push]";
 
-declare global {
-  interface Window {
-    OneSignal?: OneSignalType;
-    OneSignalDeferred?: ((os: OneSignalType) => void)[];
-  }
-}
-
-interface OneSignalType {
-  init: (config: OneSignalConfig) => Promise<void>;
-  login: (externalId: string) => Promise<void>;
-  logout: () => Promise<void>;
-  Notifications: {
-    permission: boolean;
-    requestPermission: () => Promise<void>;
-    addEventListener: (event: string, listener: (permission: boolean) => void) => void;
-  };
-  User: {
-    PushSubscription: {
-      id: string | null;
-      token: string | null;
-      optedIn: boolean;
-      optIn: () => Promise<void>;
-      optOut: () => Promise<void>;
-    };
-    addTag: (key: string, value: string) => void;
-    addTags: (tags: Record<string, string>) => void;
-  };
-  Slidedown?: {
-    promptPush: () => Promise<void>;
-  };
-}
-
-interface OneSignalConfig {
-  appId: string;
-  serviceWorkerParam?: { scope: string };
-  serviceWorkerPath?: string;
-  notifyButton?: { enable: boolean };
-  allowLocalhostAsSecureOrigin?: boolean;
-}
-
 // App ID with hardcoded fallback
 const ONESIGNAL_APP_ID =
   (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
@@ -72,7 +32,7 @@ export async function initOneSignal(): Promise<void> {
 
   initPromise = new Promise<void>((resolve) => {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async (OneSignal: OneSignalType) => {
+    window.OneSignalDeferred.push(async (OneSignal: OneSignalNamespace) => {
       try {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,

@@ -19,6 +19,7 @@ interface OneSignalNotifications {
   readonly permission: boolean;
   /** Request the native browser permission prompt */
   requestPermission(): Promise<void>;
+  permissionNative?(): Promise<NotificationPermission>;
 }
 
 interface OneSignalSlidedown {
@@ -29,6 +30,10 @@ interface OneSignalSlidedown {
 interface OneSignalPushSubscription {
   optIn(): Promise<void>;
   optOut(): Promise<void>;
+  optedIn?: boolean | (() => Promise<boolean>);
+  /** OneSignal device push token (available after opt-in) */
+  token?: string | null;
+  id?: string | null;
 }
 
 interface OneSignalUser {
@@ -53,4 +58,3 @@ interface Window {
   /** Populated by OneSignal SDK after initialization */
   OneSignal?: OneSignalNamespace;
 }
-

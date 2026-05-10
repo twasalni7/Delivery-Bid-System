@@ -26,7 +26,8 @@ export type PushSubscribeResult =
   | "sw_error"
   | "subscribe_error"
   | "server_error"
-  | "unsupported";
+  | "unsupported"
+  | "sdk_unavailable";
 
 // ─── usePushNotifications ─────────────────────────────────────────────────────
 export function usePushNotifications(role?: string) {
@@ -113,9 +114,7 @@ export function usePushNotifications(role?: string) {
       }
 
       if (Notification.permission !== "granted") {
-        const result: PushSubscribeResult = Notification.permission === "denied"
-          ? "permission_denied"
-          : "permission_default";
+        const result: PushSubscribeResult = "permission_default";
         setLastError(result);
         return result;
       }

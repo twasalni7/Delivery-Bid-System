@@ -70,6 +70,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env["VAPID_PUBLIC_KEY"] = "public-key";
   process.env["VAPID_PRIVATE_KEY"] = "private-key";
+  delete process.env["ONESIGNAL_APP_ID"];
+  delete process.env["ONESIGNAL_REST_API_KEY"];
 });
 
 describe("notify", () => {
@@ -119,7 +121,7 @@ describe("notify", () => {
       title: "Test",
       body: "Hello",
       notificationId: 123,
-      url: "/admin/support?ticket=42#reply",
+      url: "/admin/support?ticket=42&notificationId=123&notificationSource=push&notificationAction=open#reply",
     });
   });
 });

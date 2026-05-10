@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, Pencil, Trash2, ShieldOff, ShieldCheck, AlertTriangle, RefreshCw, Banknote, RotateCcw, ChevronDown, ChevronUp, Upload, CheckCircle2, XCircle, FileSpreadsheet, Search, X, Copy, MessageCircle, MinusCircle } from "lucide-react";
 import type { DriverDetail } from "@workspace/api-client-react";
-import * as XLSX from "xlsx";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { openWhatsApp } from "@/lib/whatsapp-utils";
 
@@ -94,6 +93,7 @@ function normalizeRow(raw: Record<string, unknown>): ParsedRow {
 async function parseFile(file: File): Promise<ParsedRow[]> {
   try {
     const data = await file.arrayBuffer();
+    const XLSX = await import("xlsx");
     const workbook = XLSX.read(data, { type: "array" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];

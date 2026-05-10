@@ -12,14 +12,10 @@ function errorMessage(reason: PushSubscribeResult): string {
       return "الإشعارات محجوبة. افتح إعدادات المتصفح وأعِد السماح لهذا الموقع.";
     case "permission_default":
       return "لم يتم منح الإذن. اضغط على الزر مرة أخرى وامنح الإذن عند ظهور النافذة.";
-    case "no_vapid_key":
-      return "خدمة الإشعارات غير مُهيَّأة على الخادم. تواصل مع الدعم.";
-    case "sw_error":
-      return "تعذّر تسجيل Service Worker. أعِد تحميل الصفحة وحاول مرة أخرى.";
+    case "sdk_unavailable":
+      return "تعذّر تحميل OneSignal حالياً. أعِد تحميل الصفحة وحاول مرة أخرى.";
     case "subscribe_error":
       return "فشل إنشاء الاشتراك. تأكد من أن الصفحة تعمل عبر HTTPS وأعِد المحاولة.";
-    case "server_error":
-      return "تم تفعيل الإشعارات في المتصفح لكن فشل الحفظ في الخادم. يُرجى المحاولة مرة أخرى أو التواصل مع الدعم إذا استمر الخطأ.";
     default:
       return "حدث خطأ غير متوقع. أعِد المحاولة.";
   }

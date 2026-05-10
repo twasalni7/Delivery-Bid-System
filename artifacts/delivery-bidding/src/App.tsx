@@ -225,10 +225,7 @@ function FlowOrchestrator() {
     });
 
     // Handle pending notification tap (if app was opened from a notification)
-    const pending = consumePendingNotificationInteraction();
-    if (pending?.url) {
-      window.location.href = pending.url;
-    }
+    void consumePendingNotificationInteraction();
   }, [user?.id, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render prompts (only one at a time) ───────────────────────────────────

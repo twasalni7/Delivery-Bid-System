@@ -253,7 +253,8 @@ describe("POST /offers (driver creates offer)", () => {
     const returningMock = vi.fn().mockResolvedValue([
       { id: 20, driverId: 2, requestId: 1, status: "PENDING", createdAt: new Date() },
     ]);
-    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const onConflictDoNothingMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoNothing: onConflictDoNothingMock });
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
