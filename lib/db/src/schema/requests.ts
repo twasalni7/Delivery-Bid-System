@@ -60,6 +60,14 @@ export const requestsTable = pgTable("requests", {
   destLat: doublePrecision("dest_lat"),
   destLng: doublePrecision("dest_lng"),
   distanceKm: doublePrecision("distance_km"),
+  durationMinutes: doublePrecision("duration_minutes"),
+  coordinates: jsonb("coordinates").$type<{
+    pickup: { lat: number; lng: number; address?: string | null } | null;
+    dropoff: { lat: number; lng: number; address?: string | null } | null;
+    waypoints?: Array<{ lat: number; lng: number; address?: string | null; type?: string | null }>;
+  }>(),
+  routePolyline: text("route_polyline"),
+  pricingSnapshot: jsonb("pricing_snapshot").$type<Record<string, unknown>>(),
   needsAdminReview: boolean("needs_admin_review").notNull().default(false),
   monthlyPrice: numeric("monthly_price", { precision: 12, scale: 2 }).notNull().default("0"),
   status: requestStatusEnum("status").notNull().default("OPEN"),
@@ -67,6 +75,7 @@ export const requestsTable = pgTable("requests", {
   selectedDriverId: integer("selected_driver_id").references(
     () => driversTable.id
   ),
+  archivedAt: timestamp("archived_at"),
   createdBy: text("created_by").notNull().default("client"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -83,4 +92,3 @@ export const insertRequestSchema = createInsertSchema(requestsTable).omit({
 
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
 export type Request = typeof requestsTable.$inferSelect;
-

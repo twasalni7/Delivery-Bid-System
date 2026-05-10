@@ -150,10 +150,32 @@ async function markNotificationDelivered(notificationId: number | undefined) {
   try {
     await db
       .update(notificationsTable)
-      .set({ deliveredAt: new Date() })
+      .set({ deliveredAt: new Date(), deliveryStatus: "delivered", deliveryError: null })
       .where(eq(notificationsTable.id, notificationId));
   } catch (err) {
     logger.warn({ err, notificationId }, "notify: failed to update delivered_at");
+  }
+}
+
+async function markNotificationFailed(params: {
+  notificationId: number | undefined;
+  error: string;
+  provider?: string | null;
+  response?: Record<string, unknown> | null;
+}) {
+  if (params.notificationId === undefined) return;
+  try {
+    await db
+      .update(notificationsTable)
+      .set({
+        deliveryStatus: "failed",
+        deliveryError: params.error,
+        provider: params.provider ?? null,
+        providerResponse: params.response ?? null,
+      })
+      .where(eq(notificationsTable.id, params.notificationId));
+  } catch (err) {
+    logger.warn({ err, notificationId: params.notificationId }, "notify: failed to update delivery failure");
   }
 }
 
@@ -254,6 +276,11 @@ async function sendWebPush(
   const vapid = getVapidConfig();
   if (!vapid) {
     logger.warn({ userId, userRole, notificationId }, "notify: skipping web push because VAPID is not configured");
+    await markNotificationFailed({
+      notificationId,
+      error: "vapid_not_configured",
+      provider: "web-push",
+    });
     return;
   }
 
@@ -306,6 +333,11 @@ async function sendWebPush(
   if (result === "expired") {
     logger.info({ userId, userRole }, "notify: removing expired push subscription");
     void clearExpiredSubscription(userId, userRole);
+    await markNotificationFailed({
+      notificationId,
+      error: "subscription_expired",
+      provider: "web-push",
+    });
     return;
   }
 
@@ -317,11 +349,21 @@ async function sendWebPush(
     if (result === "expired") {
       logger.info({ userId, userRole }, "notify: removing expired push subscription (retry)");
       void clearExpiredSubscription(userId, userRole);
+      await markNotificationFailed({
+        notificationId,
+        error: "subscription_expired",
+        provider: "web-push",
+      });
       return;
     }
 
     if (result === "error") {
       logger.warn({ userId, userRole, notificationId }, "notify: web push delivery failed after retry");
+      await markNotificationFailed({
+        notificationId,
+        error: "web_push_failed",
+        provider: "web-push",
+      });
       return;
     }
   }
@@ -381,6 +423,9 @@ export async function notify(params: {
         actionLabel: params.actionLabel ?? null,
         actionPayload: params.actionPayload ?? null,
         isRead: false,
+        channel: "push",
+        deliveryStatus: "pending",
+        provider: isOneSignalConfigured() ? "onesignal" : "web-push",
       })
       .returning({ id: notificationsTable.id });
     notificationId = inserted?.id;
@@ -414,8 +459,25 @@ export async function notify(params: {
         actionPayload: params.actionPayload ?? null,
       },
     }).then(async (result) => {
-      if (!result.ok) return;
+      if (!result.ok) {
+        await markNotificationFailed({
+          notificationId,
+          error: `onesignal_${result.status ?? "unknown"}`,
+          provider: "onesignal",
+          response: (result.response ?? null) as Record<string, unknown> | null,
+        });
+        return;
+      }
       await markNotificationDelivered(notificationId);
+      try {
+        await db
+          .update(notificationsTable)
+          .set({
+            provider: "onesignal",
+            providerResponse: (result.response ?? null) as Record<string, unknown> | null,
+          })
+          .where(eq(notificationsTable.id, notificationId!));
+      } catch {}
       logger.info(
         { userId: params.userId, userRole: params.userRole, notificationId, response: result.response },
         "notify: OneSignal delivery accepted"
@@ -443,7 +505,43 @@ export async function notify(params: {
       return;
     }
     logger.info({ userId: params.userId, userRole: params.userRole, notificationId }, "notify: no push subscription stored for recipient");
+    void markNotificationFailed({
+      notificationId,
+      error: "no_push_subscription",
+      provider: "web-push",
+    });
   });
+}
+
+export async function sendToUser(
+  userId: number,
+  userRole: "client" | "driver" | "admin",
+  params: Omit<Parameters<typeof notify>[0], "userId" | "userRole">
+) {
+  return notify({ userId, userRole, ...params });
+}
+
+export async function sendToAdmin(
+  adminId: number,
+  params: Omit<Parameters<typeof notify>[0], "userId" | "userRole">
+) {
+  return sendToUser(adminId, "admin", params);
+}
+
+export async function sendToDriver(
+  driverId: number,
+  params: Omit<Parameters<typeof notify>[0], "userId" | "userRole">
+) {
+  return sendToUser(driverId, "driver", params);
+}
+
+export async function sendBroadcast(params: {
+  target: "admins" | "drivers";
+} & Omit<Parameters<typeof notifyAllAdmins>[0], never>) {
+  if (params.target === "admins") {
+    return notifyAllAdmins(params);
+  }
+  return notifyAllDrivers(params);
 }
 
 export async function notifyAllAdmins(params: {

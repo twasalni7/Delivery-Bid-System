@@ -7,9 +7,9 @@ import {
   transactionsTable,
   requestStopsTable,
   requestPassengersTable,
+  clientsTable,
 } from "@workspace/db";
-import { haversineKm } from "@workspace/db";
-import { eq, and, count, inArray, ne, sql } from "drizzle-orm";
+import { eq, and, count, inArray, ne, sql, isNull } from "drizzle-orm";
 import { notify, notifyAllAdmins, notifyAllDrivers } from "../lib/notify";
 import {
   CreateRequestBody,
@@ -22,27 +22,18 @@ import { requireHardDeleteApproval } from "../middleware/requireHardDeleteApprov
 import { getSessionUser } from "../lib/session";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
-import { getBidFee, calculatePriceForRequest } from "./pricing";
+import { getBidFee } from "./pricing";
 import { withDbTransaction } from "../lib/db-transaction";
 import {
   logRequestStatusTransition,
   resolveRequestStatus,
   type RequestStatus,
 } from "../lib/request-status-engine";
-
-/** Per-passenger data submitted by the client */
-interface PassengerInput {
-  passengerIndex: number;
-  pickupLat?: number | null;
-  pickupLng?: number | null;
-  destinationLat?: number | null;
-  destinationLng?: number | null;
-  pickupAddress?: string | null;
-  destinationAddress?: string | null;
-  workTime?: string | null;
-  daysPerWeek?: number | null;
-  distanceKm?: number | null;
-}
+import {
+  resolveRequestRoutingAndPricing,
+  type PassengerRoutingInput,
+  type StopRoutingInput,
+} from "../lib/request-routing";
 
 const router = Router();
 
@@ -56,6 +47,7 @@ const ALL_STATUSES = new Set([
   "EXPIRED",
   "FROZEN",
 ]);
+const TERMINAL_STATUSES = new Set<RequestStatus>(["COMPLETED", "CANCELLED"]);
 
 /** Convert a value that may be a numeric string (Drizzle returns numeric as string) to a JS number. */
 function toNum(val: string | number | null | undefined): number {
@@ -63,6 +55,11 @@ function toNum(val: string | number | null | undefined): number {
   if (typeof val === "number") return val;
   const n = parseFloat(val);
   return isNaN(n) ? 0 : n;
+}
+
+function buildArchivedAt(status: RequestStatus, current?: Date | null) {
+  if (!TERMINAL_STATUSES.has(status)) return null;
+  return current ?? new Date();
 }
 
 function canSeePhone(
@@ -104,7 +101,8 @@ function formatDriver(
 function formatRequest(
   req: Request,
   r: typeof requestsTable.$inferSelect,
-  driver?: typeof driversTable.$inferSelect | null
+  driver?: typeof driversTable.$inferSelect | null,
+  client?: typeof clientsTable.$inferSelect | null
 ) {
   const showPhone = canSeePhone(req, r);
   const user = getSessionUser(req);
@@ -134,6 +132,10 @@ function formatRequest(
     destLat: r.destLat,
     destLng: r.destLng,
     distanceKm: r.distanceKm,
+    durationMinutes: r.durationMinutes,
+    coordinates: r.coordinates,
+    routePolyline: r.routePolyline,
+    pricingSnapshot: r.pricingSnapshot,
     needsAdminReview: r.needsAdminReview,
     monthlyPrice: toNum(r.monthlyPrice),
     status: r.status,
@@ -141,6 +143,16 @@ function formatRequest(
     ...(user?.role === "admin" ? { statusManuallySetByAdmin: r.statusManuallySetByAdmin } : {}),
     selectedDriverId: r.selectedDriverId,
     selectedDriver: driver ? formatDriver(driver, showDriverContact) : null,
+    client:
+      user?.role === "admin" && client
+        ? {
+            id: client.id,
+            name: client.name,
+            mobile: client.mobile,
+            createdAt: client.createdAt?.toISOString(),
+          }
+        : null,
+    archivedAt: r.archivedAt?.toISOString() ?? null,
     createdBy: r.createdBy ?? "client",
     createdAt: r.createdAt?.toISOString(),
     updatedAt: r.updatedAt?.toISOString(),
@@ -151,6 +163,7 @@ router.get("/", requireAuth(), async (req, res) => {
   try {
     const parsed = ListRequestsQueryParams.safeParse(req.query);
     const status = parsed.success ? parsed.data.status : undefined;
+    const includeArchived = String(req.query["archived"] ?? "").toLowerCase() === "true";
     const sessionUser = getSessionUser(req);
     const isClient = sessionUser?.role === "client";
     const isDriver = sessionUser?.role === "driver";
@@ -170,6 +183,7 @@ router.get("/", requireAuth(), async (req, res) => {
     if (isClient) conditions.push(eq(requestsTable.clientId, sessionUser!.id));
     // Drivers see only OPEN requests (plus their own accepted ones handled by /drivers/me/requests)
     if (isDriver) conditions.push(eq(requestsTable.status, "OPEN"));
+    if (!includeArchived) conditions.push(isNull(requestsTable.archivedAt));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const rows = await db
@@ -210,9 +224,23 @@ router.get("/", requireAuth(), async (req, res) => {
       for (const d of drivers) driversMap.set(d.id, d);
     }
 
+    const clientIds =
+      sessionUser?.role === "admin"
+        ? [...new Set(rows.map((r) => r.clientId).filter((id): id is number => id != null))]
+        : [];
+    const clientsMap = new Map<number, typeof clientsTable.$inferSelect>();
+    if (clientIds.length > 0) {
+      const clients = await db
+        .select()
+        .from(clientsTable)
+        .where(inArray(clientsTable.id, clientIds));
+      for (const client of clients) clientsMap.set(client.id, client);
+    }
+
     const results = rows.map((r) => {
       const driver = r.selectedDriverId ? (driversMap.get(r.selectedDriverId) ?? null) : null;
-      return { ...formatRequest(req, r, driver), offerCount: offerCounts[r.id] ?? 0 };
+      const client = r.clientId ? (clientsMap.get(r.clientId) ?? null) : null;
+      return { ...formatRequest(req, r, driver, client), offerCount: offerCounts[r.id] ?? 0 };
     });
 
     res.json(results);
@@ -234,8 +262,11 @@ router.post("/", requireAuth("client"), async (req, res) => {
     const data = parsed.data;
 
     // Extract per-passenger data (not part of the Zod schema — passed as raw body field)
-    const passengersInput = (req.body as { passengers?: PassengerInput[] }).passengers;
+    const passengersInput = (req.body as { passengers?: PassengerRoutingInput[] }).passengers;
     const hasPassengers = Array.isArray(passengersInput) && passengersInput.length > 0;
+    const stopsInput = Array.isArray((req.body as { stops?: unknown }).stops)
+      ? ((req.body as { stops?: StopRoutingInput[] }).stops ?? [])
+      : [];
 
     // Validate: if multiple passengers, all must have coordinates
     if (data.numberOfPeople > 1 && hasPassengers) {
@@ -253,70 +284,42 @@ router.post("/", requireAuth("client"), async (req, res) => {
       }
     }
 
-    // Calculate effective distance: use max distance across all passengers when provided,
-    // otherwise fall back to main request coordinates.
-    let distanceKm: number | null = data.distanceKm ?? null;
+    const routing = await resolveRequestRoutingAndPricing({
+      homeLat: data.homeLat ?? null,
+      homeLng: data.homeLng ?? null,
+      homeLocation: data.homeLocation,
+      destLat: data.destLat ?? null,
+      destLng: data.destLng ?? null,
+      workLocation: data.workLocation,
+      stops: stopsInput,
+      passengers: hasPassengers ? passengersInput! : null,
+      additionalLocations:
+        (data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
+      numberOfPeople: data.numberOfPeople ?? 1,
+      workingDaysPerWeek: data.workingDaysPerWeek ?? 5,
+      numberOfShifts: data.numberOfShifts ?? 1,
+      eveningTime: data.eveningTime ?? null,
+      shifts: (data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
+    });
 
-    if (hasPassengers) {
-      const passengers = passengersInput!;
-      const passengerDistances = passengers
-        .filter(
-          (p) =>
-            p.pickupLat != null &&
-            p.pickupLng != null &&
-            p.destinationLat != null &&
-            p.destinationLng != null
-        )
-        .map((p) => {
-          if (p.distanceKm != null && p.distanceKm > 0) return p.distanceKm;
-          return haversineKm(p.pickupLat!, p.pickupLng!, p.destinationLat!, p.destinationLng!);
-        });
-      if (passengerDistances.length > 0) {
-        distanceKm = Math.max(...passengerDistances);
-      }
-    } else if (
-      data.homeLat != null &&
-      data.homeLng != null &&
-      data.destLat != null &&
-      data.destLng != null
-    ) {
-      distanceKm = haversineKm(data.homeLat, data.homeLng, data.destLat, data.destLng);
-    }
+    const distanceKm = routing.distanceKm;
+    const durationMinutes = routing.durationMinutes;
+    const monthlyPrice = routing.pricing?.price ?? 0;
+    const needsAdminReview = false;
 
-    // Calculate price using active pricing engine (UNIFIED with /api/pricing/calculate)
-    let monthlyPrice = 0;
-    let needsAdminReview = false;
-
-    if (distanceKm != null) {
-      const result = await calculatePriceForRequest({
-        distanceKm,
-        numberOfPeople: data.numberOfPeople ?? 1,
-        workingDaysPerWeek: data.workingDaysPerWeek ?? 5,
-        numberOfShifts: data.numberOfShifts ?? 1,
-        eveningTime: data.eveningTime ?? null,
-        shifts: (data.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
-        additionalLocations:
-          (data.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
-      });
-      monthlyPrice = result.price;
-      needsAdminReview = result.needsAdminReview;
-
-      // Log pricing decision at the request creation level
+    if (routing.pricing) {
       logger.info(
         {
           context: "request.create",
-          engine: result.engine,
-          finalPrice: result.price,
-          pricePerPerson: result.pricePerPerson,
+          engine: routing.pricing.engine,
+          finalPrice: routing.pricing.price,
+          pricePerPerson: routing.pricing.pricePerPerson,
           distanceKm,
+          durationMinutes,
           workingDaysPerWeek: data.workingDaysPerWeek ?? 5,
           numberOfShifts: data.numberOfShifts ?? 1,
-          shiftsCount: Array.isArray(data.shifts) ? data.shifts.length : 0,
-          shifts: (data.shifts as { goTime: string; returnTime?: string }[] | undefined) ?? null,
           additionalLocationsCount: Array.isArray(data.additionalLocations) ? data.additionalLocations.length : 0,
-          additionalLocations: data.additionalLocations ?? null,
           numberOfPeople: data.numberOfPeople ?? 1,
-          needsAdminReview: result.needsAdminReview,
         },
         "request.create: price calculated"
       );
@@ -339,6 +342,10 @@ router.post("/", requireAuth("client"), async (req, res) => {
         destLat: data.destLat ?? null,
         destLng: data.destLng ?? null,
         distanceKm,
+        durationMinutes,
+        coordinates: routing.coordinates,
+        routePolyline: routing.routePolyline,
+        pricingSnapshot: routing.pricingSnapshot,
         needsAdminReview,
         phone: data.phone,
         numberOfPeople: data.numberOfPeople,
@@ -371,21 +378,16 @@ router.post("/", requireAuth("client"), async (req, res) => {
           destinationAddress: p.destinationAddress ?? null,
           workTime: p.workTime ?? null,
           daysPerWeek: p.daysPerWeek ?? null,
-          distanceKm:
-            p.distanceKm != null
-              ? p.distanceKm
-              : p.pickupLat != null && p.pickupLng != null && p.destinationLat != null && p.destinationLng != null
-              ? haversineKm(p.pickupLat, p.pickupLng, p.destinationLat, p.destinationLng)
-              : null,
-        }))
-      );
-    }
+            distanceKm:
+              routing.passengerRoutes.find((route) => route.passengerIndex === p.passengerIndex)?.route.distanceKm ?? null,
+         }))
+       );
+     }
 
-    // Insert multi-stop waypoints if provided
-    const stops = (req.body as { stops?: unknown }).stops;
-    if (Array.isArray(stops) && stops.length > 0) {
+     // Insert multi-stop waypoints if provided
+    if (stopsInput.length > 0) {
       await db.insert(requestStopsTable).values(
-        (stops as Array<{ stopOrder: number; lat: number; lng: number; address: string; stopType?: string }>).map(s => ({
+        stopsInput.map(s => ({
           requestId: created.id,
           stopOrder: s.stopOrder,
           lat: s.lat,
@@ -476,8 +478,12 @@ router.get("/:id", requireAuth(), async (req, res) => {
         where: eq(driversTable.id, request.selectedDriverId),
       });
     }
+    const client =
+      sessionUser?.role === "admin" && request.clientId
+        ? await db.query.clientsTable.findFirst({ where: eq(clientsTable.id, request.clientId) })
+        : null;
 
-    res.json(formatRequest(req, request, driver));
+    res.json(formatRequest(req, request, driver, client));
   } catch (err) {
     logger.error({ err }, "requests GET /:id error");
     res.status(500).json({ error: SERVER_ERROR_MSG });
@@ -514,32 +520,24 @@ router.patch("/:id/client", requireAuth("client"), async (req, res) => {
     }
 
     const next = { ...existing, ...parsed.data };
-    let distanceKm: number | null = next.distanceKm ?? null;
-    if (
-      next.homeLat != null &&
-      next.homeLng != null &&
-      next.destLat != null &&
-      next.destLng != null
-    ) {
-      distanceKm = haversineKm(next.homeLat, next.homeLng, next.destLat, next.destLng);
-    }
-
-    let monthlyPrice = toNum(existing.monthlyPrice);
-    let needsAdminReview = Boolean(existing.needsAdminReview);
-    if (distanceKm != null) {
-      const pricing = await calculatePriceForRequest({
-        distanceKm,
-        numberOfPeople: next.numberOfPeople ?? 1,
-        workingDaysPerWeek: next.workingDaysPerWeek ?? 5,
-        numberOfShifts: next.numberOfShifts ?? 1,
-        eveningTime: next.eveningTime ?? null,
-        shifts: (next.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
-        additionalLocations:
-          (next.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
-      });
-      monthlyPrice = pricing.price;
-      needsAdminReview = pricing.needsAdminReview;
-    }
+    const routing = await resolveRequestRoutingAndPricing({
+      homeLat: next.homeLat ?? null,
+      homeLng: next.homeLng ?? null,
+      homeLocation: next.homeLocation,
+      destLat: next.destLat ?? null,
+      destLng: next.destLng ?? null,
+      workLocation: next.workLocation,
+      additionalLocations:
+        (next.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
+      numberOfPeople: next.numberOfPeople ?? 1,
+      workingDaysPerWeek: next.workingDaysPerWeek ?? 5,
+      numberOfShifts: next.numberOfShifts ?? 1,
+      eveningTime: next.eveningTime ?? null,
+      shifts: (next.shifts as { label?: string; goTime: string; returnTime?: string }[] | undefined) ?? null,
+    });
+    const distanceKm = routing.distanceKm;
+    const monthlyPrice = routing.pricing?.price ?? toNum(existing.monthlyPrice);
+    const needsAdminReview = false;
 
     const resolved = resolveRequestStatus({
       currentStatus: existing.status as RequestStatus,
@@ -558,6 +556,10 @@ router.patch("/:id/client", requireAuth("client"), async (req, res) => {
         destLat: next.destLat ?? null,
         destLng: next.destLng ?? null,
         distanceKm,
+        durationMinutes: routing.durationMinutes,
+        coordinates: routing.coordinates,
+        routePolyline: routing.routePolyline,
+        pricingSnapshot: routing.pricingSnapshot,
         additionalLocations:
           (next.additionalLocations as { type: "pickup" | "dropoff"; address: string }[] | undefined) ?? null,
         shifts: (next.shifts as { label?: string; goTime?: string; returnTime?: string }[] | undefined) ?? null,
@@ -573,6 +575,7 @@ router.patch("/:id/client", requireAuth("client"), async (req, res) => {
         needsAdminReview,
         status: resolved.status,
         statusManuallySetByAdmin: false,
+        archivedAt: buildArchivedAt(resolved.status, existing.archivedAt),
         updatedAt: new Date(),
       })
       .where(and(eq(requestsTable.id, id), eq(requestsTable.clientId, clientId)))
@@ -635,6 +638,7 @@ router.post("/:id/cancel", requireAuth("client"), async (req, res) => {
       .set({
         status: "CANCELLED",
         statusManuallySetByAdmin: false,
+        archivedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(and(eq(requestsTable.id, id), eq(requestsTable.clientId, clientId)))
@@ -661,6 +665,14 @@ router.post("/:id/cancel", requireAuth("client"), async (req, res) => {
       entityId: id,
       metadata: { previousStatus: existing.status, newStatus: "CANCELLED" },
       req,
+    });
+
+    void notifyAllAdmins({
+      title: "تم إلغاء الطلب",
+      message: `ألغى العميل الطلب #${id}`,
+      type: "request",
+      relatedId: id,
+      url: `/admin/requests/${id}`,
     });
 
     res.json(formatRequest(req, updated, null));
@@ -702,6 +714,7 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
       .set({
         status: nextStatus,
         statusManuallySetByAdmin: true,
+        archivedAt: buildArchivedAt(nextStatus),
         updatedAt: new Date(),
       })
       .where(eq(requestsTable.id, id))
@@ -734,6 +747,46 @@ router.patch("/:id/status", requireAuth("admin"), async (req, res) => {
     if (updated.selectedDriverId) {
       driver = await db.query.driversTable.findFirst({
         where: eq(driversTable.id, updated.selectedDriverId),
+      });
+    }
+
+    if (existing.clientId) {
+      const clientMessage =
+        nextStatus === "ACTIVE"
+          ? "وصل السائق إلى طلبك وتم تحديث الحالة."
+          : nextStatus === "COMPLETED"
+          ? "تم إتمام الطلب بنجاح."
+          : nextStatus === "CANCELLED"
+          ? "تم إلغاء الطلب."
+          : `تم تحديث حالة الطلب إلى ${nextStatus}.`;
+      void notify({
+        userId: existing.clientId,
+        userRole: "client",
+        title: "تحديث حالة الطلب",
+        message: clientMessage,
+        type: "request",
+        relatedId: id,
+        url: `/client/request/${id}`,
+      });
+    }
+
+    if (updated.selectedDriverId) {
+      const driverMessage =
+        nextStatus === "ACTIVE"
+          ? "تم تسجيل وصولك للطلب."
+          : nextStatus === "COMPLETED"
+          ? "تم إغلاق الطلب كمكتمل."
+          : nextStatus === "CANCELLED"
+          ? "تم إلغاء الطلب."
+          : `تم تحديث حالة الطلب إلى ${nextStatus}.`;
+      void notify({
+        userId: updated.selectedDriverId,
+        userRole: "driver",
+        title: "تحديث حالة الطلب",
+        message: driverMessage,
+        type: "request",
+        relatedId: id,
+        url: `/driver/request/${id}`,
       });
     }
 

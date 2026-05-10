@@ -62,6 +62,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
       label: "إدارة البيانات",
       links: [
         { href: "/admin/requests",      label: "الطلبات",    icon: FileText },
+        { href: "/admin/archive",       label: "الأرشيف",    icon: ClipboardList },
         { href: "/admin/drivers",       label: "السائقون",   icon: Car },
         { href: "/admin/clients",       label: "العملاء",    icon: Users },
         { href: "/admin/offers",        label: "العروض",     icon: ClipboardList },
@@ -73,9 +74,9 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
       label: "المراقبة",
       links: [
         { href: "/admin/operations",              label: "مركز التحكم",     icon: Activity },
-        { href: "/admin/activity-logs",           label: "سجل النشاط",      icon: Activity },
+        { href: "/admin/activity",                label: "سجل النشاط",      icon: Activity },
         { href: "/admin/notifications",           label: "مركز الإشعارات",  icon: Bell },
-        { href: "/admin/database-monitor",        label: "قاعدة البيانات",   icon: Database },
+        { href: "/admin/database",                label: "قاعدة البيانات",   icon: Database },
       ],
     },
     {
@@ -270,12 +271,14 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
       ? [
           { href: "/client/profile", label: "الحساب",   icon: User },
           { href: "/client",         label: "الرئيسية", icon: Home },
+          { href: "/client/archive", label: "الأرشيف",  icon: FileText },
           { href: "/client/support", label: "المزيد",   icon: LifeBuoy },
         ]
       : [
           { href: "/driver/profile",   label: "الحساب",    icon: User },
           { href: "/driver/dashboard", label: "طلباتي",    icon: Home },
           { href: "/driver/requests",  label: "اشتراكاتي", icon: ClipboardList },
+          { href: "/driver/archive",   label: "الأرشيف",   icon: FileText },
           { href: "/driver/support",   label: "المزيد",    icon: MoreHorizontal },
         ];
 
@@ -283,6 +286,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
     { href: "/driver/dashboard", label: "الرئيسية", icon: Home },
     { href: "/driver/requests", label: "طلباتي", icon: ClipboardList },
     { href: "/driver/profile", label: "الملف الشخصي", icon: User },
+    { href: "/driver/archive", label: "الأرشيف", icon: FileText },
     { href: "/driver/support", label: "المساعدة والدعم", icon: LifeBuoy },
     { href: "/driver/notifications", label: "الإشعارات", icon: Bell },
   ];

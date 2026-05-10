@@ -16,6 +16,11 @@ import { getAuthHeaders } from "@/lib/authed-fetch";
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
+type RequestContext = {
+  client: { id: number; name: string; mobile: string; createdAt?: string | null } | null;
+  events: Array<{ id: number; action: string; actorRole: string; createdAt: string; metadata?: Record<string, unknown> | null }>;
+  notifications: Array<{ id: number; title: string; deliveryStatus?: string | null; provider?: string | null; createdAt: string }>;
+};
 
 const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string }> = {
   OPEN:      { bg: "var(--status-open-bg)",      border: "var(--status-open-border)",      text: "var(--status-open-text)" },
@@ -28,7 +33,7 @@ const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string
 };
 
 export default function AdminRequestDetails() {
-  const [, params] = useRoute("/admin/request/:id");
+  const [, params] = useRoute("/admin/requests/:id");
   const id = parseInt((params as { id: string } | null)?.id ?? "0");
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -66,6 +71,16 @@ export default function AdminRequestDetails() {
     },
     enabled: !!id && showChat,
     refetchInterval: 5_000,
+  });
+  const { data: requestContext } = useQuery<RequestContext>({
+    queryKey: ["admin-request-context", id],
+    queryFn: async () => {
+      const res = await fetch(`${API}/api/admin/requests/${id}/context`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("فشل جلب سياق الطلب");
+      return res.json();
+    },
+    enabled: !!id,
+    refetchInterval: 15_000,
   });
 
   const sendMessage = useMutation({
@@ -360,6 +375,47 @@ export default function AdminRequestDetails() {
             </div>
           </div>
         </div>
+
+        {requestContext && (
+          <div className="grid gap-4 md:grid-cols-3 mb-5">
+            <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-xs font-black mb-2" style={{ color: "var(--text-hint)" }}>بيانات العميل</p>
+              {requestContext.client ? (
+                <div className="space-y-1">
+                  <p className="font-black" style={{ color: "var(--text)" }}>{requestContext.client.name}</p>
+                  <p className="text-sm font-bold" dir="ltr" style={{ color: "var(--text-sub)" }}>{requestContext.client.mobile}</p>
+                  <p className="text-xs" style={{ color: "var(--text-hint)" }}>Client ID: {requestContext.client.id}</p>
+                </div>
+              ) : (
+                <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>لا يوجد عميل مرتبط</p>
+              )}
+            </div>
+            <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-xs font-black mb-2" style={{ color: "var(--text-hint)" }}>أحداث الطلب</p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {requestContext.events.slice(0, 6).map((event) => (
+                  <div key={event.id} className="rounded-xl px-3 py-2" style={{ backgroundColor: "var(--surface-2)" }}>
+                    <p className="text-xs font-black" style={{ color: "var(--text)" }}>{event.action}</p>
+                    <p className="text-[11px]" style={{ color: "var(--text-hint)" }}>{new Date(event.createdAt).toLocaleString("ar-SA")}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-xs font-black mb-2" style={{ color: "var(--text-hint)" }}>الإشعارات</p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {requestContext.notifications.slice(0, 6).map((notification) => (
+                  <div key={notification.id} className="rounded-xl px-3 py-2" style={{ backgroundColor: "var(--surface-2)" }}>
+                    <p className="text-xs font-black" style={{ color: "var(--text)" }}>{notification.title}</p>
+                    <p className="text-[11px]" style={{ color: "var(--text-hint)" }}>
+                      {notification.deliveryStatus ?? "pending"}{notification.provider ? ` • ${notification.provider}` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
           <div className="rounded-2xl overflow-hidden shadow-md mb-5">

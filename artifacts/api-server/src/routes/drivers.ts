@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { driversTable, transactionsTable, requestsTable } from "@workspace/db";
-import { eq, ne, sql } from "drizzle-orm";
+import { eq, ne, sql, isNull, isNotNull, and } from "drizzle-orm";
 import { AddDriverBalanceBody } from "@workspace/api-zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { getSessionUser } from "../lib/session";
@@ -77,10 +77,16 @@ router.get("/me", requireAuth("driver"), async (req, res) => {
 router.get("/me/requests", requireAuth("driver"), async (req, res) => {
   try {
     const driverId = getSessionUser(req)!.id;
+    const archived = String(req.query["archived"] ?? "").toLowerCase() === "true";
     const rows = await db
       .select()
       .from(requestsTable)
-      .where(eq(requestsTable.selectedDriverId, driverId))
+      .where(
+        and(
+          eq(requestsTable.selectedDriverId, driverId),
+          archived ? isNotNull(requestsTable.archivedAt) : isNull(requestsTable.archivedAt)
+        )
+      )
       .orderBy(requestsTable.createdAt);
     res.json(
       rows.map((r) => ({
@@ -92,6 +98,11 @@ router.get("/me/requests", requireAuth("driver"), async (req, res) => {
         homeLng: r.homeLng,
         destLat: r.destLat,
         destLng: r.destLng,
+        distanceKm: r.distanceKm,
+        durationMinutes: r.durationMinutes,
+        coordinates: r.coordinates,
+        routePolyline: r.routePolyline,
+        pricingSnapshot: r.pricingSnapshot,
         numberOfPeople: r.numberOfPeople,
         workingDaysPerWeek: r.workingDaysPerWeek,
         morningTime: r.morningTime,
@@ -101,6 +112,7 @@ router.get("/me/requests", requireAuth("driver"), async (req, res) => {
         status: r.status,
         selectedDriverId: r.selectedDriverId,
         phone: r.phone,
+        archivedAt: r.archivedAt?.toISOString() ?? null,
         createdAt: r.createdAt?.toISOString(),
       }))
     );

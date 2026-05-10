@@ -64,9 +64,6 @@ export function getDefaultPricingConfig(): PricingConfig {
   };
 }
 
-/** Requests exceeding this distance (km) require admin review before drivers can see them */
-export const ADMIN_REVIEW_DISTANCE_KM = 40;
-
 /** Result returned by calculateMonthlyPrice */
 export interface MonthlyPriceResult {
   price: number;
@@ -75,7 +72,7 @@ export interface MonthlyPriceResult {
 
 /**
  * Calculate monthly price from distance and trip parameters using default tiers.
- * Returns needsAdminReview=true (and price=0) when distance exceeds the admin threshold.
+ * Returns an automatic price for any supported distance tier.
  */
 export function calculateMonthlyPrice(
   distanceKm: number,
@@ -83,13 +80,13 @@ export function calculateMonthlyPrice(
   workingDaysPerWeek?: number | null,
   numberOfPeople?: number | null,
 ): MonthlyPriceResult {
-  if (distanceKm > ADMIN_REVIEW_DISTANCE_KM) {
-    return { price: 0, needsAdminReview: true };
-  }
-
   const tier = DEFAULT_DISTANCE_TIERS.find((t) => distanceKm <= t.max);
   if (!tier) {
-    return { price: 0, needsAdminReview: true };
+    const fallbackTier = DEFAULT_DISTANCE_TIERS[DEFAULT_DISTANCE_TIERS.length - 1];
+    if (!fallbackTier) return { price: 0, needsAdminReview: false };
+    const overflowFactor = Math.max(1, Math.ceil(distanceKm / fallbackTier.max));
+    const overflowPrice = fallbackTier.base * overflowFactor;
+    return { price: Math.round(overflowPrice), needsAdminReview: false };
   }
 
   let base = tier.base;

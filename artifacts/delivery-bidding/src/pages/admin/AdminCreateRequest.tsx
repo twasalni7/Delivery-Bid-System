@@ -145,7 +145,6 @@ export default function AdminCreateRequest() {
   // Step 4
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
-  const [monthlyPrice, setMonthlyPrice] = useState("");
 
   const toggleDay = (key: string) =>
     setSelectedDays((prev) =>
@@ -191,7 +190,6 @@ export default function AdminCreateRequest() {
           eveningTime: firstReturnTime || undefined,
           shifts: validShifts.length > 0 ? validShifts : undefined,
           notes: notes.trim() || undefined,
-          monthlyPrice: monthlyPrice.trim() ? parseFloat(monthlyPrice) : 0,
         }),
       });
       const data = await res.json();
@@ -433,20 +431,8 @@ export default function AdminCreateRequest() {
             {/* ── Step 4: Financial & Contact ── */}
             {step === 4 && (
               <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>💰 السعر الشهري (ريال) *</label>
-                  <div className="relative">
-                    <Input
-                      type="number" min="1" step="1"
-                      placeholder="مثال: 800"
-                      value={monthlyPrice}
-                      onChange={(e) => setMonthlyPrice(e.target.value)}
-                      className="rounded-2xl text-xl font-black pl-14 h-14 input-dark"
-                      dir="ltr"
-                    />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black" style={{ color: "var(--text-hint)" }}>ر.س</span>
-                  </div>
-                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>السعر الذي سيدفعه العميل شهرياً للسائق</p>
+                <div className="rounded-2xl px-4 py-3 text-sm font-bold" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", color: "var(--text-sub)" }}>
+                  يتم احتساب السعر تلقائياً من الخادم بعد إنشاء الطلب وفق المسافة الفعلية عبر الطرق.
                 </div>
 
                 <div className="space-y-2">
