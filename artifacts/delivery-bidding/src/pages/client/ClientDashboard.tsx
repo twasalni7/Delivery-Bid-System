@@ -132,30 +132,30 @@ export default function ClientDashboard() {
   return (
     <Layout role="client">
       <div dir="rtl" className="space-y-5">
-        {/* Page title */}
-        <div className="flex items-center justify-between mb-2 px-1">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-[1.8rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكاتي</h1>
+        <div className="rounded-3xl p-5 overflow-hidden relative"
+          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)", color: "#fff", boxShadow: "0 18px 42px rgba(76, 29, 149, 0.35)" }}>
+          <div className="absolute left-[-2rem] bottom-[-2rem] w-28 h-28 rounded-full bg-white/10" />
+          <div className="relative z-10 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-violet-100">لوحة العميل</p>
+                <h1 className="text-[1.65rem] font-black tracking-tight">اشتراكاتي</h1>
+              </div>
               {totalUnread > 0 && (
-                <span className="inline-flex items-center gap-1 text-sm font-bold px-2.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
-                  <Bell size={12} /> {totalUnread}
+                <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-full bg-white/20 text-white">
+                  <Bell size={11} /> {totalUnread}
                 </span>
               )}
             </div>
-            <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>لوحة متابعة الاشتراكات الشهرية</p>
+            <p className="font-bold text-sm text-violet-100">جاهزة لمشوارك القادم؟ أضيفي طلب اشتراك جديد خلال ثوانٍ.</p>
+            <Link href="/client/request/new">
+              <div className="w-full rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 text-base font-black bg-white text-violet-700 cursor-pointer">
+                <Plus size={19} aria-hidden="true" />
+                طلب اشتراك جديد
+              </div>
+            </Link>
           </div>
         </div>
-
-        {/* CTA button */}
-        <Link href="/client/request/new">
-          <div className="w-full mb-4 rounded-3xl px-5 py-4 flex items-center justify-center gap-2 text-lg font-black"
-            style={{ background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)", boxShadow: "0 16px 34px rgba(200,16,46,0.45)" }}>
-            <Plus size={21} aria-hidden="true" />
-            طلب اشتراك جديد
-          </div>
-        </Link>
 
         {/* Push notifications opt-in */}
         <div className="mb-3">
@@ -208,10 +208,12 @@ export default function ClientDashboard() {
         )}
 
         {!isLoading && activeRequests.length === 0 && activeFilter !== "ARCHIVED" && (
-          <div className="text-center py-24 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
-            <p className="text-5xl mb-4">📦</p>
-            <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد اشتراكات بعد</p>
-            <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>أضف أول طلب دوام شهري للحصول على عروض السائقين</p>
+          <div className="text-center py-16 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: "var(--surface-2)" }}>
+              <span className="text-4xl">🗺️</span>
+            </div>
+            <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد طلبات نشطة</p>
+            <p className="font-bold text-sm mt-1 px-5" style={{ color: "var(--text-hint)" }}>ابدئي بطلب اشتراك شهري وسنحدد لك السعر العادل ونربطك بأفضل السائقين.</p>
           </div>
         )}
 

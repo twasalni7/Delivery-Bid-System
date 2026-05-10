@@ -295,6 +295,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
     href === "/client" || href === "/driver/dashboard"
       ? location === href
       : location.startsWith(href);
+  const hideBottomNav = role === "client" && location.startsWith("/client/request/new");
 
   return (
     <div
@@ -431,38 +432,40 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
       )}
 
       {/* Content */}
-      <main className="flex-1 mx-auto w-full px-4 py-5 max-w-xl pb-32">
+      <main className={`flex-1 mx-auto w-full px-4 py-5 max-w-xl ${hideBottomNav ? "pb-8" : "pb-32"}`}>
         {children}
       </main>
 
       {/* Bottom tab nav */}
-      <nav
-        className="fixed bottom-0 inset-x-0 z-30 px-3 pb-2"
-        style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)",
-        }}
-      >
-        <div
-          className="mx-auto max-w-xl w-full rounded-[1.4rem] border px-1 py-1.5 flex"
-          style={{ background: "var(--header-bg)", borderColor: "var(--header-border)", boxShadow: "var(--shadow-lg)" }}
+      {!hideBottomNav && (
+        <nav
+          className="fixed bottom-0 inset-x-0 z-30 px-3 pb-2"
+          style={{
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)",
+          }}
         >
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const active = isActive(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors rounded-xl"
-                style={active ? { color: "var(--brand-fg)", background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)" } : { color: "var(--text-hint)" }}
-              >
-                <Icon size={19} style={{ color: active ? "var(--brand-fg)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.8} />
-                <span>{link.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+          <div
+            className="mx-auto max-w-xl w-full rounded-[1.4rem] border px-1 py-1.5 flex"
+            style={{ background: "var(--header-bg)", borderColor: "var(--header-border)", boxShadow: "var(--shadow-lg)" }}
+          >
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors rounded-xl"
+                  style={active ? { color: "var(--brand-fg)", background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)" } : { color: "var(--text-hint)" }}
+                >
+                  <Icon size={19} style={{ color: active ? "var(--brand-fg)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.8} />
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

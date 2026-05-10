@@ -59,12 +59,33 @@ export default function ClientProfile() {
   return (
     <Layout role="client">
       <div dir="rtl" className="max-w-lg mx-auto space-y-5">
-        <div className="mb-6">
-          <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>ملفي الشخصي</h1>
-          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>تحديث بياناتك الشخصية</p>
+        <div className="rounded-b-[2.2rem] rounded-t-3xl p-6 text-white"
+          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)" }}>
+          <div className="flex items-center gap-4 mt-2">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black border border-white/40 bg-white/20">
+              {(user?.name ?? "أ").charAt(0)}
+            </div>
+            <div>
+              <h1 className="text-xl font-black">{user?.name ?? "العميل"}</h1>
+              <p className="text-xs text-violet-200">حساب العميل</p>
+            </div>
+          </div>
         </div>
 
-        {/* ── إشعارات الدفع ── */}
+        <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <p className="text-sm font-black mb-4" style={{ color: "var(--text)" }}>الإعدادات والمساعدة</p>
+          <div className="space-y-2">
+            <div className="rounded-2xl px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)" }}>
+              <span className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>الأسئلة الشائعة</span>
+              <span style={{ color: "var(--text-hint)" }}>⌄</span>
+            </div>
+            <div className="rounded-2xl px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)" }}>
+              <span className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>رفع شكوى</span>
+              <span style={{ color: "var(--text-hint)" }}>⌄</span>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
