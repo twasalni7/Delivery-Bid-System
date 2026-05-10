@@ -31,6 +31,9 @@ interface OneSignalPushSubscription {
   optIn(): Promise<void>;
   optOut(): Promise<void>;
   optedIn?: boolean | (() => Promise<boolean>);
+  /** OneSignal device push token (available after opt-in) */
+  token?: string | null;
+  id?: string | null;
 }
 
 interface OneSignalUser {

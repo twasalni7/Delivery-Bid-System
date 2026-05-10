@@ -70,6 +70,7 @@ autoInstallPeers: false
 approvedBuilds:
   - '@swc/core'
   - esbuild
+  - '@esbuild/linux-x64'
   - msw
   - unrs-resolver
 

@@ -36,6 +36,8 @@ export const clientTypeEnum = pgEnum("client_type", [
 
 export const requestsTable = pgTable("requests", {
   id: serial("id").primaryKey(),
+  // clientId is intentionally nullable: admin-created requests may not have a client owner.
+  // Enforce non-null in the API route layer when role === "client".
   clientId: integer("client_id").references(() => clientsTable.id),
   clientType: clientTypeEnum("client_type").notNull().default("غيره"),
   homeLocation: text("home_location").notNull(),
@@ -81,3 +83,4 @@ export const insertRequestSchema = createInsertSchema(requestsTable).omit({
 
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
 export type Request = typeof requestsTable.$inferSelect;
+

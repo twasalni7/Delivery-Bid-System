@@ -130,8 +130,12 @@ if (!isTest) {
       if (tokenUser) return `token:${tokenUser.role}:${tokenUser.id}`;
       const sessionUser = req.session?.user;
       if (sessionUser) return `session:${sessionUser.role}:${sessionUser.id}`;
-      return req.ip ?? "unknown-ip";
+      // Normalize IP — strip IPv6-mapped IPv4 prefix (::ffff:x.x.x.x) to avoid ERR_ERL_KEY_GEN_IPV6
+      const raw = req.ip ?? "unknown";
+      const normalized = raw.startsWith("::ffff:") ? raw.slice(7) : raw;
+      return normalized;
     },
+    validate: { xForwardedForHeader: false },
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => req.path === "/healthz" || req.path === "/readyz",
@@ -147,9 +151,6 @@ app.get("/", (_req, res) => {
 
 app.use("/api", router);
 
-app.get("/debug-sentry", (_req, _res) => {
-  throw new Error("My first Sentry error!");
-});
 
 // Global error handler — returns JSON instead of the default HTML error page
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -168,3 +169,4 @@ app.use(errorLogger);
 app.use(globalErrorHandler);
 
 export default app;
+

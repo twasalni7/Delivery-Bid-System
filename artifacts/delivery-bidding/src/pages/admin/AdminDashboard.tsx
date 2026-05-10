@@ -132,8 +132,16 @@ export default function AdminDashboard() {
 
         {isLoading && <div className="text-center py-16 font-bold" style={{ color: "var(--text-muted)" }}>جاري التحميل...</div>}
 
-        {/* Push notifications opt-in */}
-        <div className="mb-5">
+        {/* ── إشعارات لوحة التحكم ── */}
+        <div className="rounded-3xl p-5 mb-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>🔔</div>
+            <div>
+              <p className="font-black text-base" style={{ color: "var(--text)" }}>إشعارات لوحة التحكم</p>
+              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>تلقّ تنبيهات فورية عند أي نشاط جديد</p>
+            </div>
+          </div>
           <EnablePushButton />
         </div>
 

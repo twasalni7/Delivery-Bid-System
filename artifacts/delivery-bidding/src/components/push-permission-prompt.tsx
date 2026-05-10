@@ -34,7 +34,7 @@ export const PushPermissionPrompt: FC<PushPermissionPromptProps> = ({
 
       if (result === "ok" || result === "already_subscribed") {
         onEnabled();
-      } else if (result === "subscribe_error" || result === "sdk_unavailable") {
+      } else if (result === "server_error") {
         setSaveError(true);
       } else {
         onDismiss();

@@ -23,7 +23,12 @@ router.use("/auth", authRouter);
 router.use("/drivers", driversRouter);
 router.use("/requests", requestsRouter);
 router.use("/offers", offersRouter);
+// Admin routes are split across two routers intentionally:
+//   adminRouter    — core CRUD (drivers, clients, requests, financials)
+//   operationsRouter — monitoring & ops (system-health, live-errors, alerts)
+// Both are mounted under /admin so all routes remain at /api/admin/*
 router.use("/admin", adminRouter);
+router.use("/admin", operationsRouter);
 router.use("/support-tickets", supportTicketsRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/bank-accounts", bankAccountsRouter);
@@ -34,6 +39,5 @@ router.use("/pricing", pricingRouter);
 router.use("/activity-logs", activityLogsRouter);
 router.use("/admin/activity-logs", activityLogsRouter);
 router.use("/service-areas", serviceAreasRouter);
-router.use("/admin", operationsRouter);
 
 export default router;

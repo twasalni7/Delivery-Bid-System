@@ -322,12 +322,25 @@ async function parseSuccessBody(
   }
 }
 
+// Default request timeout — 30 seconds. Prevents hung requests on mobile networks.
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
   input = applyBaseUrl(input);
-  const { responseType = "auto", headers: headersInit, ...init } = options;
+  const { responseType = "auto", headers: headersInit, signal: userSignal, ...init } = options;
+
+  // Merge user-supplied AbortSignal with our 30s timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(new DOMException("Request timed out after 30s", "TimeoutError")),
+    DEFAULT_TIMEOUT_MS
+  );
+  const signal: AbortSignal = (userSignal && typeof AbortSignal.any === "function")
+    ? AbortSignal.any([userSignal, controller.signal])
+    : controller.signal;
 
   const method = resolveMethod(input, init.method);
 
@@ -365,7 +378,12 @@ export async function customFetch<T = unknown>(
   // Authorization header so we do not force cookies to be included.
   const credentials = init.credentials;
 
-  const response = await fetch(input, { ...init, method, headers, credentials });
+  let response: Response;
+  try {
+    response = await fetch(input, { ...init, method, headers, credentials, signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

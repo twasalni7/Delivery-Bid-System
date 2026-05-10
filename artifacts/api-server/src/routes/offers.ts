@@ -305,10 +305,18 @@ router.post("/", requireAuth("driver"), async (req, res) => {
       return;
     }
 
+    // INSERT with conflict guard — prevents duplicate offers from rapid double-clicks
+    // (DB-level: UNIQUE constraint on (driver_id, request_id) where status IN ('PENDING','SELECTED'))
     const [created] = await db
       .insert(offersTable)
       .values({ driverId, requestId, status: "PENDING" })
+      .onConflictDoNothing()
       .returning();
+
+    if (!created) {
+      res.status(400).json({ error: "لقد قبلت هذا الطلب مسبقاً" });
+      return;
+    }
 
     await logActivity({
       actorId:   driverId,

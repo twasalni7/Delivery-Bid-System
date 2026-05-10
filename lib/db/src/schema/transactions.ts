@@ -1,7 +1,19 @@
-import { pgTable, serial, integer, numeric, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, numeric, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { driversTable } from "./drivers";
+
+/**
+ * Transaction types:
+ *  fee    — platform bid fee deducted when driver accepts a request
+ *  credit — balance top-up approved by admin
+ *  debit  — manual balance deduction by admin
+ */
+export const transactionTypeEnum = pgEnum("transaction_type", [
+  "fee",
+  "credit",
+  "debit",
+]);
 
 export const transactionsTable = pgTable("transactions", {
   id: serial("id").primaryKey(),
@@ -9,7 +21,7 @@ export const transactionsTable = pgTable("transactions", {
     .notNull()
     .references(() => driversTable.id),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  type: text("type").notNull(),
+  type: transactionTypeEnum("type").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

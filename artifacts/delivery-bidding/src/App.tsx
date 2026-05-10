@@ -5,12 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import NotFound from "@/pages/not-found";
-import { useInstallAndPushFlow } from "@/hooks/use-install-and-push-flow";
+import { useInstallAndPushFlow, markOneSignalLinked, clearOneSignalLinked } from "@/hooks/use-install-and-push-flow";
 import { consumePendingNotificationInteraction } from "@/lib/notification-actions";
 import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { PushPermissionPrompt } from "@/components/push-permission-prompt";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { initOneSignal, loginOneSignal, logoutOneSignal } from "@/lib/push-notifications";
 
 import Home from "@/pages/Home";
 
@@ -56,7 +57,6 @@ import NotificationsCenter from "@/pages/notifications/NotificationsCenter";
 const PWA_ROLE_KEY = "pwa_role";
 type PwaRole = "admin" | "driver" | "client";
 
-/** Returns the stored PWA role, if any. */
 function getStoredRole(): PwaRole | null {
   try {
     return (localStorage.getItem(PWA_ROLE_KEY) as PwaRole) || null;
@@ -65,28 +65,19 @@ function getStoredRole(): PwaRole | null {
   }
 }
 
-/** Saves a role only on the very first visit (never overwrites). */
 function saveRoleOnce(role: PwaRole): void {
   try {
     if (!localStorage.getItem(PWA_ROLE_KEY)) {
       localStorage.setItem(PWA_ROLE_KEY, role);
     }
-  } catch {
-    // localStorage unavailable — ignore
-  }
+  } catch {}
 }
 
-// Custom event type for beforeinstallprompt (not in standard TS lib)
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-/**
- * Silently detects which section the user is visiting and saves
- * their role to localStorage on the first visit.
- * Must be rendered inside WouterRouter.
- */
 function RoleDetector() {
   const [location] = useLocation();
 
@@ -103,12 +94,6 @@ function RoleDetector() {
   return null;
 }
 
-/**
- * Dynamically switches the <link rel="manifest"> tag based on the current
- * portal (driver / client / admin) so that when a user installs the PWA
- * from a role-specific URL the correct start_url and app name are used.
- * Must be rendered inside WouterRouter.
- */
 function ManifestUpdater() {
   const [location] = useLocation();
 
@@ -131,10 +116,6 @@ function ManifestUpdater() {
   return null;
 }
 
-/**
- * Shows a bottom install-prompt banner when the browser fires
- * the `beforeinstallprompt` event (Android/Chrome/Edge).
- */
 function InstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
@@ -191,30 +172,17 @@ function InstallBanner() {
   );
 }
 
-// ─── OneSignal App ID ─────────────────────────────────────────────────────────
-
-const ONESIGNAL_APP_ID =
-  (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
-  "936a2461-9f06-4231-986e-29578e9a56d7";
-
-function getOneSignalExternalId(user: { id: number; role: "client" | "driver" | "admin" }): string {
-  // OneSignal external IDs must be globally unique in our app. IDs can overlap
-  // across roles (e.g. client #1 and driver #1), so we namespace by role.
-  return `${user.role}:${user.id}`;
-}
-
 // ─── FlowOrchestrator ─────────────────────────────────────────────────────────
 /**
- * Handles three responsibilities in one place:
+ * مسؤول عن:
+ * 1. تهيئة OneSignal مرة واحدة
+ * 2. ربط المستخدم بـ OneSignal عند login وفك الربط عند logout
+ * 3. عرض prompts التثبيت والإشعارات
  *
- * 1. OneSignal initialization (runs once on mount).
- * 2. OneSignal user linking — calls `login(userId)` after sign-in and
- *    `logout()` on sign-out so push notifications are correctly targeted.
- * 3. Smart install + push permission prompts:
- *    - iOS (Safari): iOS install guide → then push permission
- *    - Android / Desktop: push permission only
- *
- * Must be rendered inside <AuthProvider>.
+ * الإصلاحات (PR #134):
+ * - استخدام loginOneSignal/logoutOneSignal من push-notifications.ts
+ * - ServiceWorker path صحيح: /OneSignalSDKWorker.js
+ * - لا تكرار في init
  */
 function FlowOrchestrator() {
   const { user } = useAuth();
@@ -225,63 +193,40 @@ function FlowOrchestrator() {
     dismissIOSPrompt,
     dismissPushPrompt,
     markPushEnabled,
-  } = useInstallAndPushFlow(canPromptForPush);
+  } = useInstallAndPushFlow(canPromptForPush, user?.id as number | undefined);
 
-  // ── OneSignal init (once) ─────────────────────────────────────────────────
+  // ── OneSignal init (once on mount) ────────────────────────────────────────
   useEffect(() => {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async (OneSignal) => {
-      if (!isSecurePushContext()) {
-        console.error("[Push] OneSignal init skipped: push requires HTTPS", {
-          protocol: window.location.protocol,
-          hostname: window.location.hostname,
-          isSecureContext: window.isSecureContext,
-        });
-        return;
-      }
-
-      try {
-        await OneSignal.init({
-          appId: ONESIGNAL_APP_ID,
-          allowLocalhostAsSecureOrigin: true,
-          // Use our custom service worker so VAPID push handling is preserved
-          // and only one SW is registered at the root scope.
-          serviceWorkerPath: appPath("sw.js"),
-          serviceWorkerParam: { scope: appPath() },
-        });
-      } catch {
-        // init already called — safe to ignore
-      }
-    });
+    if (!isSecurePushContext()) {
+      console.warn("[Push] OneSignal init skipped: not a secure context", {
+        protocol: window.location.protocol,
+        isSecureContext: window.isSecureContext,
+      });
+      return;
+    }
+    // initOneSignal handles deduplication internally
+    void initOneSignal();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── OneSignal user linking ────────────────────────────────────────────────
   useEffect(() => {
     if (!user) {
       // User logged out — unlink from OneSignal
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push(async (OneSignal) => {
-        try { await OneSignal.logout(); } catch { /* non-critical */ }
-      });
+      void logoutOneSignal();
+      clearOneSignalLinked();
       return;
     }
 
     // User logged in — link device to their account
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async (OneSignal) => {
-      try {
-        await OneSignal.login(getOneSignalExternalId(user));
-        // Also tag the role so segment-based pushes work
-        await OneSignal.User.addTag("role", user.role);
-        await OneSignal.User.addTag("user_id", String(user.id));
-      } catch { /* non-critical */ }
+    // external_id format: role:id (e.g. "driver:42", "client:7")
+    void loginOneSignal(user.id as number, user.role).then(() => {
+      // ✅ سجّل أن OneSignal تم ربطه بهذا المستخدم
+      markOneSignalLinked(user.id as number);
     });
-  }, [user?.id, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!user) return;
+    // Handle pending notification tap (if app was opened from a notification)
     void consumePendingNotificationInteraction();
-  }, [user?.id]);
+  }, [user?.id, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render prompts (only one at a time) ───────────────────────────────────
   if (showIOSPrompt) {
@@ -331,11 +276,9 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 function HomeRedirect() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div className="flex items-center justify-center min-h-screen" style={{ color: "var(--text-muted)", fontFamily: "var(--font-arabic)" }}>جاري التحقق...</div>;
-  // Authenticated users go directly to their dashboard
   if (user?.role === "admin") return <Redirect to="/admin" />;
   if (user?.role === "driver") return <Redirect to="/driver/dashboard" />;
   if (user?.role === "client") return <Redirect to="/client" />;
-  // Not authenticated — use stored role to show the right login page
   const role = getStoredRole();
   if (role === "admin") return <Redirect to="/admin/login" />;
   if (role === "driver") return <Redirect to="/driver/login" />;
@@ -346,12 +289,9 @@ function HomeRedirect() {
 function Router() {
   return (
     <>
-      {/* Silently track role on every navigation */}
       <RoleDetector />
-      {/* Dynamically switch manifest per portal */}
       <ManifestUpdater />
       <Switch>
-        {/* Smart home: send authenticated users to their dashboard, others to login */}
         <Route path="/" component={HomeRedirect} />
 
         <Route path="/client/login" component={ClientLogin} />
@@ -386,14 +326,14 @@ function Router() {
         <Route path="/driver/requests">
           <DriverGuard><DriverRequests /></DriverGuard>
         </Route>
+        <Route path="/driver/request/:id">
+          <DriverGuard><SubmitOffer /></DriverGuard>
+        </Route>
         <Route path="/driver/support">
           <DriverGuard><DriverSupport /></DriverGuard>
         </Route>
         <Route path="/driver/notifications">
           <DriverGuard><NotificationsCenter /></DriverGuard>
-        </Route>
-        <Route path="/driver/request/:id">
-          <DriverGuard><SubmitOffer /></DriverGuard>
         </Route>
 
         <Route path="/admin/login" component={AdminLoginPage} />
@@ -403,34 +343,31 @@ function Router() {
         <Route path="/admin/requests">
           <AdminGuard><AdminRequests /></AdminGuard>
         </Route>
+        <Route path="/admin/requests/new">
+          <AdminGuard><AdminCreateRequest /></AdminGuard>
+        </Route>
+        <Route path="/admin/requests/:id">
+          <AdminGuard><AdminRequestDetails /></AdminGuard>
+        </Route>
         <Route path="/admin/drivers">
           <AdminGuard><AdminDrivers /></AdminGuard>
-        </Route>
-        <Route path="/admin/clients">
-          <AdminGuard><AdminClients /></AdminGuard>
         </Route>
         <Route path="/admin/offers">
           <AdminGuard><AdminOffers /></AdminGuard>
         </Route>
-        <Route path="/admin/settings">
-          <AdminGuard><AdminSettings /></AdminGuard>
+        <Route path="/admin/clients">
+          <AdminGuard><AdminClients /></AdminGuard>
         </Route>
         <Route path="/admin/pricing">
           <AdminGuard><AdminPricing /></AdminGuard>
         </Route>
+        <Route path="/admin/settings">
+          <AdminGuard><AdminSettings /></AdminGuard>
+        </Route>
         <Route path="/admin/support">
           <AdminGuard><AdminSupport /></AdminGuard>
         </Route>
-        <Route path="/admin/request/new">
-          <AdminGuard><AdminCreateRequest /></AdminGuard>
-        </Route>
-        <Route path="/admin/requests/new">
-          <AdminGuard><AdminCreateRequest /></AdminGuard>
-        </Route>
-        <Route path="/admin/request/:id">
-          <AdminGuard><AdminRequestDetails /></AdminGuard>
-        </Route>
-        <Route path="/admin/activity-logs">
+        <Route path="/admin/activity">
           <AdminGuard><AdminActivityLogs /></AdminGuard>
         </Route>
         <Route path="/admin/activity">
@@ -442,20 +379,17 @@ function Router() {
         <Route path="/admin/push-debug">
           <AdminGuard><AdminPushDebug /></AdminGuard>
         </Route>
-        <Route path="/admin/notifications">
-          <AdminGuard><AdminNotificationComposer /></AdminGuard>
-        </Route>
         <Route path="/admin/operations">
           <AdminGuard><AdminOperations /></AdminGuard>
         </Route>
-        <Route path="/admin/notifications-monitor">
+        <Route path="/admin/notifications">
           <AdminGuard><AdminNotificationsMonitor /></AdminGuard>
         </Route>
-        <Route path="/admin/database-monitor">
+        <Route path="/admin/database">
           <AdminGuard><AdminDatabaseMonitor /></AdminGuard>
         </Route>
-        <Route path="/admin/notifications-center">
-          <AdminGuard><NotificationsCenter /></AdminGuard>
+        <Route path="/admin/compose">
+          <AdminGuard><AdminNotificationComposer /></AdminGuard>
         </Route>
 
         <Route component={NotFound} />
@@ -464,24 +398,21 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <WouterRouter>
+              <InstallBanner />
+              <FlowOrchestrator />
               <Router />
+              <Toaster />
             </WouterRouter>
-            <Toaster />
-            <InstallBanner />
-            {/* iOS install guide + push permission soft-ask */}
-            <FlowOrchestrator />
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
 }
-
-export default App;

@@ -1,171 +1,199 @@
-import { isSecurePushContext } from "@/lib/pwa-utils";
+/**
+ * push-notifications.ts — OneSignal Integration
+ * يستخدم OneSignal SDK v16 للإشعارات
+ *
+ * الإصلاحات (PR #135):
+ * 1. external_id format: role:id (مطابق للبكند)
+ * 2. إضافة role tag عند loginOneSignal لدعم notifyAllDrivers/Admins
+ * 3. initOneSignal يستخدم OneSignalSDKWorker.js
+ */
 
-const PUSH_SUBSCRIBED_KEY = "push_subscribed";
 const LOG_PREFIX = "[Push]";
 
-export type PushSubscribeResult =
-  | "ok"
-  | "already_subscribed"
-  | "unsupported"
-  | "permission_denied"
-  | "permission_default"
-  | "insecure_context"
-  | "sdk_unavailable"
-  | "subscribe_error";
+// App ID with hardcoded fallback
+const ONESIGNAL_APP_ID =
+  (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
+  "ed8315eb-36d7-4028-ab7d-a5114eaa4061";
 
-type OneSignalPushSubscriptionState = {
-  optedIn?: boolean | (() => Promise<boolean>);
-  optIn?: () => Promise<void>;
-  optOut?: () => Promise<void>;
-};
+let initialized = false;
+let initPromise: Promise<void> | null = null;
 
-function emitPushStatusChanged() {
-  window.dispatchEvent(new CustomEvent("push-status-changed"));
-}
+/**
+ * تهيئة OneSignal — يُستدعى مرة واحدة عند تحميل التطبيق
+ */
+export async function initOneSignal(): Promise<void> {
+  if (initialized) return;
+  if (initPromise) return initPromise;
 
-function cachePushEnabled(enabled: boolean) {
-  try {
-    if (enabled) {
-      localStorage.setItem(PUSH_SUBSCRIBED_KEY, "1");
-    } else {
-      localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
-    }
-  } catch {
-    // ignore storage failures
-  }
-  emitPushStatusChanged();
-}
-
-export function clearPushSubscriptionCache(): void {
-  try {
-    localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
-  } catch {
-    // ignore storage failures
-  }
-  emitPushStatusChanged();
-  console.log(LOG_PREFIX, "subscription cache cleared");
-}
-
-async function withOneSignal<T>(fn: (oneSignal: OneSignalNamespace) => Promise<T>): Promise<T> {
-  if (window.OneSignal) {
-    return fn(window.OneSignal);
+  if (!ONESIGNAL_APP_ID) {
+    console.warn(LOG_PREFIX, "ONESIGNAL_APP_ID غير موجود — الإشعارات معطلة");
+    return;
   }
 
-  return new Promise<T>((resolve, reject) => {
-    const timeoutId = window.setTimeout(() => {
-      reject(new Error("OneSignal SDK unavailable"));
-    }, 5000);
-
+  initPromise = new Promise<void>((resolve) => {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async (oneSignal) => {
-      window.clearTimeout(timeoutId);
+    window.OneSignalDeferred.push(async (OneSignal: OneSignalNamespace) => {
       try {
-        resolve(await fn(oneSignal));
-      } catch (error) {
-        reject(error);
+        await OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/" },
+          notifyButton: { enable: false },
+          allowLocalhostAsSecureOrigin: true,
+        });
+        initialized = true;
+        console.log(LOG_PREFIX, "OneSignal initialized ✓", { appId: ONESIGNAL_APP_ID });
+      } catch (err) {
+        console.warn(LOG_PREFIX, "OneSignal init warning:", err);
+        initialized = true;
       }
+      resolve();
     });
   });
+
+  return initPromise;
 }
 
-async function readOneSignalPermission(oneSignal: OneSignalNamespace): Promise<NotificationPermission> {
-  const permissionReader = oneSignal.Notifications.permissionNative;
-  if (typeof permissionReader === "function") {
-    return permissionReader();
+/**
+ * ربط المستخدم بـ OneSignal باستخدام external_id
+ * الصيغة: role:id (مثال: driver:42, client:7, admin:1)
+ * يُضيف role tag لدعم إشعارات المجموعة (notifyAllDrivers/Admins)
+ */
+export async function loginOneSignal(userId: number, role: string): Promise<void> {
+  // external_id: role:id — يجب أن يطابق buildExternalId() في البكند
+  const externalId = `${role}:${userId}`;
+  try {
+    await initOneSignal();
+    const os = window.OneSignal;
+    if (!os) {
+      console.warn(LOG_PREFIX, "OneSignal SDK not ready");
+      return;
+    }
+
+    // ربط المستخدم بالجهاز
+    await os.login(externalId);
+    console.log(LOG_PREFIX, `OneSignal login ✓ externalId=${externalId}`);
+
+    // إضافة role tag لدعم notifyAllDrivers / notifyAllAdmins
+    try {
+      os.User.addTags({ role, userId: String(userId) });
+      console.log(LOG_PREFIX, `Tags added ✓ role=${role}`);
+    } catch {
+      // addTags اختيارية — لا توقف التسجيل
+    }
+
+    // طلب الإذن إذا لم يكن ممنوحاً
+    if (!os.Notifications.permission) {
+      try {
+        await os.Notifications.requestPermission();
+      } catch {
+        // المستخدم رفض — ليس خطأً
+      }
+    }
+
+    // Opt-in للـ push subscription
+    if (os.Notifications.permission && !os.User.PushSubscription.optedIn) {
+      try {
+        await os.User.PushSubscription.optIn();
+      } catch {
+        // قد تفشل إذا لم تكن هناك subscription بعد
+      }
+    }
+  } catch (err) {
+    console.warn(LOG_PREFIX, "OneSignal loginOneSignal error:", err);
   }
-  return Notification.permission;
 }
 
-async function readOptInState(oneSignal: OneSignalNamespace): Promise<boolean> {
-  const pushSubscription = oneSignal.User?.PushSubscription as OneSignalPushSubscriptionState | undefined;
-  if (!pushSubscription) {
-    return Notification.permission === "granted";
+/**
+ * تسجيل خروج المستخدم من OneSignal
+ */
+export async function logoutOneSignal(): Promise<void> {
+  try {
+    const os = window.OneSignal;
+    if (!os) return;
+    await os.logout();
+    console.log(LOG_PREFIX, "OneSignal logout ✓");
+  } catch (err) {
+    console.warn(LOG_PREFIX, "OneSignal logout error:", err);
   }
-
-  if (typeof pushSubscription.optedIn === "function") {
-    return pushSubscription.optedIn();
-  }
-
-  if (typeof pushSubscription.optedIn === "boolean") {
-    return pushSubscription.optedIn;
-  }
-
-  return Notification.permission === "granted";
 }
 
-export async function isPushEnabled(): Promise<boolean> {
-  if (!("Notification" in window)) return false;
-  if (Notification.permission !== "granted") return false;
+/**
+ * طلب إذن الإشعارات يدوياً (زر "فعّل الإشعارات")
+ */
+export async function requestPushPermission(): Promise<"granted" | "denied" | "default"> {
+  try {
+    await initOneSignal();
+    const os = window.OneSignal;
+    if (!os) return "default";
+
+    if (os.Notifications.permission) return "granted";
+
+    await os.Notifications.requestPermission();
+    return os.Notifications.permission ? "granted" : "denied";
+  } catch (err) {
+    console.warn(LOG_PREFIX, "requestPushPermission error:", err);
+    return "default";
+  }
+}
+
+/**
+ * subscribeToPush — يُستدعى من push-permission-prompt.tsx
+ */
+export async function subscribeToPush(
+  role?: string
+): Promise<"ok" | "already_subscribed" | "server_error" | "unsupported" | "denied"> {
+  if (!("Notification" in window)) return "unsupported";
+  if (Notification.permission === "denied") return "denied";
 
   try {
-    const enabled = await withOneSignal((oneSignal) => readOptInState(oneSignal));
-    cachePushEnabled(enabled);
-    return enabled;
-  } catch (error) {
-    console.warn(LOG_PREFIX, "could not read OneSignal opt-in state, falling back to browser permission", error);
-    cachePushEnabled(true);
-    return true;
+    const raw = localStorage.getItem("auth_user");
+    if (!raw) return "server_error";
+    const user = JSON.parse(raw);
+    const userId = user?.id;
+    const userRole = role ?? user?.role;
+    if (!userId || !userRole) return "server_error";
+
+    await initOneSignal();
+    const os = window.OneSignal;
+    if (!os) return "server_error";
+
+    // ربط المستخدم بـ external_id الصحيح (role:id)
+    const externalId = `${userRole}:${userId}`;
+    await os.login(externalId);
+
+    // إضافة role tag
+    try {
+      os.User.addTags({ role: userRole, userId: String(userId) });
+    } catch {
+      // اختيارية
+    }
+
+    // طلب الإذن
+    if (!os.Notifications.permission) {
+      await os.Notifications.requestPermission();
+    }
+
+    if (Notification.permission !== "granted") return "denied";
+
+    // Opt-in
+    if (!os.User.PushSubscription.optedIn) {
+      await os.User.PushSubscription.optIn();
+    }
+
+    const token = os.User.PushSubscription.token;
+    if (token) {
+      console.log(LOG_PREFIX, `subscribeToPush ✓ externalId=${externalId} token=${token.slice(0, 20)}...`);
+    }
+
+    return "ok";
+  } catch (err) {
+    console.error(LOG_PREFIX, "subscribeToPush error:", err);
+    return "server_error";
   }
 }
 
-export async function subscribeToPush(_role?: string): Promise<PushSubscribeResult> {
-  if (!("Notification" in window)) {
-    console.warn(LOG_PREFIX, "notifications are not supported in this browser");
-    return "unsupported";
-  }
-
-  if (!isSecurePushContext()) {
-    console.error(LOG_PREFIX, "push subscription requires HTTPS");
-    return "insecure_context";
-  }
-
-  try {
-    return await withOneSignal(async (oneSignal) => {
-      let permission = await readOneSignalPermission(oneSignal);
-      let enabled = permission === "granted" ? await readOptInState(oneSignal) : false;
-
-      if (enabled) {
-        cachePushEnabled(true);
-        return "already_subscribed";
-      }
-
-      if (permission === "default") {
-        if (oneSignal.Slidedown) {
-          try {
-            await oneSignal.Slidedown.promptPush();
-          } catch {
-            // fall through to native permission handling below
-          }
-        }
-
-        permission = await readOneSignalPermission(oneSignal);
-        if (permission === "default") {
-          await oneSignal.Notifications.requestPermission();
-          permission = await readOneSignalPermission(oneSignal);
-        }
-      }
-
-      if (permission === "denied") {
-        cachePushEnabled(false);
-        return "permission_denied";
-      }
-
-      if (permission !== "granted") {
-        cachePushEnabled(false);
-        return "permission_default";
-      }
-
-      const pushSubscription = oneSignal.User?.PushSubscription as OneSignalPushSubscriptionState | undefined;
-      if (pushSubscription?.optIn) {
-        await pushSubscription.optIn();
-      }
-
-      enabled = await readOptInState(oneSignal);
-      cachePushEnabled(enabled);
-      return enabled ? "ok" : "subscribe_error";
-    });
-  } catch (error) {
-    console.error(LOG_PREFIX, "OneSignal subscription failed", error);
-    return window.OneSignal || window.OneSignalDeferred ? "subscribe_error" : "sdk_unavailable";
-  }
+/** للتوافق مع الكود القديم */
+export function clearPushSubscriptionCache(): void {
+  localStorage.removeItem("push_subscribed");
 }
