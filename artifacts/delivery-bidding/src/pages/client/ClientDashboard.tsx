@@ -30,6 +30,13 @@ const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string
 
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
 
+function hasArchivedTimestamp(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  if (!("archivedAt" in value)) return false;
+  const archivedAt = (value as { archivedAt?: unknown }).archivedAt;
+  return typeof archivedAt === "string" && archivedAt.length > 0;
+}
+
 type FilterTab = "PENDING" | "ACCEPTED" | "COMPLETED" | "ARCHIVED";
 
 const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
@@ -68,9 +75,8 @@ export default function ClientDashboard() {
   const [unreadMap, setUnreadMap] = useState<Record<number, number>>({});
   const [activeFilter, setActiveFilter] = useState<FilterTab>("PENDING");
 
-  const activeRequests = (requests ?? []).filter((req) => !(req as any).archivedAt);
-  const archivedRequests = ((Array.isArray(archivedData) ? archivedData : []) as Array<{ archivedAt?: string | null }>)
-    .filter((req) => Boolean(req.archivedAt));
+  const activeRequests = (requests ?? []).filter((req) => !hasArchivedTimestamp(req));
+  const archivedRequests = Array.isArray(archivedData) ? archivedData : [];
 
   const archiveRequest = useMutation({
     mutationFn: async (id: number) => {
@@ -93,7 +99,7 @@ export default function ClientDashboard() {
     if (!requests) return;
     const map: Record<number, number> = {};
     for (const req of requests) {
-      if ((req as any).archivedAt) continue;
+      if (hasArchivedTimestamp(req)) continue;
       if (req.status !== "OPEN") continue;
       const currentCount = req.offerCount ?? 0;
       const seenCount = parseInt(localStorage.getItem(SEEN_KEY(req.id)) ?? "0", 10);

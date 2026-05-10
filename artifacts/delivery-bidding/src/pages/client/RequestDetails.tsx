@@ -19,6 +19,13 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
 
+function hasArchivedTimestamp(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  if (!("archivedAt" in value)) return false;
+  const archivedAt = (value as { archivedAt?: unknown }).archivedAt;
+  return typeof archivedAt === "string" && archivedAt.length > 0;
+}
+
 /** Confirmation dialog shown before finalizing a driver selection */
 function DriverConfirmDialog({
   offer,
@@ -528,7 +535,7 @@ export default function RequestDetails() {
           </div>
         )}
 
-        {!((request as any).archivedAt) && (
+        {!hasArchivedTimestamp(request) && (
           <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
             <button
               onClick={() => archiveRequest.mutate()}
