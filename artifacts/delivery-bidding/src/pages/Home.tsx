@@ -35,7 +35,7 @@ export default function Home() {
 
           <div className="space-y-3 pt-2">
             <Link href="/client/login">
-              <div className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-violet-200 transition-all flex justify-center items-center gap-3">
+              <div className="w-full bg-violet-700 hover:bg-violet-800 hover:shadow-2xl active:scale-[0.99] text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-violet-200 transition-all flex justify-center items-center gap-3">
                 <span>دخول العميل</span><ArrowLeft size={18} />
               </div>
             </Link>

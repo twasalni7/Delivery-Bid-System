@@ -76,10 +76,10 @@ export default function ClientProfile() {
         <div className="rounded-3xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
           <p className="text-sm font-black mb-4" style={{ color: "var(--text)" }}>الإعدادات والمساعدة</p>
           <div className="space-y-2">
-            <Link href="/client/support" className="block rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)" }}>
+            <Link href="/client/support?topic=faq" className="block rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)" }}>
               <span className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>الأسئلة الشائعة</span>
             </Link>
-            <Link href="/client/support" className="block rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)" }}>
+            <Link href="/client/support?topic=complaint" className="block rounded-2xl px-4 py-3" style={{ backgroundColor: "var(--surface-2)" }}>
               <span className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>رفع شكوى</span>
             </Link>
           </div>
