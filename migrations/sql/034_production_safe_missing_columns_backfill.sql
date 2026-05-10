@@ -10,7 +10,17 @@ ALTER TABLE requests
   ADD COLUMN IF NOT EXISTS route_polyline text,
   ADD COLUMN IF NOT EXISTS pricing_snapshot jsonb,
   ADD COLUMN IF NOT EXISTS archived_at timestamp,
-  ADD COLUMN IF NOT EXISTS status_manually_set_by_admin boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS status_manually_set_by_admin boolean;
+
+UPDATE requests
+SET status_manually_set_by_admin = false
+WHERE status_manually_set_by_admin IS NULL;
+
+ALTER TABLE requests
+  ALTER COLUMN status_manually_set_by_admin SET DEFAULT false;
+
+ALTER TABLE requests
+  ALTER COLUMN status_manually_set_by_admin SET NOT NULL;
 
 ALTER TABLE notifications
   ADD COLUMN IF NOT EXISTS channel text NOT NULL DEFAULT 'in_app',

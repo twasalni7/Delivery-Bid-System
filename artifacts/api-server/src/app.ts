@@ -130,7 +130,8 @@ if (!isTest) {
       if (tokenUser) return `token:${tokenUser.role}:${tokenUser.id}`;
       const sessionUser = req.session?.user;
       if (sessionUser) return `session:${sessionUser.role}:${sessionUser.id}`;
-      return ipKeyGenerator(req.ip ?? "");
+      if (req.ip) return ipKeyGenerator(req.ip);
+      return "unknown";
     },
     validate: { xForwardedForHeader: false },
     standardHeaders: true,
