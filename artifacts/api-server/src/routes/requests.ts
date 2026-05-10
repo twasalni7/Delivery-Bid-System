@@ -518,7 +518,7 @@ router.patch("/:id/client", requireAuth("client"), async (req, res) => {
       res.status(404).json({ error: "الطلب غير موجود" });
       return;
     }
-    if (existing.clientId == null || existing.clientId !== clientId) {
+    if (existing.clientId === null || existing.clientId !== clientId) {
       res.status(403).json({ error: "غير مصرح بهذا الإجراء" });
       return;
     }

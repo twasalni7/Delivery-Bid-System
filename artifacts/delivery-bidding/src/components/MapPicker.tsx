@@ -62,7 +62,7 @@ const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 const SEARCH_DEBOUNCE_MS = 300;
 const MOVE_END_DEBOUNCE_MS = 350;
 const PROGRAMMATIC_MOVE_GUARD_MS = 150;
-// ~5-6 meters at the equator: enough to ignore tiny map jitters while dragging.
+// ~4-6 meters in our target region (latitude-dependent): enough to ignore tiny map jitters while dragging.
 // Increase only if geocoding triggers too frequently; decrease only if very small deliberate drags are missed.
 const COORDINATE_EPSILON = 0.00005;
 

@@ -104,6 +104,14 @@ export default function ClientDashboard() {
     setUnreadMap(map);
   }, [requests]);
 
+  useEffect(() => {
+    if (!requests) return;
+    const unknownStatuses = [...new Set(requests.map((r) => r.status).filter((status) => !KNOWN_STATUSES.has(status)))];
+    if (unknownStatuses.length > 0) {
+      console.warn("[ClientDashboard] Unknown request statuses:", unknownStatuses);
+    }
+  }, [requests]);
+
   const totalUnread = Object.values(unreadMap).reduce((sum, n) => sum + n, 0);
 
   const filteredRequests = activeFilter === "ARCHIVED"
