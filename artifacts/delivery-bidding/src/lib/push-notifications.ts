@@ -156,6 +156,24 @@ export async function loginOneSignal(userId: number, role: string): Promise<void
         // قد تفشل إذا لم تكن هناك subscription بعد
       }
     }
+
+    // Diagnostics: log subscription identifiers when available
+    try {
+      const rawOptedIn = os.User.PushSubscription.optedIn;
+      const optedIn =
+        typeof rawOptedIn === "function" ? await rawOptedIn() : Boolean(rawOptedIn);
+      const token = os.User.PushSubscription.token ?? null;
+      const subscriptionId = os.User.PushSubscription.id ?? null;
+      console.log(LOG_PREFIX, "Push subscription status", {
+        externalId,
+        permission: os.Notifications.permission,
+        optedIn,
+        subscriptionId,
+        tokenPrefix: token ? `${token.slice(0, 16)}...` : null,
+      });
+    } catch {
+      // diagnostics only
+    }
   } catch (err) {
     console.warn(LOG_PREFIX, "OneSignal loginOneSignal error:", err);
   }
@@ -239,8 +257,12 @@ export async function subscribeToPush(
     }
 
     const token = os.User.PushSubscription.token;
+    const subscriptionId = os.User.PushSubscription.id ?? null;
     if (token) {
-      console.log(LOG_PREFIX, `subscribeToPush ✓ externalId=${externalId} token=${token.slice(0, 20)}...`);
+      console.log(LOG_PREFIX, `subscribeToPush ✓ externalId=${externalId}`, {
+        subscriptionId,
+        tokenPrefix: `${token.slice(0, 20)}...`,
+      });
     }
 
     return "ok";
