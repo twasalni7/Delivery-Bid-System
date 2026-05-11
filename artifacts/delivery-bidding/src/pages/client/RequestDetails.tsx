@@ -20,6 +20,11 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
 
+function hasDriverRating(driver: Offer["driver"]): driver is Offer["driver"] & { rating: number } {
+  const rating = (driver as { rating?: unknown } | null | undefined)?.rating;
+  return typeof rating === "number" && Number.isFinite(rating);
+}
+
 /** Confirmation dialog shown before finalizing a driver selection */
 function DriverConfirmDialog({
   offer,
@@ -544,40 +549,52 @@ export default function RequestDetails() {
         )}
 
         {request.selectedDriver && (request.status === "SELECTED" || request.status === "ACTIVE" || request.status === "COMPLETED") && (
-          <div className="rounded-3xl overflow-hidden mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>
-            <div className="p-5" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={16} style={{ color: "var(--brand)" }} />
-                <span className="font-bold" style={{ color: "var(--brand)" }}>
-                  {request.status === "COMPLETED" ? "تمت الاتفاقية" : "تم اختيار السائق"}
-                </span>
+          <div className="rounded-3xl overflow-hidden mb-6" style={{ background: "linear-gradient(160deg, rgba(7,64,50,0.88) 0%, rgba(6,31,26,0.96) 100%)", border: "1px solid rgba(74,222,128,0.38)" }}>
+            <div className="p-5 text-center" style={{ borderBottom: "1px solid rgba(74,222,128,0.25)" }}>
+              <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3" style={{ background: "linear-gradient(180deg, #22c55e 0%, #16a34a 100%)", color: "#fff", boxShadow: "0 10px 26px rgba(34,197,94,0.36)" }}>
+                <CheckCircle size={30} />
               </div>
-              <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{request.selectedDriver.name}</p>
-              {request.selectedDriver.carType && (
-                <p className="text-xs font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>{request.selectedDriver.carType}</p>
+              <p className="font-black text-lg" style={{ color: "#dcfce7" }}>
+                {request.status === "COMPLETED" ? "تمت عملية التوصيل بنجاح" : "السائق مؤكد لطلبك"}
+              </p>
+              <p className="text-sm font-bold mt-1" style={{ color: "rgba(220,252,231,0.78)" }}>
+                يمكنك الآن التواصل معه مباشرة
+              </p>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="rounded-2xl p-3 flex items-center justify-between" style={{ backgroundColor: "rgba(2,6,23,0.22)", border: "1px solid rgba(74,222,128,0.22)" }}>
+                <div>
+                  <p className="text-sm font-black" style={{ color: "#f0fdf4" }}>{request.selectedDriver.name}</p>
+                  {request.selectedDriver.carType && (
+                    <p className="text-xs font-bold mt-0.5" style={{ color: "rgba(220,252,231,0.72)" }}>{request.selectedDriver.carType}</p>
+                  )}
+                </div>
+                <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-black" style={{ background: "rgba(167,243,208,0.18)", color: "#f0fdf4" }}>
+                  {request.selectedDriver.name?.charAt(0) ?? "س"}
+                </div>
+              </div>
+              {request.selectedDriver.mobile && (
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={buildWhatsAppUrl(request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966"))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-black px-4 py-3 rounded-2xl flex items-center justify-center gap-1.5"
+                    style={{ backgroundColor: "#15803d", color: "#ecfdf5" }}
+                  >
+                    <MessageCircle size={12} /> واتساب
+                  </a>
+                  <a href={`tel:${request.selectedDriver.mobile}`} className="text-xs font-black px-4 py-3 rounded-2xl flex items-center justify-center gap-1.5" style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "#ecfdf5", border: "1px solid rgba(236,253,245,0.28)" }} dir="ltr">
+                    <Phone size={12} /> اتصال
+                  </a>
+                </div>
               )}
             </div>
-            {request.selectedDriver.mobile && (
-              <div className="px-5 py-4 flex items-center gap-3">
-                <Phone size={14} style={{ color: "var(--status-active-text)" }} />
-                <a href={`tel:${request.selectedDriver.mobile}`} className="text-sm font-bold" style={{ color: "var(--text)" }} dir="ltr">
-                  {request.selectedDriver.mobile}
-                </a>
-                <a
-                  href={buildWhatsAppUrl(request.selectedDriver.mobile.replace(/\D/g, "").replace(/^0/, "966"))}
-                  target="_blank" rel="noopener noreferrer"
-                  className="mr-auto text-xs font-black px-4 py-2 rounded-full flex items-center gap-1.5"
-                  style={{ backgroundColor: "#25D366", color: "#fff", boxShadow: "0 2px 12px rgba(37,211,102,0.3)" }}
-                >
-                  <MessageCircle size={12} /> واتساب
-                </a>
-              </div>
-            )}
           </div>
         )}
 
         <div>
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-black" style={{ color: "var(--text)" }}>
               السائقون المقبِلون {offers ? `(${offers.length})` : ""}
             </h2>
@@ -591,17 +608,21 @@ export default function RequestDetails() {
               </button>
             )}
           </div>
+          <div className="rounded-2xl px-4 py-3 mb-4" style={{ backgroundColor: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.28)" }}>
+            <p className="text-sm font-black" style={{ color: "#fbbf24" }}>اختر السائق المناسب لك</p>
+            <p className="text-xs font-bold mt-1" style={{ color: "var(--text-muted)" }}>يمكنك مشاهدة التفاصيل والتواصل بعد الاختيار</p>
+          </div>
 
           {showChat && canChat && (
-            <div className="mb-6 rounded-3xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+            <div className="mb-6 rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(148,163,184,0.24)", background: "linear-gradient(160deg, rgba(15,23,42,0.85) 0%, rgba(8,14,28,0.95) 100%)" }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "rgba(15,23,42,0.45)", borderBottom: "1px solid rgba(148,163,184,0.2)" }}>
                 <div className="flex items-center gap-2">
                   <MessageCircle size={15} style={{ color: "var(--brand)" }} />
                   <span className="font-black text-sm" style={{ color: "var(--brand)" }}>محادثة مع السائق</span>
                 </div>
                 <button onClick={() => setShowChat(false)} style={{ color: "var(--text-hint)" }}><X size={14} /></button>
               </div>
-              <div className="max-h-72 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "var(--header-bg)" }} dir="rtl">
+              <div className="max-h-72 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "rgba(2,6,23,0.35)" }} dir="rtl">
                 {(!chatMessages || chatMessages.length === 0) && (
                   <p className="text-center text-xs py-6 font-bold" style={{ color: "var(--text-hint)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
                 )}
@@ -621,7 +642,7 @@ export default function RequestDetails() {
                 })}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-2 flex gap-2" style={{ backgroundColor: "var(--surface)", borderTop: "1px solid var(--border-subtle)" }}>
+              <div className="p-2 flex gap-2" style={{ backgroundColor: "rgba(15,23,42,0.45)", borderTop: "1px solid rgba(148,163,184,0.2)" }}>
                 <input
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
@@ -654,12 +675,14 @@ export default function RequestDetails() {
           <div className="space-y-3">
             {(offers ?? []).map((offer: Offer) => {
               const isSelected = request.selectedDriverId === offer.driverId;
+              const driverRatingValue = hasDriverRating(offer.driver) ? offer.driver.rating : null;
+              const hasValidRating = driverRatingValue != null && Number.isFinite(driverRatingValue) && driverRatingValue > 0;
               return (
                 <div key={offer.id} className="rounded-2xl overflow-hidden transition-all"
                   style={{
-                    backgroundColor: "var(--surface)",
-                    border: `1px solid ${isSelected ? "var(--brand-border)" : "var(--border-subtle)"}`,
-                    boxShadow: isSelected ? "0 0 0 2px var(--brand-border)" : undefined,
+                    background: "linear-gradient(160deg, rgba(15,23,42,0.86) 0%, rgba(8,13,28,0.95) 100%)",
+                    border: `1px solid ${isSelected ? "rgba(167,139,250,0.7)" : "rgba(148,163,184,0.22)"}`,
+                    boxShadow: isSelected ? "0 0 0 2px rgba(139,92,246,0.38)" : undefined,
                   }}>
                   {isSelected && (
                     <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
@@ -667,17 +690,28 @@ export default function RequestDetails() {
                       <span className="text-xs font-bold" style={{ color: "var(--brand)" }}>السائق المؤكَّد</span>
                     </div>
                   )}
-                  <div className="p-4">
-                    <div className="flex items-center gap-3">
-                      {/* Avatar */}
-                      <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-black shrink-0"
-                        style={{ backgroundColor: isSelected ? "var(--brand)" : "var(--brand-subtle)", color: isSelected ? "var(--brand-fg)" : "var(--brand)" }}>
-                        {offer.driver?.name?.charAt(0) ?? "س"}
-                      </div>
+                    <div className="p-4">
+                      <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-black shrink-0"
+                          style={{ backgroundColor: isSelected ? "var(--brand)" : "var(--brand-subtle)", color: isSelected ? "var(--brand-fg)" : "var(--brand)" }}>
+                          {offer.driver?.name?.charAt(0) ?? "س"}
+                        </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                            {hasValidRating && driverRatingValue != null ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-black" style={{ color: "#fbbf24" }}>
+                                <Star size={12} fill="currentColor" /> {driverRatingValue.toFixed(1)}
+                              </span>
+                            ) : (
+                              <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ color: "var(--text-muted)", backgroundColor: "rgba(148,163,184,0.16)" }}>
+                                سائق جديد
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap mt-0.5">
                           {offer.driver?.carType && (
                             <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</span>
                           )}
@@ -689,15 +723,16 @@ export default function RequestDetails() {
                         </div>
                       </div>
                       {/* Action */}
-                      {isOpen && !request.selectedDriverId && (
-                        <button
-                          onClick={() => setConfirmOffer(offer)}
-                          className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
-                          style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-                        >
-                          اختيار
-                        </button>
-                      )}
+                       {isOpen && !request.selectedDriverId && (
+                          <button
+                            onClick={() => setConfirmOffer(offer)}
+                            className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
+                            aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}${offer.driver?.carType ? `، نوع المركبة ${offer.driver.carType}` : ""}${hasValidRating && driverRatingValue != null ? `، التقييم ${driverRatingValue.toFixed(1)}` : ""}`}
+                            style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
+                          >
+                           اختيار السائق
+                         </button>
+                       )}
                     </div>
                   </div>
                 </div>

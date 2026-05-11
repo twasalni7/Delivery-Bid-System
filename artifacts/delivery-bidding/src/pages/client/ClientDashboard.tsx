@@ -5,7 +5,7 @@ import { Layout } from "@/components/layout";
 import { getStatusLabel } from "@/lib/status-utils";
 import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Archive, Plus } from "lucide-react";
+import { Archive, Bell, MessageCircle, Plus, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +63,7 @@ export default function ClientDashboard() {
 
   const requests = (Array.isArray(data) ? data : []).filter((req) => !hasArchivedTimestamp(req));
   const displayName = user?.name?.trim() || "عميل";
+  const firstName = displayName.split(" ")[0] || displayName;
 
   return (
     <Layout role="client">
@@ -70,45 +71,110 @@ export default function ClientDashboard() {
         <section
           className="rounded-[2rem] p-5"
           style={{
-            background: "linear-gradient(150deg, rgba(27,29,39,0.95) 0%, rgba(15,17,24,0.98) 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 50%, rgba(5,8,16,1) 100%)",
+            border: "1px solid rgba(148,163,184,0.22)",
+            boxShadow: "0 22px 40px rgba(2,6,23,0.5)",
           }}
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>مرحباً</p>
-              <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>{displayName}</h1>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>مرحباً بك</p>
+                <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>{firstName}</h1>
+              </div>
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-base font-black"
+                style={{
+                  background: "linear-gradient(145deg, #a78bfa 0%, #6d28d9 100%)",
+                  color: "#fff",
+                  border: "2px solid rgba(255,255,255,0.12)",
+                  boxShadow: "0 14px 26px rgba(124,58,237,0.35)",
+                }}
+              >
+                {displayName.charAt(0)}
+              </div>
             </div>
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-base font-black"
-              style={{
-                background: "linear-gradient(145deg, #7c3aed 0%, #6d28d9 100%)",
-                color: "#fff",
-                boxShadow: "0 12px 24px rgba(124,58,237,0.35)",
-              }}
+            <Link
+              href="/client/notifications"
+              className="touch-compact w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ border: "1px solid rgba(148,163,184,0.22)", backgroundColor: "rgba(15,23,42,0.55)", color: "var(--text-sub)" }}
+              aria-label="الإشعارات"
             >
-              {displayName.charAt(0)}
-            </div>
+              <Bell size={17} />
+            </Link>
           </div>
         </section>
 
         <section
           className="rounded-[2rem] p-6 space-y-4"
+          aria-label="قسم إنشاء طلب توصيل جديد"
           style={{
-            background: "linear-gradient(145deg, #7c3aed 0%, #5b21b6 100%)",
+            background: "linear-gradient(145deg, #5b21b6 0%, #7c3aed 45%, #6d28d9 100%)",
             color: "#fff",
-            boxShadow: "0 18px 38px rgba(91,33,182,0.45)",
+            boxShadow: "0 22px 42px rgba(91,33,182,0.5)",
           }}
         >
-          <h2 className="text-2xl font-black leading-tight">جاهز لمشاويرك القادمة؟</h2>
-          <p className="text-sm font-bold text-violet-100">حددي مساراتك والشفتات واحصلي على السعر النهائي</p>
+          <h2 className="text-3xl font-black leading-tight">جاهز لطلب توصيل؟</h2>
+          <p className="text-sm font-bold text-violet-100">حدد تفاصيل مشوارك وسيتم حساب السعر ونشر الطلب للسائقين المناسبين</p>
           <Link
             href="/client/request/new"
             className="w-full rounded-2xl px-5 py-4 flex items-center justify-center gap-2 text-base font-black"
-            style={{ backgroundColor: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff" }}
+            style={{ backgroundColor: "rgba(255,255,255,0.92)", color: "#3b0764", boxShadow: "0 10px 25px rgba(42, 13, 88, 0.28)" }}
           >
             <Plus size={18} /> طلب اشتراك جديد
           </Link>
+        </section>
+
+        <section
+          className="rounded-[2rem] p-4 grid grid-cols-4 gap-2"
+          style={{
+            background: "linear-gradient(160deg, rgba(15,22,42,0.9) 0%, rgba(8,12,24,0.95) 100%)",
+            border: "1px solid rgba(148,163,184,0.18)",
+          }}
+        >
+          {[
+            { icon: Wallet, title: "سعر واضح" },
+            { icon: Sparkles, title: "اختيار الأنسب" },
+            { icon: MessageCircle, title: "تواصل مباشر" },
+            { icon: ShieldCheck, title: "دفع آمن" },
+          ].map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <div key={feature.title} className="rounded-2xl p-3 text-center space-y-2" style={{ backgroundColor: "rgba(15,23,42,0.42)", border: "1px solid rgba(148,163,184,0.16)" }}>
+                <div className="w-9 h-9 mx-auto rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(124,58,237,0.24)", color: "#c4b5fd" }}>
+                  <Icon size={15} />
+                </div>
+                <p className="text-xs font-black leading-tight" style={{ color: "var(--text-sub)" }}>{feature.title}</p>
+              </div>
+            );
+          })}
+        </section>
+
+        <section
+          className="rounded-[2rem] p-5 space-y-4"
+          style={{
+            background: "linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%)",
+            border: "1px solid rgba(148,163,184,0.18)",
+          }}
+        >
+          <h3 className="text-2xl font-black" style={{ color: "var(--text)" }}>كيف يعمل النظام؟</h3>
+          <div className="space-y-2">
+            {[
+              "أنشئ طلب التوصيل وحدد التفاصيل",
+              "يتم احتساب السعر تلقائياً قبل الإرسال",
+              "يتم نشر الطلب للسائقين المناسبين",
+              "السائقون المهتمون يرسلون قبولهم",
+              "اختر السائق المناسب لك",
+              "تواصل معه مباشرة عبر المحادثة أو واتساب",
+            ].map((step, idx) => (
+              <div key={step} className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: "rgba(15,23,42,0.45)", border: "1px solid rgba(148,163,184,0.14)" }}>
+                <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>{step}</p>
+                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "#fff" }}>
+                  {idx + 1}
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="space-y-3">
