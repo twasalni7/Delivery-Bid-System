@@ -120,11 +120,11 @@ router.post("/live-errors", async (req, res) => {
 
     // Sanitise string fields to prevent oversized payloads from bloating the DB
     const MAX_SHORT = 255;
-    const MAX_LONG  = 4000;
+    const MAX_LONG = 4000;
     const sanitizedErrorType = String(errorType).slice(0, MAX_SHORT);
     const sanitizedMessage   = String(message).slice(0, MAX_SHORT);
-    const sanitizedStack     = stack   ? String(stack).slice(0, MAX_LONG) : undefined;
-    const sanitizedPage      = page    ? String(page).slice(0, MAX_SHORT) : undefined;
+    const sanitizedStack     = stack  ? String(stack).slice(0, MAX_LONG)  : undefined;
+    const sanitizedPage      = page   ? String(page).slice(0, MAX_SHORT)  : undefined;
 
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const existing = await db.select().from(systemErrorsTable)

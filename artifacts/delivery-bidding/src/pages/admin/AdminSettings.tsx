@@ -131,7 +131,10 @@ export default function AdminSettings() {
       // Refresh the full list to reflect the server-computed balance change
       const updated = await fetch(`${API}/api/wallet-transactions`, { headers: getAuthHeaders() })
         .then((r) => r.json())
-        .catch(() => null);
+        .catch(() => {
+          toast({ title: "تم تحديث الحالة، يرجى تحديث الصفحة لرؤية الرصيد المحدّث", variant: "destructive" });
+          return null;
+        });
       if (Array.isArray(updated)) setWalletTxs(updated);
       else setWalletTxs((prev) =>
         prev.map((tx) => (tx.intId === intId ? { ...tx, status: action === "approve" ? "approved" : "rejected" } : tx))

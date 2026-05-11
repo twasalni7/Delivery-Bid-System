@@ -350,7 +350,9 @@ export default function AdminDashboard() {
 
         {/* ── Advanced Tools ── */}
         <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <p className="text-sm font-black mb-3" style={{ color: "var(--text-muted)" }}>🛠 أدوات متقدمة</p>
+          <p className="text-sm font-black mb-3" style={{ color: "var(--text-muted)" }}>
+            أدوات متقدمة <span aria-hidden="true">🛠</span>
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
               { href: "/admin/notifications", emoji: "🔔", label: "مراقبة الإشعارات" },
