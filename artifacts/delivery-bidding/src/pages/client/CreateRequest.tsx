@@ -333,10 +333,6 @@ export default function CreateRequest() {
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
   const [notes, setNotes] = useState("");
 
-  // Step 4
-  const [phone, setPhone] = useState("");
-  const [name, setName] = useState("");
-
   // Shared subscription state
   const [sharedSuggestions, setSharedSuggestions] = useState<{ count: number } | null>(null);
   const [subscriptionType, setSubscriptionType] = useState<"private" | "shared">("private");
@@ -489,7 +485,7 @@ export default function CreateRequest() {
       return true;
     }
     if (step === 4) return !!(shifts[0]?.goTime) && selectedDays.length > 0;
-    return phone.trim().length >= 10;
+    return true; // Step 5 has no required fields now
   };
 
   const handleSubmit = () => {
@@ -542,7 +538,7 @@ export default function CreateRequest() {
           destLng: workCoords?.lng,
           distanceKm: routeSummary?.distanceKm,
           additionalLocations: validAdditional.length > 0 ? validAdditional : undefined,
-          phone: phone.trim(),
+          // phone is no longer sent - server fetches it from logged-in client
           numberOfPeople: parseInt(numberOfPeople) || 1,
           workingDaysPerWeek: selectedDays.length,
           numberOfShifts: validShifts.length || 1,
@@ -927,29 +923,6 @@ export default function CreateRequest() {
                     </p>
                   </div>
                 )}
-
-                <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>الاسم الكامل (اختياري)</label>
-                  <Input
-                    placeholder="مثال: سارة أحمد"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="rounded-2xl font-bold h-12 input-dark"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-black" style={{ color: "var(--text-sub)" }}>رقم الجوال *</label>
-                  <Input
-                    type="tel"
-                    placeholder="05xxxxxxxx"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="rounded-2xl font-bold h-12 input-dark"
-                    dir="ltr"
-                  />
-                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>يُخفى عن السائقين حتى يتم اختيار أحدهم</p>
-                </div>
 
                 {/* Summary */}
                 <div className="p-5 rounded-[1.5rem] space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--brand-border)" }}>
