@@ -96,33 +96,36 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
     ...payload.context,
   });
 
-  const requestBody: Record<string, unknown> = {
-    app_id: config.appId,
-    include_aliases: { external_id: payload.externalIds },
-    target_channel: "push",
-    headings: { en: payload.title },
-    contents: { en: payload.message },
-    isAnyWeb: true,
-  };
+  function buildRequestBody(mode: "aliases" | "external_user_ids"): Record<string, unknown> {
+    const body: Record<string, unknown> = {
+      app_id: config.appId,
+      target_channel: "push",
+      headings: { en: payload.title },
+      contents: { en: payload.message },
+      isAnyWeb: true,
+    };
 
-  if (payload.url) {
-    requestBody["url"] = payload.url;
-    requestBody["web_url"] = payload.url;
+    if (mode === "aliases") {
+      body["include_aliases"] = { external_id: payload.externalIds };
+    } else {
+      body["include_external_user_ids"] = payload.externalIds;
+      body["channel_for_external_user_ids"] = "push";
+    }
+
+    if (payload.url) {
+      body["url"] = payload.url;
+      body["web_url"] = payload.url;
+    }
+
+    if (payload.data && Object.keys(payload.data).length > 0) {
+      body["data"] = payload.data;
+      body["custom_data"] = payload.data;
+    }
+
+    return body;
   }
 
-  if (payload.data && Object.keys(payload.data).length > 0) {
-    requestBody["data"] = payload.data;
-    requestBody["custom_data"] = payload.data;
-  }
-
-  if (pushDebug) {
-    logger.info(
-      { requestBody, externalIds: payload.externalIds, ...payload.context },
-      "OneSignal: request payload"
-    );
-  }
-
-  try {
+  async function postNotification(requestBody: Record<string, unknown>) {
     const response = await fetch(`${config.apiUrl}/notifications`, {
       method: "POST",
       headers: {
@@ -136,6 +139,44 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
       .json()
       .catch(async () => (await response.text().catch(() => null)));
 
+    return { response, body };
+  }
+
+  function shouldRetryWithLegacyTargeting(status: number, body: unknown): boolean {
+    if (status !== 400) return false;
+    const raw = typeof body === "string" ? body : JSON.stringify(body ?? {});
+    const lowered = raw.toLowerCase();
+    return (
+      lowered.includes("include_aliases") &&
+      (lowered.includes("unknown") || lowered.includes("invalid") || lowered.includes("not allowed") || lowered.includes("not a valid"))
+    );
+  }
+
+  try {
+    // Prefer modern targeting via aliases (external_id), but fall back to legacy
+    // include_external_user_ids if the upstream API rejects include_aliases.
+    let targetingMode: "aliases" | "external_user_ids" = "aliases";
+    let requestBody = buildRequestBody(targetingMode);
+
+    if (pushDebug) {
+      logger.info(
+        { requestBody, targetingMode, externalIds: payload.externalIds, ...payload.context },
+        "OneSignal: request payload"
+      );
+    }
+
+    let { response, body } = await postNotification(requestBody);
+
+    if (!response.ok && shouldRetryWithLegacyTargeting(response.status, body)) {
+      targetingMode = "external_user_ids";
+      requestBody = buildRequestBody(targetingMode);
+      logger.warn(
+        { status: response.status, externalIds: payload.externalIds, ...payload.context },
+        "OneSignal: include_aliases rejected — retrying with include_external_user_ids"
+      );
+      ({ response, body } = await postNotification(requestBody));
+    }
+
     if (!response.ok) {
       logger.error(
         {
@@ -143,6 +184,7 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
           body,
           externalIds: payload.externalIds,
           title: payload.title,
+          targetingMode,
           ...payload.context,
         },
         "OneSignal: Push notification FAILED"
@@ -156,6 +198,7 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
           recipients: (body as Record<string, unknown> | null)?.["recipients"] ?? null,
           errors: (body as Record<string, unknown> | null)?.["errors"] ?? null,
           invalid_aliases: (body as Record<string, unknown> | null)?.["invalid_aliases"] ?? null,
+          targetingMode,
           ...payload.context,
         },
         "OneSignal: Push notification accepted"
@@ -164,7 +207,7 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
 
     if (pushDebug) {
       logger.info(
-        { status: response.status, body, externalIds: payload.externalIds, ...payload.context },
+        { status: response.status, body, externalIds: payload.externalIds, targetingMode, ...payload.context },
         "OneSignal: raw response body"
       );
     }
@@ -172,7 +215,10 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
     return {
       ok: response.ok,
       status: response.status,
-      response: body,
+      response: {
+        targetingMode,
+        body,
+      },
     };
   } catch (err) {
     logger.error(
