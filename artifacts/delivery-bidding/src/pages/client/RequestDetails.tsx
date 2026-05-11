@@ -21,7 +21,8 @@ const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "ا
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
 
 function hasDriverRating(driver: Offer["driver"]): driver is Offer["driver"] & { rating: number } {
-  return typeof (driver as { rating?: unknown } | null | undefined)?.rating === "number";
+  const rating = (driver as { rating?: unknown } | null | undefined)?.rating;
+  return typeof rating === "number" && Number.isFinite(rating);
 }
 
 /** Confirmation dialog shown before finalizing a driver selection */
@@ -723,12 +724,12 @@ export default function RequestDetails() {
                       </div>
                       {/* Action */}
                        {isOpen && !request.selectedDriverId && (
-                         <button
-                           onClick={() => setConfirmOffer(offer)}
+                          <button
+                            onClick={() => setConfirmOffer(offer)}
                             className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
-                           aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}`}
-                           style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
-                         >
+                            aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}${offer.driver?.carType ? `، نوع المركبة ${offer.driver.carType}` : ""}${hasValidRating ? `، التقييم ${driverRatingValue.toFixed(1)}` : ""}`}
+                            style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
+                          >
                            اختيار السائق
                          </button>
                        )}
