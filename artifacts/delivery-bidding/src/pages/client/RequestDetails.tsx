@@ -550,7 +550,7 @@ export default function RequestDetails() {
                 <CheckCircle size={30} />
               </div>
               <p className="font-black text-lg" style={{ color: "#dcfce7" }}>
-                {request.status === "COMPLETED" ? "تم اختيار السائق بنجاح" : "السائق مؤكد لطلبك"}
+                {request.status === "COMPLETED" ? "تمت عملية التوصيل بنجاح" : "السائق مؤكد لطلبك"}
               </p>
               <p className="text-sm font-bold mt-1" style={{ color: "rgba(220,252,231,0.78)" }}>
                 يمكنك الآن التواصل معه مباشرة
@@ -670,7 +670,8 @@ export default function RequestDetails() {
           <div className="space-y-3">
             {(offers ?? []).map((offer: Offer, index) => {
               const isSelected = request.selectedDriverId === offer.driverId;
-              const rating = Number(((offer as any)?.driver?.rating ?? (4.5 + ((offer.driverId % 6) * 0.1))).toFixed(1));
+              const driverRatingValue = Number((offer as any)?.driver?.rating);
+              const hasDriverRating = Number.isFinite(driverRatingValue) && driverRatingValue > 0;
               return (
                 <div key={offer.id} className="rounded-2xl overflow-hidden transition-all"
                   style={{
@@ -696,9 +697,15 @@ export default function RequestDetails() {
                       <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                            <span className="inline-flex items-center gap-1 text-xs font-black" style={{ color: "#fbbf24" }}>
-                              <Star size={12} fill="currentColor" /> {rating}
-                            </span>
+                            {hasDriverRating ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-black" style={{ color: "#fbbf24" }}>
+                                <Star size={12} fill="currentColor" /> {driverRatingValue.toFixed(1)}
+                              </span>
+                            ) : (
+                              <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ color: "var(--text-muted)", backgroundColor: "rgba(148,163,184,0.16)" }}>
+                                سائق جديد
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 flex-wrap mt-0.5">
                           {offer.driver?.carType && (

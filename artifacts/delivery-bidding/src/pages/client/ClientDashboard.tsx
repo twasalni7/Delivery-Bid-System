@@ -113,8 +113,8 @@ export default function ClientDashboard() {
             boxShadow: "0 22px 42px rgba(91,33,182,0.5)",
           }}
         >
-          <h2 className="text-3xl font-black leading-tight">جاهزة لطلب توصيل؟</h2>
-          <p className="text-sm font-bold text-violet-100">حددي تفاصيل مشوارك وسيتم حساب السعر ونشر الطلب للسائقين المناسبين</p>
+          <h2 className="text-3xl font-black leading-tight">جاهز لطلب توصيل؟</h2>
+          <p className="text-sm font-bold text-violet-100">حدد تفاصيل مشوارك وسيتم حساب السعر ونشر الطلب للسائقين المناسبين</p>
           <Link
             href="/client/request/new"
             className="w-full rounded-2xl px-5 py-4 flex items-center justify-center gap-2 text-base font-black"
@@ -159,12 +159,12 @@ export default function ClientDashboard() {
           <h3 className="text-2xl font-black" style={{ color: "var(--text)" }}>كيف يعمل النظام؟</h3>
           <div className="space-y-2">
             {[
-              "أنشئي طلب التوصيل وحددي التفاصيل",
+              "أنشئ طلب التوصيل وحدد التفاصيل",
               "يتم احتساب السعر تلقائياً قبل الإرسال",
               "يتم نشر الطلب للسائقين المناسبين",
               "السائقون المهتمون يرسلون قبولهم",
-              "تختارين السائق المناسب لك",
-              "تواصلي معه مباشرة عبر المحادثة أو واتساب",
+              "اختر السائق المناسب لك",
+              "تواصل معه مباشرة عبر المحادثة أو واتساب",
             ].map((step, idx) => (
               <div key={step} className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: "rgba(15,23,42,0.45)", border: "1px solid rgba(148,163,184,0.14)" }}>
                 <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>{step}</p>
