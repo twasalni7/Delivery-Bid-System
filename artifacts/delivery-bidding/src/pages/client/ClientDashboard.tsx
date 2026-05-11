@@ -121,7 +121,7 @@ export default function ClientDashboard() {
             className="w-full rounded-2xl px-5 py-4 flex items-center justify-center gap-2 text-base font-black"
             style={{ backgroundColor: "rgba(255,255,255,0.92)", color: "#3b0764", boxShadow: "0 10px 25px rgba(42, 13, 88, 0.28)" }}
           >
-            <Plus size={18} /> إنشاء طلب جديد
+            <Plus size={18} /> طلب اشتراك جديد
           </Link>
         </section>
 
