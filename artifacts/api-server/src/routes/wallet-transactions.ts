@@ -19,13 +19,35 @@ const SERVER_ERROR_MSG = "حدث خطأ في الخادم، يرجى المحا�
 const receiptUrlSchema = z
   .string()
   .refine(
-    (v) => v.startsWith("data:") || z.string().url().safeParse(v).success,
-    { message: "رابط الإيصال غير صحيح" }
+    (v) => {
+      // Allow standard URLs
+      if (z.string().url().safeParse(v).success) return true;
+
+      // Validate data URLs more strictly
+      if (v.startsWith("data:")) {
+        // Only allow image data URLs
+        if (!v.startsWith("data:image/")) return false;
+
+        // Only allow specific image MIME types (no SVG for security)
+        const allowedMimeTypes = ["data:image/jpeg", "data:image/png", "data:image/webp"];
+        if (!allowedMimeTypes.some(type => v.startsWith(type))) return false;
+
+        // Check size limit (5MB) - data URLs are base64 encoded (~33% larger)
+        // So we check for ~6.65MB of base64 data (5MB * 1.33)
+        const MAX_DATA_URL_LENGTH = 6.65 * 1024 * 1024;
+        if (v.length > MAX_DATA_URL_LENGTH) return false;
+
+        return true;
+      }
+
+      return false;
+    },
+    { message: "رابط الإيصال غير صحيح أو حجم الملف كبير جداً" }
   );
 
 const CreateWalletTxBody = z.object({
   amount: z.number().min(0.01),
-  receiptUrl: receiptUrlSchema.optional().nullable(),
+  receiptUrl: receiptUrlSchema,
 });
 
 // GET /api/wallet-transactions — driver sees own transactions, admin sees all
@@ -74,7 +96,8 @@ router.get("/", requireAuth(), async (req, res) => {
 router.post("/", requireAuth("driver"), async (req, res) => {
   const parsed = CreateWalletTxBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "يرجى إدخال مبلغ صحيح أكبر من الصفر" });
+    const errorMsg = parsed.error.errors[0]?.message || "يرجى إدخال مبلغ صحيح وإرفاق صورة الإيصال";
+    res.status(400).json({ error: errorMsg });
     return;
   }
   const driverId = getSessionUser(req)!.id;
@@ -86,7 +109,7 @@ router.post("/", requireAuth("driver"), async (req, res) => {
         // int_id now uses a DB sequence (migration 018) — no race condition
         driverId,
         amount: String(amount),
-        receiptUrl: receiptUrl ?? null,
+        receiptUrl,
       })
       .returning();
 

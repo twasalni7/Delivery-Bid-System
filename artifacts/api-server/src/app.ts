@@ -10,6 +10,7 @@ import { pool } from "@workspace/db";
 import { csrfProtection } from "./middleware/csrfProtection";
 import { errorLogger } from "./middleware/errorLogger";
 import { resolveTokenUser } from "./middleware/resolveTokenUser";
+import { securityHeaders } from "./middleware/securityHeaders";
 
 const app = express();
 
@@ -57,6 +58,9 @@ app.use(
     credentials: true,
   })
 );
+
+// ─── Security Headers ──────────────────────────────────────────────────────
+app.use(securityHeaders);
 
 // 10 MB limit to support base64-encoded receipt images submitted as JSON
 // when Supabase Storage is not configured (fallback: FileReader data URL).
