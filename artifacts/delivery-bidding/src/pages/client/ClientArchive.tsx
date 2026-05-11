@@ -21,21 +21,38 @@ export default function ClientArchive() {
 
   return (
     <Layout role="client">
-      <div dir="rtl" className="space-y-4">
-        <div>
+      <div dir="rtl" className="space-y-5">
+        <div
+          className="rounded-[1.75rem] p-5"
+          style={{
+            background: "linear-gradient(150deg, rgba(27,29,39,0.95) 0%, rgba(15,17,24,0.98) 100%)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
           <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>الأرشيف</h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>تعرض هذه الصفحة الطلبات المؤرشفة فقط</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>تعرض هذه الصفحة الطلبات المؤرشفة فقط</p>
         </div>
         <div className="space-y-3">
           {items.map((item) => (
             <Link key={item.id} href={`/client/request/${item.id}`}>
-              <div className="rounded-2xl p-4 cursor-pointer" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="font-black" style={{ color: "var(--text)" }}>#{item.id} — {item.homeLocation} ← {item.workLocation}</p>
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>{item.status}</p>
+              <div
+                className="rounded-[1.5rem] p-4 cursor-pointer"
+                style={{
+                  background: "linear-gradient(150deg, rgba(23,24,31,0.95) 0%, rgba(16,17,23,0.98) 100%)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <p className="font-black" style={{ color: "var(--text)" }}>طلب #{item.id}</p>
+                <p className="text-sm font-bold mt-1" style={{ color: "var(--text-sub)" }}>{item.homeLocation} ← {item.workLocation}</p>
+                <p className="text-xs font-black mt-2" style={{ color: "var(--brand)" }}>{item.status}</p>
               </div>
             </Link>
           ))}
-          {items.length === 0 && <div className="rounded-2xl p-6 text-sm font-bold" style={{ backgroundColor: "var(--surface)", color: "var(--text-muted)" }}>لا توجد طلبات في الأرشيف</div>}
+          {items.length === 0 && (
+            <div className="rounded-2xl p-6 text-sm font-black" style={{ backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+              لا توجد طلبات في الأرشيف
+            </div>
+          )}
         </div>
       </div>
     </Layout>

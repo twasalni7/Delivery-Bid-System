@@ -75,10 +75,10 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
       <div className="absolute left-8 right-8 h-[2px] top-5 -z-10 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.12)" }} />
       <div
         className="absolute right-8 h-[2px] top-5 -z-10 transition-all duration-700 rounded-full"
-        style={{ backgroundColor: "var(--brand)", left: "2rem", width: `${((currentStep - 1) / 4) * 100}%` }}
+        style={{ backgroundColor: "var(--brand)", left: "2rem", width: `${((currentStep - 1) / 2) * 100}%` }}
       />
       <div className="flex justify-between items-center gap-2">
-        {STEP_TITLES.map((label, idx) => {
+        {VISUAL_STEP_TITLES.map((label, idx) => {
           const s = idx + 1;
           const active = s <= currentStep;
           const stepState = s < currentStep ? "مكتملة" : s === currentStep ? "الحالية" : "قادمة";
@@ -104,6 +104,13 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
 const MAX_PASSENGERS = 10;
 
 const STEP_TITLES = ["نوع الاشتراك", "عدد الأشخاص", "تحديد المواقع", "الجدول والوقت", "التفاصيل المالية"];
+const VISUAL_STEP_TITLES = ["مواقع الرحلة", "الأوقات والشفتات", "التفاصيل والتأكيد"];
+
+function getVisualStepFromInternal(step: number) {
+  if (step <= 3) return 1;
+  if (step === 4) return 2;
+  return 3;
+}
 
 /** Single shift editor card used in Step 3 */
 function ShiftCard({
@@ -357,6 +364,8 @@ export default function CreateRequest() {
     subscriptionType === "shared" && sharedSuggestions && sharedSuggestions.count > 0
       ? Math.min(parseInt(numberOfPeople) + sharedSuggestions.count, 4)
       : parseInt(numberOfPeople) || 1;
+  const visualStep = getVisualStepFromInternal(step);
+  const visualTitle = VISUAL_STEP_TITLES[visualStep - 1];
 
   // Sync extraPassengers length when numberOfPeople changes
   const handleSetNumberOfPeople = (n: number) => {
@@ -573,15 +582,15 @@ export default function CreateRequest() {
 
         <div className="mb-5">
           <h1 className="text-[1.9rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>طلب اشتراك جديد</h1>
-          <p className="text-sm font-bold mt-1" style={{ color: "var(--text-muted)" }}>{STEP_TITLES[step - 1]}</p>
+          <p className="text-sm font-bold mt-1" style={{ color: "var(--text-muted)" }}>{visualTitle}</p>
         </div>
 
-        <ProgressSteps currentStep={step} />
+        <ProgressSteps currentStep={visualStep} />
 
         <div className="rounded-[2rem] overflow-hidden" style={{ background: "linear-gradient(160deg, rgba(18,27,43,0.72) 0%, rgba(9,14,23,0.88) 45%, rgba(6,10,16,0.96) 100%)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 24px 56px rgba(0,0,0,0.55)" }}>
           {/* Step header */}
           <div className="text-center px-6 pt-6 pb-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            <h2 className="text-[1.55rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>{STEP_TITLES[step - 1]}</h2>
+            <h2 className="text-[1.55rem] font-black tracking-tight leading-none" style={{ color: "var(--text)" }}>{visualTitle}</h2>
           </div>
 
           <div className="p-6 space-y-5">
@@ -1037,12 +1046,18 @@ export default function CreateRequest() {
               disabled={createRequest.isPending}
                 aria-label={step === 5 ? "نشر الطلب للسائقين" : `الانتقال إلى ${STEP_TITLES[step]}`}
                 className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
+                style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
               >
                 {step === 5 ? (
                   createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>
                 ) : (
-                  "التالي"
+                  (() => {
+                    const nextVisualStep = getVisualStepFromInternal(step + 1);
+                    if (nextVisualStep !== visualStep) {
+                      return `التالي: ${VISUAL_STEP_TITLES[nextVisualStep - 1]}`;
+                    }
+                    return "التالي";
+                  })()
                 )}
             </button>
           </div>
