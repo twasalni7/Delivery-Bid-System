@@ -74,6 +74,11 @@ export function usePushNotifications(role?: string) {
         try {
           await initOneSignal();
           const os = window.OneSignal;
+
+          // انتظر قليلاً حتى يتم ربط المستخدم بـ OneSignal
+          // loginOneSignal يُستدعى في App.tsx useEffect
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
           if (os?.User?.PushSubscription?.optedIn && os?.User?.PushSubscription?.token) {
             // مشترك بالفعل
             setShowNotificationButton(false);
@@ -134,6 +139,9 @@ export function usePushNotifications(role?: string) {
       if (!os.User.PushSubscription.optedIn) {
         await os.User.PushSubscription.optIn();
       }
+
+      // انتظر قليلاً حتى يتم تأكيد التسجيل
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       setShowNotificationButton(false);
       return os.User.PushSubscription.token ? "ok" : "already_subscribed";

@@ -10,6 +10,7 @@ import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
+import { EnablePushButton } from "@/components/enable-push-button";
 
 type ClientRequest = {
   id: number;
@@ -175,6 +176,26 @@ export default function ClientDashboard() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section
+          className="rounded-[2rem] p-5 space-y-4"
+          style={{
+            background: "linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%)",
+            border: "1px solid rgba(148,163,184,0.18)",
+          }}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
+              style={{ backgroundColor: "rgba(124,58,237,0.24)", border: "1px solid rgba(168,85,247,0.3)" }}>
+              🔔
+            </div>
+            <div>
+              <h3 className="font-black text-base" style={{ color: "var(--text)" }}>الإشعارات الفورية</h3>
+              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>تلقّ تنبيهات عند وصول عروض جديدة</p>
+            </div>
+          </div>
+          <EnablePushButton />
         </section>
 
         <section className="space-y-3">

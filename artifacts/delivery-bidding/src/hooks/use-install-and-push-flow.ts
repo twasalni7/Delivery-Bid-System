@@ -96,11 +96,14 @@ function shouldOfferPush(userId?: number | string): boolean {
   if (!detectPushSupported()) return false;
   if (Notification.permission === "denied") return false;
 
-  // ✅ إذا الإذن ممنوح لكن OneSignal لم يُربط بهذا المستخدم — نحتاج re-register
+  // ✅ إذا الإذن ممنوح وOneSignal مُربط — لا حاجة للعرض
   if (Notification.permission === "granted") {
-    if (userId && !isOneSignalLinked(userId)) return true;
-    try { localStorage.setItem(PUSH_ENABLED_KEY, "1"); } catch { /* ignore */ }
-    return false;
+    if (userId && isOneSignalLinked(userId)) {
+      try { localStorage.setItem(PUSH_ENABLED_KEY, "1"); } catch { /* ignore */ }
+      return false;
+    }
+    // الإذن ممنوح لكن OneSignal غير مربط — أعرض الزر
+    return true;
   }
 
   if (lsRaw(PUSH_ENABLED_KEY) === "1") return false;
