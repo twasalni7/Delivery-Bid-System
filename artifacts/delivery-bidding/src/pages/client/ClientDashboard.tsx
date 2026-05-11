@@ -77,14 +77,6 @@ export default function ClientDashboard() {
           }}
         >
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              className="touch-compact w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ border: "1px solid rgba(148,163,184,0.22)", backgroundColor: "rgba(15,23,42,0.55)", color: "var(--text-sub)" }}
-              aria-label="الإشعارات"
-            >
-              <Bell size={17} />
-            </button>
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>مرحباً بك</p>
@@ -102,6 +94,14 @@ export default function ClientDashboard() {
                 {displayName.charAt(0)}
               </div>
             </div>
+            <Link
+              href="/client/notifications"
+              className="touch-compact w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ border: "1px solid rgba(148,163,184,0.22)", backgroundColor: "rgba(15,23,42,0.55)", color: "var(--text-sub)" }}
+              aria-label="الإشعارات"
+            >
+              <Bell size={17} />
+            </Link>
           </div>
         </section>
 

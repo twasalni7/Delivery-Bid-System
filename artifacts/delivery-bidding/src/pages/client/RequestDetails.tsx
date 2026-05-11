@@ -19,7 +19,10 @@ const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
-type DriverWithOptionalRating = Offer["driver"] & { rating?: number | null };
+
+function hasDriverRating(driver: Offer["driver"]): driver is Offer["driver"] & { rating: number } {
+  return typeof (driver as { rating?: unknown } | null | undefined)?.rating === "number";
+}
 
 /** Confirmation dialog shown before finalizing a driver selection */
 function DriverConfirmDialog({
@@ -671,9 +674,8 @@ export default function RequestDetails() {
           <div className="space-y-3">
             {(offers ?? []).map((offer: Offer) => {
               const isSelected = request.selectedDriverId === offer.driverId;
-              const driver = offer.driver as DriverWithOptionalRating | undefined;
-              const driverRatingValue = Number(driver?.rating);
-              const hasDriverRating = Number.isFinite(driverRatingValue) && driverRatingValue > 0;
+              const driverRatingValue = hasDriverRating(offer.driver) ? offer.driver.rating : null;
+              const hasValidRating = driverRatingValue != null && Number.isFinite(driverRatingValue) && driverRatingValue > 0;
               return (
                 <div key={offer.id} className="rounded-2xl overflow-hidden transition-all"
                   style={{
@@ -689,7 +691,6 @@ export default function RequestDetails() {
                   )}
                     <div className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full border-2 shrink-0" style={{ borderColor: isSelected ? "#8b5cf6" : "rgba(203,213,225,0.65)", backgroundColor: isSelected ? "#8b5cf6" : "transparent", boxShadow: isSelected ? "0 0 0 3px rgba(139,92,246,0.2)" : undefined }} />
                         {/* Avatar */}
                         <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-black shrink-0"
                           style={{ backgroundColor: isSelected ? "var(--brand)" : "var(--brand-subtle)", color: isSelected ? "var(--brand-fg)" : "var(--brand)" }}>
@@ -699,7 +700,7 @@ export default function RequestDetails() {
                       <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                            {hasDriverRating ? (
+                            {hasValidRating ? (
                               <span className="inline-flex items-center gap-1 text-xs font-black" style={{ color: "#fbbf24" }}>
                                 <Star size={12} fill="currentColor" /> {driverRatingValue.toFixed(1)}
                               </span>
@@ -724,7 +725,8 @@ export default function RequestDetails() {
                        {isOpen && !request.selectedDriverId && (
                          <button
                            onClick={() => setConfirmOffer(offer)}
-                           className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
+                            className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
+                           aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}`}
                            style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
                          >
                            اختيار السائق
