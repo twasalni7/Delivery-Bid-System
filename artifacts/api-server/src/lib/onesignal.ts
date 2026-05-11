@@ -22,10 +22,24 @@ export function getOneSignalConfig() {
     process.env["ONESIGNAL_APP_ID"] ??
     process.env["VITE_ONESIGNAL_APP_ID"] ??
     null;
-  const restApiKey = process.env["ONESIGNAL_REST_API_KEY"] ?? null;
+  // Check both ONESIGNAL_API_KEY and ONESIGNAL_REST_API_KEY to avoid 403 errors
+  const restApiKey =
+    process.env["ONESIGNAL_REST_API_KEY"] ??
+    process.env["ONESIGNAL_API_KEY"] ??
+    null;
   const apiUrl = (process.env["ONESIGNAL_API_URL"] ?? DEFAULT_ONESIGNAL_API_URL).replace(/\/+$/, "");
 
-  if (!appId || !restApiKey) return null;
+  if (!appId || !restApiKey) {
+    if (!appId) {
+      logger.warn("OneSignal: ONESIGNAL_APP_ID is not configured");
+    }
+    if (!restApiKey) {
+      logger.warn("OneSignal: Neither ONESIGNAL_REST_API_KEY nor ONESIGNAL_API_KEY is configured");
+    }
+    return null;
+  }
+
+  logger.info("OneSignal: Configuration loaded successfully", { appId: appId.substring(0, 8) + "..." });
 
   return {
     appId,
@@ -45,8 +59,15 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
 }> {
   const config = getOneSignalConfig();
   if (!config) {
+    logger.error("OneSignal: Cannot send push - configuration is missing");
     return { ok: false, status: null, response: { error: "OneSignal is not configured" } };
   }
+
+  logger.info("OneSignal: Sending push notification", {
+    externalIds: payload.externalIds,
+    title: payload.title,
+    hasUrl: !!payload.url,
+  });
 
   const requestBody: Record<string, unknown> = {
     app_id: config.appId,
@@ -79,9 +100,14 @@ export async function sendOneSignalPush(payload: OneSignalPushPayload): Promise<
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    logger.warn(
-      { status: response.status, body, externalIds: payload.externalIds },
-      "onesignal: failed to send push notification"
+    logger.error(
+      { status: response.status, body, externalIds: payload.externalIds, title: payload.title },
+      "OneSignal: Push notification FAILED"
+    );
+  } else {
+    logger.info(
+      { status: response.status, externalIds: payload.externalIds, recipients: body?.["recipients"] },
+      "OneSignal: Push notification sent SUCCESSFULLY"
     );
   }
 
