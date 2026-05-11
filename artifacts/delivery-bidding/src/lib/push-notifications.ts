@@ -12,11 +12,21 @@ import { API_ORIGIN } from "@/lib/api-config";
 import { appPath } from "@/lib/pwa-utils";
 
 const LOG_PREFIX = "[Push]";
+const INIT_MAX_ATTEMPTS = 3;
+const INIT_RETRY_COOLDOWN_MS = 5 * 60 * 1000;
 
 let resolvedAppId: string | null | undefined;
 
 let initialized = false;
 let initPromise: Promise<void> | null = null;
+let initAttempts = 0;
+let firstInitFailureAt: number | null = null;
+
+function parseOneSignalAppId(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
 
 async function resolveOneSignalAppId(): Promise<string | null> {
   if (resolvedAppId !== undefined) {
@@ -30,16 +40,13 @@ async function resolveOneSignalAppId(): Promise<string | null> {
   }
 
   try {
-    const res = await fetch(`${API_ORIGIN}/api/push/public-config`, {
-      credentials: "include",
-    });
+    const res = await fetch(`${API_ORIGIN}/api/push/public-config`);
     if (!res.ok) {
       resolvedAppId = null;
       return null;
     }
     const body = (await res.json()) as { oneSignalAppId?: unknown };
-    const fetchedAppId = typeof body.oneSignalAppId === "string" ? body.oneSignalAppId.trim() : "";
-    resolvedAppId = fetchedAppId || null;
+    resolvedAppId = parseOneSignalAppId(body.oneSignalAppId);
     return resolvedAppId;
   } catch {
     resolvedAppId = null;
@@ -53,6 +60,16 @@ async function resolveOneSignalAppId(): Promise<string | null> {
 export async function initOneSignal(): Promise<void> {
   if (initialized) return;
   if (initPromise) return initPromise;
+  if (
+    firstInitFailureAt &&
+    Date.now() - firstInitFailureAt >= INIT_RETRY_COOLDOWN_MS
+  ) {
+    initAttempts = 0;
+    firstInitFailureAt = null;
+  }
+  if (initAttempts >= INIT_MAX_ATTEMPTS) {
+    throw new Error("OneSignal init reached max retry attempts");
+  }
 
   const oneSignalAppId = await resolveOneSignalAppId();
 
@@ -61,7 +78,8 @@ export async function initOneSignal(): Promise<void> {
     return;
   }
 
-  initPromise = new Promise<void>((resolve) => {
+  initAttempts += 1;
+  initPromise = new Promise<void>((resolve, reject) => {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal: OneSignalNamespace) => {
       try {
@@ -73,11 +91,18 @@ export async function initOneSignal(): Promise<void> {
           allowLocalhostAsSecureOrigin: true,
         });
         initialized = true;
+        initAttempts = 0;
+        firstInitFailureAt = null;
         console.log(LOG_PREFIX, "OneSignal initialized ✓", { appId: oneSignalAppId });
       } catch (err) {
         console.warn(LOG_PREFIX, "OneSignal init warning:", err);
         initialized = false;
+        if (!firstInitFailureAt) {
+          firstInitFailureAt = Date.now();
+        }
         initPromise = null;
+        reject(err instanceof Error ? err : new Error(String(err)));
+        return;
       }
       resolve();
     });
