@@ -407,7 +407,6 @@ export async function notify(params: {
   icon?: string;
   badge?: string;
 }) {
-  let notificationId: number | undefined;
   logger.info(
     {
       userId: params.userId,
@@ -416,8 +415,44 @@ export async function notify(params: {
       url: params.url ?? null,
       actionType: params.actionType ?? null,
     },
-    "notify: creating notification"
+    "notify: creating dual-channel notification (in-app + push)"
   );
+
+  // Step 1: Always create an in-app notification record for the notification bell/center
+  let inAppNotificationId: number | undefined;
+  try {
+    const [inserted] = await db
+      .insert(notificationsTable)
+      .values({
+        userId: params.userId,
+        userRole: params.userRole,
+        title: params.title,
+        message: params.message,
+        type: params.type,
+        relatedId: params.relatedId ?? null,
+        url: params.url ?? null,
+        actionType: params.actionType ?? "open_url",
+        actionLabel: params.actionLabel ?? null,
+        actionPayload: params.actionPayload ?? null,
+        isRead: false,
+        channel: "in_app",
+        deliveryStatus: "delivered",
+        deliveredAt: new Date(),
+        provider: null,
+      })
+      .returning({ id: notificationsTable.id });
+    inAppNotificationId = inserted?.id;
+    if (inAppNotificationId === undefined) {
+      logger.warn({ params }, "notify: in-app notification insert returned no id");
+    } else {
+      logger.info({ userId: params.userId, userRole: params.userRole, notificationId: inAppNotificationId }, "notify: in-app notification created");
+    }
+  } catch (err) {
+    logger.error({ err, params }, "notify: failed to insert in-app notification record");
+  }
+
+  // Step 2: Create a separate push notification record and attempt delivery
+  let pushNotificationId: number | undefined;
   try {
     const [inserted] = await db
       .insert(notificationsTable)
@@ -438,22 +473,28 @@ export async function notify(params: {
         provider: isOneSignalConfigured() ? "onesignal" : "web-push",
       })
       .returning({ id: notificationsTable.id });
-    notificationId = inserted?.id;
-    if (notificationId === undefined) {
-      logger.warn({ params }, "notify: insert returned no id — delivered_at tracking will be skipped");
+    pushNotificationId = inserted?.id;
+    if (pushNotificationId === undefined) {
+      logger.warn({ params }, "notify: push notification insert returned no id — push delivery will be skipped");
     }
   } catch (err) {
-    logger.error({ err, params }, "notify: failed to insert notification record");
+    logger.error({ err, params }, "notify: failed to insert push notification record");
+  }
+
+  // If we couldn't create the push record, stop here (in-app notification is already saved)
+  if (pushNotificationId === undefined) {
+    return;
   }
 
   const deliveryUrl = buildPushTrackingUrl({
     userRole: params.userRole,
-    notificationId,
+    notificationId: pushNotificationId,
     url: params.url,
     actionType: params.actionType,
     actionPayload: params.actionPayload ?? null,
   });
 
+  // Step 3: Attempt push delivery via OneSignal or legacy web-push
   if (isOneSignalConfigured()) {
     void sendOneSignalPush({
       externalIds: [buildOneSignalExternalId(params.userId, params.userRole)],
@@ -461,7 +502,7 @@ export async function notify(params: {
       message: params.message,
       url: `${getAppOrigin()}${deliveryUrl}`,
       data: {
-        notificationId: notificationId ?? null,
+        notificationId: pushNotificationId ?? null,
         userRole: params.userRole,
         type: params.type,
         url: deliveryUrl,
@@ -471,14 +512,14 @@ export async function notify(params: {
     }).then(async (result) => {
       if (!result.ok) {
         await markNotificationFailed({
-          notificationId,
+          notificationId: pushNotificationId,
           error: `onesignal_${result.status ?? "unknown"}`,
           provider: "onesignal",
           response: (result.response ?? null) as Record<string, unknown> | null,
         });
         return;
       }
-      await markNotificationDelivered(notificationId);
+      await markNotificationDelivered(pushNotificationId);
       try {
         await db
           .update(notificationsTable)
@@ -486,11 +527,11 @@ export async function notify(params: {
             provider: "onesignal",
             providerResponse: (result.response ?? null) as Record<string, unknown> | null,
           })
-          .where(eq(notificationsTable.id, notificationId!));
+          .where(eq(notificationsTable.id, pushNotificationId!));
       } catch {}
       logger.info(
-        { userId: params.userId, userRole: params.userRole, notificationId, response: result.response },
-        "notify: OneSignal delivery accepted"
+        { userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId, response: result.response },
+        "notify: OneSignal push delivery accepted"
       );
     });
     return;
@@ -498,12 +539,12 @@ export async function notify(params: {
 
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
-      logger.info({ userId: params.userId, userRole: params.userRole, notificationId }, "notify: push subscription found");
+      logger.info({ userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: push subscription found");
       void sendWebPush(
         params.userId,
         params.userRole,
         sub,
-        notificationId,
+        pushNotificationId,
         params.title,
         params.message,
         deliveryUrl,
@@ -514,9 +555,9 @@ export async function notify(params: {
       );
       return;
     }
-    logger.info({ userId: params.userId, userRole: params.userRole, notificationId }, "notify: no push subscription stored for recipient");
+    logger.info({ userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: no push subscription stored for recipient");
     void markNotificationFailed({
-      notificationId,
+      notificationId: pushNotificationId,
       error: "no_push_subscription",
       provider: "web-push",
     });
