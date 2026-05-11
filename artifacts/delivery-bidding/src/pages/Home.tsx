@@ -1,61 +1,74 @@
 import { Link } from "wouter";
-import { Navigation, ShieldCheck, Wallet, ArrowLeft } from "lucide-react";
+import { Package, Truck, Shield } from "lucide-react";
 
 export default function Home() {
   return (
     <div
-      className="min-h-screen text-slate-100 pb-10 px-4 sm:px-6"
+      className="min-h-screen pb-10 px-4 sm:px-6 flex items-center justify-center"
       dir="rtl"
-      style={{ fontFamily: "var(--font-arabic)", background: "linear-gradient(180deg, #12151f 0%, #181c27 45%, #10131b 100%)" }}
+      style={{ fontFamily: "var(--font-arabic)", background: "#f5f5f5" }}
     >
-      <div className="max-w-md mx-auto pt-10">
-        <div
-          className="text-white pt-10 pb-12 px-6 rounded-[2.25rem] shadow-2xl relative overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #7b2cff 0%, #6126c9 58%, #4f1da7 100%)" }}
-        >
-          <div className="absolute top-[-72px] left-[-72px] w-44 h-44 rounded-full opacity-25 blur-3xl bg-fuchsia-400" />
-          <div className="absolute bottom-[-86px] right-[-64px] w-52 h-52 rounded-full opacity-25 blur-3xl bg-violet-300" />
-          <div className="relative z-10 text-center flex flex-col items-center">
-            <div className="w-20 h-20 bg-[#0b0f16] rounded-3xl flex items-center justify-center mb-6 shadow-xl">
-              <Navigation className="text-fuchsia-300 w-10 h-10" />
-            </div>
-            <h1 className="text-5xl font-black mb-4">توصّلني</h1>
-            <p className="text-violet-100/95 text-[1.35rem] leading-relaxed max-w-xs">
-              مشاويرك الشهرية بأمان، بسهولة، وتسعيرة ثابتة بدون مفاجآت.
-            </p>
-          </div>
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-700 mb-2">Delivery Bid Management System</h1>
+          <p className="text-sm text-gray-500">اختر نوع الحساب للدخول إلى النظام</p>
+          <p className="text-xs text-gray-400 mt-1">Select account type to access the system</p>
         </div>
 
-        <div className="px-4 -mt-10 relative z-20 space-y-4">
-          <div className="rounded-3xl p-5 shadow-xl border border-white/10 flex items-start gap-4 backdrop-blur-sm" style={{ backgroundColor: "rgba(10, 13, 20, 0.9)" }}>
-            <div className="bg-emerald-900/60 p-3 rounded-2xl text-emerald-300 shrink-0"><ShieldCheck size={18} /></div>
-            <div>
-              <h3 className="font-black text-white mb-1">خصوصية تامة</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">رقمك مخفي تماماً. أنت من يختار السائق المناسب.</p>
+        <div className="space-y-5">
+          {/* Client Card */}
+          <Link href="/client/login">
+            <div
+              className="rounded-3xl p-8 text-white text-center cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              style={{ background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)" }}
+            >
+              <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
+                <Package size={32} />
+              </div>
+              <h2 className="text-2xl font-black mb-2">عميل</h2>
+              <p className="text-sm font-medium opacity-90">Customer</p>
+              <p className="text-sm mt-3 opacity-95 leading-relaxed">
+                اطلب توصيل واطلع العروض<br />
+                Request delivery and view bids
+              </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="rounded-3xl p-5 shadow-xl border border-white/10 flex items-start gap-4 backdrop-blur-sm" style={{ backgroundColor: "rgba(10, 13, 20, 0.9)" }}>
-            <div className="bg-blue-900/60 p-3 rounded-2xl text-blue-300 shrink-0"><Wallet size={18} /></div>
-            <div>
-              <h3 className="font-black text-white mb-1">سعر ثابت، الدفع لاحقاً</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">لا تدفع شيئاً بالتطبيق. الدفع مع السائق بعد تقديم الخدمة.</p>
+          {/* Driver Card */}
+          <Link href="/driver/login">
+            <div
+              className="rounded-3xl p-8 text-white text-center cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              style={{ background: "linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)" }}
+            >
+              <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
+                <Truck size={32} />
+              </div>
+              <h2 className="text-2xl font-black mb-2">سائق</h2>
+              <p className="text-sm font-medium opacity-90">Driver</p>
+              <p className="text-sm mt-3 opacity-95 leading-relaxed">
+                استلم الطلبات واقدم عروض<br />
+                Accept orders and place bids
+              </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="space-y-3 pt-2">
-            <Link href="/client/login" className="w-full bg-violet-700 hover:bg-violet-600 active:scale-[0.99] text-white font-black text-[2rem] py-4 rounded-[1.6rem] shadow-2xl shadow-violet-950/80 transition-all flex justify-center items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">
-              <span>دخول العميل</span><ArrowLeft size={28} aria-hidden="true" />
-            </Link>
-            <div className="grid grid-cols-2 gap-3">
-              <Link href="/driver/login" aria-label="الانتقال إلى دخول السائق">
-                <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white/5 border border-white/10 text-slate-200">دخول السائق</div>
-              </Link>
-              <Link href="/admin/login" aria-label="الانتقال إلى دخول الإدارة">
-                <div className="rounded-2xl p-3.5 text-center font-black text-sm bg-white/5 border border-white/10 text-slate-200">دخول الإدارة</div>
-              </Link>
+          {/* Admin Card */}
+          <Link href="/admin/login">
+            <div
+              className="rounded-3xl p-8 text-white text-center cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              style={{ background: "linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%)" }}
+            >
+              <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
+                <Shield size={32} />
+              </div>
+              <h2 className="text-2xl font-black mb-2">إدارة</h2>
+              <p className="text-sm font-medium opacity-90">Admin</p>
+              <p className="text-sm mt-3 opacity-95 leading-relaxed">
+                إدارة النظام والمستخدمين<br />
+                Manage system and users
+              </p>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </div>
