@@ -86,6 +86,7 @@ export default function MapPicker({
   const geocodeRequestIdRef = useRef(0);
   const programmaticMoveRef = useRef(false);
   const pendingSelectionRef = useRef<MapCoords | null>(value);
+  const handleMapMoveStopRef = useRef<() => void>(() => {});
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -134,8 +135,11 @@ export default function MapPicker({
   const applySelection = useCallback(
     (next: MapCoords) => {
       pendingSelectionRef.current = next;
-      setPendingSelection(next);
-      setSearchText(next.address);
+      setPendingSelection((prev) => {
+        if (prev && prev.lat === next.lat && prev.lng === next.lng && prev.address === next.address) return prev;
+        return next;
+      });
+      setSearchText((prev) => (prev === next.address ? prev : next.address));
     },
     [setPendingSelection, setSearchText]
   );
@@ -264,6 +268,12 @@ export default function MapPicker({
     }, MOVE_END_DEBOUNCE_MS);
   }, [updateSelectionFromCoordinates]);
 
+  useEffect(() => {
+    handleMapMoveStopRef.current = () => {
+      void handleMapMoveStop();
+    };
+  }, [handleMapMoveStop]);
+
   const handleConfirmSelection = useCallback(() => {
     if (!pendingSelection) return;
     dismissKeyboardAndSuggestions();
@@ -340,7 +350,7 @@ export default function MapPicker({
       setLoading(false);
 
       map.on("moveend", () => {
-        void handleMapMoveStop();
+        handleMapMoveStopRef.current();
       });
 
       // Make sure map sizes correctly in fixed full-screen container.
@@ -359,7 +369,7 @@ export default function MapPicker({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldRenderMap, initialCenter, handleMapMoveStop]);
+  }, [shouldRenderMap]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !pendingSelection) return;
@@ -607,7 +617,7 @@ export default function MapPicker({
                     onClick={handleConfirmSelection}
                     disabled={!pendingSelection || geocoding || loading}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "56px", background: "linear-gradient(180deg, #f32d4d 0%, #c8102e 100%)", color: "var(--brand-fg)" }}
+                    style={{ minHeight: "56px", background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
                   >
                     <CheckCircle2 size={22} />
                     <span>✅ تأكيد الموقع</span>

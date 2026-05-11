@@ -19,17 +19,17 @@ function ThemeToggle() {
     { value: "dark", icon: Moon, label: "الوضع الداكن" },
   ];
   return (
-    <div className="flex items-center gap-1.5 p-1.5 rounded-2xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
+    <div className="flex items-center gap-2 p-2 rounded-2xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
       {options.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
           onClick={() => setTheme(value)}
           aria-label={label}
-          className="touch-compact px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 font-black text-xs sm:text-sm"
+          className="touch-compact px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 font-black text-xs sm:text-sm"
           style={
             theme === value
-              ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)", minHeight: "auto" }
-              : { color: "var(--text-muted)", minHeight: "auto", border: "1px solid var(--border-subtle)" }
+              ? { background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)", minHeight: "auto" }
+              : { color: "var(--text-muted)", minHeight: "auto", border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }
           }
         >
           <Icon size={15} />
@@ -269,10 +269,9 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
   const navLinks: NavLink[] =
     role === "client"
       ? [
-          { href: "/client/profile", label: "الحساب",   icon: User },
           { href: "/client",         label: "الرئيسية", icon: Home },
-          { href: "/client/archive", label: "الأرشيف",  icon: FileText },
-          { href: "/client/support", label: "المزيد",   icon: LifeBuoy },
+          { href: "/client/request/new", label: "طلب جديد", icon: ClipboardList },
+          { href: "/client/support", label: "حسابي والدعم",   icon: LifeBuoy },
         ]
       : [
           { href: "/driver/profile",   label: "الحساب",    icon: User },
@@ -456,7 +455,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
                   key={link.href}
                   href={link.href}
                   className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors rounded-xl"
-                  style={active ? { color: "var(--brand-fg)", background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)" } : { color: "var(--text-hint)" }}
+                  style={active ? { color: "var(--brand-fg)", background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)" } : { color: "var(--text-hint)" }}
                 >
                   <Icon size={19} style={{ color: active ? "var(--brand-fg)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.8} />
                   <span>{link.label}</span>

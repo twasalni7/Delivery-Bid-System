@@ -1,77 +1,48 @@
-import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { useListRequests, getListRequestsQueryKey } from "@workspace/api-client-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getListRequestsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { EnablePushButton } from "@/components/enable-push-button";
 import { getStatusLabel } from "@/lib/status-utils";
-import { formatTime12h } from "@/lib/time-utils";
 import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Bell, Clock, Users, Calendar, Plus, Archive, Map as MapIcon } from "lucide-react";
+import { Archive, Plus } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 
-const SEEN_KEY = (id: number) => `seen_offers_${id}`;
-
-const CLIENT_TYPE_EMOJI: Record<string, string> = {
-  موظفات: "👩‍💼", طلاب: "🎓", مدارس: "🏫", جامعات: "🎓", معلمات: "📚", غيره: "📦",
+type ClientRequest = {
+  id: number;
+  status: string;
+  homeLocation: string;
+  workLocation: string;
+  archivedAt?: string | null;
+  selectedDriver?: { name?: string | null } | null;
 };
-
-const STATUS_GRADIENT: Record<string, { bg: string; border: string; text: string }> = {
-  OPEN:      { bg: "var(--status-open-bg)",      border: "var(--status-open-border)",      text: "var(--status-open-text)" },
-  SELECTED:  { bg: "var(--status-selected-bg)",  border: "var(--status-selected-border)",  text: "var(--status-selected-text)" },
-  ACTIVE:    { bg: "var(--status-active-bg)",    border: "var(--status-active-border)",    text: "var(--status-active-text)" },
-  COMPLETED: { bg: "var(--status-completed-bg)", border: "var(--status-completed-border)", text: "var(--status-completed-text)" },
-  CANCELLED: { bg: "var(--status-cancelled-bg)", border: "var(--status-cancelled-border)", text: "var(--status-cancelled-text)" },
-  EXPIRED:   { bg: "var(--status-expired-bg)",   border: "var(--status-expired-border)",   text: "var(--status-expired-text)" },
-  FROZEN:    { bg: "var(--status-frozen-bg)",    border: "var(--status-frozen-border)",    text: "var(--status-frozen-text)" },
-};
-
-const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الجم", "الس"];
-
-type FilterTab = "PENDING" | "ACCEPTED" | "COMPLETED" | "ARCHIVED";
-
-const FILTER_TABS: { id: FilterTab; label: string; statuses: string[] }[] = [
-  { id: "PENDING", label: "قيد الانتظار", statuses: ["OPEN", "FROZEN"] },
-  { id: "ACCEPTED", label: "مقبول", statuses: ["SELECTED", "ACTIVE"] },
-  { id: "COMPLETED", label: "مكتمل", statuses: ["COMPLETED", "CANCELLED", "EXPIRED"] },
-  { id: "ARCHIVED", label: "مؤرشف", statuses: [] },
-];
-const KNOWN_STATUSES = new Set(FILTER_TABS.flatMap((tab) => tab.statuses));
 
 export default function ClientDashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: requests, isLoading } = useListRequests(undefined, {
-    query: { queryKey: getListRequestsQueryKey(), refetchInterval: 15_000 },
-  });
-  const { data: archivedData } = useQuery({
-    queryKey: [...getListRequestsQueryKey(), "archived"],
+
+  const { data, isLoading } = useQuery({
+    queryKey: [...getListRequestsQueryKey(), "active"],
     queryFn: async () => {
-      const res = await fetch(`${API}/api/requests?archived=true`, { headers: getAuthHeaders() });
+      const res = await fetch(`${API}/api/requests?archived=false`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error("failed");
-      return res.json();
+      return res.json() as Promise<ClientRequest[]>;
     },
-    refetchInterval: 30_000,
+    refetchInterval: 15_000,
   });
 
-  // Real-time: refresh when any request changes status or a new offer arrives
   useRealtimeRefresh(
     "client-dashboard-realtime",
     [
       { table: "requests", events: ["UPDATE"] },
       { table: "offers", events: ["INSERT"] },
     ],
-    [getListRequestsQueryKey()]
+    [[...getListRequestsQueryKey(), "active"]]
   );
-
-  const [unreadMap, setUnreadMap] = useState<Record<number, number>>({});
-  const [activeFilter, setActiveFilter] = useState<FilterTab>("PENDING");
-
-  const activeRequests = (requests ?? []).filter((req) => !hasArchivedTimestamp(req));
-  const archivedRequests = Array.isArray(archivedData) ? archivedData : [];
 
   const archiveRequest = useMutation({
     mutationFn: async (id: number) => {
@@ -79,303 +50,127 @@ export default function ClientDashboard() {
         method: "POST",
         headers: getAuthHeaders(),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as { error?: string }).error ?? "تعذرت أرشفة الطلب");
-      return data;
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((payload as { error?: string }).error ?? "تعذرت أرشفة الطلب");
+      return payload;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: [...getListRequestsQueryKey(), "active"] });
       toast({ title: "تمت أرشفة الطلب" });
     },
     onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
-  useEffect(() => {
-    if (!requests) return;
-    const map: Record<number, number> = {};
-    for (const req of requests) {
-      if (hasArchivedTimestamp(req)) continue;
-      if (req.status !== "OPEN") continue;
-      const currentCount = req.offerCount ?? 0;
-      const seenCount = parseInt(localStorage.getItem(SEEN_KEY(req.id)) ?? "0", 10);
-      const unread = Math.max(0, currentCount - seenCount);
-      if (unread > 0) map[req.id] = unread;
-    }
-    setUnreadMap(map);
-  }, [requests]);
-
-  useEffect(() => {
-    if (!requests) return;
-    const unknownStatuses = [...new Set(requests.map((r) => r.status).filter((status) => !KNOWN_STATUSES.has(status)))];
-    if (unknownStatuses.length > 0) {
-      console.warn("[ClientDashboard] Unknown request statuses:", unknownStatuses);
-    }
-  }, [requests]);
-
-  const totalUnread = Object.values(unreadMap).reduce((sum, n) => sum + n, 0);
-
-  const filteredRequests = activeFilter === "ARCHIVED"
-    ? archivedRequests
-    : activeRequests.filter((req) => {
-        const tab = FILTER_TABS.find((t) => t.id === activeFilter);
-        if (!tab || tab.statuses.length === 0) return false;
-        // Keep unknown statuses visible under "pending" so no request disappears from the client view.
-        if (activeFilter === "PENDING" && !KNOWN_STATUSES.has(req.status)) return true;
-        return tab.statuses.includes(req.status);
-      });
-
-  const getTabCount = (tab: typeof FILTER_TABS[0]) => {
-    if (tab.id === "ARCHIVED") return archivedRequests.length;
-    return activeRequests.filter((r) => tab.statuses.includes(r.status)).length;
-  };
+  const requests = (Array.isArray(data) ? data : []).filter((req) => !hasArchivedTimestamp(req));
+  const displayName = user?.name?.trim() || "عميل";
 
   return (
     <Layout role="client">
       <div dir="rtl" className="space-y-5">
-        <div className="rounded-3xl p-5 overflow-hidden relative"
-          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)", color: "#fff", boxShadow: "0 18px 42px rgba(76, 29, 149, 0.35)" }}>
-          <div className="absolute left-[-2rem] bottom-[-2rem] w-28 h-28 rounded-full bg-white/10" />
-          <div className="relative z-10 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-violet-100">لوحة العميل</p>
-                <h1 className="text-[1.65rem] font-black tracking-tight">اشتراكاتي</h1>
-              </div>
-              {totalUnread > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-full bg-white/20 text-white">
-                  <Bell size={11} /> {totalUnread}
+        <section
+          className="rounded-[2rem] p-5"
+          style={{
+            background: "linear-gradient(150deg, rgba(27,29,39,0.95) 0%, rgba(15,17,24,0.98) 100%)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>مرحباً</p>
+              <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>{displayName}</h1>
+            </div>
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center text-base font-black"
+              style={{
+                background: "linear-gradient(145deg, #7c3aed 0%, #6d28d9 100%)",
+                color: "#fff",
+                boxShadow: "0 12px 24px rgba(124,58,237,0.35)",
+              }}
+            >
+              {displayName.charAt(0)}
+            </div>
+          </div>
+        </section>
+
+        <section
+          className="rounded-[2rem] p-6 space-y-4"
+          style={{
+            background: "linear-gradient(145deg, #7c3aed 0%, #5b21b6 100%)",
+            color: "#fff",
+            boxShadow: "0 18px 38px rgba(91,33,182,0.45)",
+          }}
+        >
+          <h2 className="text-2xl font-black leading-tight">جاهزة لمشاويرك القادمة؟</h2>
+          <p className="text-sm font-bold text-violet-100">حددي مساراتك والشفتات واحصلي على السعر النهائي</p>
+          <Link
+            href="/client/request/new"
+            className="w-full rounded-2xl px-5 py-4 flex items-center justify-center gap-2 text-base font-black"
+            style={{ backgroundColor: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff" }}
+          >
+            <Plus size={18} /> طلب اشتراك جديد
+          </Link>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-black" style={{ color: "var(--text)" }}>طلباتي</h3>
+            <Link href="/client/archive" className="text-sm font-black" style={{ color: "var(--brand)" }}>
+              الأرشيف
+            </Link>
+          </div>
+
+          {isLoading && <div className="rounded-2xl p-5 text-sm font-black" style={{ backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>جاري التحميل...</div>}
+
+          {!isLoading && requests.length === 0 && (
+            <div className="rounded-2xl p-6 text-sm font-black" style={{ backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+              لا توجد طلبات حالية.
+            </div>
+          )}
+
+          {!isLoading && requests.map((req) => (
+            <div
+              key={req.id}
+              className="rounded-[1.5rem] p-4 space-y-3"
+              style={{
+                background: "linear-gradient(150deg, rgba(23,24,31,0.95) 0%, rgba(16,17,23,0.98) 100%)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-black" style={{ color: "var(--text)" }}>طلب #{req.id}</p>
+                <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}>
+                  {getStatusLabel(req.status)}
                 </span>
-              )}
-            </div>
-            <p className="font-bold text-sm text-violet-100">جاهز لمشوارك القادم؟ أضف طلب اشتراك جديد خلال ثوانٍ.</p>
-            <Link href="/client/request/new" className="w-full rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 text-base font-black bg-white text-violet-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">
-              <Plus size={19} aria-hidden="true" />
-              طلب اشتراك جديد
-            </Link>
-          </div>
-        </div>
+              </div>
 
-        {/* Push notifications opt-in */}
-        <div className="mb-3">
-          <EnablePushButton />
-        </div>
+              <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{req.homeLocation} ← {req.workLocation}</p>
 
-        {/* Status filter tabs */}
-        {!isLoading && (activeRequests.length > 0 || archivedRequests.length > 0) && (
-          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
-            {FILTER_TABS.map((tab) => {
-              const count = getTabCount(tab);
-              const isActive = activeFilter === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveFilter(tab.id)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-black whitespace-nowrap transition-all shrink-0"
-                  style={isActive
-                    ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                    : { backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}
+              <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+                السائق: {req.selectedDriver?.name?.trim() || "لم يتم التعيين بعد"}
+              </p>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/client/request/${req.id}`}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-black"
+                  style={{ background: "linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%)", color: "#fff" }}
                 >
-                  {tab.label}
-                  {count > 0 && (
-                    <span className="text-xs rounded-full px-1.5 py-0.5 font-black leading-none min-w-[18px] text-center"
-                      style={isActive
-                        ? { backgroundColor: "rgba(0,0,0,0.2)", color: "var(--brand-fg)" }
-                        : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <p className="text-sm font-black mb-2" style={{ color: "var(--text)" }}>رحلة الطلب</p>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
-            {["إنشاء الطلب", "تعيين السائق", "تنفيذ المشوار", "الإغلاق", "الفوترة الشهرية"].map((step) => (
-              <div key={step} className="rounded-xl px-2 py-2 text-xs font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-sub)", border: "1px solid var(--border-subtle)" }}>
-                {step}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {isLoading && (
-          <div className="text-center py-20 font-bold text-base" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>
-        )}
-
-        {!isLoading && activeRequests.length === 0 && activeFilter !== "ARCHIVED" && (
-          <div className="text-center py-16 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-            <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: "var(--surface-2)" }}>
-              <MapIcon className="w-9 h-9" style={{ color: "var(--text-hint)" }} aria-hidden="true" />
-            </div>
-            <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد طلبات نشطة</p>
-            <p className="font-bold text-sm mt-1 px-5" style={{ color: "var(--text-hint)" }}>ابدأ بطلب اشتراك شهري وسنحدد لك السعر العادل ونربطك بأفضل السائقين.</p>
-          </div>
-        )}
-
-        {!isLoading && activeFilter === "ARCHIVED" && (
-          <div className="rounded-3xl p-6 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-            <p className="font-black text-lg mb-2" style={{ color: "var(--text)" }}>الطلبات المؤرشفة</p>
-            <p className="text-sm font-bold mb-4" style={{ color: "var(--text-muted)" }}>لمراجعة الأرشيف الكامل ادخل صفحة الأرشيف.</p>
-            <Link href="/client/archive">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black" style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
-                <Archive size={14} /> فتح الأرشيف
-              </div>
-            </Link>
-          </div>
-        )}
-
-        {!isLoading && activeFilter !== "ARCHIVED" && activeRequests.length > 0 && filteredRequests.length === 0 && (
-          <div className="text-center py-16 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
-            <p className="text-4xl mb-3">🔍</p>
-            <p className="text-lg font-black" style={{ color: "var(--text)" }}>لا توجد نتائج</p>
-            <button onClick={() => setActiveFilter("PENDING")} className="mt-4 text-sm font-bold" style={{ color: "var(--brand)" }}>
-              العودة إلى قيد الانتظار
-            </button>
-          </div>
-        )}
-
-        {filteredRequests.length > 0 && activeFilter !== "ARCHIVED" && (
-          <div className="space-y-4">
-            {filteredRequests.map((req) => {
-              const offerCount = req.offerCount ?? 0;
-              const unread = unreadMap[req.id] ?? 0;
-              const statusStyle = STATUS_GRADIENT[req.status] ?? STATUS_GRADIENT.OPEN;
-              const emoji = CLIENT_TYPE_EMOJI[(req as any).clientType ?? ""] ?? "📦";
-              const clientTypeLabel = (req as any).clientType ?? "";
-
-              return (
-                <Link key={req.id} href={`/client/request/${req.id}`}>
-                  <div className="rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
-                    style={{ backgroundColor: "var(--surface)", boxShadow: "var(--shadow-sm)", border: `1px solid ${unread > 0 ? "var(--brand-border)" : "var(--border-subtle)"}` }}>
-                    {/* Status header */}
-                    <div className="p-5" style={{ backgroundColor: statusStyle.bg, borderBottom: `1px solid ${statusStyle.border}` }}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className="text-xs font-black px-3 py-1 rounded-full"
-                            style={{ backgroundColor: statusStyle.border, color: statusStyle.text }}>
-                            {getStatusLabel(req.status)}
-                          </span>
-                          {unread > 0 && (
-                            <span className="text-xs font-black px-2.5 py-0.5 rounded-full flex items-center gap-1"
-                              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
-                              <Bell size={11} /> {unread} جديد
-                            </span>
-                          )}
-                        </div>
-                        {offerCount > 0 && (
-                          <p className="text-sm font-black" style={{ color: statusStyle.text }}>{offerCount} {offerCount === 1 ? "عرض" : "عروض"}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 mt-4">
-                        <span className="text-4xl">{emoji}</span>
-                        <div>
-                          {clientTypeLabel && <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{clientTypeLabel}</p>}
-                          <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>طلب #{req.id}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card body */}
-                    <div className="px-5 py-4 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)" }} />
-                        <div className="flex-1">
-                          <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>من (الانطلاق)</p>
-                          <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.homeLocation}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
-                        <div className="flex-1">
-                          <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
-                          <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workLocation}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-3 pt-1">
-                        <div className="flex items-center gap-1.5">
-                          <Clock size={14} style={{ color: "var(--text-hint)" }} />
-                          <span className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.morningTime)}</span>
-                        </div>
-                        {req.eveningTime && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock size={14} style={{ color: "var(--text-hint)" }} />
-                            <span className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12h(req.eveningTime)}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1.5">
-                          <Users size={14} style={{ color: "var(--text-hint)" }} />
-                          <span className="text-sm font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople} ركاب</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Calendar size={14} style={{ color: "var(--text-hint)" }} />
-                          <span className="text-sm font-black" style={{ color: "var(--text)" }}>{req.workingDaysPerWeek} أيام/أسبوع</span>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-1.5 flex-wrap">
-                        {DAYS_AR.map((d, i) => {
-                          const active = i < (req.workingDaysPerWeek ?? 5);
-                          return (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full font-black"
-                              style={active
-                                ? { backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }
-                                : { backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}>
-                              {d}
-                            </span>
-                          );
-                        })}
-                      </div>
-
-                      {req.selectedDriver && (
-                        <div className="flex items-center gap-2.5 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black"
-                            style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-                            {req.selectedDriver.name?.charAt(0) ?? "س"}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>السائق</p>
-                            <p className="text-sm font-black" style={{ color: "var(--text)" }}>{req.selectedDriver.name}</p>
-                          </div>
-                          {req.selectedDriver.mobile && (
-                            <a href={`tel:${req.selectedDriver.mobile}`}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black"
-                              style={{ backgroundColor: "#25D366", color: "#fff" }}>
-                              اتصال
-                            </a>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between gap-2 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                        <span className="text-sm font-black" style={{ color: "var(--brand)" }}>
-                          {req.status === "SELECTED" || req.status === "ACTIVE" ? "عرض تفاصيل الرحلات اليومية ‹" : "عرض تفاصيل العروض ‹"}
-                        </span>
-                        <button
-                          type="button"
-                          className="text-xs px-3 py-1.5 rounded-full font-black flex items-center gap-1"
-                          style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-sub)" }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            archiveRequest.mutate(req.id);
-                          }}
-                          disabled={archiveRequest.isPending}
-                        >
-                          <Archive size={12} />
-                          أرشفة
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  إدارة الطلب
                 </Link>
-              );
-            })}
-          </div>
-        )}
+                <button
+                  type="button"
+                  onClick={() => archiveRequest.mutate(req.id)}
+                  disabled={archiveRequest.isPending}
+                  className="rounded-xl px-3 py-2.5 text-xs font-black inline-flex items-center gap-1"
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-sub)" }}
+                >
+                  <Archive size={13} /> أرشفة
+                </button>
+              </div>
+            </div>
+          ))}
+        </section>
       </div>
     </Layout>
   );
