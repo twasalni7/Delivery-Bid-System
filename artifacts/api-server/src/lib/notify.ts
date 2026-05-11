@@ -496,8 +496,9 @@ export async function notify(params: {
 
   // Step 3: Attempt push delivery via OneSignal or legacy web-push
   if (isOneSignalConfigured()) {
+    const externalUserId = buildOneSignalExternalId(params.userId, params.userRole);
     void sendOneSignalPush({
-      externalIds: [buildOneSignalExternalId(params.userId, params.userRole)],
+      externalIds: [externalUserId],
       title: params.title,
       message: params.message,
       url: `${getAppOrigin()}${deliveryUrl}`,
@@ -508,6 +509,11 @@ export async function notify(params: {
         url: deliveryUrl,
         actionType: params.actionType ?? "open_url",
         actionPayload: params.actionPayload ?? null,
+      },
+      context: {
+        userId: params.userId,
+        userRole: params.userRole,
+        notificationId: pushNotificationId,
       },
     }).then(async (result) => {
       if (!result.ok) {
@@ -533,6 +539,17 @@ export async function notify(params: {
         { userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId, response: result.response },
         "notify: OneSignal push delivery accepted"
       );
+    }).catch(async (err) => {
+      logger.error(
+        { err, userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId, externalUserId },
+        "notify: OneSignal push delivery threw (unhandled exception)"
+      );
+      await markNotificationFailed({
+        notificationId: pushNotificationId,
+        error: "onesignal_exception",
+        provider: "onesignal",
+        response: { error: "onesignal_exception" },
+      });
     });
     return;
   }
@@ -658,12 +675,14 @@ export async function sendPushToUser(
   params: { title: string; body: string; url?: string; tag?: string }
 ): Promise<{ sent: boolean }> {
   if (isOneSignalConfigured()) {
+    const externalUserId = buildOneSignalExternalId(userId, role);
     const result = await sendOneSignalPush({
-      externalIds: [buildOneSignalExternalId(userId, role)],
+      externalIds: [externalUserId],
       title: params.title,
       message: params.body,
       url: `${getAppOrigin()}${buildPushTrackingUrl({ userRole: role, url: params.url })}`,
       data: { tag: params.tag ?? "push-test", userRole: role },
+      context: { userId, userRole: role },
     });
     return { sent: result.ok };
   }

@@ -16,6 +16,7 @@ import activityLogsRouter from "./activity-logs";
 import serviceAreasRouter from "./service-areas";
 import operationsRouter from "./operations";
 import mapsRouter from "./maps";
+import debugRouter from "./debug";
 
 const router: IRouter = Router();
 
@@ -41,5 +42,6 @@ router.use("/maps", mapsRouter);
 router.use("/activity-logs", activityLogsRouter);
 router.use("/admin/activity-logs", activityLogsRouter);
 router.use("/service-areas", serviceAreasRouter);
+router.use("/debug", debugRouter);
 
 export default router;
