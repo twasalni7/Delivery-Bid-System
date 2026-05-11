@@ -20,16 +20,28 @@ vi.mock("@workspace/db", () => {
     requestsTable: {},
     driversTable: {},
     offersTable: {},
+    clientsTable: {},
     transactionsTable: {},
+    requestStopsTable: {},
+    requestPassengersTable: {},
+    activityLogsTable: {},
     eq: vi.fn(),
     and: vi.fn(),
     count: vi.fn().mockReturnValue("count_expr"),
     inArray: vi.fn(),
+    ne: vi.fn(),
+    isNull: vi.fn(),
+    isNotNull: vi.fn(),
     desc: vi.fn(),
     gte: vi.fn(),
     lte: vi.fn(),
+    sql: vi.fn(),
   };
 });
+
+vi.mock("../lib/activity", () => ({
+  logActivity: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("@workspace/api-zod", () => ({
   CreateRequestBody: {
