@@ -147,7 +147,10 @@ describe("POST /wallet-transactions (driver submits top-up)", () => {
     (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
 
     const app = createApp({ id: 2, role: "driver", name: "Khaled" });
-    const res = await request(app).post("/wallet-transactions").send({ amount: 100 });
+    const res = await request(app).post("/wallet-transactions").send({
+      amount: 100,
+      receiptUrl: "data:image/jpeg;base64,/9j/4AAQSkZJRg=="
+    });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ id: 5, status: "pending" });
   });
