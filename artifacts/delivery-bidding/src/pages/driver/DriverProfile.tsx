@@ -41,7 +41,9 @@ export default function DriverProfile() {
   const [showChargeModal, setShowChargeModal] = useState(false);
   const [amount, setAmount] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>("");
   const [transactions, setTransactions] = useState<WalletTx[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +69,52 @@ export default function DriverProfile() {
     return <Layout role="driver"><div className="text-center py-16 font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div></Layout>;
   }
 
+  const handleFileSelect = (file: File | null) => {
+    if (!file) {
+      setReceiptFile(null);
+      setReceiptPreview(null);
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      toast({
+        title: "حجم الملف كبير جداً",
+        description: "يجب أن يكون حجم الصورة أقل من 5 ميجابايت",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate MIME type (only allow JPEG, PNG, WebP)
+    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: "نوع الملف غير مدعوم",
+        description: "يرجى اختيار صورة بصيغة JPG أو PNG أو WebP",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setReceiptPreview(e.target?.result as string);
+    };
+    reader.onerror = () => {
+      toast({
+        title: "خطأ في قراءة الملف",
+        description: "تعذر عرض معاينة الصورة",
+        variant: "destructive"
+      });
+    };
+    reader.readAsDataURL(file);
+
+    setReceiptFile(file);
+  };
+
   const handleChargeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const numAmount = parseFloat(amount);
@@ -80,13 +128,21 @@ export default function DriverProfile() {
     }
 
     setUploading(true);
+    setUploadProgress("جاري تحضير الصورة...");
     try {
       let receiptUrl: string | null = null;
 
       // Upload receipt image to Supabase Storage (if configured)
       try {
+        setUploadProgress("جاري رفع الصورة...");
         const supabase = getSupabase();
-        const ext = receiptFile.name.split(".").pop() ?? "jpg";
+        // Get file extension based on MIME type for security
+        const extMap: Record<string, string> = {
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/webp": "webp"
+        };
+        const ext = extMap[receiptFile.type] ?? "jpg";
         const fileName = `receipts/${user.id}_${Date.now()}.${ext}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("receipts")
@@ -94,9 +150,10 @@ export default function DriverProfile() {
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(uploadData.path);
         receiptUrl = urlData?.publicUrl ?? null;
-      } catch {
+      } catch (supabaseError) {
         // Supabase Storage not configured — fall back to base64 data URL so the
         // admin can still view the receipt image directly from the database.
+        setUploadProgress("جاري تحويل الصورة...");
         try {
           receiptUrl = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -104,18 +161,28 @@ export default function DriverProfile() {
             reader.onerror = () => reject(reader.error ?? new Error("FileReader failed"));
             reader.readAsDataURL(receiptFile);
           });
-        } catch {
-          // If even FileReader fails, proceed without a URL
+        } catch (readerError) {
+          // If even FileReader fails, show error and prevent submission
+          throw new Error("فشل في معالجة الصورة. يرجى المحاولة مرة أخرى أو اختيار صورة أخرى.");
         }
       }
 
+      // Ensure we have a receipt URL before submitting
+      if (!receiptUrl) {
+        throw new Error("فشل في رفع الصورة. يرجى المحاولة مرة أخرى.");
+      }
+
+      setUploadProgress("جاري إرسال الطلب...");
       const res = await fetch(`${API}/api/wallet-transactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ amount: numAmount, receiptUrl }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "فشل إرسال الطلب");
+      if (!res.ok) {
+        const errorMsg = data.error ?? "فشل إرسال الطلب";
+        throw new Error(errorMsg);
+      }
 
       toast({ title: "✅ تم إرسال طلب الشحن", description: "سيتم مراجعة الطلب من قِبل الإدارة" });
       setTransactions((prev) => [data, ...prev]);
@@ -123,10 +190,13 @@ export default function DriverProfile() {
       setShowChargeModal(false);
       setAmount("");
       setReceiptFile(null);
+      setReceiptPreview(null);
     } catch (err: unknown) {
-      toast({ title: (err as Error).message, variant: "destructive" });
+      const errorMessage = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
+      toast({ title: errorMessage, variant: "destructive" });
     } finally {
       setUploading(false);
+      setUploadProgress("");
     }
   };
 
@@ -390,7 +460,7 @@ export default function DriverProfile() {
                 </div>
               </div>
               <button
-                onClick={() => { setShowChargeModal(false); setReceiptFile(null); setAmount(""); }}
+                onClick={() => { setShowChargeModal(false); setReceiptFile(null); setReceiptPreview(null); setAmount(""); }}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
                 style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}>
                 <X size={16} />
@@ -437,30 +507,57 @@ export default function DriverProfile() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
-                    onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
                   />
                   {receiptFile ? (
-                    <div className="flex items-center justify-between p-3.5 rounded-xl min-h-[48px]"
-                      style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)" }}>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={18} className="shrink-0" style={{ color: "var(--status-active-text)" }} />
-                        <span className="text-sm font-bold truncate max-w-[180px]" style={{ color: "var(--status-active-text)" }}>{receiptFile.name}</span>
+                    <div className="space-y-2">
+                      {receiptPreview && (
+                        <div className="relative rounded-xl overflow-hidden" style={{ border: "2px solid var(--status-active-border)" }}>
+                          <img
+                            src={receiptPreview}
+                            alt="معاينة الإيصال"
+                            className="w-full h-auto max-h-[300px] object-contain"
+                            style={{ backgroundColor: "var(--surface-2)" }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between p-3.5 rounded-xl min-h-[48px]"
+                        style={{ backgroundColor: "var(--status-active-bg)", border: "1px solid var(--status-active-border)" }}>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={18} className="shrink-0" style={{ color: "var(--status-active-text)" }} />
+                          <div>
+                            <span className="text-sm font-bold block" style={{ color: "var(--status-active-text)" }}>{receiptFile.name}</span>
+                            <span className="text-xs font-bold" style={{ color: "var(--status-active-text)", opacity: 0.8 }}>
+                              {(receiptFile.size / 1024 / 1024).toFixed(2)} ميجابايت
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleFileSelect(null)}
+                          className="p-1 rounded-lg hover:bg-black/10 transition-colors"
+                          style={{ color: "var(--text-hint)" }}
+                        >
+                          <X size={15} />
+                        </button>
                       </div>
-                      <button type="button" onClick={() => setReceiptFile(null)} style={{ color: "var(--text-hint)" }}>
-                        <X size={15} />
-                      </button>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full flex items-center justify-center gap-2 p-4 rounded-xl text-sm min-h-[52px] transition-colors"
+                      className="w-full flex items-center justify-center gap-2 p-4 rounded-xl text-sm min-h-[52px] transition-colors hover:opacity-80"
                       style={{ border: "2px dashed var(--border)", color: "var(--text-muted)" }}
                     >
                       <Upload size={18} />
-                      اضغط لإرفاق صورة الإيصال
+                      <div className="text-center">
+                        <div>اضغط لإرفاق صورة الإيصال</div>
+                        <div className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>
+                          JPG أو PNG أو WebP • حد أقصى 5 ميجابايت
+                        </div>
+                      </div>
                     </button>
                   )}
                 </div>
@@ -475,7 +572,7 @@ export default function DriverProfile() {
                   disabled={uploading}
                   className="w-full btn-primary disabled:opacity-50 min-h-[52px] text-base"
                 >
-                  {uploading ? "جاري الإرسال..." : "إرسال طلب الشحن ✓"}
+                  {uploading ? (uploadProgress || "جاري الإرسال...") : "إرسال طلب الشحن ✓"}
                 </button>
               </form>
             </div>
