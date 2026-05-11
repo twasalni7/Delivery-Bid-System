@@ -66,6 +66,18 @@ vi.mock("./pricing", () => ({
   getBidFee: vi.fn().mockResolvedValue(50),
 }));
 
+vi.mock("../lib/request-routing", () => ({
+  resolveRequestRoutingAndPricing: vi.fn().mockResolvedValue({
+    distanceKm: 15,
+    durationMinutes: 20,
+    coordinates: { pickup: null, dropoff: null, waypoints: [] },
+    routePolyline: "encoded_polyline",
+    pricingSnapshot: null,
+    pricing: { price: 1000, pricePerPerson: 1000, needsAdminReview: false, engine: "test" },
+    passengerRoutes: [],
+  }),
+}));
+
 import { db } from "@workspace/db";
 import { CreateRequestBody, UpdateRequestStatusBody, SelectOfferBody } from "@workspace/api-zod";
 import { calculatePriceForRequest } from "./pricing";
@@ -80,6 +92,14 @@ function makeSelectChain(result: unknown[]) {
   chain.limit = vi.fn().mockReturnValue(chain);
   chain.offset = vi.fn().mockResolvedValue(result);
   chain.groupBy = vi.fn().mockResolvedValue([]);
+  return chain;
+}
+
+function makeSelectChainWithLimit(result: unknown[]) {
+  const chain: Record<string, unknown> = {};
+  chain.from = vi.fn().mockReturnValue(chain);
+  chain.where = vi.fn().mockReturnValue(chain);
+  chain.limit = vi.fn().mockResolvedValue(result); // limit resolves directly
   return chain;
 }
 
@@ -150,6 +170,11 @@ describe("POST /requests (client creates request)", () => {
         distanceKm: 15,
       },
     });
+
+    // Mock client lookup query for fetching mobile
+    const clientSelectMock = makeSelectChainWithLimit([{ id: 1, mobile: "0501234567", name: "Ali" }]);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValueOnce(clientSelectMock);
+
     const returningMock = vi.fn().mockResolvedValue([{
       id: 10,
       clientId: 1,
@@ -168,7 +193,8 @@ describe("POST /requests (client creates request)", () => {
       updatedAt: new Date(),
     }]);
     const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
-    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+    const insertMock = { values: valuesMock };
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue(insertMock);
 
     const app = createApp({ id: 1, role: "client", name: "Ali" });
     const res = await request(app).post("/requests").send({
@@ -182,6 +208,10 @@ describe("POST /requests (client creates request)", () => {
       eveningTime: "17:00",
       distanceKm: 15,
     });
+    if (res.status !== 201) {
+      console.error("Test failed with status:", res.status);
+      console.error("Response body:", JSON.stringify(res.body, null, 2));
+    }
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ id: 10, status: "OPEN" });
   });
@@ -203,6 +233,11 @@ describe("POST /requests (client creates request)", () => {
         distanceKm: 60,
       },
     });
+
+    // Mock client lookup query for fetching mobile
+    const clientSelectMock = makeSelectChainWithLimit([{ id: 1, mobile: "0501234567", name: "Ali" }]);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValueOnce(clientSelectMock);
+
     const returningMock = vi.fn().mockResolvedValue([{
       id: 11,
       clientId: 1,
@@ -221,7 +256,8 @@ describe("POST /requests (client creates request)", () => {
       updatedAt: new Date(),
     }]);
     const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
-    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+    const insertMock = { values: valuesMock };
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue(insertMock);
 
     const app = createApp({ id: 1, role: "client", name: "Ali" });
     const res = await request(app).post("/requests").send({
