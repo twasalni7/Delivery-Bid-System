@@ -113,6 +113,15 @@ function formatRequest(
   const showDriverContact =
     user?.role === "admin" ||
     (user?.role === "client" && r.clientId === user.id && postSelection);
+
+  // Drivers only see exact GPS coordinates once they are the selected driver.
+  // For OPEN requests (bid phase), expose null coordinates to prevent
+  // drivers from mapping client home/work locations before any contract is formed.
+  const showExactCoords =
+    user?.role === "admin" ||
+    user?.role === "client" ||
+    (user?.role === "driver" && r.selectedDriverId === user.id);
+
   return {
     id: r.id,
     clientId: r.clientId,
@@ -129,14 +138,14 @@ function formatRequest(
     morningTime: r.morningTime,
     eveningTime: r.eveningTime,
     notes: r.notes,
-    homeLat: r.homeLat,
-    homeLng: r.homeLng,
-    destLat: r.destLat,
-    destLng: r.destLng,
+    homeLat: showExactCoords ? r.homeLat : null,
+    homeLng: showExactCoords ? r.homeLng : null,
+    destLat: showExactCoords ? r.destLat : null,
+    destLng: showExactCoords ? r.destLng : null,
     distanceKm: r.distanceKm,
     durationMinutes: r.durationMinutes,
-    coordinates: r.coordinates,
-    routePolyline: r.routePolyline,
+    coordinates: showExactCoords ? r.coordinates : null,
+    routePolyline: showExactCoords ? r.routePolyline : null,
     pricingSnapshot: r.pricingSnapshot,
     needsAdminReview: r.needsAdminReview,
     monthlyPrice: toNum(r.monthlyPrice),
@@ -563,7 +572,7 @@ router.patch("/:id/client", requireAuth("client"), async (req, res) => {
       currentStatus: existing.status as RequestStatus,
       selectedDriverId: existing.selectedDriverId,
       needsAdminReview,
-      event: "background_sync",
+      event: "client_request_updated",
     });
 
     const [updated] = await db
@@ -611,7 +620,7 @@ router.patch("/:id/client", requireAuth("client"), async (req, res) => {
       previousStatus: existing.status as RequestStatus,
       nextStatus: updated.status as RequestStatus,
       reason: resolved.reason,
-      event: "background_sync",
+      event: "client_request_updated",
     });
 
     await logActivity({

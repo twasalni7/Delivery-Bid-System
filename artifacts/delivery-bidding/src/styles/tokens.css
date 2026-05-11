@@ -64,7 +64,8 @@ html.light {
   --text:        #0B1221;
   --text-sub:    #162238;
   --text-muted:  #2A3A57;
-  --text-hint:   #42506B;
+  /* #2E3F5C gives ≥4.6:1 contrast against white — passes WCAG AA */
+  --text-hint:   #2E3F5C;
 
   /* Borders */
   --border:        #CBD4EA;

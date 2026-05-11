@@ -159,7 +159,7 @@ export default function RequestDetails() {
       return res.json();
     },
     enabled: !!id && showChat,
-    refetchInterval: 5_000,
+    refetchInterval: 10_000,
   });
 
   const sendMessage = useMutation({

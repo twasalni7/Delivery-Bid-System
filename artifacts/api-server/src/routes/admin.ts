@@ -13,7 +13,7 @@ import {
   activityLogsTable,
   requestStopsTable,
 } from "@workspace/db";
-import { eq, count, ne, desc, sql, sum, inArray, and } from "drizzle-orm";
+import { eq, count, ne, desc, sql, sum, inArray, and, isNull, isNotNull } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireHardDeleteApproval } from "../middleware/requireHardDeleteApproval";
 import { generateLoginCode } from "../lib/auth";
@@ -676,10 +676,12 @@ router.get("/clients", async (_req, res) => {
   );
 });
 
-router.get("/requests", async (_req, res) => {
+router.get("/requests", async (req, res) => {
+  const showArchived = req.query["archived"] === "true";
   const rows = await db
     .select()
     .from(requestsTable)
+    .where(showArchived ? isNotNull(requestsTable.archivedAt) : isNull(requestsTable.archivedAt))
     .orderBy(requestsTable.createdAt);
   res.json(
     rows.map((r) => ({

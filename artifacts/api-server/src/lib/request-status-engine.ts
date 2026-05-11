@@ -40,6 +40,7 @@ export interface ResolveRequestStatusInput {
     | "selected_driver_assigned"
     | "admin_manual_override"
     | "admin_request_updated"
+    | "client_request_updated"
     | "background_sync";
 }
 

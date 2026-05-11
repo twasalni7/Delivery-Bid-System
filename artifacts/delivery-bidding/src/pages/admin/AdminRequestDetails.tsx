@@ -70,7 +70,7 @@ export default function AdminRequestDetails() {
       return res.json();
     },
     enabled: !!id && showChat,
-    refetchInterval: 5_000,
+    refetchInterval: 10_000,
   });
   const { data: requestContext } = useQuery<RequestContext>({
     queryKey: ["admin-request-context", id],
