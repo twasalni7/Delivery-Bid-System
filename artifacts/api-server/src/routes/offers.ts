@@ -29,17 +29,16 @@ router.get("/", requireAuth("admin"), async (_req, res) => {
       .from(offersTable)
       .orderBy(offersTable.createdAt);
 
-    // Batch-fetch unique drivers with Promise.all (avoids N+1 via deduplication)
+    // Batch-fetch all unique drivers in a single query to avoid N+1
     const uniqueDriverIds = [...new Set(offers.map((o) => o.driverId))];
     const driverMap = new Map<number, typeof driversTable.$inferSelect>();
-    await Promise.all(
-      uniqueDriverIds.map(async (id) => {
-        const d = await db.query.driversTable.findFirst({
-          where: eq(driversTable.id, id),
-        });
-        if (d) driverMap.set(id, d);
-      })
-    );
+    if (uniqueDriverIds.length > 0) {
+      const drivers = await db
+        .select()
+        .from(driversTable)
+        .where(inArray(driversTable.id, uniqueDriverIds));
+      for (const d of drivers) driverMap.set(d.id, d);
+    }
 
     const results = offers.map((o) => {
       const driver = driverMap.get(o.driverId) ?? null;

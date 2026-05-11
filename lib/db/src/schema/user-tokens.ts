@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, index } from "drizzle-orm/pg-core";
 
 export const userTokensTable = pgTable("user_tokens", {
   token: text("token").primaryKey(),
@@ -7,4 +7,6 @@ export const userTokensTable = pgTable("user_tokens", {
   name: text("name").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [
+  index("user_tokens_user_id_expires_at_idx").on(t.userId, t.expiresAt),
+]);

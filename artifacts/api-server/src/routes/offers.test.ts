@@ -63,6 +63,14 @@ function makeSelectChain(result: unknown[]) {
   return chain;
 }
 
+/** Chain that resolves after `.from().where()` — used for batch-fetch queries. */
+function makeSelectWhereChain(result: unknown[]) {
+  const chain: Record<string, unknown> = {};
+  chain.from = vi.fn().mockReturnValue(chain);
+  chain.where = vi.fn().mockResolvedValue(result);
+  return chain;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -81,14 +89,16 @@ describe("GET /offers (admin only)", () => {
   });
 
   it("returns offers list when admin", async () => {
-    const chain = makeSelectChain([
+    const offersChain = makeSelectChain([
       { id: 1, driverId: 2, requestId: 3, status: "PENDING", createdAt: new Date() },
     ]);
-    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
-    (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 2, name: "Khaled", mobile: "0501234567", balance: 100,
-      carType: "Sedan", nationality: "SA", status: "ACTIVE", createdAt: new Date(),
-    });
+    const driversChain = makeSelectWhereChain([
+      { id: 2, name: "Khaled", mobile: "0501234567", balance: 100,
+        carType: "Sedan", nationality: "SA", status: "ACTIVE", createdAt: new Date() },
+    ]);
+    (db.select as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(offersChain)
+      .mockReturnValueOnce(driversChain);
 
     const app = createApp({ id: 1, role: "admin", name: "Admin" });
     const res = await request(app).get("/offers");

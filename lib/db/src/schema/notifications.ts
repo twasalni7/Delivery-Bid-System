@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 
 export const notificationsTable = pgTable("notifications", {
   id: serial("id").primaryKey(),
@@ -25,7 +25,12 @@ export const notificationsTable = pgTable("notifications", {
   interactionSource: text("interaction_source"),
   interactionType: text("interaction_type"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => [
+  // Speeds up "unread notifications for a user" queries
+  index("notifications_user_read_idx").on(t.userId, t.userRole, t.isRead),
+  // Speeds up "recent notifications for a user" queries (bell, center)
+  index("notifications_user_created_idx").on(t.userId, t.userRole, t.createdAt),
+]);
 
 export type Notification = typeof notificationsTable.$inferSelect;
 export type InsertNotification = typeof notificationsTable.$inferInsert;

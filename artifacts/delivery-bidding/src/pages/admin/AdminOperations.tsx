@@ -152,8 +152,8 @@ export default function AdminOperations() {
       if (alertsRes.ok) setAlerts(await alertsRes.json());
       if (maintenanceRes.ok) { const m = await maintenanceRes.json(); setMaintenance(m.enabled); }
       setLastRefresh(new Date());
-    } catch (err) {
-      console.error("fetch ops data", err);
+    } catch {
+      // Errors are surfaced via the isLoading/empty-state guards in the UI.
     } finally {
       setLoading(false);
     }
@@ -280,7 +280,7 @@ export default function AdminOperations() {
           <StatCard icon={<TrendingUp size={18} />} label="طلبات اليوم" value={stats?.todayRequests ?? 0} />
           <StatCard icon={<Activity size={18} />} label="الطلبات النشطة" value={stats?.activeRequests ?? 0} warn={!stats?.activeRequests} />
           <StatCard icon={<Clock size={18} />} label="الطلبات المتأخرة" value={stats?.delayedRequests ?? 0} error={!!stats?.delayedRequests} sublabel="مفتوح > 48 ساعة" />
-          <StatCard icon={<Users size={18} />} label="السائقون النشطون" value={stats?.connectedDrivers ?? 0} />
+          <StatCard icon={<Users size={18} />} label="السائقون المفعّلون" value={stats?.connectedDrivers ?? 0} />
           <StatCard icon={<Users size={18} />} label="إجمالي السائقين" value={stats?.totalDrivers ?? 0} />
           <StatCard icon={<Users size={18} />} label="إجمالي العملاء" value={stats?.totalClients ?? 0} />
           <StatCard icon={<AlertTriangle size={18} />} label="الأخطاء الحالية" value={stats?.currentErrors ?? 0} error={!!stats?.currentErrors} />

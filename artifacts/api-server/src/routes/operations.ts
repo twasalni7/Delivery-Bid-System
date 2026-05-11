@@ -118,11 +118,19 @@ router.post("/live-errors", async (req, res) => {
       return;
     }
 
+    // Sanitise string fields to prevent oversized payloads from bloating the DB
+    const MAX_SHORT = 255;
+    const MAX_LONG = 4000;
+    const sanitizedErrorType = String(errorType).slice(0, MAX_SHORT);
+    const sanitizedMessage   = String(message).slice(0, MAX_SHORT);
+    const sanitizedStack     = stack  ? String(stack).slice(0, MAX_LONG)  : undefined;
+    const sanitizedPage      = page   ? String(page).slice(0, MAX_SHORT)  : undefined;
+
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const existing = await db.select().from(systemErrorsTable)
       .where(and(
-        eq(systemErrorsTable.errorType, errorType),
-        eq(systemErrorsTable.message, message),
+        eq(systemErrorsTable.errorType, sanitizedErrorType),
+        eq(systemErrorsTable.message, sanitizedMessage),
         gte(systemErrorsTable.createdAt, oneHourAgo),
         eq(systemErrorsTable.resolved, false),
       ))
@@ -136,7 +144,7 @@ router.post("/live-errors", async (req, res) => {
       res.json(updated[0]);
     } else {
       const inserted = await db.insert(systemErrorsTable)
-        .values({ errorType, message, stack, page, userId, userRole, severity })
+        .values({ errorType: sanitizedErrorType, message: sanitizedMessage, stack: sanitizedStack, page: sanitizedPage, userId, userRole, severity })
         .returning();
       res.json(inserted[0]);
     }

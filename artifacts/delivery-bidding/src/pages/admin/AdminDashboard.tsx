@@ -49,7 +49,10 @@ function exportAnalyticsCSV(analytics: AdminAnalytics) {
   const blob = new Blob(["\uFEFF" + sections.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "analytics.csv"; a.click();
+  a.href = url; a.download = "analytics.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
@@ -104,7 +107,7 @@ export default function AdminDashboard() {
     : [];
 
   const totalRequests = analytics ? analytics.requestStatusSplit.selected + analytics.requestStatusSplit.open : 0;
-  const selectionRate = totalRequests > 0 ? Math.round((analytics!.requestStatusSplit.selected / totalRequests) * 100) : 0;
+  const selectionRate = analytics && totalRequests > 0 ? Math.round((analytics.requestStatusSplit.selected / totalRequests) * 100) : 0;
 
   return (
     <Layout role="admin">
@@ -324,7 +327,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
           {[
             { href: "/admin/requests", emoji: "📋", label: "الطلبات" },
             { href: "/admin/drivers", emoji: "🚗", label: "السائقون" },
@@ -343,6 +346,35 @@ export default function AdminDashboard() {
               <span className="text-sm font-black">{item.label}</span>
             </Link>
           ))}
+        </div>
+
+        {/* ── Advanced Tools ── */}
+        <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+          <p className="text-sm font-black mb-3" style={{ color: "var(--text-muted)" }}>
+            أدوات متقدمة <span aria-hidden="true">🛠</span>
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { href: "/admin/notifications", emoji: "🔔", label: "مراقبة الإشعارات" },
+              { href: "/admin/activity", emoji: "📜", label: "سجل النشاط" },
+              { href: "/admin/compose", emoji: "✉️", label: "إرسال إشعار" },
+              { href: "/admin/database", emoji: "🗄️", label: "قاعدة البيانات" },
+              { href: "/admin/pricing", emoji: "💲", label: "التسعير" },
+              { href: "/admin/service-areas", emoji: "🗺️", label: "مناطق الخدمة" },
+              { href: "/admin/archive", emoji: "🗃️", label: "الأرشيف" },
+              { href: "/admin/push-debug", emoji: "🔧", label: "تشخيص الإشعارات" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-xl p-3 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
+                style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+              >
+                <span className="text-lg">{item.emoji}</span>
+                <span className="text-xs font-bold text-center leading-tight" style={{ color: "var(--text-sub)" }}>{item.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
 
       </div>

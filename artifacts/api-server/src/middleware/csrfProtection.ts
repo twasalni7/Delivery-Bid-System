@@ -12,6 +12,10 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  *
  * This guards against cross-site request forgery when sameSite=none cookies
  * are used for cross-origin credential sharing.
+ *
+ * Protection is always active in production.  In non-production environments
+ * it can be enabled explicitly by setting CSRF_PROTECTION_ENABLED=true so
+ * that staging mirrors production behaviour.
  */
 export function csrfProtection(
   req: Request,
@@ -24,7 +28,8 @@ export function csrfProtection(
   }
 
   const isProduction = process.env["NODE_ENV"] === "production";
-  if (!isProduction) {
+  const isExplicitlyEnabled = process.env["CSRF_PROTECTION_ENABLED"] === "true";
+  if (!isProduction && !isExplicitlyEnabled) {
     next();
     return;
   }
