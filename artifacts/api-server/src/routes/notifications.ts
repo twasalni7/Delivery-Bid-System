@@ -21,7 +21,8 @@ router.get("/", requireAuth(), async (req, res) => {
       .where(
         and(
           eq(notificationsTable.userId, user.id),
-          eq(notificationsTable.userRole, user.role)
+          eq(notificationsTable.userRole, user.role),
+          eq(notificationsTable.channel, "in_app") // Only return in-app notifications for the bell/center
         )
       )
       .orderBy(desc(notificationsTable.createdAt))
@@ -45,6 +46,7 @@ router.get("/unread-count", requireAuth(), async (req, res) => {
         and(
           eq(notificationsTable.userId, user.id),
           eq(notificationsTable.userRole, user.role),
+          eq(notificationsTable.channel, "in_app"), // Only count in-app notifications
           eq(notificationsTable.isRead, false)
         )
       );
@@ -66,6 +68,7 @@ router.patch("/mark-all-read", requireAuth(), async (req, res) => {
         and(
           eq(notificationsTable.userId, user.id),
           eq(notificationsTable.userRole, user.role),
+          eq(notificationsTable.channel, "in_app"), // Only mark in-app notifications as read
           eq(notificationsTable.isRead, false)
         )
       );
