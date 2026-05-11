@@ -91,6 +91,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   delete process.env["VAPID_PUBLIC_KEY"];
   delete process.env["VAPID_PRIVATE_KEY"];
+  delete process.env["ONESIGNAL_APP_ID"];
+  delete process.env["VITE_ONESIGNAL_APP_ID"];
+  delete process.env["ONESIGNAL_REST_API_KEY"];
+  delete process.env["ONESIGNAL_API_KEY"];
 });
 
 describe("GET /push/vapid-public-key", () => {
@@ -107,6 +111,30 @@ describe("GET /push/vapid-public-key", () => {
     const res = await request(app).get("/push/vapid-public-key");
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ publicKey: "test-vapid-key" });
+  });
+});
+
+describe("GET /push/public-config", () => {
+  it("returns disabled config when OneSignal env is missing", async () => {
+    const app = createApp();
+    const res = await request(app).get("/push/public-config");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      oneSignalEnabled: false,
+      oneSignalAppId: null,
+    });
+  });
+
+  it("returns OneSignal app id when OneSignal is configured", async () => {
+    process.env["ONESIGNAL_APP_ID"] = "onesignal-app-id";
+    process.env["ONESIGNAL_REST_API_KEY"] = "onesignal-rest-key";
+    const app = createApp();
+    const res = await request(app).get("/push/public-config");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      oneSignalEnabled: true,
+      oneSignalAppId: "onesignal-app-id",
+    });
   });
 });
 

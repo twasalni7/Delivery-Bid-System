@@ -124,6 +124,42 @@ describe("notify", () => {
       url: "/admin/support?ticket=42&notificationId=123&notificationSource=push&notificationAction=open#reply",
     });
   });
+
+  it("uses /admin/notifications as default landing path for admin push links", async () => {
+    const insertReturningMock = vi.fn().mockResolvedValue([{ id: 77 }]);
+    const insertValuesMock = vi.fn().mockReturnValue({ returning: insertReturningMock });
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: insertValuesMock });
+
+    const updateWhereMock = vi.fn().mockResolvedValue([]);
+    const updateSetMock = vi.fn().mockReturnValue({ where: updateWhereMock });
+    (db.update as ReturnType<typeof vi.fn>).mockReturnValue({ set: updateSetMock });
+
+    (db.query.pushSubscriptionsTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      subscriptionData: {
+        endpoint: "https://example.com/push",
+        keys: { auth: "auth-key", p256dh: "p256dh-key" },
+      },
+    });
+    sendNotificationMock.mockResolvedValue(undefined);
+
+    await notify({
+      userId: 2,
+      userRole: "admin",
+      title: "Admin Test",
+      message: "Hello Admin",
+      type: "system",
+    });
+
+    await flushAsyncWork();
+    await flushAsyncWork();
+
+    expect(sendNotificationMock).toHaveBeenCalledTimes(1);
+    const [, payload] = sendNotificationMock.mock.calls[0]!;
+    expect(JSON.parse(payload)).toMatchObject({
+      notificationId: 77,
+      url: "/admin/notifications?notificationId=77&notificationSource=push&notificationAction=open",
+    });
+  });
 });
 
 describe("clearExpiredSubscription", () => {

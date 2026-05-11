@@ -100,6 +100,18 @@ router.get("/vapid-public-key", (_req, res) => {
 });
 
 /**
+ * GET /api/push/public-config
+ * Returns safe public push config needed by frontend bootstrap.
+ */
+router.get("/public-config", (_req, res) => {
+  const oneSignalConfig = getOneSignalConfig();
+  res.json({
+    oneSignalEnabled: Boolean(oneSignalConfig),
+    oneSignalAppId: oneSignalConfig?.appId ?? null,
+  });
+});
+
+/**
  * GET /api/push/status
  * Returns whether the current authenticated user has an active push subscription in DB.
  */

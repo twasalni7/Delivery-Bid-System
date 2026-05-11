@@ -208,7 +208,9 @@ function FlowOrchestrator() {
       return;
     }
     // initOneSignal handles deduplication internally
-    void initOneSignal();
+    void initOneSignal().catch((err) => {
+      console.warn("[Push] OneSignal init failed:", err);
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── OneSignal user linking ────────────────────────────────────────────────

@@ -104,7 +104,7 @@ function getAppOrigin(): string {
 }
 
 function getNotificationLandingPath(userRole: "client" | "driver" | "admin"): string {
-  if (userRole === "admin") return "/admin/notifications-center";
+  if (userRole === "admin") return "/admin/notifications";
   if (userRole === "driver") return "/driver/notifications";
   return "/client/notifications";
 }
