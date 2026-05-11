@@ -267,6 +267,18 @@ router.post("/", requireAuth("client"), async (req, res) => {
     const clientId = getSessionUser(req)!.id;
     const data = parsed.data;
 
+    // Fetch client data to get phone number (don't trust client-provided phone)
+    const [client] = await db
+      .select()
+      .from(clientsTable)
+      .where(eq(clientsTable.id, clientId))
+      .limit(1);
+
+    if (!client) {
+      res.status(404).json({ error: "العميل غير موجود" });
+      return;
+    }
+
     // Extract per-passenger data (not part of the Zod schema — passed as raw body field)
     const passengersInput = (req.body as { passengers?: PassengerRoutingInput[] }).passengers;
     const hasPassengers = Array.isArray(passengersInput) && passengersInput.length > 0;
@@ -353,7 +365,7 @@ router.post("/", requireAuth("client"), async (req, res) => {
         routePolyline: routing.routePolyline,
         pricingSnapshot: routing.pricingSnapshot,
         needsAdminReview,
-        phone: data.phone,
+        phone: client.mobile, // Use client's registered mobile number
         numberOfPeople: data.numberOfPeople,
         workingDaysPerWeek: data.workingDaysPerWeek,
         numberOfShifts: data.numberOfShifts ?? 1,
