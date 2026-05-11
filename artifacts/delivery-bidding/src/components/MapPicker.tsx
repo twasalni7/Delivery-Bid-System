@@ -270,7 +270,7 @@ export default function MapPicker({
 
   useEffect(() => {
     handleMapMoveStopRef.current = () => {
-      void handleMapMoveStop();
+      handleMapMoveStop().catch(() => {});
     };
   }, [handleMapMoveStop]);
 

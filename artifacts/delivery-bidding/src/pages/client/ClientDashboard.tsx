@@ -100,7 +100,7 @@ export default function ClientDashboard() {
             boxShadow: "0 18px 38px rgba(91,33,182,0.45)",
           }}
         >
-          <h2 className="text-2xl font-black leading-tight">جاهزة لمشاويرك القادمة؟</h2>
+          <h2 className="text-2xl font-black leading-tight">جاهز لمشاويرك القادمة؟</h2>
           <p className="text-sm font-bold text-violet-100">حددي مساراتك والشفتات واحصلي على السعر النهائي</p>
           <Link
             href="/client/request/new"
