@@ -8,15 +8,44 @@
  * 3. initOneSignal يستخدم OneSignalSDKWorker.js
  */
 
+import { API_ORIGIN } from "@/lib/api-config";
+import { appPath } from "@/lib/pwa-utils";
+
 const LOG_PREFIX = "[Push]";
 
-// App ID with hardcoded fallback
-const ONESIGNAL_APP_ID =
-  (import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined) ??
-  "ed8315eb-36d7-4028-ab7d-a5114eaa4061";
+let resolvedAppId: string | null | undefined;
 
 let initialized = false;
 let initPromise: Promise<void> | null = null;
+
+async function resolveOneSignalAppId(): Promise<string | null> {
+  if (resolvedAppId !== undefined) {
+    return resolvedAppId;
+  }
+
+  const envAppId = import.meta.env.VITE_ONESIGNAL_APP_ID?.trim();
+  if (envAppId) {
+    resolvedAppId = envAppId;
+    return resolvedAppId;
+  }
+
+  try {
+    const res = await fetch(`${API_ORIGIN}/api/push/public-config`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      resolvedAppId = null;
+      return null;
+    }
+    const body = (await res.json()) as { oneSignalAppId?: unknown };
+    const fetchedAppId = typeof body.oneSignalAppId === "string" ? body.oneSignalAppId.trim() : "";
+    resolvedAppId = fetchedAppId || null;
+    return resolvedAppId;
+  } catch {
+    resolvedAppId = null;
+    return null;
+  }
+}
 
 /**
  * تهيئة OneSignal — يُستدعى مرة واحدة عند تحميل التطبيق
@@ -25,7 +54,9 @@ export async function initOneSignal(): Promise<void> {
   if (initialized) return;
   if (initPromise) return initPromise;
 
-  if (!ONESIGNAL_APP_ID) {
+  const oneSignalAppId = await resolveOneSignalAppId();
+
+  if (!oneSignalAppId) {
     console.warn(LOG_PREFIX, "ONESIGNAL_APP_ID غير موجود — الإشعارات معطلة");
     return;
   }
@@ -35,17 +66,18 @@ export async function initOneSignal(): Promise<void> {
     window.OneSignalDeferred.push(async (OneSignal: OneSignalNamespace) => {
       try {
         await OneSignal.init({
-          appId: ONESIGNAL_APP_ID,
-          serviceWorkerPath: "/OneSignalSDKWorker.js",
-          serviceWorkerParam: { scope: "/" },
+          appId: oneSignalAppId,
+          serviceWorkerPath: appPath("sw.js"),
+          serviceWorkerParam: { scope: appPath() },
           notifyButton: { enable: false },
           allowLocalhostAsSecureOrigin: true,
         });
         initialized = true;
-        console.log(LOG_PREFIX, "OneSignal initialized ✓", { appId: ONESIGNAL_APP_ID });
+        console.log(LOG_PREFIX, "OneSignal initialized ✓", { appId: oneSignalAppId });
       } catch (err) {
         console.warn(LOG_PREFIX, "OneSignal init warning:", err);
-        initialized = true;
+        initialized = false;
+        initPromise = null;
       }
       resolve();
     });
