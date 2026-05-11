@@ -107,6 +107,7 @@ export default function ClientDashboard() {
 
         <section
           className="rounded-[2rem] p-6 space-y-4"
+          aria-label="قسم إنشاء طلب توصيل جديد"
           style={{
             background: "linear-gradient(145deg, #5b21b6 0%, #7c3aed 45%, #6d28d9 100%)",
             color: "#fff",

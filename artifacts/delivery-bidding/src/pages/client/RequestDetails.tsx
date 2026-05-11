@@ -701,7 +701,7 @@ export default function RequestDetails() {
                       <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
-                            {hasValidRating ? (
+                            {hasValidRating && driverRatingValue != null ? (
                               <span className="inline-flex items-center gap-1 text-xs font-black" style={{ color: "#fbbf24" }}>
                                 <Star size={12} fill="currentColor" /> {driverRatingValue.toFixed(1)}
                               </span>
@@ -727,7 +727,7 @@ export default function RequestDetails() {
                           <button
                             onClick={() => setConfirmOffer(offer)}
                             className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
-                            aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}${offer.driver?.carType ? `، نوع المركبة ${offer.driver.carType}` : ""}${hasValidRating ? `، التقييم ${driverRatingValue.toFixed(1)}` : ""}`}
+                            aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}${offer.driver?.carType ? `، نوع المركبة ${offer.driver.carType}` : ""}${hasValidRating && driverRatingValue != null ? `، التقييم ${driverRatingValue.toFixed(1)}` : ""}`}
                             style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
                           >
                            اختيار السائق
