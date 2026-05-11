@@ -274,6 +274,86 @@ describe("POST /requests (client creates request)", () => {
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ id: 11, status: "FROZEN" });
   });
+
+  it("validates pricing engine is called during request creation", async () => {
+    const mockResolve = vi.fn().mockResolvedValue({
+      distanceKm: 15,
+      durationMinutes: 20,
+      coordinates: { pickup: null, dropoff: null, waypoints: [] },
+      routePolyline: "encoded_polyline",
+      pricingSnapshot: null,
+      pricing: { price: 1200, pricePerPerson: 1200, needsAdminReview: false, engine: "matrix" },
+      passengerRoutes: [],
+    });
+
+    vi.doMock("../lib/request-routing", () => ({
+      resolveRequestRoutingAndPricing: mockResolve,
+    }));
+
+    (CreateRequestBody.safeParse as ReturnType<typeof vi.fn>).mockReturnValue({
+      success: true,
+      data: {
+        homeLocation: "Dammam",
+        workLocation: "Jubail",
+        phone: "0501234567",
+        numberOfPeople: 2,
+        workingDaysPerWeek: 5,
+        numberOfShifts: 1,
+        morningTime: "06:30",
+        eveningTime: "16:00",
+        clientType: "موظفات",
+        homeLat: 26.4207,
+        homeLng: 50.0888,
+        destLat: 27.0174,
+        destLng: 49.6520,
+      },
+    });
+
+    // Mock client lookup
+    const clientSelectMock = makeSelectChainWithLimit([{ id: 1, mobile: "0501234567", name: "Fatima" }]);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValueOnce(clientSelectMock);
+
+    const returningMock = vi.fn().mockResolvedValue([{
+      id: 12,
+      clientId: 1,
+      clientType: "موظفات",
+      homeLocation: "Dammam",
+      workLocation: "Jubail",
+      phone: "0501234567",
+      numberOfPeople: 2,
+      workingDaysPerWeek: 5,
+      numberOfShifts: 1,
+      morningTime: "06:30",
+      eveningTime: "16:00",
+      monthlyPrice: 1200,
+      status: "OPEN",
+      selectedDriverId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }]);
+    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const insertMock = { values: valuesMock };
+    (db.insert as ReturnType<typeof vi.fn>).mockReturnValue(insertMock);
+
+    const app = createApp({ id: 1, role: "client", name: "Fatima" });
+    const res = await request(app).post("/requests").send({
+      homeLocation: "Dammam",
+      workLocation: "Jubail",
+      phone: "0501234567",
+      numberOfPeople: 2,
+      workingDaysPerWeek: 5,
+      numberOfShifts: 1,
+      morningTime: "06:30",
+      eveningTime: "16:00",
+      homeLat: 26.4207,
+      homeLng: 50.0888,
+      destLat: 27.0174,
+      destLng: 49.6520,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ id: 12, status: "OPEN", monthlyPrice: 1200 });
+  });
 });
 
 describe("GET /requests/:id", () => {
