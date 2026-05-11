@@ -19,6 +19,7 @@ const SEEN_KEY = (id: number) => `seen_offers_${id}`;
 const DAYS_AR = ["الأح", "الإث", "الثل", "الأر", "الخم", "الج", "الس"];
 
 type Message = { id: number; senderRole: string; senderId: number; body: string; createdAt: string };
+type DriverWithOptionalRating = Offer["driver"] & { rating?: number | null };
 
 /** Confirmation dialog shown before finalizing a driver selection */
 function DriverConfirmDialog({
@@ -668,9 +669,10 @@ export default function RequestDetails() {
           )}
 
           <div className="space-y-3">
-            {(offers ?? []).map((offer: Offer, index) => {
+            {(offers ?? []).map((offer: Offer) => {
               const isSelected = request.selectedDriverId === offer.driverId;
-              const driverRatingValue = Number((offer as any)?.driver?.rating);
+              const driver = offer.driver as DriverWithOptionalRating | undefined;
+              const driverRatingValue = Number(driver?.rating);
               const hasDriverRating = Number.isFinite(driverRatingValue) && driverRatingValue > 0;
               return (
                 <div key={offer.id} className="rounded-2xl overflow-hidden transition-all"
@@ -725,7 +727,7 @@ export default function RequestDetails() {
                            className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
                            style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
                          >
-                           {index === 0 ? "اختيار السائق" : "اختيار"}
+                           اختيار السائق
                          </button>
                        )}
                     </div>
