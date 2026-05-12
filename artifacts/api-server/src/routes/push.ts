@@ -791,4 +791,74 @@ router.post("/test-subscribe-manual", requireAuth("admin"), async (req, res) => 
   }
 });
 
+/**
+ * POST /api/push/debug-subscribe
+ * Temporary diagnostic endpoint that bypasses auth to test subscription save logic.
+ * Body: { subscription: PushSubscriptionJSON, userId: number, userRole: string }
+ * WARNING: This is for debugging only. Remove or protect before production.
+ */
+router.post("/debug-subscribe", async (req, res) => {
+  const rawBody = req.body as Record<string, unknown>;
+  const userId = Number(rawBody["userId"]);
+  const userRole = String(rawBody["userRole"]);
+
+  logger.info(
+    { userId, userRole },
+    "push/debug-subscribe: diagnostic subscription attempt (NO AUTH)"
+  );
+
+  if (!userId || !userRole) {
+    res.status(400).json({ error: "userId and userRole are required" });
+    return;
+  }
+
+  const normalized = normalizePushSubscription(rawBody);
+
+  if (!normalized) {
+    logger.warn(
+      { userId, userRole, bodyKeys: Object.keys(rawBody) },
+      "push/debug-subscribe: normalization failed"
+    );
+    res.status(400).json({
+      error: "بيانات الاشتراك غير صحيحة",
+      details: "Missing endpoint or keys in subscription",
+    });
+    return;
+  }
+
+  try {
+    await savePushSubscription(userId, userRole, normalized);
+
+    logger.info({ userId, userRole }, "push/debug-subscribe: saved successfully");
+
+    // Verify
+    const saved = await db.query.pushSubscriptionsTable.findFirst({
+      where: and(
+        eq(pushSubscriptionsTable.userId, userId),
+        eq(pushSubscriptionsTable.userRole, userRole as "client" | "driver" | "admin")
+      ),
+    });
+
+    res.json({
+      success: true,
+      message: "تم حفظ الاشتراك في قاعدة البيانات",
+      saved: !!saved,
+      details: saved ? {
+        id: saved.id,
+        userId: saved.userId,
+        userRole: saved.userRole,
+        endpoint: typeof saved.subscriptionData === "object" && saved.subscriptionData !== null
+          ? (saved.subscriptionData as { endpoint?: string }).endpoint?.substring(0, 50) + "..."
+          : null,
+      } : null,
+    });
+  } catch (err) {
+    logger.error({ err, userId, userRole }, "push/debug-subscribe: save failed");
+    res.status(500).json({
+      error: "فشل حفظ الاشتراك",
+      details: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
 export default router;

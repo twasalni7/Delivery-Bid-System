@@ -10,6 +10,7 @@ import {
   checkPushSubscriptionStatus,
 } from "@/lib/push-notifications";
 import { useAuth } from "@/contexts/auth-context";
+import { API_ORIGIN } from "@/lib/api-config";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type PushSubscribeResult =
@@ -41,6 +42,7 @@ export function usePushNotifications(role?: string) {
     const check = async () => {
       setIsChecking(true);
 
+      // First check browser status
       const status = await checkPushSubscriptionStatus();
 
       // لا يدعم الإشعارات
@@ -57,7 +59,27 @@ export function usePushNotifications(role?: string) {
         return;
       }
 
-      // مشترك بالفعل
+      // Check with server if user is logged in
+      if (user?.id) {
+        try {
+          const res = await fetch(`${API_ORIGIN}/api/push/my-subscription`, {
+            credentials: 'include',
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.hasSubscription) {
+              // Subscribed on server - don't show button
+              setShowNotificationButton(false);
+              setIsChecking(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("[Push] Failed to check server subscription status:", err);
+        }
+      }
+
+      // مشترك بالفعل في المتصفح
       if (status.subscribed) {
         setShowNotificationButton(false);
         setIsChecking(false);
