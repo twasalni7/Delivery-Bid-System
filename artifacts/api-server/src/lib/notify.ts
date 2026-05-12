@@ -3,11 +3,6 @@ import { db, pool } from "@workspace/db";
 import { notificationsTable, pushSubscriptionsTable, driversTable, adminsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { logger } from "./logger";
-import {
-  buildOneSignalExternalId,
-  isOneSignalConfigured,
-  sendOneSignalPush,
-} from "./onesignal";
 
 function getVapidConfig(): { public: string; private: string; subject: string } | null {
   const pub = process.env["VAPID_PUBLIC_KEY"];
@@ -17,12 +12,8 @@ function getVapidConfig(): { public: string; private: string; subject: string } 
   return { public: pub, private: priv, subject };
 }
 
-// Initialize VAPID at module load only when legacy web-push fallback is used.
+// Initialize VAPID at module load
 (function initVapid() {
-  if (isOneSignalConfigured()) {
-    logger.info("[push] OneSignal is configured — skipping legacy web-push VAPID initialization");
-    return;
-  }
   const vapid = getVapidConfig();
   if (vapid) {
     webpush.setVapidDetails(vapid.subject, vapid.public, vapid.private);
@@ -275,13 +266,6 @@ async function sendWebPush(
   icon?: string,
   badge?: string
 ): Promise<void> {
-  if (isOneSignalConfigured()) {
-    logger.info(
-      { userId, userRole, notificationId },
-      "notify: skipping legacy web push because OneSignal is configured"
-    );
-    return;
-  }
   const pushDebug = process.env["PUSH_DEBUG"] === "true";
   const vapid = getVapidConfig();
   if (!vapid) {
@@ -470,7 +454,7 @@ export async function notify(params: {
         isRead: false,
         channel: "push",
         deliveryStatus: "pending",
-        provider: isOneSignalConfigured() ? "onesignal" : "web-push",
+        provider: "web-push",
       })
       .returning({ id: notificationsTable.id });
     pushNotificationId = inserted?.id;
@@ -494,66 +478,7 @@ export async function notify(params: {
     actionPayload: params.actionPayload ?? null,
   });
 
-  // Step 3: Attempt push delivery via OneSignal or legacy web-push
-  if (isOneSignalConfigured()) {
-    const externalUserId = buildOneSignalExternalId(params.userId, params.userRole);
-    void sendOneSignalPush({
-      externalIds: [externalUserId],
-      title: params.title,
-      message: params.message,
-      url: `${getAppOrigin()}${deliveryUrl}`,
-      data: {
-        notificationId: pushNotificationId ?? null,
-        userRole: params.userRole,
-        type: params.type,
-        url: deliveryUrl,
-        actionType: params.actionType ?? "open_url",
-        actionPayload: params.actionPayload ?? null,
-      },
-      context: {
-        userId: params.userId,
-        userRole: params.userRole,
-        notificationId: pushNotificationId,
-      },
-    }).then(async (result) => {
-      if (!result.ok) {
-        await markNotificationFailed({
-          notificationId: pushNotificationId,
-          error: `onesignal_${result.status ?? "unknown"}`,
-          provider: "onesignal",
-          response: (result.response ?? null) as Record<string, unknown> | null,
-        });
-        return;
-      }
-      await markNotificationDelivered(pushNotificationId);
-      try {
-        await db
-          .update(notificationsTable)
-          .set({
-            provider: "onesignal",
-            providerResponse: (result.response ?? null) as Record<string, unknown> | null,
-          })
-          .where(eq(notificationsTable.id, pushNotificationId!));
-      } catch {}
-      logger.info(
-        { userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId, response: result.response },
-        "notify: OneSignal push delivery accepted"
-      );
-    }).catch(async (err) => {
-      logger.error(
-        { err, userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId, externalUserId },
-        "notify: OneSignal push delivery threw (unhandled exception)"
-      );
-      await markNotificationFailed({
-        notificationId: pushNotificationId,
-        error: "onesignal_exception",
-        provider: "onesignal",
-        response: { error: "onesignal_exception" },
-      });
-    });
-    return;
-  }
-
+  // Step 3: Attempt push delivery via web-push
   void getPushSubscription(params.userId, params.userRole).then((sub) => {
     if (sub) {
       logger.info({ userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: push subscription found");
@@ -674,19 +599,6 @@ export async function sendPushToUser(
   role: "client" | "driver" | "admin",
   params: { title: string; body: string; url?: string; tag?: string }
 ): Promise<{ sent: boolean }> {
-  if (isOneSignalConfigured()) {
-    const externalUserId = buildOneSignalExternalId(userId, role);
-    const result = await sendOneSignalPush({
-      externalIds: [externalUserId],
-      title: params.title,
-      message: params.body,
-      url: `${getAppOrigin()}${buildPushTrackingUrl({ userRole: role, url: params.url })}`,
-      data: { tag: params.tag ?? "push-test", userRole: role },
-      context: { userId, userRole: role },
-    });
-    return { sent: result.ok };
-  }
-
   const vapid = getVapidConfig();
   if (!vapid) {
     const msg = "[push] VAPID keys are not configured — cannot send push notification";

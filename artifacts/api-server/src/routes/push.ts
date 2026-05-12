@@ -13,7 +13,6 @@ import {
   type NotificationAudience,
   type NotificationUserRole,
 } from "../lib/notification-targeting";
-import { getOneSignalConfig, isOneSignalConfigured } from "../lib/onesignal";
 import { z } from "zod";
 
 const router = Router();
@@ -97,18 +96,6 @@ router.get("/vapid-public-key", (_req, res) => {
     return;
   }
   res.json({ publicKey: key });
-});
-
-/**
- * GET /api/push/public-config
- * Returns safe public push config needed by frontend bootstrap.
- */
-router.get("/public-config", (_req, res) => {
-  const oneSignalConfig = getOneSignalConfig();
-  res.json({
-    oneSignalEnabled: Boolean(oneSignalConfig),
-    oneSignalAppId: oneSignalConfig?.appId ?? null,
-  });
 });
 
 /**
@@ -354,7 +341,6 @@ router.post("/subscribe", requireAuth(), async (req, res) => {
  * a summary of endpoints currently registered.
  */
 router.get("/debug", requireAuth("admin"), async (_req, res) => {
-  const oneSignalConfig = getOneSignalConfig();
   const vapidConfigured = Boolean(
     process.env["VAPID_PUBLIC_KEY"] && process.env["VAPID_PRIVATE_KEY"]
   );
@@ -398,9 +384,7 @@ router.get("/debug", requireAuth("admin"), async (_req, res) => {
     }));
 
     res.json({
-      provider: isOneSignalConfigured() ? "onesignal" : vapidConfigured ? "vapid" : "none",
-      oneSignalConfigured: Boolean(oneSignalConfig),
-      oneSignalAppId: oneSignalConfig?.appId ?? null,
+      provider: vapidConfigured ? "web-push" : "none",
       vapidConfigured,
       vapidPublicKey: process.env["VAPID_PUBLIC_KEY"] ?? null,
       subscriptions: {
