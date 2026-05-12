@@ -11,7 +11,7 @@ import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { PushPermissionPrompt } from "@/components/push-permission-prompt";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { initOneSignal, loginOneSignal, logoutOneSignal } from "@/lib/push-notifications";
+import { initPushNotifications, loginOneSignal, logoutOneSignal } from "@/lib/push-notifications";
 
 import Home from "@/pages/Home";
 
@@ -178,14 +178,8 @@ function InstallBanner() {
 // ─── FlowOrchestrator ─────────────────────────────────────────────────────────
 /**
  * مسؤول عن:
- * 1. تهيئة OneSignal مرة واحدة
- * 2. ربط المستخدم بـ OneSignal عند login وفك الربط عند logout
- * 3. عرض prompts التثبيت والإشعارات
- *
- * الإصلاحات (PR #134):
- * - استخدام loginOneSignal/logoutOneSignal من push-notifications.ts
- * - ServiceWorker path صحيح: /OneSignalSDKWorker.js
- * - لا تكرار في init
+ * 1. تهيئة Service Worker للإشعارات
+ * 2. عرض prompts التثبيت والإشعارات
  */
 function FlowOrchestrator() {
   const { user } = useAuth();
@@ -198,34 +192,31 @@ function FlowOrchestrator() {
     markPushEnabled,
   } = useInstallAndPushFlow(canPromptForPush, user?.id as number | undefined);
 
-  // ── OneSignal init (once on mount) ────────────────────────────────────────
+  // ── Push init (once on mount) ─────────────────────────────────────────────
   useEffect(() => {
     if (!isSecurePushContext()) {
-      console.warn("[Push] OneSignal init skipped: not a secure context", {
+      console.warn("[Push] Init skipped: not a secure context", {
         protocol: window.location.protocol,
         isSecureContext: window.isSecureContext,
       });
       return;
     }
-    // initOneSignal handles deduplication internally
-    void initOneSignal().catch((err) => {
-      console.warn("[Push] OneSignal init failed:", err);
+    void initPushNotifications().catch((err) => {
+      console.warn("[Push] Init failed:", err);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── OneSignal user linking ────────────────────────────────────────────────
+  // ── User session tracking ──────────────────────────────────────────────────
   useEffect(() => {
     if (!user) {
-      // User logged out — unlink from OneSignal
+      // User logged out
       void logoutOneSignal();
       clearOneSignalLinked();
       return;
     }
 
-    // User logged in — link device to their account
-    // external_id format: role:id (e.g. "driver:42", "client:7")
+    // User logged in — track for push subscription flow
     void loginOneSignal(user.id as number, user.role).then(() => {
-      // ✅ سجّل أن OneSignal تم ربطه بهذا المستخدم
       markOneSignalLinked(user.id as number);
     });
 

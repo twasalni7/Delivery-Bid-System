@@ -12,7 +12,6 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { logSystemError } from "./middleware/errorLogger";
 import { startPushCleanupJob } from "./lib/cleanup";
-import { isOneSignalConfigured } from "./lib/onesignal";
 import { startRequestStatusSyncJob } from "./lib/request-status-sync";
 
 const rawPort = process.env["PORT"];
@@ -30,12 +29,10 @@ if (Number.isNaN(port) || port <= 0) {
 // ─── VAPID check ───────────────────────────────────────────────────────────
 const vapidPublicKey = process.env["VAPID_PUBLIC_KEY"];
 const vapidPrivateKey = process.env["VAPID_PRIVATE_KEY"];
-if (isOneSignalConfigured()) {
-  logger.info("OneSignal is configured — external push delivery uses OneSignal");
-} else if (!vapidPublicKey || !vapidPrivateKey) {
+if (!vapidPublicKey || !vapidPrivateKey) {
   logger.warn(
     "VAPID_PUBLIC_KEY and/or VAPID_PRIVATE_KEY are not set. " +
-    "External push delivery will be skipped unless OneSignal is configured. " +
+    "External push delivery will be disabled. " +
     "Run: pnpm --filter @workspace/scripts run generate-vapid"
   );
 } else {
