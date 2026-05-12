@@ -88,6 +88,10 @@ export function clearOneSignalLinked(): void {
   try { localStorage.removeItem(PUSH_LINKED_KEY); } catch { /* ignore */ }
 }
 
+// Renamed exports (preferred names)
+export const markPushLinked = markOneSignalLinked;
+export const clearPushLinked = clearOneSignalLinked;
+
 function isOneSignalLinked(userId: number | string): boolean {
   return lsRaw(PUSH_LINKED_KEY) === String(userId);
 }

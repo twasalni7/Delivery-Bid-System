@@ -203,3 +203,7 @@ export async function logoutOneSignal(): Promise<void> {
 export async function initOneSignal(): Promise<void> {
   // No-op: replaced by initPushNotifications
 }
+
+// Renamed exports (preferred names)
+export const loginPush = loginOneSignal;
+export const logoutPush = logoutOneSignal;

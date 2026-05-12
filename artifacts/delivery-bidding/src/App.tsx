@@ -5,13 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import NotFound from "@/pages/not-found";
-import { useInstallAndPushFlow, markOneSignalLinked, clearOneSignalLinked } from "@/hooks/use-install-and-push-flow";
+import { useInstallAndPushFlow, markPushLinked, clearPushLinked } from "@/hooks/use-install-and-push-flow";
 import { consumePendingNotificationInteraction } from "@/lib/notification-actions";
 import { appPath, isSecurePushContext } from "@/lib/pwa-utils";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { PushPermissionPrompt } from "@/components/push-permission-prompt";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { initPushNotifications, loginOneSignal, logoutOneSignal } from "@/lib/push-notifications";
+import { initPushNotifications, loginPush, logoutPush } from "@/lib/push-notifications";
 
 import Home from "@/pages/Home";
 
@@ -210,14 +210,14 @@ function FlowOrchestrator() {
   useEffect(() => {
     if (!user) {
       // User logged out
-      void logoutOneSignal();
-      clearOneSignalLinked();
+      void logoutPush();
+      clearPushLinked();
       return;
     }
 
     // User logged in — track for push subscription flow
-    void loginOneSignal(user.id as number, user.role).then(() => {
-      markOneSignalLinked(user.id as number);
+    void loginPush(user.id as number, user.role).then(() => {
+      markPushLinked(user.id as number);
     });
 
     // Handle pending notification tap (if app was opened from a notification)
