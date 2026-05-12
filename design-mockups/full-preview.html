@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة كاملة - توصّلني</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --bg-card: #121212;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --brand: #00d15a;
+            --border: rgba(255, 255, 255, 0.12);
+            --font: 'IBM Plex Sans Arabic', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, var(--brand) 0%, #00b84d 100%);
+            border-radius: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #000;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            color: rgba(0, 0, 0, 0.8);
+            font-weight: 600;
+        }
+
+        .flow-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .flow-title {
+            font-size: 1.75rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(0, 209, 90, 0.05);
+            border: 1px solid rgba(0, 209, 90, 0.2);
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .flow-step:hover {
+            background: rgba(0, 209, 90, 0.1);
+            border-color: var(--brand);
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: var(--brand);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h3 {
+            font-size: 1.25rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .screens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .screen-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .screen-card:hover {
+            border-color: var(--brand);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 209, 90, 0.2);
+        }
+
+        .screen-preview {
+            background: linear-gradient(135deg, rgba(0, 209, 90, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .screen-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .screen-number {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--brand);
+            color: #000;
+            border-radius: 99px;
+            font-weight: 900;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .screen-content {
+            padding: 2rem;
+        }
+
+        .screen-content h3 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+
+        .screen-content p {
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+        }
+
+        .screen-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .screen-features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .screen-features li:last-child {
+            border-bottom: none;
+        }
+
+        .screen-features li::before {
+            content: '✓';
+            color: var(--brand);
+            font-weight: 900;
+            margin-left: 0.75rem;
+        }
+
+        .view-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--brand);
+            color: #000;
+            border: none;
+            border-radius: 99px;
+            font-weight: 900;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 209, 90, 0.4);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(0, 209, 90, 0.15) 0%, rgba(0, 209, 90, 0.05) 100%);
+            border: 2px solid var(--brand);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .highlight-box h3 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            color: var(--brand);
+        }
+
+        .highlight-box p {
+            color: var(--text-secondary);
+            font-weight: 500;
+            line-height: 1.7;
+        }
+
+        .payment-emphasis {
+            background: var(--brand);
+            color: #000;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .payment-emphasis h2 {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+        }
+
+        .payment-emphasis ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .payment-emphasis li {
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 1rem;
+            font-weight: 900;
+            font-size: 1.125rem;
+        }
+
+        @media (max-width: 768px) {
+            .screens-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚗 معاينة كاملة للتطبيق</h1>
+            <p>تطبيق توصّلني - من البداية للنهاية</p>
+        </div>
+
+        <!-- Payment Emphasis -->
+        <div class="payment-emphasis">
+            <h2>💳 معلومة مهمة جداً</h2>
+            <p style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">
+                نظام الدفع في توصّلني
+            </p>
+            <ul>
+                <li>🔒 لا دفع مقدم</li>
+                <li>💰 الدفع آخر الشهر</li>
+                <li>👤 للسائق مباشرة</li>
+                <li>✅ بدون رسوم إضافية</li>
+            </ul>
+        </div>
+
+        <!-- Flow Diagram -->
+        <div class="flow-diagram">
+            <h2 class="flow-title">
+                <span>📍</span>
+                تدفق التطبيق الكامل
+            </h2>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>صفحة التعريف (Onboarding)</h3>
+                        <p>شرح تفاعلي للتطبيق مع التركيز على نظام الدفع والمميزات</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>تفعيل الإشعارات</h3>
+                        <p>طلب تفعيل الإشعارات لاستلام التحديثات الفورية</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>الصفحة الرئيسية</h3>
+                        <p>لوحة التحكم مع معلومات الدفع البارزة وزر إنشاء طلب</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>إنشاء طلب جديد</h3>
+                        <p>نموذج تفصيلي لإنشاء طلب اشتراك شهري</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h3>استقبال العروض</h3>
+                        <p>عرض السائقين المهتمين مع تقييماتهم</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h3>اختيار السائق</h3>
+                        <p>مراجعة العروض واختيار السائق المناسب</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">7</div>
+                    <div class="step-content">
+                        <h3>المحادثة والتنسيق</h3>
+                        <p>التواصل مع السائق داخل التطبيق</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-number">8</div>
+                    <div class="step-content">
+                        <h3>الدفع آخر الشهر</h3>
+                        <p>الدفع مباشرة للسائق - بدون دفع مقدم</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screens Preview -->
+        <h2 class="section-title">
+            <span>📱</span>
+            معاينة الشاشات
+        </h2>
+
+        <div class="screens-grid">
+            <!-- Screen 1: Onboarding -->
+            <div class="screen-card">
+                <div class="screen-preview">
+                    <div class="screen-number">الشاشة 1</div>
+                    <div class="screen-icon">🎯</div>
+                </div>
+                <div class="screen-content">
+                    <h3>صفحة التعريف</h3>
+                    <p>4 شاشات تفاعلية تشرح التطبيق بشكل واضح</p>
+                    <ul class="screen-features">
+                        <li>شرح نظام الاشتراك الشهري</li>
+                        <li>التركيز على معلومات الدفع</li>
+                        <li>شرح المميزات والموثوقية</li>
+                        <li>انتقالات سلسة بين الشاشات</li>
+                    </ul>
+                    <button class="view-btn" onclick="window.open('onboarding.html', '_blank')">
+                        عرض المعاينة 👁️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen 2: Dashboard -->
+            <div class="screen-card">
+                <div class="screen-preview">
+                    <div class="screen-number">الشاشة 2</div>
+                    <div class="screen-icon">🏠</div>
+                </div>
+                <div class="screen-content">
+                    <h3>الصفحة الرئيسية</h3>
+                    <p>لوحة التحكم الرئيسية بتصميم Uber</p>
+                    <ul class="screen-features">
+                        <li>قسم بارز عن معلومات الدفع</li>
+                        <li>زر إنشاء طلب جديد</li>
+                        <li>المميزات والثقة</li>
+                        <li>عرض الطلبات الحالية</li>
+                    </ul>
+                    <button class="view-btn" onclick="window.open('design-v2-uber-style.html', '_blank')">
+                        عرض المعاينة 👁️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen 3: Create Request -->
+            <div class="screen-card">
+                <div class="screen-preview">
+                    <div class="screen-number">الشاشة 3</div>
+                    <div class="screen-icon">➕</div>
+                </div>
+                <div class="screen-content">
+                    <h3>إنشاء طلب جديد</h3>
+                    <p>نموذج تفصيلي مع عرض السعر المباشر</p>
+                    <ul class="screen-features">
+                        <li>Progress Stepper للخطوات</li>
+                        <li>حساب السعر تلقائياً</li>
+                        <li>تحديد المواقع والأوقات</li>
+                        <li>عرض السعر الشهري</li>
+                    </ul>
+                    <button class="view-btn" onclick="window.open('design-preview-create-request.html', '_blank')">
+                        عرض المعاينة 👁️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen 4: Request Details -->
+            <div class="screen-card">
+                <div class="screen-preview">
+                    <div class="screen-number">الشاشة 4</div>
+                    <div class="screen-icon">📋</div>
+                </div>
+                <div class="screen-content">
+                    <h3>تفاصيل الطلب</h3>
+                    <p>عرض العروض والتواصل مع السائقين</p>
+                    <ul class="screen-features">
+                        <li>عرض عروض السائقين</li>
+                        <li>تقييمات ومعلومات السائق</li>
+                        <li>محادثة داخل التطبيق</li>
+                        <li>تأكيد الدفع آخر الشهر</li>
+                    </ul>
+                    <button class="view-btn" onclick="window.open('design-preview-request-details.html', '_blank')">
+                        عرض المعاينة 👁️
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Highlight Box -->
+        <div class="highlight-box">
+            <h3>🎯 ملاحظات مهمة</h3>
+            <p>
+                <strong>1. صفحة الـ Onboarding:</strong> تظهر مرة واحدة فقط للمستخدم الجديد وتشرح كل شيء بشكل واضح.<br><br>
+
+                <strong>2. معلومات الدفع:</strong> موجودة في كل مكان بشكل بارز - في الـ Onboarding، الصفحة الرئيسية، وصفحات التفاصيل.<br><br>
+
+                <strong>3. التصميم:</strong> مستوحى من Uber بخلفية سوداء ولون أخضر للعناصر التفاعلية.<br><br>
+
+                <strong>4. التنقل:</strong> سلس جداً مع Modals وانتقالات احترافية بين الشاشات.<br><br>
+
+                <strong>5. الإشعارات:</strong> صفحة مخصصة لتفعيل الإشعارات بعد الـ Onboarding مباشرة.
+            </p>
+        </div>
+
+        <!-- Links Section -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2rem; margin-bottom: 3rem;">
+            <h2 class="section-title">
+                <span>🔗</span>
+                روابط المعاينة المباشرة
+            </h2>
+            <div style="display: grid; gap: 1rem;">
+                <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/twasalni7/Delivery-Bid-System/claude/redesign-client-portal-ui/design-mockups/onboarding.html"
+                   target="_blank"
+                   style="padding: 1.25rem; background: rgba(0, 209, 90, 0.1); border: 1px solid var(--brand); border-radius: 1rem; color: var(--brand); text-decoration: none; font-weight: 900; display: block; transition: all 0.3s ease;">
+                    1️⃣ صفحة التعريف (Onboarding) →
+                </a>
+                <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/twasalni7/Delivery-Bid-System/claude/redesign-client-portal-ui/design-mockups/design-v2-uber-style.html"
+                   target="_blank"
+                   style="padding: 1.25rem; background: rgba(0, 209, 90, 0.1); border: 1px solid var(--brand); border-radius: 1rem; color: var(--brand); text-decoration: none; font-weight: 900; display: block; transition: all 0.3s ease;">
+                    2️⃣ الصفحة الرئيسية (Dashboard) →
+                </a>
+                <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/twasalni7/Delivery-Bid-System/claude/redesign-client-portal-ui/design-mockups/design-preview-create-request.html"
+                   target="_blank"
+                   style="padding: 1.25rem; background: rgba(0, 209, 90, 0.1); border: 1px solid var(--brand); border-radius: 1rem; color: var(--brand); text-decoration: none; font-weight: 900; display: block; transition: all 0.3s ease;">
+                    3️⃣ إنشاء طلب جديد →
+                </a>
+                <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/twasalni7/Delivery-Bid-System/claude/redesign-client-portal-ui/design-mockups/design-preview-request-details.html"
+                   target="_blank"
+                   style="padding: 1.25rem; background: rgba(0, 209, 90, 0.1); border: 1px solid var(--brand); border-radius: 1rem; color: var(--brand); text-decoration: none; font-weight: 900; display: block; transition: all 0.3s ease;">
+                    4️⃣ تفاصيل الطلب والعروض →
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            <p style="font-size: 1.125rem; font-weight: 600;">
+                تم إنشاء المعاينات بواسطة Claude Code
+            </p>
+            <p style="margin-top: 1rem;">
+                جميع المعاينات تفاعلية وجاهزة للاستعراض 🚀
+            </p>
+        </div>
+    </div>
+</body>
+</html>
