@@ -61,5 +61,67 @@ describe("maps.calculateRoutePlan", () => {
     expect(route.routePolyline).toBe("");
     expect(route.distanceKm).toBeCloseTo(haversineKm(0, 0, 0, 1), 3);
   });
-});
 
+  it("retries with larger radius when ORS cannot find a routable point", async () => {
+    process.env["OPENROUTESERVICE_API_KEY"] = "test";
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    fetchSpy
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          error: {
+            code: 2010,
+            message:
+              "Could not find routable point within a radius of 350.0 meters of specified coordinate 1",
+          },
+        }),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          routes: [{ geometry: "poly", summary: { distance: 1000, duration: 600 } }],
+        }),
+      } as unknown as Response);
+
+    const route = await calculateRoutePlan(POINTS);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(route.routePolyline).toBe("poly");
+    expect(route.distanceKm).toBeCloseTo(1, 5);
+    expect(route.durationMinutes).toBeCloseTo(10, 5);
+  });
+
+  it("falls back when ORS routable-point retry also fails", async () => {
+    process.env["OPENROUTESERVICE_API_KEY"] = "test";
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    fetchSpy
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          error: {
+            code: 2010,
+            message:
+              "Could not find routable point within a radius of 350.0 meters of specified coordinate 1",
+          },
+        }),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          error: {
+            code: 2010,
+            message:
+              "Could not find routable point within a radius of 2000.0 meters of specified coordinate 1",
+          },
+        }),
+      } as unknown as Response);
+
+    const route = await calculateRoutePlan(POINTS);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(route.routePolyline).toBe("");
+    expect(route.distanceKm).toBeCloseTo(haversineKm(0, 0, 0, 1), 3);
+  });
+});
