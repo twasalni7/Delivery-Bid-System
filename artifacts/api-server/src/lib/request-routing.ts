@@ -123,7 +123,7 @@ export async function resolveRequestRoutingAndPricing(params: {
   return {
     distanceKm,
     durationMinutes,
-    routePolyline: primaryRoute?.routePolyline ?? null,
+    routePolyline: primaryRoute?.routePolyline ? primaryRoute.routePolyline : null,
     coordinates:
       primaryRoute?.coordinates ?? {
         pickup:
