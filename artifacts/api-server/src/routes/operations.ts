@@ -11,7 +11,6 @@ import {
 import { systemErrorsTable, systemAlertsTable } from "@workspace/db";
 import { requireAuth } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
-import { isOneSignalConfigured } from "../lib/onesignal";
 import { eq, and, gte, lte, desc, count, isNotNull, isNull, sql, ne } from "drizzle-orm";
 
 const router = Router();
@@ -73,10 +72,13 @@ router.get("/system-health", async (_req, res) => {
   services.push({ name: "Database", nameAr: "قاعدة البيانات", status: dbStatus, lastCheck: now });
   services.push({ name: "Auth", nameAr: "نظام التوثيق", status: "healthy", lastCheck: now });
 
+  const vapidConfigured = Boolean(
+    process.env["VAPID_PUBLIC_KEY"] && process.env["VAPID_PRIVATE_KEY"]
+  );
   services.push({
     name: "Push Notifications",
     nameAr: "الإشعارات",
-    status: isOneSignalConfigured() ? "healthy" : "warning",
+    status: vapidConfigured ? "healthy" : "warning",
     lastCheck: now,
   });
 

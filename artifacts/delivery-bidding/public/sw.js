@@ -1,9 +1,6 @@
-/* توصّلني Service Worker — powered by OneSignal */
+/* توصّلني Service Worker — Web Push API */
 
-/* OneSignal SDK يتولى كل شيء: FCM, VAPID, APNs */
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
-
-const CACHE_VERSION = 'twasalni-v5';
+const CACHE_VERSION = 'twasalni-v6';
 const APP_SCOPE = new URL(self.registration.scope).pathname;
 const APP_INDEX_URL = new URL('index.html', self.registration.scope).pathname;
 const APP_MANIFEST_URL = new URL('manifest.json', self.registration.scope).pathname;
@@ -29,6 +26,56 @@ self.addEventListener('activate', (event) => {
         )
       )
       .then(() => self.clients.claim())
+  );
+});
+
+/* ─── Push ─────────────────────────────────────────────────────────────── */
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    console.warn('[SW] Push event data is not valid JSON');
+    return;
+  }
+
+  const title = data.title || 'توصّلني';
+  const options = {
+    body: data.body || data.message || '',
+    icon: data.icon || '/icons/icon-192.svg',
+    badge: data.badge || '/favicon.svg',
+    data: { url: data.url || '/' },
+    tag: data.tag || data.type || 'default',
+    requireInteraction: false,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+/* ─── Notification Click ──────────────────────────────────────────────── */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/';
+  const fullUrl = new URL(url, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // محاولة التركيز على نافذة موجودة
+      for (const client of clientList) {
+        if (client.url === fullUrl && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // فتح نافذة جديدة
+      if (clients.openWindow) {
+        return clients.openWindow(fullUrl);
+      }
+    })
   );
 });
 

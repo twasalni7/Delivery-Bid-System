@@ -1,18 +1,13 @@
 /**
- * use-push-notifications.ts — OneSignal Hook (PR #136 Fix)
+ * use-push-notifications.ts — Web Push Hook
  *
- * الإصلاح: يوحّد واجهة الـ hook مع ما يتوقعه EnablePushButton
- * يرجع:
- *   - showNotificationButton: هل تظهر زر التفعيل
- *   - isChecking: جاري الفحص
- *   - lastError: آخر خطأ
- *   - subscribeUserToPush: دالة التفعيل
+ * Hook لإدارة الإشعارات عبر Web Push API
  */
 import { useEffect, useState, useCallback } from "react";
 import {
-  initOneSignal,
-  loginOneSignal,
-  requestPushPermission,
+  initPushNotifications,
+  subscribeToPush,
+  checkPushSubscriptionStatus,
 } from "@/lib/push-notifications";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -38,63 +33,38 @@ export function usePushNotifications(role?: string) {
   const [lastError, setLastError] = useState<PushSubscribeResult | null>(null);
 
   useEffect(() => {
-    // تهيئة OneSignal دائماً
-    initOneSignal().catch(console.warn);
+    // تهيئة Service Worker عند تحميل التطبيق
+    initPushNotifications().catch(console.warn);
   }, []);
-
-  useEffect(() => {
-    // ربط المستخدم بـ OneSignal عند الدخول
-    if (user?.id && user?.role) {
-      loginOneSignal(user.id as number, user.role).catch(console.warn);
-    }
-  }, [user?.id, user?.role]);
 
   useEffect(() => {
     const check = async () => {
       setIsChecking(true);
 
+      const status = await checkPushSubscriptionStatus();
+
       // لا يدعم الإشعارات
-      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      if (!status.supported) {
         setShowNotificationButton(false);
         setIsChecking(false);
         return;
       }
-
-      const perm = Notification.permission;
 
       // مرفوض من المستخدم
-      if (perm === "denied") {
+      if (status.permission === "denied") {
         setShowNotificationButton(false);
         setIsChecking(false);
         return;
       }
 
-      // ممنوح — تحقق من OneSignal subscription
-      if (perm === "granted") {
-        try {
-          await initOneSignal();
-          const os = window.OneSignal;
-
-          // انتظر قليلاً حتى يتم ربط المستخدم بـ OneSignal
-          // loginOneSignal يُستدعى في App.tsx useEffect
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          if (os?.User?.PushSubscription?.optedIn && os?.User?.PushSubscription?.token) {
-            // مشترك بالفعل
-            setShowNotificationButton(false);
-            setIsChecking(false);
-            return;
-          }
-        } catch {
-          // لا نتوقف
-        }
-        // الإذن ممنوح لكن OneSignal غير مسجّل — أظهر الزر
-        setShowNotificationButton(true);
+      // مشترك بالفعل
+      if (status.subscribed) {
+        setShowNotificationButton(false);
         setIsChecking(false);
         return;
       }
 
-      // default — أظهر زر التفعيل
+      // غير مشترك — أظهر زر التفعيل
       setShowNotificationButton(true);
       setIsChecking(false);
     };
@@ -105,46 +75,26 @@ export function usePushNotifications(role?: string) {
   const subscribeUserToPush = useCallback(async (): Promise<PushSubscribeResult> => {
     setLastError(null);
 
-    if (!("Notification" in window)) return "unsupported";
+    if (!('Notification' in window)) return "unsupported";
     if (Notification.permission === "denied") return "permission_denied";
 
     try {
-      await initOneSignal();
-      const os = window.OneSignal;
-      if (!os) return "server_error";
+      const result = await subscribeToPush(role ?? user?.role);
 
-      // طلب الإذن
-      if (!os.Notifications.permission) {
-        await os.Notifications.requestPermission();
+      if (result === "ok") {
+        setShowNotificationButton(false);
+        return "ok";
       }
 
-      if (Notification.permission !== "granted") {
-        const result: PushSubscribeResult = "permission_default";
-        setLastError(result);
-        return result;
+      if (result === "denied") {
+        const mappedResult: PushSubscribeResult = "permission_denied";
+        setLastError(mappedResult);
+        return mappedResult;
       }
 
-      // ربط المستخدم
-      if (user?.id && user?.role) {
-        const externalId = `${user.role}:${user.id}`;
-        await os.login(externalId);
-        try {
-          os.User.addTags({ role: user.role ?? role ?? "unknown", userId: String(user.id) });
-        } catch {
-          // اختيارية
-        }
-      }
-
-      // Opt-in
-      if (!os.User.PushSubscription.optedIn) {
-        await os.User.PushSubscription.optIn();
-      }
-
-      // انتظر قليلاً حتى يتم تأكيد التسجيل
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      setShowNotificationButton(false);
-      return os.User.PushSubscription.token ? "ok" : "already_subscribed";
+      const mappedResult: PushSubscribeResult = result === "unsupported" ? "unsupported" : "subscribe_error";
+      setLastError(mappedResult);
+      return mappedResult;
     } catch (err) {
       console.error("[Push] subscribeUserToPush error:", err);
       const result: PushSubscribeResult = "subscribe_error";

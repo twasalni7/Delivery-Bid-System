@@ -26,10 +26,6 @@ services:
         value: "1"
       - key: CORS_ORIGIN
         sync: false
-      - key: ONESIGNAL_APP_ID
-        sync: false
-      - key: ONESIGNAL_REST_API_KEY
-        sync: false
       - key: VAPID_PUBLIC_KEY
         sync: false
       - key: VAPID_PRIVATE_KEY
@@ -43,9 +39,6 @@ services:
     branch: main
     buildCommand: BASE_PATH=/ corepack pnpm --filter @workspace/delivery-bidding run build
     staticPublishPath: artifacts/delivery-bidding/dist/public
-    envVars:
-      - key: VITE_ONESIGNAL_APP_ID
-        sync: false
     routes:
       - type: rewrite
         source: /*
