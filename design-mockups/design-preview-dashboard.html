@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة تصميم - الصفحة الرئيسية | توصّلني</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════════
+         *  Design Tokens - Dark Mode Only (Purple Theme)
+         * ═══════════════════════════════════════════════════ */
+        :root {
+            /* Background Layers */
+            --bg-primary: #050816;
+            --bg-secondary: #0a0f1e;
+            --bg-tertiary: #0f1729;
+            --bg-card: #101423;
+
+            /* Purple Brand Colors */
+            --brand-purple-dark: #5b21b6;
+            --brand-purple: #7c3aed;
+            --brand-purple-light: #8b5cf6;
+            --brand-purple-glow: rgba(124, 58, 237, 0.15);
+
+            /* Accent & Glow */
+            --accent-glow: rgba(167, 139, 250, 0.08);
+            --border-glow: rgba(167, 139, 250, 0.12);
+
+            /* Text Colors */
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+
+            /* Border Colors */
+            --border-subtle: rgba(148, 163, 184, 0.12);
+            --border-medium: rgba(148, 163, 184, 0.18);
+
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+            --shadow-glow: 0 0 24px var(--brand-purple-glow);
+
+            /* Radius */
+            --radius-sm: 0.75rem;
+            --radius-md: 1rem;
+            --radius-lg: 1.5rem;
+            --radius-xl: 2rem;
+
+            /* Spacing */
+            --space-xs: 0.5rem;
+            --space-sm: 0.75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+
+            /* Font Family */
+            --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-arabic);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+            background: var(--bg-secondary);
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════════
+         *  Hero Section
+         * ═══════════════════════════════════════════ */
+        .hero-card {
+            background: linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 50%, rgba(5,8,16,1) 100%);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-lg);
+            box-shadow: 0 22px 40px rgba(2,6,23,0.5);
+        }
+
+        .hero-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .user-info {
+            display: flex;
+            gap: var(--space-md);
+            align-items: center;
+        }
+
+        .avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #a78bfa 0%, #6d28d9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 900;
+            font-size: 1.125rem;
+            border: 2px solid rgba(255,255,255,0.12);
+            box-shadow: 0 14px 26px rgba(124,58,237,0.35);
+        }
+
+        .user-text h1 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-text p {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            font-weight: 900;
+        }
+
+        .notification-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border-subtle);
+            background: rgba(15,23,42,0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .notification-btn:hover {
+            background: rgba(124,58,237,0.2);
+            border-color: var(--brand-purple);
+            color: var(--brand-purple-light);
+        }
+
+        /* ═══════════════════════════════════════════
+         *  CTA Card
+         * ═══════════════════════════════════════════ */
+        .cta-card {
+            background: linear-gradient(145deg, #5b21b6 0%, #7c3aed 45%, #6d28d9 100%);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+            box-shadow: 0 22px 42px rgba(91,33,182,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-card h2 {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+            line-height: 1.2;
+        }
+
+        .cta-card p {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: var(--space-lg);
+        }
+
+        .cta-btn {
+            width: 100%;
+            padding: var(--space-md) var(--space-lg);
+            background: rgba(255,255,255,0.92);
+            color: #3b0764;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 900;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            box-shadow: 0 10px 25px rgba(42, 13, 88, 0.28);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(42, 13, 88, 0.4);
+        }
+
+        .cta-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ═══════════════════════════════════════════
+         *  Features Grid
+         * ═══════════════════════════════════════════ */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-sm);
+            background: linear-gradient(160deg, rgba(15,22,42,0.9) 0%, rgba(8,12,24,0.95) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .feature-item {
+            background: rgba(15,23,42,0.42);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md) var(--space-sm);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(124,58,237,0.1);
+            border-color: var(--brand-purple);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto var(--space-sm);
+            background: rgba(124,58,237,0.24);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .feature-item p {
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+
+        /* ═══════════════════════════════════════════
+         *  How It Works Section
+         * ═══════════════════════════════════════════ */
+        .section-card {
+            background: linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        .section-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(124,58,237,0.24);
+            border: 1px solid rgba(168,85,247,0.3);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .section-header h3 {
+            font-size: 1.5rem;
+            font-weight: 900;
+        }
+
+        /* Timeline Steps */
+        .timeline {
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            right: 23px;
+            top: 20px;
+            bottom: 20px;
+            width: 2px;
+            background: linear-gradient(180deg, var(--brand-purple) 0%, transparent 100%);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-lg);
+            position: relative;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+            box-shadow: 0 8px 20px rgba(124,58,237,0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-content {
+            flex: 1;
+            background: rgba(15,23,42,0.45);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md) var(--space-lg);
+        }
+
+        .timeline-content h4 {
+            font-size: 0.9375rem;
+            font-weight: 900;
+            margin-bottom: var(--space-xs);
+            color: var(--text-primary);
+        }
+
+        .timeline-content p {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* ═══════════════════════════════════════════
+         *  Trust & Security Section
+         * ═══════════════════════════════════════════ */
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+            margin-top: var(--space-lg);
+        }
+
+        .trust-badge {
+            background: rgba(15,23,42,0.5);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg) var(--space-md);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .trust-badge:hover {
+            background: rgba(124,58,237,0.08);
+            border-color: var(--brand-purple);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(124,58,237,0.2);
+        }
+
+        .trust-badge-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto var(--space-md);
+            background: rgba(124,58,237,0.2);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+        }
+
+        .trust-badge h4 {
+            font-size: 0.875rem;
+            font-weight: 900;
+            margin-bottom: var(--space-xs);
+        }
+
+        .trust-badge p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        /* ═══════════════════════════════════════════
+         *  Current Requests Section
+         * ═══════════════════════════════════════════ */
+        .section-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+        }
+
+        .link-text {
+            font-size: 0.875rem;
+            font-weight: 900;
+            color: var(--brand-purple);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .link-text:hover {
+            color: var(--brand-purple-light);
+        }
+
+        .request-card {
+            background: linear-gradient(150deg, rgba(23,24,31,0.95) 0%, rgba(16,17,23,0.98) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-xl);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .request-card:hover {
+            border-color: var(--brand-purple);
+            box-shadow: 0 8px 32px rgba(124,58,237,0.2);
+            transform: translateY(-2px);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .request-id {
+            font-size: 1rem;
+            font-weight: 900;
+        }
+
+        .status-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            background: rgba(234, 88, 12, 0.12);
+            color: #FB923C;
+            border: 1px solid rgba(234, 88, 12, 0.25);
+        }
+
+        .request-location {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .request-meta {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-lg);
+            font-weight: 700;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .btn-primary {
+            flex: 1;
+            padding: var(--space-md);
+            background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 900;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124,58,237,0.4);
+        }
+
+        .btn-secondary {
+            padding: var(--space-md) var(--space-lg);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            font-weight: 900;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--border-medium);
+        }
+
+        /* ═══════════════════════════════════════════
+         *  Bottom Navigation
+         * ═══════════════════════════════════════════ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(16, 20, 35, 0.98);
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-md);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+
+        .bottom-nav-container {
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: var(--space-xs);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: var(--brand-purple-light);
+        }
+
+        .nav-item:hover {
+            color: var(--text-secondary);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .nav-label {
+            font-size: 0.6875rem;
+            font-weight: 700;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        /* Responsive */
+        @media (max-width: 420px) {
+            .trust-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero-card">
+            <div class="hero-header">
+                <div class="user-info">
+                    <div class="avatar">أ</div>
+                    <div class="user-text">
+                        <h1>أحمد</h1>
+                        <p>مرحباً بك</p>
+                    </div>
+                </div>
+                <button class="notification-btn">
+                    🔔
+                </button>
+            </div>
+        </div>
+
+        <!-- CTA Card -->
+        <div class="cta-card">
+            <h2>جاهز لطلب توصيل؟</h2>
+            <p>حدد مشوارك واحصل على أفضل عرض من السائقين الموثوقين</p>
+            <button class="cta-btn">
+                ➕ طلب اشتراك جديد
+            </button>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">💰</div>
+                <p>سعر واضح</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">✨</div>
+                <p>اختيار الأنسب</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">💬</div>
+                <p>تواصل مباشر</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🛡️</div>
+                <p>دفع آمن</p>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-icon">🔍</div>
+                <h3>كيف يعمل النظام؟</h3>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-number">1</div>
+                    <div class="timeline-content">
+                        <h4>أنشئ طلبك</h4>
+                        <p>حدد موقع الانطلاق والوصول، الأوقات، وعدد الأشخاص</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">2</div>
+                    <div class="timeline-content">
+                        <h4>السعر يحسب تلقائياً</h4>
+                        <p>لا توجد مفاجآت - السعر النهائي يظهر قبل نشر الطلب</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">3</div>
+                    <div class="timeline-content">
+                        <h4>نشر للسائقين</h4>
+                        <p>يتم إرسال الطلب للسائقين المناسبين في منطقتك</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">4</div>
+                    <div class="timeline-content">
+                        <h4>استلام العروض</h4>
+                        <p>السائقون المهتمون يرسلون قبولهم وبياناتهم</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">5</div>
+                    <div class="timeline-content">
+                        <h4>اختر السائق المناسب</h4>
+                        <p>راجع التقييمات والسيارات واختر الأفضل لك</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-number">6</div>
+                    <div class="timeline-content">
+                        <h4>بدء الخدمة</h4>
+                        <p>بعد التأكيد تظهر معلومات التواصل والمحادثة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trust & Security -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-icon">🛡️</div>
+                <h3>الأمان والثقة</h3>
+            </div>
+
+            <div class="trust-grid">
+                <div class="trust-badge">
+                    <div class="trust-badge-icon">🔒</div>
+                    <h4>لا دفع مقدم</h4>
+                    <p>الدفع آخر الشهر مباشرة للسائق</p>
+                </div>
+
+                <div class="trust-badge">
+                    <div class="trust-badge-icon">✅</div>
+                    <h4>سائقون موثقون</h4>
+                    <p>جميع السائقين مراجعين ومصرح لهم</p>
+                </div>
+
+                <div class="trust-badge">
+                    <div class="trust-badge-icon">📱</div>
+                    <h4>محادثة داخلية</h4>
+                    <p>تواصل آمن داخل التطبيق</p>
+                </div>
+
+                <div class="trust-badge">
+                    <div class="trust-badge-icon">💳</div>
+                    <h4>دفع آمن</h4>
+                    <p>معاملات موثوقة ومحمية</p>
+                </div>
+
+                <div class="trust-badge">
+                    <div class="trust-badge-icon">👥</div>
+                    <h4>خصوصية محمية</h4>
+                    <p>بياناتك لا تظهر إلا بعد الاختيار</p>
+                </div>
+
+                <div class="trust-badge">
+                    <div class="trust-badge-icon">📊</div>
+                    <h4>أسعار واضحة</h4>
+                    <p>لا رسوم خفية أو مفاجآت</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Requests -->
+        <div style="margin-bottom: 100px;">
+            <div class="section-title-row">
+                <h3 class="section-title">📋 طلباتي الحالية</h3>
+                <a href="#" class="link-text">الأرشيف ←</a>
+            </div>
+
+            <!-- Request Card Example -->
+            <div class="request-card">
+                <div class="request-header">
+                    <span class="request-id">طلب #123</span>
+                    <span class="status-badge">مفتوح</span>
+                </div>
+
+                <div class="request-location">
+                    📍 من: الرياض، حي النخيل
+                </div>
+                <div class="request-location">
+                    📍 إلى: جامعة الملك سعود
+                </div>
+
+                <div class="request-meta">
+                    👤 السائق: لم يتم التعيين بعد<br>
+                    ⏰ ذهاب 7:00 ص | عودة 3:00 م
+                </div>
+
+                <div class="request-actions">
+                    <button class="btn-primary">إدارة الطلب</button>
+                    <button class="btn-secondary">
+                        📦 أرشفة
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty State Example (commented out) -->
+            <!-- <div class="empty-state">
+                لا توجد طلبات حالية
+            </div> -->
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="bottom-nav-container">
+            <a href="#" class="nav-item active">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="nav-label">الرئيسية</span>
+            </a>
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="nav-label">طلباتي</span>
+            </a>
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+                <span class="nav-label">الإشعارات</span>
+            </a>
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="nav-label">حسابي</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

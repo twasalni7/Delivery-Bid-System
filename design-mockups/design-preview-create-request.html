@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة تصميم - إنشاء طلب | توصّلني</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050816;
+            --bg-secondary: #0a0f1e;
+            --bg-tertiary: #0f1729;
+            --bg-card: #101423;
+            --brand-purple-dark: #5b21b6;
+            --brand-purple: #7c3aed;
+            --brand-purple-light: #8b5cf6;
+            --brand-purple-glow: rgba(124, 58, 237, 0.15);
+            --accent-glow: rgba(167, 139, 250, 0.08);
+            --border-glow: rgba(167, 139, 250, 0.12);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-subtle: rgba(148, 163, 184, 0.12);
+            --border-medium: rgba(148, 163, 184, 0.18);
+            --radius-sm: 0.75rem;
+            --radius-md: 1rem;
+            --radius-lg: 1.5rem;
+            --radius-xl: 2rem;
+            --space-xs: 0.5rem;
+            --space-sm: 0.75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-arabic);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+            background: var(--bg-secondary);
+            min-height: 100vh;
+            padding-bottom: 120px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(15,23,42,0.55);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(124,58,237,0.2);
+            border-color: var(--brand-purple);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 900;
+        }
+
+        /* Progress Stepper */
+        .stepper {
+            margin-bottom: var(--space-2xl);
+            padding: 0 var(--space-md);
+        }
+
+        .stepper-track {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: var(--space-md);
+        }
+
+        .stepper-line {
+            position: absolute;
+            right: 0;
+            left: 0;
+            height: 2px;
+            background: rgba(255,255,255,0.12);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+
+        .stepper-progress {
+            position: absolute;
+            right: 0;
+            height: 2px;
+            background: var(--brand-purple);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+            transition: width 0.5s ease;
+        }
+
+        .stepper-steps {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 0.9375rem;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.04);
+            border: 2px solid rgba(255,255,255,0.18);
+            color: var(--text-muted);
+        }
+
+        .step.active .step-circle {
+            background: var(--brand-purple);
+            border-color: var(--brand-purple);
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(124,58,237,0.4);
+        }
+
+        .step.completed .step-circle {
+            background: var(--brand-purple-dark);
+            border-color: var(--brand-purple-dark);
+            color: #fff;
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .step.active .step-label {
+            color: var(--brand-purple-light);
+        }
+
+        /* Form Card */
+        .form-card {
+            background: linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+            margin-bottom: var(--space-sm);
+        }
+
+        .form-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: var(--space-xl);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .input {
+            width: 100%;
+            padding: var(--space-md);
+            background: rgba(15,23,42,0.5);
+            border: 1.5px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            font-weight: 500;
+            font-family: var(--font-arabic);
+            transition: all 0.2s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--brand-purple);
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+        }
+
+        .input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .map-btn {
+            width: 100%;
+            padding: var(--space-lg);
+            background: rgba(124,58,237,0.12);
+            border: 1px dashed var(--brand-purple);
+            border-radius: var(--radius-lg);
+            color: var(--brand-purple-light);
+            font-weight: 700;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        .map-btn:hover {
+            background: rgba(124,58,237,0.2);
+        }
+
+        /* Passenger Card */
+        .passenger-card {
+            background: rgba(15,23,42,0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+        }
+
+        .passenger-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .passenger-title {
+            font-size: 1rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .status-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid #10B981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #10B981;
+            font-size: 0.75rem;
+        }
+
+        /* Price Preview */
+        .price-preview {
+            background: linear-gradient(145deg, #5b21b6 0%, #7c3aed 45%, #6d28d9 100%);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+            box-shadow: 0 22px 42px rgba(91,33,182,0.5);
+            position: sticky;
+            top: var(--space-lg);
+        }
+
+        .price-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .price-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.15);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .price-title {
+            font-size: 1rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .price-amount {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: var(--space-xs);
+            text-align: center;
+        }
+
+        .price-period {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .price-details {
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-sm) 0;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .price-row:not(:last-child) {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Navigation Buttons */
+        .nav-buttons {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(16, 20, 35, 0.98);
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-lg);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+
+        .nav-buttons-container {
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        .btn-back {
+            padding: var(--space-md) var(--space-xl);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            font-weight: 900;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-arabic);
+        }
+
+        .btn-back:hover {
+            background: var(--bg-card);
+        }
+
+        .btn-next {
+            flex: 1;
+            padding: var(--space-md) var(--space-xl);
+            background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 900;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-arabic);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        .btn-next:hover {
+            box-shadow: 0 8px 20px rgba(124,58,237,0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-next:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="back-btn">←</button>
+            <h1>طلب اشتراك جديد</h1>
+        </div>
+
+        <!-- Progress Stepper -->
+        <div class="stepper">
+            <div class="stepper-track">
+                <div class="stepper-line"></div>
+                <div class="stepper-progress" style="width: 33%;"></div>
+                <div class="stepper-steps">
+                    <div class="step completed">
+                        <div class="step-circle">✓</div>
+                        <span class="step-label">المواقع</span>
+                    </div>
+                    <div class="step active">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">الأوقات</span>
+                    </div>
+                    <div class="step">
+                        <div class="step-circle">3</div>
+                        <span class="step-label">التفاصيل</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Preview (Sticky) -->
+        <div class="price-preview">
+            <div class="price-header">
+                <div class="price-icon">💰</div>
+                <div class="price-title">السعر المحسوب</div>
+            </div>
+            <div class="price-amount">1,200 ر.س</div>
+            <div class="price-period">للشخص / شهرياً</div>
+            <div class="price-details">
+                <div class="price-row">
+                    <span>📏 المسافة</span>
+                    <span>25 كم</span>
+                </div>
+                <div class="price-row">
+                    <span>⏱️ الزمن المتوقع</span>
+                    <span>~30 دقيقة</span>
+                </div>
+                <div class="price-row">
+                    <span>👥 عدد الأشخاص</span>
+                    <span>1</span>
+                </div>
+                <div class="price-row">
+                    <span>📅 أيام العمل</span>
+                    <span>5 أيام</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card">
+            <h2 class="form-title">⏰ تحديد الأوقات</h2>
+            <p class="form-subtitle">حدد أوقات الانطلاق والعودة لكل راكب</p>
+
+            <!-- Passenger 1 -->
+            <div class="passenger-card">
+                <div class="passenger-header">
+                    <div class="passenger-title">
+                        <span>👤</span>
+                        راكب 1 (أنت)
+                    </div>
+                    <div class="status-check">✓</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">وقت الذهاب</label>
+                    <input type="time" class="input" value="07:00">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">وقت العودة</label>
+                    <input type="time" class="input" value="15:00">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">أيام العمل</label>
+                    <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-top: var(--space-sm);">
+                        <button style="padding: var(--space-sm) var(--space-md); background: var(--brand-purple); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8125rem; cursor: pointer;">الأحد</button>
+                        <button style="padding: var(--space-sm) var(--space-md); background: var(--brand-purple); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8125rem; cursor: pointer;">الإثنين</button>
+                        <button style="padding: var(--space-sm) var(--space-md); background: var(--brand-purple); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8125rem; cursor: pointer;">الثلاثاء</button>
+                        <button style="padding: var(--space-sm) var(--space-md); background: var(--brand-purple); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8125rem; cursor: pointer;">الأربعاء</button>
+                        <button style="padding: var(--space-sm) var(--space-md); background: var(--brand-purple); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8125rem; cursor: pointer;">الخميس</button>
+                        <button style="padding: var(--space-sm) var(--space-md); background: rgba(15,23,42,0.5); color: var(--text-muted); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8125rem; cursor: pointer;">الجمعة</button>
+                        <button style="padding: var(--space-sm) var(--space-md); background: rgba(15,23,42,0.5); color: var(--text-muted); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8125rem; cursor: pointer;">السبت</button>
+                    </div>
+                </div>
+            </div>
+
+            <button style="width: 100%; padding: var(--space-md); background: rgba(124,58,237,0.12); border: 1px dashed var(--brand-purple); border-radius: var(--radius-lg); color: var(--brand-purple-light); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: var(--space-sm); font-size: 0.9375rem; font-family: var(--font-arabic);">
+                ➕ إضافة راكب آخر
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="nav-buttons">
+        <div class="nav-buttons-container">
+            <button class="btn-back">← رجوع</button>
+            <button class="btn-next">التالي →</button>
+        </div>
+    </div>
+</body>
+</html>
