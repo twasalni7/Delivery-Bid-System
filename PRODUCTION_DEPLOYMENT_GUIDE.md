@@ -211,7 +211,7 @@ NODE_ENV
 production
 ```
 
-#### 4. مفتاح OpenRouteService (إلزامي لحساب المسافة والتسعير!) ✅
+#### 4. مفتاح OpenRouteService (موصى به لحساب المسافة بدقة) ✅
 ```
 OPENROUTESERVICE_API_KEY
 ```
@@ -225,7 +225,7 @@ OPENROUTESERVICE_API_KEY
 5. اختر: **Free** plan (يعطيك 2000 طلب يومياً مجاناً)
 6. انسخ الـ API Key والصقه في Render
 
-⚠️ **بدون هذا المفتاح، لن يعمل حساب المسافة والتسعير التلقائي!**
+⚠️ **بدون هذا المفتاح، النظام سيستخدم تقدير مسافة خط مستقيم (أقل دقة) وقد لا تظهر المسارات (Polyline).**
 
 #### 5. منفذ الخادم (اختياري)
 ```
@@ -451,6 +451,6 @@ pg_dump "$SUPABASE_DATABASE_URL" | gzip > backup_$(date +%Y%m%d).sql.gz
 - `SUPABASE_DATABASE_URL` ✅
 - `SESSION_SECRET` ✅
 - `NODE_ENV=production` ✅
-- `OPENROUTESERVICE_API_KEY` ✅ (لحساب المسافة والتسعير)
+- `OPENROUTESERVICE_API_KEY` (موصى به لحساب مسافة الطرق بدقة)
 
-بدون هذه المفاتيح الأربعة، النظام **لن يعمل بشكل صحيح**!
+بدون المفاتيح الثلاثة الأولى، النظام **لن يعمل**. وبدون `OPENROUTESERVICE_API_KEY` ستعمل المنظومة بتقدير مسافة تقريبي.

@@ -32,7 +32,7 @@ The React app is served as a static site and the Express API runs as a Vercel Se
    | `SUPABASE_DATABASE_URL` | Supabase Transaction Pooler connection string (port **6543**) | `postgresql://postgres:[password]@db.[ref].supabase.co:6543/postgres` |
    | `SESSION_SECRET` | A long random secret for signing session cookies | `openssl rand -hex 32` output |
    | `NODE_ENV` | Set to `production` | `production` |
-   | `OPENROUTESERVICE_API_KEY` | **Required** for distance calculation and auto-pricing | Get from [openrouteservice.org](https://openrouteservice.org) |
+   | `OPENROUTESERVICE_API_KEY` | **Recommended** for accurate road distance (fallback uses straight-line estimate) | Get from [openrouteservice.org](https://openrouteservice.org) |
    | `VITE_SENTRY_DSN` | (Optional) Sentry DSN for frontend error monitoring | `https://...@sentry.io/...` |
 
    > **Sentry (optional):** create a React project at https://sentry.io, copy the DSN, and add it as `VITE_SENTRY_DSN`.
@@ -47,7 +47,7 @@ The React app is served as a static site and the Express API runs as a Vercel Se
    > 2. Sign Up (free account)
    > 3. Dashboard → Tokens → Request a token (Free plan: 2000 requests/day)
    > 4. Copy the API key
-   > **Without this key, distance calculation and auto-pricing will NOT work!**
+   > **Without this key, the system falls back to a straight-line distance estimate (no route polyline).**
 
 6. **Deploy** — click **Deploy**. Vercel will build and deploy the project.
 

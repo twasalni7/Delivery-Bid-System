@@ -39,11 +39,11 @@ NODE_ENV=production
 
 ---
 
-### 4. مفتاح OpenRouteService (مهم جداً!)
+### 4. مفتاح OpenRouteService (موصى به)
 ```bash
 OPENROUTESERVICE_API_KEY=your-actual-api-key-here
 ```
-- ✅ **بدون هذا المفتاح، لن يعمل حساب المسافة والتسعير!**
+- ✅ بدون هذا المفتاح، سيستخدم النظام تقدير مسافة خط مستقيم (أقل دقة) وقد لا تظهر المسارات (Polyline)
 - ✅ احصل عليه من [openrouteservice.org](https://openrouteservice.org)
 - ✅ الخطة المجانية تعطيك 2000 طلب يومياً
 

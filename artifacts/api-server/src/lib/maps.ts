@@ -1,4 +1,5 @@
 import { logger } from "./logger";
+import { haversineKm } from "@workspace/db/utils/pricing";
 
 // Verified against the OpenRouteService v2 directions API on 2026-05-10.
 const DEFAULT_ORS_API_URL = "https://api.openrouteservice.org/v2";
@@ -6,6 +7,7 @@ const DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org";
 const DEFAULT_LANGUAGE = "en"; // OpenRouteService doesn't support 'ar' for directions, causing HTTP 500
 const GEO_CACHE_LIMIT = 200;
 const geoCache = new Map<string, unknown>();
+const FALLBACK_AVG_SPEED_KPH = 40;
 
 export type RoutePoint = {
   lat: number;
@@ -34,6 +36,30 @@ export function getOpenRouteServiceConfig() {
 
 export function isOpenRouteServiceConfigured(): boolean {
   return Boolean(getOpenRouteServiceConfig());
+}
+
+function buildFallbackRoutePlan(points: RoutePoint[], reason: string): RoutePlan {
+  const distanceKm = points.slice(1).reduce((sum, point, idx) => {
+    const prev = points[idx]!;
+    return sum + haversineKm(prev.lat, prev.lng, point.lat, point.lng);
+  }, 0);
+  const durationMinutes = distanceKm > 0 ? (distanceKm / FALLBACK_AVG_SPEED_KPH) * 60 : 0;
+
+  logger.warn(
+    { reason, distanceKm, pointsCount: points.length },
+    "maps: using fallback haversine route (no provider polyline)"
+  );
+
+  return {
+    distanceKm,
+    durationMinutes,
+    routePolyline: "",
+    coordinates: {
+      pickup: points[0] ?? null,
+      dropoff: points[points.length - 1] ?? null,
+      waypoints: points.slice(1, -1),
+    },
+  };
 }
 
 function getCached<T>(key: string): T | null {
@@ -124,22 +150,28 @@ export async function calculateRoutePlan(points: RoutePoint[]): Promise<RoutePla
 
   const config = getOpenRouteServiceConfig();
   if (!config) {
-    throw new Error("openrouteservice_not_configured");
+    return buildFallbackRoutePlan(points, "openrouteservice_not_configured");
   }
 
-  const response = await fetch(`${config.apiUrl}/directions/driving-car/json`, {
-    method: "POST",
-    headers: {
-      Authorization: config.apiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      coordinates: points.map((point) => [point.lng, point.lat]),
-      instructions: false,
-      language: DEFAULT_LANGUAGE,
-      geometry: true,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${config.apiUrl}/directions/driving-car/json`, {
+      method: "POST",
+      headers: {
+        Authorization: config.apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        coordinates: points.map((point) => [point.lng, point.lat]),
+        instructions: false,
+        language: DEFAULT_LANGUAGE,
+        geometry: true,
+      }),
+    });
+  } catch (err) {
+    logger.error({ err }, "maps: directions request threw");
+    return buildFallbackRoutePlan(points, "openrouteservice_fetch_failed");
+  }
 
   const body = (await response.json().catch(() => null)) as
     | {
@@ -153,12 +185,13 @@ export async function calculateRoutePlan(points: RoutePoint[]): Promise<RoutePla
 
   if (!response.ok) {
     logger.error({ status: response.status, body }, "maps: directions request failed");
-    throw new Error("route_calculation_failed");
+    return buildFallbackRoutePlan(points, "openrouteservice_http_error");
   }
 
   const route = body?.routes?.[0];
   if (!route?.summary || !route.geometry) {
-    throw new Error("route_response_missing_summary");
+    logger.error({ body }, "maps: directions response missing summary/geometry");
+    return buildFallbackRoutePlan(points, "openrouteservice_invalid_response");
   }
 
   return {
