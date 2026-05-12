@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>توصّلني - الصفحة الرئيسية</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-card: #121212;
+            --brand-primary: #00d15a;
+            --brand-dark: #00b84d;
+            --brand-light: #00e566;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --text-muted: #6b6b6b;
+            --border: rgba(255, 255, 255, 0.12);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --font-arabic: 'IBM Plex Sans Arabic', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-arabic);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            padding: 1.5rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--brand-primary);
+        }
+
+        .notification-badge {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .notification-badge::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 8px;
+            height: 8px;
+            background: #ff4757;
+            border-radius: 50%;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 0 0 100px 0;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 2rem 1.25rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Payment Notice - VERY PROMINENT */
+        .payment-notice {
+            margin: 1.5rem 1.25rem;
+            background: linear-gradient(135deg, #00d15a 0%, #00b84d 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 12px 40px rgba(0, 209, 90, 0.3);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .payment-notice-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .payment-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .payment-notice h3 {
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .payment-notice-content {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .payment-notice-content p {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .payment-notice-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .highlight-text {
+            font-size: 1.125rem;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        /* CTA Button */
+        .cta-button {
+            width: calc(100% - 2.5rem);
+            margin: 1.5rem 1.25rem;
+            padding: 1.25rem;
+            background: var(--brand-primary);
+            color: #000;
+            border: none;
+            border-radius: 3rem;
+            font-weight: 900;
+            font-size: 1.125rem;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 209, 90, 0.4);
+            transition: all 0.3s ease;
+            font-family: var(--font-arabic);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 209, 90, 0.5);
+        }
+
+        .cta-button:active {
+            transform: translateY(0);
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 2rem 1.25rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--brand-primary);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card h4 {
+            font-size: 0.9375rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 2rem 1.25rem;
+            background: var(--bg-primary);
+        }
+
+        .steps {
+            margin-top: 1.5rem;
+        }
+
+        .step {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-size: 1rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        /* Current Requests */
+        .current-requests {
+            padding: 2rem 1.25rem;
+        }
+
+        .request-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .request-card:hover {
+            border-color: var(--brand-primary);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .request-id {
+            font-weight: 900;
+        }
+
+        .status-badge {
+            padding: 0.375rem 0.875rem;
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 900;
+        }
+
+        .request-route {
+            margin-bottom: 1rem;
+        }
+
+        .route-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .request-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .price {
+            font-size: 1.125rem;
+            font-weight: 900;
+            color: var(--brand-primary);
+        }
+
+        .view-btn {
+            padding: 0.625rem 1.25rem;
+            background: var(--brand-primary);
+            color: #000;
+            border: none;
+            border-radius: 99px;
+            font-weight: 900;
+            font-size: 0.875rem;
+            cursor: pointer;
+            font-family: var(--font-arabic);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Modal Content */
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 1.5rem 1.5rem 0 0;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s ease;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+            z-index: 10;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+        }
+
+        .close-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem 1.25rem;
+        }
+
+        /* Payment Info in Modal */
+        .modal-payment-info {
+            background: linear-gradient(135deg, #00d15a 0%, #00b84d 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-payment-info h4 {
+            font-size: 1.125rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 0.75rem;
+        }
+
+        .modal-payment-info p {
+            font-size: 0.9375rem;
+            color: #fff;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 0.75rem 0;
+            z-index: 100;
+        }
+
+        .bottom-nav-container {
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .nav-item.active {
+            color: var(--brand-primary);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+        }
+
+        .nav-label {
+            font-size: 0.6875rem;
+            font-weight: 700;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.25rem;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">توصّلني</div>
+            <div class="notification-badge">🔔</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Hero -->
+            <div class="hero">
+                <h1>توصيل شهري آمن ومريح</h1>
+                <p>خدمة اشتراك شهري للتوصيل اليومي</p>
+            </div>
+
+            <!-- Payment Notice - VERY VISIBLE -->
+            <div class="payment-notice">
+                <div class="payment-notice-header">
+                    <div class="payment-icon">💳</div>
+                    <h3>نظام الدفع الآمن</h3>
+                </div>
+                <div class="payment-notice-content">
+                    <p>🔒 <span class="highlight-text">لا يوجد دفع مقدم</span></p>
+                    <p>💰 الدفع آخر الشهر فقط</p>
+                    <p>👤 الدفع للسائق مباشرة</p>
+                    <p>✅ بدون رسوم إضافية</p>
+                </div>
+            </div>
+
+            <!-- CTA Button -->
+            <button class="cta-button" onclick="openModal('create-request')">
+                ➕ طلب اشتراك جديد
+            </button>
+
+            <!-- Features -->
+            <div class="features">
+                <h2 class="section-title">لماذا توصّلني؟</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">💰</div>
+                        <h4>أسعار واضحة</h4>
+                        <p>السعر النهائي يظهر مقدماً</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h4>دفع آمن</h4>
+                        <p>آخر الشهر للسائق مباشرة</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✅</div>
+                        <h4>سائقون موثوقون</h4>
+                        <p>جميع السائقين مراجعين</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h4>سهل الاستخدام</h4>
+                        <p>واجهة بسيطة وسريعة</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="how-it-works">
+                <h2 class="section-title">كيف يعمل؟</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>حدد مشوارك</h4>
+                            <p>اختر موقع الانطلاق والوصول مع الأوقات المناسبة</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>اعرف السعر الشهري</h4>
+                            <p>يتم حساب السعر تلقائياً قبل النشر - بدون مفاجآت</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>استقبل العروض</h4>
+                            <p>السائقون المهتمون يرسلون قبولهم</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>اختر السائق</h4>
+                            <p>راجع التقييمات واختر الأنسب لك</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>ابدأ الخدمة</h4>
+                            <p>ادفع آخر الشهر مباشرة للسائق - بدون دفع مقدم</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Requests -->
+            <div class="current-requests">
+                <h2 class="section-title">طلباتي الحالية</h2>
+
+                <div class="request-card" onclick="openModal('request-details')">
+                    <div class="request-header">
+                        <span class="request-id">طلب #123</span>
+                        <span class="status-badge">مفتوح</span>
+                    </div>
+                    <div class="request-route">
+                        <div class="route-item">
+                            <span>📍</span>
+                            <span>من: الرياض، حي النخيل</span>
+                        </div>
+                        <div class="route-item">
+                            <span>🎯</span>
+                            <span>إلى: جامعة الملك سعود</span>
+                        </div>
+                    </div>
+                    <div class="request-footer">
+                        <div class="price">1,200 ر.س/شهر</div>
+                        <button class="view-btn">عرض التفاصيل</button>
+                    </div>
+                </div>
+
+                <!-- Uncomment for empty state -->
+                <!-- <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <p>لا توجد طلبات حالية</p>
+                </div> -->
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="bottom-nav-container">
+                <div class="nav-item active">
+                    <div class="nav-icon">🏠</div>
+                    <div class="nav-label">الرئيسية</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon">📋</div>
+                    <div class="nav-label">طلباتي</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon">💬</div>
+                    <div class="nav-label">المحادثات</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon">👤</div>
+                    <div class="nav-label">حسابي</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <!-- Create Request Modal -->
+        <div class="modal" id="createRequestModal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">طلب اشتراك جديد</div>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-payment-info">
+                    <h4>💳 تذكير مهم</h4>
+                    <p><strong>لا يوجد دفع مقدم!</strong><br>
+                    الدفع آخر الشهر مباشرة للسائق فقط</p>
+                </div>
+                <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                    سيتم نقلك إلى نموذج إنشاء الطلب...
+                </p>
+            </div>
+        </div>
+
+        <!-- Request Details Modal -->
+        <div class="modal" id="requestDetailsModal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">تفاصيل الطلب #123</div>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-payment-info">
+                    <h4>💰 معلومات الدفع</h4>
+                    <p><strong>السعر الشهري:</strong> 1,200 ر.س<br>
+                    <strong>الدفع:</strong> آخر الشهر للسائق مباشرة<br>
+                    <strong>لا رسوم إضافية</strong></p>
+                </div>
+                <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                    تفاصيل الطلب والعروض...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(modalType) {
+            const overlay = document.getElementById('modalOverlay');
+            const createModal = document.getElementById('createRequestModal');
+            const detailsModal = document.getElementById('requestDetailsModal');
+
+            // Hide all modals first
+            createModal.style.display = 'none';
+            detailsModal.style.display = 'none';
+
+            // Show the requested modal
+            if (modalType === 'create-request') {
+                createModal.style.display = 'block';
+            } else if (modalType === 'request-details') {
+                detailsModal.style.display = 'block';
+            }
+
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const overlay = document.getElementById('modalOverlay');
+            overlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
