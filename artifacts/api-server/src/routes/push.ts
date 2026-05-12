@@ -268,15 +268,31 @@ async function savePushSubscription(
  * Set PUSH_DEBUG=true in env to enable verbose structured logging.
  */
 router.post("/subscribe", requireAuth(), async (req, res) => {
-  const user = getSessionUser(req)!;
+  const user = getSessionUser(req);
   const rawBody: unknown = req.body ?? {};
   const pushDebug = process.env["PUSH_DEBUG"] === "true";
+
+  // ── 0. Safety check: ensure user exists (should never fail after requireAuth) ──
+  if (!user) {
+    logger.error(
+      {
+        hasSession: !!req.session?.user,
+        hasTokenUser: !!req.tokenUser,
+        sessionId: req.session?.id,
+      },
+      "push/subscribe: CRITICAL - requireAuth passed but getSessionUser returned undefined"
+    );
+    res.status(401).json({ error: "الجلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى" });
+    return;
+  }
 
   // ── 1. Structured log of receipt (always on) ──────────────────────────────
   logger.info(
     {
       userId: user.id,
       userRole: user.role,
+      hasSession: !!req.session?.user,
+      hasTokenUser: !!req.tokenUser,
       ...(pushDebug && {
         bodyKeys:
           rawBody && typeof rawBody === "object" ? Object.keys(rawBody as object) : [],
@@ -663,6 +679,115 @@ router.get("/analytics", requireAuth("admin"), async (_req, res) => {
   } catch (err) {
     logger.error({ err }, "push/analytics: failed to fetch stats");
     res.status(500).json({ error: "فشل جلب إحصائيات الإشعارات" });
+  }
+});
+
+/**
+ * GET /api/push/my-subscription
+ * Returns the current user's push subscription from the database (if any).
+ * Useful for debugging: "Is my subscription actually saved?"
+ */
+router.get("/my-subscription", requireAuth(), async (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const subscription = await db.query.pushSubscriptionsTable.findFirst({
+      where: and(
+        eq(pushSubscriptionsTable.userId, user.id),
+        eq(pushSubscriptionsTable.userRole, user.role as "client" | "driver" | "admin")
+      ),
+    });
+
+    if (!subscription) {
+      logger.info({ userId: user.id, userRole: user.role }, "push/my-subscription: no subscription found");
+      res.json({ hasSubscription: false, subscription: null });
+      return;
+    }
+
+    logger.info({ userId: user.id, userRole: user.role }, "push/my-subscription: subscription found");
+    res.json({
+      hasSubscription: true,
+      subscription: {
+        id: subscription.id,
+        userId: subscription.userId,
+        userRole: subscription.userRole,
+        endpoint: typeof subscription.subscriptionData === "object" && subscription.subscriptionData !== null
+          ? (subscription.subscriptionData as { endpoint?: string }).endpoint?.substring(0, 50) + "..."
+          : null,
+      },
+    });
+  } catch (err) {
+    logger.error({ err, userId: user.id }, "push/my-subscription: query failed");
+    res.status(500).json({ error: "فشل جلب بيانات الاشتراك" });
+  }
+});
+
+/**
+ * POST /api/push/test-subscribe-manual
+ * Admin-only test endpoint to manually save a subscription (bypasses frontend).
+ * Useful for testing the database save logic in isolation.
+ * Body: { subscription: PushSubscriptionJSON }
+ */
+router.post("/test-subscribe-manual", requireAuth("admin"), async (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const rawBody: unknown = req.body ?? {};
+
+  logger.info(
+    { userId: user.id, userRole: user.role },
+    "push/test-subscribe-manual: manual subscription test started"
+  );
+
+  const normalized = normalizePushSubscription(rawBody);
+
+  if (!normalized) {
+    logger.warn(
+      {
+        userId: user.id,
+        bodyKeys: rawBody && typeof rawBody === "object" ? Object.keys(rawBody as object) : [],
+      },
+      "push/test-subscribe-manual: normalization failed"
+    );
+    res.status(400).json({ error: "بيانات الاشتراك غير صحيحة" });
+    return;
+  }
+
+  try {
+    await savePushSubscription(user.id, user.role, normalized);
+
+    logger.info(
+      { userId: user.id, userRole: user.role },
+      "push/test-subscribe-manual: subscription saved successfully"
+    );
+
+    // Fetch back to verify
+    const saved = await db.query.pushSubscriptionsTable.findFirst({
+      where: and(
+        eq(pushSubscriptionsTable.userId, user.id),
+        eq(pushSubscriptionsTable.userRole, user.role as "client" | "driver" | "admin")
+      ),
+    });
+
+    res.json({
+      message: "تم حفظ الاشتراك بنجاح (اختبار يدوي)",
+      saved: !!saved,
+      savedData: saved ? {
+        id: saved.id,
+        userId: saved.userId,
+        userRole: saved.userRole,
+      } : null,
+    });
+  } catch (err) {
+    logger.error({ err, userId: user.id }, "push/test-subscribe-manual: failed to save");
+    res.status(500).json({ error: "فشل حفظ الاشتراك" });
   }
 });
 

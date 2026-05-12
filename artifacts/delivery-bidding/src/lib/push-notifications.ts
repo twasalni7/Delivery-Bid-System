@@ -97,19 +97,39 @@ export async function subscribeToPush(
     }
 
     // 6. أرسل الاشتراك للباكند
+    const subscriptionJSON = subscription.toJSON();
+    console.log(LOG_PREFIX, "Sending subscription to backend:", {
+      endpoint: subscriptionJSON.endpoint?.substring(0, 50) + "...",
+      hasKeys: !!(subscriptionJSON.keys?.p256dh && subscriptionJSON.keys?.auth),
+    });
+
     const response = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription: subscription.toJSON() }),
+      body: JSON.stringify({ subscription: subscriptionJSON }),
     });
 
+    console.log(LOG_PREFIX, "Backend response status:", response.status);
+
     if (!response.ok) {
-      console.error(LOG_PREFIX, "Failed to save subscription on server");
+      let errorDetails = "Unknown error";
+      try {
+        const errorBody = await response.json();
+        errorDetails = errorBody.error || JSON.stringify(errorBody);
+      } catch {
+        errorDetails = await response.text();
+      }
+      console.error(LOG_PREFIX, "Failed to save subscription on server:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorDetails,
+      });
       return "server_error";
     }
 
-    console.log(LOG_PREFIX, "Subscription saved to server ✓");
+    const responseData = await response.json();
+    console.log(LOG_PREFIX, "Subscription saved to server ✓", responseData);
     return "ok";
   } catch (err) {
     console.error(LOG_PREFIX, "subscribeToPush error:", err);
