@@ -64,10 +64,15 @@ curl "https://api.openrouteservice.org/v2/directions/driving-car?api_key=YOUR_KE
 
 ## 🔧 متغيرات اختيارية (لكن موصى بها)
 
-### 5. OneSignal للإشعارات
+### 5. Web Push / VAPID للإشعارات
+
 ```bash
-ONESIGNAL_APP_ID=your-onesignal-app-id
-ONESIGNAL_REST_API_KEY=your-onesignal-rest-api-key
+# Generate VAPID keys using:
+# pnpm --filter @workspace/scripts run generate-vapid
+
+VAPID_PUBLIC_KEY=your-vapid-public-key
+VAPID_PRIVATE_KEY=your-vapid-private-key
+VAPID_SUBJECT=mailto:admin@twasalni.app
 ```
 - بدونها: الإشعارات Push لن تعمل
 - معها: الإشعارات ستصل للمستخدمين

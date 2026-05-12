@@ -29,7 +29,7 @@ The entire interface is in Arabic with full RTL (Right-to-Left) support.
 - 💰 **Competitive bidding system** for drivers
 - 📍 **Location-based route planning** with Google Maps integration
 - 💳 **Driver balance system** (50 SAR deduction on selection)
-- 🔔 **Real-time notifications** via OneSignal
+- 🔔 **Real-time notifications** via Web Push API
 - 📊 **Admin analytics dashboard**
 - 🎫 **Support ticket system**
 - 🔒 **Row-level security** via Supabase
@@ -42,7 +42,7 @@ The entire interface is in Arabic with full RTL (Right-to-Left) support.
 - **Authentication**: Session-based (express-session + PostgreSQL store)
 - **Monorepo**: pnpm workspaces
 - **Maps**: Google Maps API
-- **Push Notifications**: OneSignal
+- **Push Notifications**: Web Push API + VAPID
 - **Deployment**: Vercel (frontend + serverless API)
 
 ## Quick Start
