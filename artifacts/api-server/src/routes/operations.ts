@@ -276,7 +276,7 @@ router.get("/notifications-monitor", async (_req, res) => {
         clickRate: delivered > 0 ? `${((clicked / delivered) * 100).toFixed(1)}%` : "0%",
       },
       recentNotifications: recentNotifs,
-      pushStatus: isOneSignalConfigured() ? "configured" : "not_configured",
+      pushStatus: (process.env["VAPID_PUBLIC_KEY"] && process.env["VAPID_PRIVATE_KEY"]) ? "configured" : "not_configured",
     });
   } catch (err) {
     logger.error({ err }, "notifications-monitor error");

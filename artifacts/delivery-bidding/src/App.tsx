@@ -382,6 +382,9 @@ function Router() {
           <AdminGuard><AdminOperations /></AdminGuard>
         </Route>
         <Route path="/admin/notifications">
+          <AdminGuard><AdminNotificationComposer /></AdminGuard>
+        </Route>
+        <Route path="/admin/notifications-monitor">
           <AdminGuard><AdminNotificationsMonitor /></AdminGuard>
         </Route>
         <Route path="/admin/archive">
