@@ -1,32 +1,32 @@
 /*
  * ═══════════════════════════════════════════════════
  *  توصّلني — Design Tokens
- *  Brand: #7C3AED · Font: IBM Plex Sans Arabic
- *  Themes: light (default) | dark | creamy
+ *  Brand: #00E676 · Font: Tajawal / IBM Plex Sans Arabic
+ *  Themes: dark (default) | light (legacy) | creamy (legacy)
  * ═══════════════════════════════════════════════════
  */
 
 /* ─── Brand (constant across all themes) ─── */
 :root {
-  --brand:              #7C3AED;
-  --brand-hover:        #6D28D9;
-  --brand-active:       #5B21B6;
+  --brand:              #00E676;
+  --brand-hover:        #00C853;
+  --brand-active:       #00B248;
   --brand-fg:           #FFFFFF;
-  --brand-subtle:       rgba(124, 58, 237, 0.14);
-  --brand-subtle-hover: rgba(124, 58, 237, 0.2);
-  --brand-border:       rgba(124, 58, 237, 0.35);
-  --brand-shadow:       0 8px 30px rgba(124, 58, 237, 0.35);
+  --brand-subtle:       rgba(0, 230, 118, 0.14);
+  --brand-subtle-hover: rgba(0, 230, 118, 0.22);
+  --brand-border:       rgba(0, 230, 118, 0.38);
+  --brand-shadow:       0 8px 24px rgba(0, 230, 118, 0.22);
 
   /* Typography */
-  --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+  --font-arabic: 'Tajawal', 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
   --font-mono:   'IBM Plex Mono', monospace;
 
   /* Radius */
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
-  --radius-xl:  20px;
-  --radius-2xl: 28px;
+  --radius-sm:  12px;
+  --radius-md:  16px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+  --radius-2xl: 32px;
 
   /* Spacing */
   --space-1:  4px;
@@ -42,64 +42,63 @@
   --sidebar-width: 220px;
 
   /* Transition */
-  --transition: 150ms ease;
+  --transition: 300ms ease;
 }
 
 /* ═══════════════════════════════════════════
-   LIGHT THEME  (default)
+   DARK THEME (default)
    ═══════════════════════════════════════════ */
 :root,
 html.light {
-  color-scheme: light;
+  color-scheme: dark;
 
   /* Page & surfaces */
-  --bg:          #F2F4FB;
-  --bg-page:     #EDEFFC;
-  --surface:     #FFFFFF;
-  --surface-2:   #F7F7FE;
-  --surface-3:   #EEF0FD;
-  --surface-4:   #E6E9FB;
+  --bg:          #0A0E1A;
+  --bg-page:     #0A0E1A;
+  --surface:     #151B2D;
+  --surface-2:   #111629;
+  --surface-3:   #1B233A;
+  --surface-4:   #232E4B;
 
   /* Text */
-  --text:        #0B1221;
-  --text-sub:    #162238;
-  --text-muted:  #2A3A57;
-  /* #2E3F5C gives ≥4.6:1 contrast against white — passes WCAG AA */
-  --text-hint:   #2E3F5C;
+  --text:        #FFFFFF;
+  --text-sub:    rgba(255, 255, 255, 0.92);
+  --text-muted:  #B0BEC5;
+  --text-hint:   rgba(176, 190, 197, 0.72);
 
   /* Borders */
-  --border:        #CBD4EA;
-  --border-subtle: rgba(11, 18, 33, 0.12);
-  --border-strong: rgba(11, 18, 33, 0.24);
+  --border:        rgba(176, 190, 197, 0.18);
+  --border-subtle: rgba(176, 190, 197, 0.12);
+  --border-strong: rgba(176, 190, 197, 0.28);
 
   /* Header */
-  --header-bg:     #FFFFFF;
-  --header-border: #CED5E8;
+  --header-bg:     rgba(10, 14, 26, 0.92);
+  --header-border: rgba(176, 190, 197, 0.12);
   --header-height: 64px;
 
   /* Sidebar */
-  --sidebar-bg:          #FFFFFF;
-  --sidebar-border:      #CED5E8;
-  --sidebar-text:        #43506A;
-  --sidebar-text-hover:  #1A2540;
-  --sidebar-active-bg:   rgba(124, 58, 237, 0.12);
-  --sidebar-active-text: #6D28D9;
-  --sidebar-hover-bg:    #EFF3FA;
-  --sidebar-icon-color:  #64748B;
+  --sidebar-bg:          rgba(10, 14, 26, 0.96);
+  --sidebar-border:      rgba(176, 190, 197, 0.12);
+  --sidebar-text:        rgba(176, 190, 197, 0.82);
+  --sidebar-text-hover:  #FFFFFF;
+  --sidebar-active-bg:   rgba(0, 230, 118, 0.16);
+  --sidebar-active-text: #00E676;
+  --sidebar-hover-bg:    rgba(176, 190, 197, 0.08);
+  --sidebar-icon-color:  rgba(176, 190, 197, 0.66);
 
   /* Inputs */
-  --input-bg:        #FFFFFF;
-  --input-border:    #B8C4D9;
-  --input-border-focus: #7C3AED;
-  --input-text:      #111827;
-  --input-placeholder: #64748B;
-  --input-ring:      rgba(124, 58, 237, 0.2);
+  --input-bg:           #0F1426;
+  --input-border:       rgba(176, 190, 197, 0.22);
+  --input-border-focus: rgba(0, 230, 118, 0.75);
+  --input-text:         #FFFFFF;
+  --input-placeholder:  rgba(176, 190, 197, 0.66);
+  --input-ring:         rgba(0, 230, 118, 0.22);
 
   /* Shadows */
-  --shadow-sm:  0 1px 2px rgba(15,23,42,0.07), 0 1px 1px rgba(15,23,42,0.05);
-  --shadow-md:  0 8px 20px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.05);
-  --shadow-lg:  0 16px 36px rgba(15,23,42,0.12);
-  --shadow-xl:  0 24px 56px rgba(15,23,42,0.18);
+  --shadow-sm:  0 6px 16px rgba(0, 0, 0, 0.22);
+  --shadow-md:  0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-lg:  0 14px 36px rgba(0, 0, 0, 0.42);
+  --shadow-xl:  0 24px 56px rgba(0, 0, 0, 0.55);
 
   /* ── Status tokens ── */
   --status-open-bg:      rgba(234, 88, 12, 0.08);
@@ -107,10 +106,10 @@ html.light {
   --status-open-text:    #C2410C;
   --status-open-dot:     #EA580C;
 
-  --status-selected-bg:     rgba(124, 58, 237, 0.12);
-  --status-selected-border: rgba(124, 58, 237, 0.28);
-  --status-selected-text:   #6D28D9;
-  --status-selected-dot:    #7C3AED;
+  --status-selected-bg:     rgba(0, 230, 118, 0.14);
+  --status-selected-border: rgba(0, 230, 118, 0.32);
+  --status-selected-text:   #00E676;
+  --status-selected-dot:    #00E676;
 
   --status-active-bg:     rgba(5, 150, 105, 0.08);
   --status-active-border: rgba(5, 150, 105, 0.2);
@@ -138,11 +137,11 @@ html.light {
   --status-frozen-dot:    #3B82F6;
 
   /* Avatar palette */
-  --avatar-1: #7C3AED; --avatar-1-fg: #fff;
+  --avatar-1: #00E676; --avatar-1-fg: #072A1B;
   --avatar-2: #2563EB; --avatar-2-fg: #fff;
   --avatar-3: #059669; --avatar-3-fg: #fff;
   --avatar-4: #D97706; --avatar-4-fg: #fff;
-  --avatar-5: #7C3AED; --avatar-5-fg: #fff;
+  --avatar-5: #00E676; --avatar-5-fg: #072A1B;
   --avatar-6: #0891B2; --avatar-6-fg: #fff;
 }
 
@@ -151,81 +150,7 @@ html.light {
    ═══════════════════════════════════════════ */
 html.dark {
   color-scheme: dark;
-
-  --bg:        #090B14;
-  --bg-page:   #090B14;
-  --surface:   #151826;
-  --surface-2: #1B1F30;
-  --surface-3: #22273B;
-  --surface-4: #2A3047;
-
-  --text:       #F9FAFB;
-  --text-sub:   rgba(246, 248, 255, 0.82);
-  --text-muted: rgba(220, 228, 252, 0.58);
-  --text-hint:  rgba(202, 213, 248, 0.45);
-
-  --border:        rgba(183, 194, 235, 0.22);
-  --border-subtle: rgba(183, 194, 235, 0.14);
-  --border-strong: rgba(183, 194, 235, 0.34);
-
-  --header-bg:     rgba(12, 15, 26, 0.96);
-  --header-border: rgba(183, 194, 235, 0.16);
-
-  --sidebar-bg:          #101426;
-  --sidebar-border:      rgba(183, 194, 235, 0.16);
-  --sidebar-text:        rgba(220, 228, 252, 0.66);
-  --sidebar-text-hover:  #F8FAFF;
-  --sidebar-active-bg:   rgba(124, 58, 237, 0.24);
-  --sidebar-active-text: #C4B5FD;
-  --sidebar-hover-bg:    rgba(183, 194, 235, 0.08);
-  --sidebar-icon-color:  rgba(220, 228, 252, 0.5);
-
-  --input-bg:           #151928;
-  --input-border:       rgba(183, 194, 235, 0.24);
-  --input-border-focus: #A78BFA;
-  --input-text:         #F9FAFB;
-  --input-placeholder:  rgba(220, 228, 252, 0.44);
-  --input-ring:         rgba(124, 58, 237, 0.3);
-
-  --shadow-sm: 0 4px 14px rgba(5,8,16,0.38);
-  --shadow-md: 0 10px 28px rgba(5,8,16,0.48);
-  --shadow-lg: 0 18px 42px rgba(5,8,16,0.58);
-  --shadow-xl: 0 30px 58px rgba(5,8,16,0.68);
-
-  --status-open-bg:      rgba(234, 88, 12, 0.12);
-  --status-open-border:  rgba(234, 88, 12, 0.25);
-  --status-open-text:    #FB923C;
-  --status-open-dot:     #F97316;
-
-  --status-selected-bg:     rgba(124, 58, 237, 0.2);
-  --status-selected-border: rgba(124, 58, 237, 0.36);
-  --status-selected-text:   #C4B5FD;
-  --status-selected-dot:    #A78BFA;
-
-  --status-active-bg:     rgba(16, 185, 129, 0.12);
-  --status-active-border: rgba(16, 185, 129, 0.25);
-  --status-active-text:   #34D399;
-  --status-active-dot:    #10B981;
-
-  --status-completed-bg:     rgba(255, 255, 255, 0.05);
-  --status-completed-border: rgba(255, 255, 255, 0.1);
-  --status-completed-text:   rgba(255, 255, 255, 0.4);
-  --status-completed-dot:    rgba(255, 255, 255, 0.25);
-
-  --status-cancelled-bg:     rgba(239, 68, 68, 0.12);
-  --status-cancelled-border: rgba(239, 68, 68, 0.25);
-  --status-cancelled-text:   #F87171;
-  --status-cancelled-dot:    #EF4444;
-
-  --status-expired-bg:     rgba(107, 114, 128, 0.08);
-  --status-expired-border: rgba(107, 114, 128, 0.15);
-  --status-expired-text:   rgba(255, 255, 255, 0.35);
-  --status-expired-dot:    rgba(255, 255, 255, 0.2);
-
-  --status-frozen-bg:     rgba(59, 130, 246, 0.12);
-  --status-frozen-border: rgba(59, 130, 246, 0.25);
-  --status-frozen-text:   #60A5FA;
-  --status-frozen-dot:    #3B82F6;
+  /* Keep .dark identical to default to enforce "Dark Mode only" UI. */
 }
 
 /* ═══════════════════════════════════════════
