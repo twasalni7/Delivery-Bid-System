@@ -44,8 +44,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'توصّلني';
   const options = {
     body: data.body || data.message || '',
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/badge-72.png',
+    icon: data.icon || '/icons/icon-192.svg',
+    badge: data.badge || '/favicon.svg',
     data: { url: data.url || '/' },
     tag: data.tag || data.type || 'default',
     requireInteraction: false,

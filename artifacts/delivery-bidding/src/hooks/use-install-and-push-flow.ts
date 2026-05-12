@@ -5,8 +5,8 @@ const IOS_DISMISSED_KEY = "ios_install_dismissed";
 const PUSH_ASK_KEY = "push_ask_state";
 const PUSH_ENABLED_KEY = "push_enabled";
 const ANALYTICS_KEY = "pwa_analytics";
-// ✅ إصلاح: مفتاح لتتبع هل تم ربط OneSignal بالمستخدم الحالي
-const ONESIGNAL_LINKED_KEY = "onesignal_linked_user";
+// Key to track if push subscription flow was completed for current user
+const PUSH_LINKED_KEY = "push_linked_user";
 
 const PUSH_RETRY_SCHEDULE = [3, 7] as const;
 
@@ -78,25 +78,25 @@ export function detectPushSupported(): boolean {
   );
 }
 
-/** تسجيل أن OneSignal تم ربطه بمستخدم معين */
+/** تسجيل أن الاشتراك في Push تم لمستخدم معين */
 export function markOneSignalLinked(userId: number | string): void {
-  try { localStorage.setItem(ONESIGNAL_LINKED_KEY, String(userId)); } catch { /* ignore */ }
+  try { localStorage.setItem(PUSH_LINKED_KEY, String(userId)); } catch { /* ignore */ }
 }
 
-/** إلغاء ربط OneSignal (عند logout) */
+/** إلغاء ربط Push (عند logout) */
 export function clearOneSignalLinked(): void {
-  try { localStorage.removeItem(ONESIGNAL_LINKED_KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(PUSH_LINKED_KEY); } catch { /* ignore */ }
 }
 
 function isOneSignalLinked(userId: number | string): boolean {
-  return lsRaw(ONESIGNAL_LINKED_KEY) === String(userId);
+  return lsRaw(PUSH_LINKED_KEY) === String(userId);
 }
 
 function shouldOfferPush(userId?: number | string): boolean {
   if (!detectPushSupported()) return false;
   if (Notification.permission === "denied") return false;
 
-  // ✅ إذا الإذن ممنوح وOneSignal مُربط — لا حاجة للعرض
+  // إذا الإذن ممنوح والاشتراك مُكتمل — لا حاجة للعرض
   if (Notification.permission === "granted") {
     if (userId && isOneSignalLinked(userId)) {
       try { localStorage.setItem(PUSH_ENABLED_KEY, "1"); } catch { /* ignore */ }
