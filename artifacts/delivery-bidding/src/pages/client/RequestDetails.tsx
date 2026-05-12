@@ -3,6 +3,7 @@ import { useRoute, Link } from "wouter";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useGetRequest, useGetRequestOffers, useSelectOffer, getGetRequestQueryKey, getGetRequestOffersQueryKey, getListRequestsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { Drawer, DrawerClose, DrawerContent } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { ArrowRight, Phone, MapPin, Clock, Users, Calendar, CheckCircle, MessageCircle, Send, X, Star, AlertCircle, Pencil, Ban, Archive } from "lucide-react";
@@ -613,53 +614,74 @@ export default function RequestDetails() {
             <p className="text-xs font-bold mt-1" style={{ color: "var(--text-muted)" }}>يمكنك مشاهدة التفاصيل والتواصل بعد الاختيار</p>
           </div>
 
-          {showChat && canChat && (
-            <div className="mb-6 rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(148,163,184,0.24)", background: "linear-gradient(160deg, rgba(15,23,42,0.85) 0%, rgba(8,14,28,0.95) 100%)" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "rgba(15,23,42,0.45)", borderBottom: "1px solid rgba(148,163,184,0.2)" }}>
-                <div className="flex items-center gap-2">
-                  <MessageCircle size={15} style={{ color: "var(--brand)" }} />
-                  <span className="font-black text-sm" style={{ color: "var(--brand)" }}>محادثة مع السائق</span>
+          {canChat && (
+            <Drawer open={showChat} onOpenChange={setShowChat}>
+              <DrawerContent
+                className="rounded-t-[2rem]"
+                style={{ backgroundColor: "var(--surface)", borderColor: "var(--border-subtle)" }}
+                dir="rtl"
+              >
+                <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                  <div className="flex items-center gap-2">
+                    <MessageCircle size={16} style={{ color: "var(--brand)" }} />
+                    <span className="font-black text-base" style={{ color: "var(--text)" }}>المحادثة داخل التطبيق</span>
+                  </div>
+                  <DrawerClose asChild>
+                    <button className="touch-compact p-2 rounded-xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-hint)", minHeight: "auto", minWidth: "auto" }}>
+                      <X size={16} />
+                    </button>
+                  </DrawerClose>
                 </div>
-                <button onClick={() => setShowChat(false)} style={{ color: "var(--text-hint)" }}><X size={14} /></button>
-              </div>
-              <div className="max-h-72 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "rgba(2,6,23,0.35)" }} dir="rtl">
-                {(!chatMessages || chatMessages.length === 0) && (
-                  <p className="text-center text-xs py-6 font-bold" style={{ color: "var(--text-hint)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
-                )}
-                {chatMessages?.map((msg) => {
-                  const isMe = msg.senderRole === "client";
-                  return (
-                    <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                      <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
-                        style={isMe
-                          ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                          : { backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
-                        {!isMe && <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>{msg.senderRole === "admin" ? "الإدارة" : "السائق"}</p>}
-                        <p>{msg.body}</p>
+
+                <div className="px-4 py-4 overflow-y-auto space-y-2" style={{ maxHeight: "60dvh", backgroundColor: "rgba(0,0,0,0.12)" }}>
+                  {(!chatMessages || chatMessages.length === 0) && (
+                    <p className="text-center text-xs py-6 font-bold" style={{ color: "var(--text-hint)" }}>لا توجد رسائل بعد. ابدأ المحادثة!</p>
+                  )}
+                  {chatMessages?.map((msg) => {
+                    const isMe = msg.senderRole === "client";
+                    return (
+                      <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm"
+                          style={isMe
+                            ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                            : { backgroundColor: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
+                        >
+                          {!isMe && (
+                            <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>
+                              {msg.senderRole === "admin" ? "الإدارة" : "السائق"}
+                            </p>
+                          )}
+                          <p>{msg.body}</p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-                <div ref={chatEndRef} />
-              </div>
-              <div className="p-2 flex gap-2" style={{ backgroundColor: "rgba(15,23,42,0.45)", borderTop: "1px solid rgba(148,163,184,0.2)" }}>
-                <input
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
-                  placeholder="اكتب رسالة..."
-                  className="flex-1 text-sm px-3 py-2 rounded-xl"
-                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }}
-                  dir="rtl"
-                />
-                <button onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
-                  disabled={!chatMessage.trim() || sendMessage.isPending}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-50"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}>
-                  <Send size={15} />
-                </button>
-              </div>
-            </div>
+                    );
+                  })}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <div className="p-4 flex gap-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                  <input
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && chatMessage.trim()) { e.preventDefault(); sendMessage.mutate(); } }}
+                    placeholder="اكتب رسالة..."
+                    className="flex-1 text-sm px-4 py-3 rounded-2xl font-bold"
+                    style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }}
+                    dir="rtl"
+                  />
+                  <button
+                    onClick={() => { if (chatMessage.trim()) sendMessage.mutate(); }}
+                    disabled={!chatMessage.trim() || sendMessage.isPending}
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-50"
+                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)" }}
+                    aria-label="إرسال"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
+              </DrawerContent>
+            </Drawer>
           )}
 
           {loadingOffers && <div className="text-center py-8 text-sm font-bold" style={{ color: "var(--text-hint)" }}>جاري التحميل...</div>}
@@ -681,8 +703,8 @@ export default function RequestDetails() {
                 <div key={offer.id} className="rounded-2xl overflow-hidden transition-all"
                   style={{
                     background: "linear-gradient(160deg, rgba(15,23,42,0.86) 0%, rgba(8,13,28,0.95) 100%)",
-                    border: `1px solid ${isSelected ? "rgba(167,139,250,0.7)" : "rgba(148,163,184,0.22)"}`,
-                    boxShadow: isSelected ? "0 0 0 2px rgba(139,92,246,0.38)" : undefined,
+                    border: `1px solid ${isSelected ? "var(--brand-border)" : "rgba(148,163,184,0.22)"}`,
+                    boxShadow: isSelected ? "0 0 0 2px rgba(0,230,118,0.18)" : undefined,
                   }}>
                   {isSelected && (
                     <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
@@ -728,7 +750,7 @@ export default function RequestDetails() {
                             onClick={() => setConfirmOffer(offer)}
                             className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
                             aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}${offer.driver?.carType ? `، نوع المركبة ${offer.driver.carType}` : ""}${hasValidRating && driverRatingValue != null ? `، التقييم ${driverRatingValue.toFixed(1)}` : ""}`}
-                            style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
+                            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)" }}
                           >
                            اختيار السائق
                          </button>

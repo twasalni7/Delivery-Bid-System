@@ -28,7 +28,7 @@ function ThemeToggle() {
           className="touch-compact px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 font-black text-xs sm:text-sm"
           style={
             theme === value
-              ? { background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)", minHeight: "auto" }
+              ? { background: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)", minHeight: "auto" }
               : { color: "var(--text-muted)", minHeight: "auto", border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }
           }
         >
@@ -318,14 +318,17 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
               <button
                 onClick={() => setDriverSideMenuOpen(true)}
                 className="touch-compact p-2 rounded-xl transition-colors"
-                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
+                style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)", minHeight: "auto", minWidth: "auto" }}
                 title="القائمة"
               >
                 <Menu size={16} />
               </button>
             )}
             <Link href={role === "client" ? "/client" : "/driver/dashboard"} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black shadow-lg" style={{ background: "linear-gradient(145deg, #f5f6fa 0%, #d7d9e2 100%)", color: "#0f172a" }}>
+            <div
+              className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black shadow-lg"
+              style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-sm)" }}
+            >
               {displayInitial}
             </div>
             <div className="leading-tight">
@@ -350,7 +353,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
                 <button
                   onClick={logout}
                   className="touch-compact p-2 rounded-xl transition-colors"
-                  style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
+                  style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)", minHeight: "auto", minWidth: "auto" }}
                   title="تسجيل خروج"
                 >
                   <LogOut size={16} />
@@ -377,7 +380,10 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
             <div className="h-full rounded-3xl px-4 py-5 flex flex-col" style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center justify-between pb-4" style={{ borderBottom: "1px solid var(--border)" }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black" style={{ background: "linear-gradient(145deg, #f5f6fa 0%, #d7d9e2 100%)", color: "#0f172a" }}>
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black"
+                    style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}
+                  >
                     {displayInitial}
                   </div>
                   <div>
@@ -388,7 +394,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
                 <button
                   onClick={() => setDriverSideMenuOpen(false)}
                   className="touch-compact p-2 rounded-xl transition-colors"
-                  style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.08)", minHeight: "auto", minWidth: "auto" }}
+                  style={{ backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)", minHeight: "auto", minWidth: "auto" }}
                   title="إغلاق"
                 >
                   <ChevronRight size={16} />
@@ -454,10 +460,10 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors rounded-xl"
-                  style={active ? { color: "var(--brand-fg)", background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)" } : { color: "var(--text-hint)" }}
+                  className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors rounded-xl border border-transparent"
+                  style={active ? { color: "var(--brand)", backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" } : { color: "var(--text-hint)" }}
                 >
-                  <Icon size={19} style={{ color: active ? "var(--brand-fg)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.8} />
+                  <Icon size={19} style={{ color: active ? "var(--brand)" : "var(--text-hint)" }} strokeWidth={active ? 2.2 : 1.8} />
                   <span>{link.label}</span>
                 </Link>
               );
