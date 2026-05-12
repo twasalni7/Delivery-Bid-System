@@ -26,6 +26,18 @@ type DebugData = {
   devices: DebugDevice[];
 };
 
+type SelfCheckData = {
+  provider: "onesignal" | "vapid" | "none";
+  user: { id: number; role: "client" | "driver" | "admin"; externalId: string };
+  server: { oneSignalConfigured: boolean; vapidConfigured: boolean };
+  legacyDb: { hasSubscription: boolean | null };
+  oneSignal: null | {
+    ok: boolean;
+    status: number | null;
+    summary: null | { oneSignalUserId: string | null; subscriptionCount: number | null };
+  };
+};
+
 type SwStatus = "not_supported" | "checking" | "registered" | "not_registered" | "error";
 
 function swStatusLabel(s: SwStatus): string {
@@ -56,6 +68,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function AdminPushDebug() {
   const [data, setData] = useState<DebugData | null>(null);
+  const [selfCheck, setSelfCheck] = useState<SelfCheckData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [swStatus, setSwStatus] = useState<SwStatus>("checking");
@@ -77,6 +90,16 @@ export default function AdminPushDebug() {
     }
   };
 
+  const fetchSelfCheck = async () => {
+    try {
+      const res = await fetch(`${API}/api/push/self-check`, { headers: getAuthHeaders() });
+      if (!res.ok) return;
+      setSelfCheck(await res.json() as SelfCheckData);
+    } catch {
+      // optional diagnostics only
+    }
+  };
+
   const checkServiceWorker = async () => {
     if (!("serviceWorker" in navigator)) {
       setSwStatus("not_supported");
@@ -93,6 +116,7 @@ export default function AdminPushDebug() {
 
   useEffect(() => {
     void fetchDebug();
+    void fetchSelfCheck();
     void checkServiceWorker();
   }, []);
 
@@ -112,7 +136,7 @@ export default function AdminPushDebug() {
             تشخيص نظام الإشعارات الفورية
           </h1>
           <button
-            onClick={() => { void fetchDebug(); void checkServiceWorker(); }}
+            onClick={() => { void fetchDebug(); void fetchSelfCheck(); void checkServiceWorker(); }}
             disabled={loading}
             className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg btn-ghost disabled:opacity-50"
           >
@@ -132,6 +156,75 @@ export default function AdminPushDebug() {
           >
             <ServerCrash size={16} className="shrink-0" />
             {error}
+          </div>
+        )}
+
+        {/* Self-check (server + current account mapping) */}
+        {selfCheck && (
+          <div
+            className="rounded-2xl p-4 space-y-3"
+            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <h2 className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
+              فحص سريع (هذا الحساب)
+            </h2>
+
+            <div className="space-y-1 text-xs" style={{ color: "var(--text-muted)" }}>
+              <p>
+                المزوّد الفعّال:{" "}
+                <strong style={{ color: "var(--text)" }}>
+                  {selfCheck.provider === "onesignal"
+                    ? "OneSignal"
+                    : selfCheck.provider === "vapid"
+                      ? "VAPID"
+                      : "غير مهيّأ"}
+                </strong>
+              </p>
+              <p>
+                External ID:{" "}
+                <span className="font-mono" style={{ color: "var(--text)" }}>
+                  {selfCheck.user.externalId}
+                </span>
+              </p>
+            </div>
+
+            {selfCheck.provider === "onesignal" && selfCheck.oneSignal && (
+              <div
+                className="rounded-xl px-4 py-3 space-y-1"
+                style={{ backgroundColor: "var(--surface-2)" }}
+              >
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  OneSignal lookup:{" "}
+                  <strong style={{ color: selfCheck.oneSignal.ok ? "var(--status-active-text)" : "var(--status-cancelled-text)" }}>
+                    {selfCheck.oneSignal.ok ? "نجح ✓" : "فشل"}
+                  </strong>
+                  {selfCheck.oneSignal.status != null && (
+                    <span className="font-mono"> (HTTP {selfCheck.oneSignal.status})</span>
+                  )}
+                </p>
+                {selfCheck.oneSignal.summary && (
+                  <p className="text-xs font-mono break-all" style={{ color: "var(--text-muted)" }}>
+                    userId={selfCheck.oneSignal.summary.oneSignalUserId ?? "—"} subscriptions={selfCheck.oneSignal.summary.subscriptionCount ?? "—"}
+                  </p>
+                )}
+                {!selfCheck.oneSignal.ok && (
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    غالباً السبب: external_id غير مسجّل في OneSignal أو REST API Key غير صحيح/صلاحياته ناقصة.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              اشتراك قاعدة البيانات (للـVAPID فقط):{" "}
+              <strong style={{ color: "var(--text)" }}>
+                {selfCheck.legacyDb.hasSubscription === null
+                  ? "غير معروف"
+                  : selfCheck.legacyDb.hasSubscription
+                    ? "موجود"
+                    : "غير موجود"}
+              </strong>
+            </p>
           </div>
         )}
 
@@ -245,7 +338,7 @@ export default function AdminPushDebug() {
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <h2 className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
-              عدد الاشتراكات المخزنة محلياً
+              عدد الاشتراكات المخزنة محلياً (VAPID فقط)
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {(
@@ -333,8 +426,8 @@ export default function AdminPushDebug() {
             <li>١. تحقق أن Service Worker في حالة «مسجّل» أعلاه.</li>
             <li>٢. تحقق أن إذن الإشعارات = <strong>granted</strong>.</li>
             <li>٣. تحقق أن الصفحة تعمل عبر <strong>HTTPS</strong> أو localhost.</li>
-            <li>٤. تحقق أن VAPID مُهيَّأ على الخادم (متغيرات البيئة VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY).</li>
-            <li>٥. بعد تفعيل الإشعارات، يجب أن يرتفع عدد الاشتراكات بمقدار 1.</li>
+            <li>٤. إذا المزوّد = OneSignal: تأكد من تفعيل ONESIGNAL_APP_ID و ONESIGNAL_REST_API_KEY على الخادم.</li>
+            <li>٥. إذا المزوّد = VAPID: تأكد من VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY، وتوقع زيادة «الاشتراكات المخزنة» بمقدار 1 بعد التفعيل.</li>
             <li>٦. افتح Console المتصفح وابحث عن رسائل <code>[Push]</code> لتتبع كل مرحلة.</li>
           </ul>
         </div>

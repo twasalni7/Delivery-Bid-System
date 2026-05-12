@@ -13,7 +13,12 @@ import {
   type NotificationAudience,
   type NotificationUserRole,
 } from "../lib/notification-targeting";
-import { getOneSignalConfig, isOneSignalConfigured } from "../lib/onesignal";
+import {
+  buildOneSignalExternalId,
+  getOneSignalConfig,
+  getOneSignalUserByExternalId,
+  isOneSignalConfigured,
+} from "../lib/onesignal";
 import { z } from "zod";
 
 const router = Router();
@@ -144,6 +149,112 @@ router.get("/status", requireAuth, async (req, res) => {
       res.json({ hasSubscription: false });
     }
   }
+});
+
+function extractOneSignalUserSummary(body: unknown): {
+  oneSignalUserId: string | null;
+  subscriptionCount: number | null;
+} {
+  if (!body || typeof body !== "object") {
+    return { oneSignalUserId: null, subscriptionCount: null };
+  }
+
+  const obj = body as Record<string, unknown>;
+  const oneSignalUserId = typeof obj["id"] === "string" ? obj["id"] : null;
+
+  const subs = obj["subscriptions"];
+  if (!Array.isArray(subs)) {
+    return { oneSignalUserId, subscriptionCount: null };
+  }
+
+  return { oneSignalUserId, subscriptionCount: subs.length };
+}
+
+/**
+ * GET /api/push/self-check
+ * Authenticated self-diagnostics (safe): tells the current user whether the
+ * server is configured for OneSignal/VAPID and whether the user's OneSignal
+ * alias mapping can be resolved (when OneSignal is enabled).
+ *
+ * Notes:
+ * - DB subscriptions are only relevant for legacy VAPID web-push fallback.
+ * - OneSignal manages browser subscriptions on its own; DB counts may be 0 even
+ *   when OneSignal push delivery works.
+ */
+router.get("/self-check", requireAuth(), async (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const role = user.role as "client" | "driver" | "admin";
+  const oneSignalConfigured = isOneSignalConfigured();
+  const vapidConfigured = Boolean(
+    process.env["VAPID_PUBLIC_KEY"] && process.env["VAPID_PRIVATE_KEY"]
+  );
+
+  const provider: "onesignal" | "vapid" | "none" = oneSignalConfigured
+    ? "onesignal"
+    : vapidConfigured
+      ? "vapid"
+      : "none";
+
+  const externalId = buildOneSignalExternalId(user.id, role);
+
+  let legacyDbHasSubscription: boolean | null = null;
+  try {
+    const row = await db.query.pushSubscriptionsTable.findFirst({
+      where: and(
+        eq(pushSubscriptionsTable.userId, user.id),
+        eq(pushSubscriptionsTable.userRole, role)
+      ),
+      columns: { id: true },
+    });
+    legacyDbHasSubscription = Boolean(row);
+  } catch (err) {
+    try {
+      const result = await pool.query(
+        `SELECT id FROM push_subscriptions WHERE user_id = $1 LIMIT 1`,
+        [user.id]
+      );
+      legacyDbHasSubscription = result.rows.length > 0;
+    } catch {
+      logger.warn({ err, userId: user.id, role }, "push/self-check: DB query failed");
+      legacyDbHasSubscription = null;
+    }
+  }
+
+  let oneSignalLookup:
+    | {
+        ok: boolean;
+        status: number | null;
+        summary: ReturnType<typeof extractOneSignalUserSummary> | null;
+        response?: unknown;
+      }
+    | null = null;
+
+  if (oneSignalConfigured) {
+    const lookup = await getOneSignalUserByExternalId(externalId);
+    const includeRaw =
+      role === "admin" &&
+      (req.query["includeRaw"] === "1" || req.query["includeRaw"] === "true");
+
+    oneSignalLookup = {
+      ok: lookup.ok,
+      status: lookup.status,
+      summary: lookup.ok ? extractOneSignalUserSummary(lookup.response) : null,
+      ...(includeRaw ? { response: lookup.response } : {}),
+    };
+  }
+
+  res.json({
+    provider,
+    user: { id: user.id, role, externalId },
+    server: { oneSignalConfigured, vapidConfigured },
+    legacyDb: { hasSubscription: legacyDbHasSubscription },
+    oneSignal: oneSignalLookup,
+  });
 });
 
 
