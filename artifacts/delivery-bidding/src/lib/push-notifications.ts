@@ -4,6 +4,7 @@
  */
 
 import { API_ORIGIN } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 import { appPath } from "@/lib/pwa-utils";
 
 const LOG_PREFIX = "[Push]";
@@ -106,7 +107,7 @@ export async function subscribeToPush(
     const response = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({ subscription: subscriptionJSON }),
     });
 
@@ -155,6 +156,7 @@ export async function unsubscribeFromPush(): Promise<void> {
     await fetch(`${API_ORIGIN}/api/push/unsubscribe`, {
       method: 'POST',
       credentials: 'include',
+      headers: { ...getAuthHeaders() },
     });
     console.log(LOG_PREFIX, "Server subscription removed ✓");
   } catch (err) {
