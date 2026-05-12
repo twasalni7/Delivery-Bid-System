@@ -575,7 +575,7 @@ router.post("/send", requireAuth("admin"), async (req, res) => {
       "push/send: resolving recipients"
     );
 
-    const recipients = await resolveNotificationRecipients(payload.audience);
+    const recipients = await resolveNotificationRecipients(payload.audience as NotificationAudience);
     if (recipients.length === 0) {
       logger.warn({ audience: payload.audience }, "push/send: no recipients matched audience");
       res.status(400).json({ error: "لم يتم العثور على مستخدمين مطابقين لقواعد الاستهداف" });
