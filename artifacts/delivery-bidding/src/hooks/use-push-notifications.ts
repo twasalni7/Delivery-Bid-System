@@ -11,6 +11,7 @@ import {
 } from "@/lib/push-notifications";
 import { useAuth } from "@/contexts/auth-context";
 import { API_ORIGIN } from "@/lib/api-config";
+import { getAuthHeaders } from "@/lib/authed-fetch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type PushSubscribeResult =
@@ -64,6 +65,7 @@ export function usePushNotifications(role?: string) {
         try {
           const res = await fetch(`${API_ORIGIN}/api/push/my-subscription`, {
             credentials: 'include',
+            headers: { ...getAuthHeaders() },
           });
           if (res.ok) {
             const data = await res.json();
