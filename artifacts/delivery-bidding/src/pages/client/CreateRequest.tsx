@@ -68,6 +68,100 @@ function calculateDropoffMapCenter(homeCoords: MapCoords | null, workCoords: Map
   return undefined;
 }
 
+function PricePreview({
+  isPricingLoading,
+  pricingResult,
+  routeSummary,
+  sharingCount,
+}: {
+  isPricingLoading: boolean;
+  pricingResult:
+    | {
+        pricePerPerson: number;
+        price: number;
+        needsAdminReview: boolean;
+        distanceKm: number;
+        numberOfPeople: number;
+      }
+    | undefined;
+  routeSummary:
+    | {
+        distanceKm: number;
+        durationMinutes: number;
+        routePolyline: string;
+      }
+    | undefined;
+  sharingCount: number;
+}) {
+  const hasPrice = Boolean(pricingResult && !pricingResult.needsAdminReview);
+  const total = pricingResult?.price ?? 0;
+  const perPerson = pricingResult?.pricePerPerson ?? 0;
+
+  return (
+    <div
+      className="rounded-[1.75rem] overflow-hidden"
+      style={{
+        backgroundColor: "rgba(21,27,45,0.86)",
+        border: "1px solid var(--border-subtle)",
+        boxShadow: "var(--shadow-xl)",
+        backdropFilter: "blur(10px)",
+      }}
+    >
+      <div className="px-5 py-4 flex items-start justify-between gap-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="min-w-0">
+          <p className="text-xs font-black tracking-wide" style={{ color: "var(--text-hint)" }}>💰 معاينة السعر</p>
+          <p className="text-sm font-black mt-1" style={{ color: "var(--text)" }}>
+            {isPricingLoading ? "جاري الحساب..." : hasPrice ? "سعر واضح ونهائي قبل الإرسال" : "حددي المواقع لحساب السعر تلقائياً"}
+          </p>
+          <p className="text-[11px] font-bold mt-1" style={{ color: "var(--text-muted)" }}>
+            لا يوجد دفع مقدم • الدفع آخر الشهر للسائق مباشرة
+          </p>
+        </div>
+        <div className="shrink-0 text-left">
+          {isPricingLoading ? (
+            <div className="w-6 h-6 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-border)", borderTopColor: "var(--brand)" }} />
+          ) : hasPrice ? (
+            <div>
+              <p className="text-xs font-black" style={{ color: "var(--text-hint)" }}>للشخص</p>
+              <p className="text-xl font-black leading-none" style={{ color: "var(--brand)" }}>
+                {perPerson.toLocaleString("ar-SA")}
+                <span className="text-xs font-black mr-1" style={{ color: "var(--text-hint)" }}>ر.س</span>
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs font-black px-3 py-2 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--text-hint)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              غير متاح
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="px-5 py-4 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-[11px] font-black" style={{ color: "var(--text-hint)" }}>المسافة</p>
+          <p className="text-sm font-black mt-0.5" style={{ color: "var(--text)" }}>
+            {routeSummary?.distanceKm != null ? `${routeSummary.distanceKm.toFixed(1)} كم` : "—"}
+          </p>
+        </div>
+        <div className="rounded-2xl p-3" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-[11px] font-black" style={{ color: "var(--text-hint)" }}>الزمن التقريبي</p>
+          <p className="text-sm font-black mt-0.5" style={{ color: "var(--text)" }}>
+            {routeSummary?.durationMinutes != null ? `${routeSummary.durationMinutes.toFixed(0)} دقيقة` : "—"}
+          </p>
+        </div>
+        {sharingCount > 1 && hasPrice && (
+          <div className="col-span-2 rounded-2xl p-3 flex items-center justify-between" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+            <p className="text-xs font-black" style={{ color: "var(--text-sub)" }}>الإجمالي ({sharingCount} أشخاص)</p>
+            <p className="text-sm font-black" style={{ color: "var(--brand)" }}>
+              {total.toLocaleString("ar-SA")} ر.س
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Progress Steps Bar ── */
 function ProgressSteps({ currentStep }: { currentStep: number }) {
   return (
@@ -85,13 +179,16 @@ function ProgressSteps({ currentStep }: { currentStep: number }) {
           return (
             <div key={s} className="flex flex-col items-center gap-2 z-10 min-w-0">
               <div
-                className="w-8 h-8 rounded-full border transition-all duration-500 shadow-md flex items-center justify-center text-sm font-black"
+                className="w-10 h-10 rounded-full border transition-all duration-500 shadow-md flex items-center justify-center text-sm font-black"
                 style={active ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)", color: "var(--brand-fg)" } : { backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.18)", color: "var(--text-hint)" }}
                 aria-label={`الخطوة ${s}: ${STEP_TITLES[idx]} - ${stepState}`}
                 title={`الخطوة ${s}: ${STEP_TITLES[idx]} - ${stepState}`}
               >
-                {s}
+                {s < currentStep ? <Check size={16} strokeWidth={4} /> : s}
               </div>
+              <p className="text-[11px] sm:text-xs font-black truncate max-w-[7.5rem]" style={{ color: active ? "var(--text)" : "var(--text-hint)" }}>
+                {label}
+              </p>
             </div>
           );
         })}
@@ -575,7 +672,7 @@ export default function CreateRequest() {
 
   return (
     <Layout role="client">
-      <div dir="rtl" className="pb-8">
+      <div dir="rtl" className="pb-56">
         <Link href="/client" className="inline-flex items-center gap-1.5 text-sm font-bold transition-colors mb-5 px-3 py-2 rounded-xl" style={{ color: "var(--text-muted)", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <ArrowRight size={15} /> العودة لاشتراكاتي
         </Link>
@@ -1044,9 +1141,9 @@ export default function CreateRequest() {
                 }
               }}
               disabled={createRequest.isPending}
-                aria-label={step === 5 ? "نشر الطلب للسائقين" : `الانتقال إلى ${STEP_TITLES[step]}`}
-                className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)", boxShadow: "0 18px 36px var(--brand-border)" }}
+              aria-label={step === 5 ? "نشر الطلب للسائقين" : `الانتقال إلى ${STEP_TITLES[step]}`}
+              className="flex-1 font-black py-4 rounded-[1.5rem] text-base active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)" }}
               >
                 {step === 5 ? (
                   createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={20} /> نشر الطلب للسائقين</>
@@ -1061,6 +1158,20 @@ export default function CreateRequest() {
                 )}
             </button>
           </div>
+        </div>
+      </div>
+
+      <div
+        className="fixed bottom-0 inset-x-0 z-40 px-4"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+      >
+        <div className="mx-auto max-w-xl">
+          <PricePreview
+            isPricingLoading={isPricingLoading}
+            pricingResult={pricingResult}
+            routeSummary={routeSummary}
+            sharingCount={sharingCount}
+          />
         </div>
       </div>
     </Layout>

@@ -5,7 +5,7 @@ import { Layout } from "@/components/layout";
 import { getStatusLabel } from "@/lib/status-utils";
 import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Archive, Bell, MessageCircle, Plus, ShieldCheck, Sparkles, Wallet } from "lucide-react";
+import { Archive, Bell, MessageCircle, Plus, ShieldCheck, Sparkles, Wallet, LifeBuoy, User, Info } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -72,9 +72,9 @@ export default function ClientDashboard() {
         <section
           className="rounded-[2rem] p-5"
           style={{
-            background: "linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 50%, rgba(5,8,16,1) 100%)",
-            border: "1px solid rgba(148,163,184,0.22)",
-            boxShadow: "0 22px 40px rgba(2,6,23,0.5)",
+            background: "linear-gradient(160deg, rgba(21,27,45,0.92) 0%, rgba(10,14,26,0.98) 100%)",
+            border: "1px solid var(--border-subtle)",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           <div className="flex items-center justify-between">
@@ -86,10 +86,10 @@ export default function ClientDashboard() {
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center text-base font-black"
                 style={{
-                  background: "linear-gradient(145deg, #a78bfa 0%, #6d28d9 100%)",
-                  color: "#fff",
-                  border: "2px solid rgba(255,255,255,0.12)",
-                  boxShadow: "0 14px 26px rgba(124,58,237,0.35)",
+                  backgroundColor: "var(--brand-subtle)",
+                  color: "var(--brand)",
+                  border: "1px solid var(--brand-border)",
+                  boxShadow: "var(--shadow-md)",
                 }}
               >
                 {displayName.charAt(0)}
@@ -98,7 +98,7 @@ export default function ClientDashboard() {
             <Link
               href="/client/notifications"
               className="touch-compact w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ border: "1px solid rgba(148,163,184,0.22)", backgroundColor: "rgba(15,23,42,0.55)", color: "var(--text-sub)" }}
+              style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text-sub)" }}
               aria-label="الإشعارات"
             >
               <Bell size={17} />
@@ -110,27 +110,108 @@ export default function ClientDashboard() {
           className="rounded-[2rem] p-6 space-y-4"
           aria-label="قسم إنشاء طلب توصيل جديد"
           style={{
-            background: "linear-gradient(145deg, #5b21b6 0%, #7c3aed 45%, #6d28d9 100%)",
-            color: "#fff",
-            boxShadow: "0 22px 42px rgba(91,33,182,0.5)",
+            background: "linear-gradient(145deg, rgba(0,230,118,0.22) 0%, rgba(21,27,45,0.92) 55%, rgba(10,14,26,0.98) 100%)",
+            color: "var(--text)",
+            border: "1px solid var(--brand-border)",
+            boxShadow: "var(--shadow-xl)",
           }}
         >
           <h2 className="text-3xl font-black leading-tight">جاهز لطلب توصيل؟</h2>
-          <p className="text-sm font-bold text-violet-100">حدد تفاصيل مشوارك وسيتم حساب السعر ونشر الطلب للسائقين المناسبين</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>حدد تفاصيل مشوارك وسيتم حساب السعر ونشر الطلب للسائقين المناسبين</p>
           <Link
             href="/client/request/new"
             className="w-full rounded-2xl px-5 py-4 flex items-center justify-center gap-2 text-base font-black"
-            style={{ backgroundColor: "rgba(255,255,255,0.92)", color: "#3b0764", boxShadow: "0 10px 25px rgba(42, 13, 88, 0.28)" }}
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)" }}
           >
             <Plus size={18} /> طلب اشتراك جديد
           </Link>
         </section>
 
         <section
+          className="rounded-[2rem] p-5 space-y-4"
+          aria-label="معلومات الدفع"
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-md)" }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}
+            >
+              <Wallet size={18} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-black text-lg leading-tight" style={{ color: "var(--text)" }}>دفع آمن وشفاف</h3>
+              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>بدون أي دفع مقدم — أسعار واضحة ونهائية</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { icon: ShieldCheck, title: "بياناتك محمية", sub: "معلومات العميل داخل التطبيق" },
+              { icon: Wallet, title: "لا يوجد دفع مقدم", sub: "ابدأ الآن وادفع لاحقاً" },
+              { icon: Sparkles, title: "أسعار نهائية وواضحة", sub: "سعر محسوب قبل نشر الطلب" },
+              { icon: MessageCircle, title: "محادثة داخل التطبيق", sub: "تواصل مباشر مع السائق" },
+            ].map(({ icon: Icon, title, sub }) => (
+              <div
+                key={title}
+                className="rounded-2xl p-4 flex items-start gap-3"
+                style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                  <Icon size={16} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black" style={{ color: "var(--text)" }}>{title}</p>
+                  <p className="text-xs font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>{sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: "rgba(0,230,118,0.10)", border: "1px solid var(--brand-border)" }}>
+            <Info size={15} style={{ color: "var(--brand)" }} />
+            <p className="text-xs font-black" style={{ color: "var(--text-sub)" }}>الدفع آخر الشهر للسائق مباشرة — بدون وسطاء.</p>
+          </div>
+        </section>
+
+        <section
+          className="rounded-[2rem] p-5 space-y-3"
+          aria-label="إجراءات سريعة"
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-md)" }}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-black" style={{ color: "var(--text)" }}>إجراءات سريعة</h3>
+            <Link href="/client/onboarding" className="text-xs font-black" style={{ color: "var(--brand)" }}>تعرف على التطبيق</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { href: "/client/request/new", label: "طلب جديد", icon: Plus },
+              { href: "/client/notifications", label: "الإشعارات", icon: Bell },
+              { href: "/client/profile", label: "حسابي", icon: User },
+              { href: "/client/support", label: "الدعم", icon: LifeBuoy },
+            ].map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="rounded-[1.5rem] p-4 flex items-center justify-between gap-3 transition-transform active:scale-[0.99]"
+                style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                    <Icon size={18} />
+                  </div>
+                  <span className="font-black text-sm truncate" style={{ color: "var(--text)" }}>{label}</span>
+                </div>
+                <span className="text-xs font-black" style={{ color: "var(--text-hint)" }}>←</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section
           className="rounded-[2rem] p-4 grid grid-cols-4 gap-2"
           style={{
-            background: "linear-gradient(160deg, rgba(15,22,42,0.9) 0%, rgba(8,12,24,0.95) 100%)",
-            border: "1px solid rgba(148,163,184,0.18)",
+            backgroundColor: "var(--surface)",
+            border: "1px solid var(--border-subtle)",
           }}
         >
           {[
@@ -141,8 +222,8 @@ export default function ClientDashboard() {
           ].map((feature) => {
             const Icon = feature.icon;
             return (
-              <div key={feature.title} className="rounded-2xl p-3 text-center space-y-2" style={{ backgroundColor: "rgba(15,23,42,0.42)", border: "1px solid rgba(148,163,184,0.16)" }}>
-                <div className="w-9 h-9 mx-auto rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(124,58,237,0.24)", color: "#c4b5fd" }}>
+              <div key={feature.title} className="rounded-2xl p-3 text-center space-y-2" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
+                <div className="w-9 h-9 mx-auto rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
                   <Icon size={15} />
                 </div>
                 <p className="text-xs font-black leading-tight" style={{ color: "var(--text-sub)" }}>{feature.title}</p>
@@ -154,8 +235,8 @@ export default function ClientDashboard() {
         <section
           className="rounded-[2rem] p-5 space-y-4"
           style={{
-            background: "linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%)",
-            border: "1px solid rgba(148,163,184,0.18)",
+            backgroundColor: "var(--surface)",
+            border: "1px solid var(--border-subtle)",
           }}
         >
           <h3 className="text-2xl font-black" style={{ color: "var(--text)" }}>كيف يعمل النظام؟</h3>
@@ -168,9 +249,9 @@ export default function ClientDashboard() {
               "اختر السائق المناسب لك",
               "تواصل معه مباشرة عبر المحادثة أو واتساب",
             ].map((step, idx) => (
-              <div key={step} className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: "rgba(15,23,42,0.45)", border: "1px solid rgba(148,163,184,0.14)" }}>
+              <div key={step} className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
                 <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>{step}</p>
-                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "#fff" }}>
+                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}>
                   {idx + 1}
                 </span>
               </div>
@@ -181,13 +262,13 @@ export default function ClientDashboard() {
         <section
           className="rounded-[2rem] p-5 space-y-4"
           style={{
-            background: "linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%)",
-            border: "1px solid rgba(148,163,184,0.18)",
+            backgroundColor: "var(--surface)",
+            border: "1px solid var(--border-subtle)",
           }}
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
-              style={{ backgroundColor: "rgba(124,58,237,0.24)", border: "1px solid rgba(168,85,247,0.3)" }}>
+              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", color: "var(--brand)" }}>
               🔔
             </div>
             <div>
@@ -217,11 +298,11 @@ export default function ClientDashboard() {
           {!isLoading && requests.map((req) => (
             <div
               key={req.id}
-              className="rounded-[1.5rem] p-4 space-y-3"
+              className="rounded-[1.75rem] p-5 space-y-3 transition-transform"
               style={{
-                background: "linear-gradient(150deg, rgba(23,24,31,0.95) 0%, rgba(16,17,23,0.98) 100%)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                boxShadow: "var(--shadow-sm)",
+                backgroundColor: "var(--surface)",
+                border: "1px solid var(--border-subtle)",
+                boxShadow: "var(--shadow-md)",
               }}
             >
               <div className="flex items-center justify-between gap-3">
@@ -241,7 +322,7 @@ export default function ClientDashboard() {
                 <Link
                   href={`/client/request/${req.id}`}
                   className="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-black"
-                  style={{ background: "linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%)", color: "#fff" }}
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
                   إدارة الطلب
                 </Link>
