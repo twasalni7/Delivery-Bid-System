@@ -26,6 +26,7 @@ import RequestDetails from "@/pages/client/RequestDetails";
 import ClientProfile from "@/pages/client/ClientProfile";
 import ClientSupport from "@/pages/client/ClientSupport";
 import ClientArchive from "@/pages/client/ClientArchive";
+import ClientOnboarding from "@/pages/client/ClientOnboarding";
 
 import DriverLogin from "@/pages/driver/DriverLogin";
 import DriverDashboard from "@/pages/driver/DriverDashboard";
@@ -312,6 +313,9 @@ function Router() {
         </Route>
         <Route path="/client/notifications">
           <ClientGuard><NotificationsCenter /></ClientGuard>
+        </Route>
+        <Route path="/client/onboarding">
+          <ClientGuard><ClientOnboarding /></ClientGuard>
         </Route>
 
         <Route path="/driver/login" component={DriverLoginPage} />
