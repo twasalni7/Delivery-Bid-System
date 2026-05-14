@@ -249,8 +249,26 @@ export default function AdminNotificationComposer() {
                     <Input value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="notification:refresh" dir="ltr" style={{ color: "var(--text)" }} />
                   </div>
                   <div className="space-y-2">
-                    <Label style={{ color: "var(--text-muted)" }}>بيانات الحدث (JSON اختياري)</Label>
-                    <Textarea value={payloadJson} onChange={(e) => setPayloadJson(e.target.value)} placeholder='{"requestId": 12}' dir="ltr" style={{ color: "var(--text)" }} />
+                    <Label style={{ color: "var(--text-muted)" }}>بيانات الحدث (JSON اختياري، حد أقصى 10KB)</Label>
+                    <Textarea
+                      value={payloadJson}
+                      onChange={(e) => {
+                        const text = e.target.value;
+                        // Check size limit (10KB)
+                        const sizeInBytes = new Blob([text]).size;
+                        if (sizeInBytes > 10240) {
+                          toast({ title: "حجم البيانات كبير جداً (الحد الأقصى 10KB)", variant: "destructive" });
+                          return;
+                        }
+                        setPayloadJson(text);
+                      }}
+                      placeholder='{"requestId": 12}'
+                      dir="ltr"
+                      style={{ color: "var(--text)" }}
+                    />
+                    <p className="text-xs" style={{ color: "var(--text-hint)" }}>
+                      الحجم: {(new Blob([payloadJson]).size / 1024).toFixed(2)} KB / 10 KB
+                    </p>
                   </div>
                 </div>
               )}
@@ -258,7 +276,7 @@ export default function AdminNotificationComposer() {
 
             <button
               onClick={() => sendMutation.mutate()}
-              disabled={sendMutation.isPending}
+              disabled={sendMutation.isPending || !title.trim() || !message.trim()}
               className="w-full py-3 rounded-2xl font-black text-base disabled:opacity-60"
               style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
             >
