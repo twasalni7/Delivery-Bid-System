@@ -62,7 +62,7 @@ export default function AdminRequestDetails() {
 
   const canChat = request && (request.status === "SELECTED" || request.status === "ACTIVE");
 
-  const { data: chatMessages } = useQuery<Message[]>({
+  const { data: chatMessages, error: chatError } = useQuery<Message[]>({
     queryKey: ["messages", id],
     queryFn: async () => {
       const res = await fetch(`${API}/api/messages/${id}`, { headers: getAuthHeaders() });
@@ -71,11 +71,9 @@ export default function AdminRequestDetails() {
     },
     enabled: !!id && showChat,
     refetchInterval: 10_000,
-    onError: (err: Error) => {
-      toast({ title: err.message ?? "فشل تحميل المحادثات", variant: "destructive" });
-    },
   });
-  const { data: requestContext } = useQuery<RequestContext>({
+
+  const { data: requestContext, error: contextError } = useQuery<RequestContext>({
     queryKey: ["admin-request-context", id],
     queryFn: async () => {
       const res = await fetch(`${API}/api/admin/requests/${id}/context`, { headers: getAuthHeaders() });
@@ -84,10 +82,20 @@ export default function AdminRequestDetails() {
     },
     enabled: !!id,
     refetchInterval: 15_000,
-    onError: (err: Error) => {
-      toast({ title: err.message ?? "فشل تحميل سياق الطلب", variant: "destructive" });
-    },
   });
+
+  // Show error toasts when queries fail
+  useEffect(() => {
+    if (chatError) {
+      toast({ title: (chatError as Error).message ?? "فشل تحميل المحادثات", variant: "destructive" });
+    }
+  }, [chatError, toast]);
+
+  useEffect(() => {
+    if (contextError) {
+      toast({ title: (contextError as Error).message ?? "فشل تحميل سياق الطلب", variant: "destructive" });
+    }
+  }, [contextError, toast]);
 
   const sendMessage = useMutation({
     mutationFn: async () => {
