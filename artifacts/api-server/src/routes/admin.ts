@@ -268,7 +268,7 @@ router.get("/drivers", async (req, res) => {
       id: d.id,
       name: d.name,
       mobile: d.mobile,
-      loginCode: d.loginCode,
+      // loginCode intentionally omitted for security
       balance: parseFloat(d.balance ?? "0"),
       carType: d.carType,
       nationality: d.nationality,
@@ -319,7 +319,7 @@ router.post("/drivers", async (req, res) => {
     id: driver.id,
     name: driver.name,
     mobile: driver.mobile,
-    loginCode: driver.loginCode,
+    // loginCode intentionally omitted for security (sent via SMS/other channel)
     balance: parseFloat(driver.balance ?? "0"),
     carType: driver.carType,
     nationality: driver.nationality,
@@ -418,7 +418,7 @@ router.get("/drivers/:id", async (req, res) => {
     id: driver.id,
     name: driver.name,
     mobile: driver.mobile,
-    loginCode: driver.loginCode,
+    // loginCode intentionally omitted for security
     balance: parseFloat(driver.balance ?? "0"),
     carType: driver.carType,
     nationality: driver.nationality,
@@ -465,7 +465,7 @@ router.patch("/drivers/:id", async (req, res) => {
     id: updated.id,
     name: updated.name,
     mobile: updated.mobile,
-    loginCode: updated.loginCode,
+    // loginCode intentionally omitted for security
     balance: parseFloat(updated.balance ?? "0"),
     carType: updated.carType,
     nationality: updated.nationality,
@@ -617,6 +617,7 @@ router.post("/drivers/:id/regenerate-code", async (req, res) => {
     res.status(404).json({ error: "السائق غير موجود" });
     return;
   }
+  // Reset driver login code - returned here so admin can send to driver via SMS/other channel
   res.json({ loginCode: updated.loginCode });
 });
 
@@ -1056,6 +1057,7 @@ router.post("/change-code", async (req, res) => {
     res.status(404).json({ error: "المشرف غير موجود" });
     return;
   }
+  // Reset admin login code - returned for immediate use
   res.json({ message: "تم تغيير الرمز السري بنجاح", loginCode: updated.loginCode });
 });
 

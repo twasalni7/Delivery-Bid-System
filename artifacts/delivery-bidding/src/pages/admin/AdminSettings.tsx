@@ -43,18 +43,27 @@ export default function AdminSettings() {
   // ── Wallet transactions ──
   const [walletTxs, setWalletTxs] = useState<WalletTx[]>([]);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/api/bank-accounts/all`, { headers: getAuthHeaders() })
-      .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d)) setAccounts(d); })
-      .catch(() => {});
-
-    fetch(`${API}/api/wallet-transactions`, { headers: getAuthHeaders() })
-      .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d)) setWalletTxs(d); })
-      .catch(() => {});
-  }, []);
+    setLoadingData(true);
+    Promise.all([
+      fetch(`${API}/api/bank-accounts/all`, { headers: getAuthHeaders() })
+        .then((r) => r.json())
+        .then((d) => { if (Array.isArray(d)) setAccounts(d); })
+        .catch((err) => {
+          console.error("Failed to fetch bank accounts:", err);
+          toast({ title: "فشل تحميل الحسابات البنكية", variant: "destructive" });
+        }),
+      fetch(`${API}/api/wallet-transactions`, { headers: getAuthHeaders() })
+        .then((r) => r.json())
+        .then((d) => { if (Array.isArray(d)) setWalletTxs(d); })
+        .catch((err) => {
+          console.error("Failed to fetch wallet transactions:", err);
+          toast({ title: "فشل تحميل طلبات الشحن", variant: "destructive" });
+        })
+    ]).finally(() => setLoadingData(false));
+  }, [toast]);
 
   const handleChangeCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +169,13 @@ export default function AdminSettings() {
             <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>إدارة الحسابات البنكية وطلبات الشحن ورمز الدخول</p>
           </div>
         </div>
+
+        {loadingData && (
+          <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 mb-3" style={{ borderColor: "var(--brand)" }}></div>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>جاري تحميل البيانات...</p>
+          </div>
+        )}
 
         {/* ── Pending Alert Banner ── */}
         {pendingTxs.length > 0 && (

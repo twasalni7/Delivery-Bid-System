@@ -62,7 +62,7 @@ export default function AdminRequestDetails() {
 
   const canChat = request && (request.status === "SELECTED" || request.status === "ACTIVE");
 
-  const { data: chatMessages } = useQuery<Message[]>({
+  const { data: chatMessages, error: chatError } = useQuery<Message[]>({
     queryKey: ["messages", id],
     queryFn: async () => {
       const res = await fetch(`${API}/api/messages/${id}`, { headers: getAuthHeaders() });
@@ -70,9 +70,10 @@ export default function AdminRequestDetails() {
       return res.json();
     },
     enabled: !!id && showChat,
-    refetchInterval: 10_000,
+    refetchInterval: 15_000, // Reduced from 10s to 15s
   });
-  const { data: requestContext } = useQuery<RequestContext>({
+
+  const { data: requestContext, error: contextError } = useQuery<RequestContext>({
     queryKey: ["admin-request-context", id],
     queryFn: async () => {
       const res = await fetch(`${API}/api/admin/requests/${id}/context`, { headers: getAuthHeaders() });
@@ -80,8 +81,21 @@ export default function AdminRequestDetails() {
       return res.json();
     },
     enabled: !!id,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000, // Reduced from 15s to 30s - less critical data
   });
+
+  // Show error toasts when queries fail
+  useEffect(() => {
+    if (chatError) {
+      toast({ title: (chatError as Error).message ?? "فشل تحميل المحادثات", variant: "destructive" });
+    }
+  }, [chatError, toast]);
+
+  useEffect(() => {
+    if (contextError) {
+      toast({ title: (contextError as Error).message ?? "فشل تحميل سياق الطلب", variant: "destructive" });
+    }
+  }, [contextError, toast]);
 
   const sendMessage = useMutation({
     mutationFn: async () => {
@@ -103,6 +117,11 @@ export default function AdminRequestDetails() {
   // Admin select-offer — calls POST /api/admin/requests/:id/select-offer
   const selectOffer = useMutation({
     mutationFn: async (offerId: number) => {
+      // Check request status before attempting selection
+      if (request && request.status !== "OPEN") {
+        throw new Error("لا يمكن اختيار السائق - الطلب ليس في حالة مفتوح");
+      }
+
       const res = await fetch(`${API}/api/admin/requests/${id}/select-offer`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
@@ -196,9 +215,17 @@ export default function AdminRequestDetails() {
 
   const isOpen = request.status === "OPEN";
   const gradient = STATUS_GRADIENT[request.status] ?? STATUS_GRADIENT.OPEN;
-  const shifts = (request as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }> | null | undefined;
-  const additionalLocations = (request as any).additionalLocations as Array<{ type: string; address: string }> | null | undefined;
-  const notes = (request as any).notes as string | null | undefined;
+
+  // Type-safe extraction of extended request properties
+  type ExtendedRequest = typeof request & {
+    shifts?: Array<{ label?: string; goTime: string; returnTime?: string }> | null;
+    additionalLocations?: Array<{ type: string; address: string }> | null;
+    notes?: string | null;
+    createdBy?: string | null;
+  };
+  const shifts = (request as ExtendedRequest).shifts;
+  const additionalLocations = (request as ExtendedRequest).additionalLocations;
+  const notes = (request as ExtendedRequest).notes;
 
   return (
     <Layout role="admin">
@@ -208,7 +235,7 @@ export default function AdminRequestDetails() {
         </Link>
 
         {/* Badge for admin-created requests */}
-        {(request as any).createdBy === "admin" && (
+        {(request as ExtendedRequest).createdBy === "admin" && (
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black mb-3" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
             🛡️ طلب منشأ من الإدارة
           </div>
@@ -546,11 +573,15 @@ export default function AdminRequestDetails() {
                           <p className="font-bold" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
                           {offer.driver?.carType && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</p>}
                           {/* Admin always sees driver mobile */}
-                          {(offer.driver as any)?.mobile && (
-                            <a href={`tel:${(offer.driver as any).mobile}`} className="text-xs font-medium" dir="ltr" style={{ color: "var(--brand)" }}>
-                              {(offer.driver as any).mobile}
-                            </a>
-                          )}
+                          {(() => {
+                            type ExtendedDriver = typeof offer.driver & { mobile?: string };
+                            const driverMobile = (offer.driver as ExtendedDriver)?.mobile;
+                            return driverMobile && (
+                              <a href={`tel:${driverMobile}`} className="text-xs font-medium" dir="ltr" style={{ color: "var(--brand)" }}>
+                                {driverMobile}
+                              </a>
+                            );
+                          })()}
                         </div>
                       </div>
                       {isOpen && !request.selectedDriverId && (

@@ -563,7 +563,7 @@ describe("POST /requests/:id/select-offer (client selects offer)", () => {
       id: 1, clientId: 1, status: "OPEN",
     });
     (db.query.offersTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 5, driverId: 2, requestId: 1,
+      id: 5, driverId: 2, requestId: 1, status: "PENDING", // Added status field
     });
     (db.query.driversTable.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 2, name: "Khaled", balance: 30,

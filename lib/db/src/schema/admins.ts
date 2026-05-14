@@ -5,7 +5,9 @@ import { z } from "zod";
 export const adminsTable = pgTable("admins", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  loginCode: text("login_code").notNull().unique(),
+  email: text("email").unique(), // Optional email for password-based auth
+  password: text("password"), // Scrypt hashed password (replaces loginCode)
+  loginCode: text("login_code").unique(), // Deprecated - kept for backward compatibility
   pushSubscription: text("push_subscription"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

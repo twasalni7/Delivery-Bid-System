@@ -47,6 +47,17 @@ export default function AdminServiceAreas() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!city.trim()) { toast({ title: "اسم المدينة مطلوب", variant: "destructive" }); return; }
+
+    // Check for duplicate city + district combination
+    const isDuplicate = areas.some(
+      (area) => area.city.toLowerCase() === city.trim().toLowerCase() &&
+                (!district.trim() || area.district?.toLowerCase() === district.trim().toLowerCase())
+    );
+    if (isDuplicate) {
+      toast({ title: "هذه المنطقة موجودة مسبقاً", variant: "destructive" });
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`${API}/api/service-areas`, {

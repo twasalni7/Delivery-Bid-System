@@ -68,7 +68,15 @@ export default function AdminSupport() {
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ adminReply, status }),
       });
-      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "فشل التحديث"); }
+      if (!r.ok) {
+        let errorData;
+        try {
+          errorData = await r.json();
+        } catch {
+          throw new Error("فشل التحديث - استجابة غير صالحة من الخادم");
+        }
+        throw new Error(errorData.error || "فشل التحديث");
+      }
       return r.json();
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-tickets"] }); toast({ title: "تم تحديث التذكرة" }); },
@@ -222,12 +230,13 @@ export default function AdminSupport() {
                         <button
                           className="flex-1 py-2.5 rounded-xl font-black disabled:opacity-50"
                           style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-                          disabled={update.isPending}
+                          disabled={update.isPending || remove.isPending || (replies[t.id] ?? t.adminReply ?? "") === (t.adminReply ?? "")}
                           onClick={() => update.mutate({ id: t.id, adminReply: replies[t.id] ?? t.adminReply ?? undefined })}>
                           حفظ الرد
                         </button>
                         <button onClick={() => { if (confirm("هل تريد حذف هذه التذكرة؟")) { remove.mutate(t.id); setExpanded(null); } }}
-                          className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                          disabled={update.isPending || remove.isPending}
+                          className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors disabled:opacity-50"
                           style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)", color: "var(--status-cancelled-text)" }}>
                           <Trash2 size={15} />
                         </button>

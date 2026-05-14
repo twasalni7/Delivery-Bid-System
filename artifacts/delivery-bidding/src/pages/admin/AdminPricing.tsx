@@ -60,14 +60,26 @@ export default function AdminPricing() {
   };
 
   const updateTier = (idx: number, field: keyof PricingTier, val: string) => {
-    setTiers((prev) => prev.map((t, i) => i === idx ? { ...t, [field]: parseFloat(val) || 0 } : t));
+    const numVal = parseFloat(val);
+    // Validate numeric range: min 0, max 1000000
+    if (isNaN(numVal) || numVal < 0 || numVal > 1000000) {
+      toast({ title: "يجب أن تكون القيمة بين 0 و 1,000,000", variant: "destructive" });
+      return;
+    }
+    setTiers((prev) => prev.map((t, i) => i === idx ? { ...t, [field]: numVal } : t));
   };
 
   const addTier = () => setTiers((prev) => [...prev, { max: 0, base: 0 }]);
   const removeTier = (idx: number) => setTiers((prev) => prev.filter((_, i) => i !== idx));
 
   const updateDiscount = (idx: number, field: keyof SharingDiscount, val: string) => {
-    setDiscounts((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: parseFloat(val) || 0 } : d));
+    const numVal = parseFloat(val);
+    // Validate numeric range
+    if (isNaN(numVal) || numVal < 0 || (field === "people" && numVal > 100) || (field === "factor" && numVal > 10)) {
+      toast({ title: "قيمة غير صالحة", variant: "destructive" });
+      return;
+    }
+    setDiscounts((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: numVal } : d));
   };
 
   const addDiscount = () => setDiscounts((prev) => [...prev, { people: 0, factor: 1.0 }]);

@@ -152,6 +152,13 @@ export default function AdminPushDebug() {
       }
       addLog("✓ الإذن ممنوح");
 
+      // Check Service Worker support
+      if (!("serviceWorker" in navigator)) {
+        addLog("❌ Service Worker غير مدعوم في هذا المتصفح");
+        setDiagLoading(false);
+        return;
+      }
+
       // Step 2: Register Service Worker
       addLog("2️⃣ تسجيل Service Worker...");
       const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
@@ -167,6 +174,11 @@ export default function AdminPushDebug() {
         return;
       }
       const vapidData = await vapidRes.json() as { publicKey: string };
+      if (!vapidData.publicKey || vapidData.publicKey.trim().length === 0) {
+        addLog("❌ VAPID key فارغ أو غير موجود");
+        setDiagLoading(false);
+        return;
+      }
       addLog(`✓ VAPID key: ${vapidData.publicKey.substring(0, 30)}...`);
 
       // Step 4: Subscribe

@@ -267,7 +267,8 @@ describe("POST /admin/drivers", () => {
       name: "Khaled", mobile: "0501234567", carType: "Sedan", nationality: "SA", age: "28", nationalId: "1234",
     });
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ id: 10, name: "Khaled", loginCode: "NEWCODE1" });
+    expect(res.body).toMatchObject({ id: 10, name: "Khaled" });
+    // loginCode intentionally not returned for security
   });
 });
 
@@ -376,7 +377,8 @@ describe("GET /admin/drivers/:id", () => {
     const app = createApp(adminUser);
     const res = await request(app).get("/admin/drivers/3");
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: 3, name: "Fahad", loginCode: "CODE3" });
+    expect(res.body).toMatchObject({ id: 3, name: "Fahad" });
+    // loginCode intentionally not returned for security
   });
 });
 

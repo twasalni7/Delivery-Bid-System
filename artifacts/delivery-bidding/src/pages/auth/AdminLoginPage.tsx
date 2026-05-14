@@ -1,10 +1,49 @@
-import { useState } from "react";
+import { useState, Component, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAdminLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
-export default function AdminLoginPage() {
+// Error Boundary wrapper for login page
+class LoginErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("Login page error:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: "var(--bg)" }} dir="rtl">
+          <div className="text-center p-8">
+            <p className="text-5xl mb-4">😕</p>
+            <h1 className="text-2xl font-black mb-2" style={{ color: "var(--text)" }}>حدث خطأ غير متوقع</h1>
+            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>تعذر تحميل صفحة تسجيل الدخول</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-5 py-2.5 rounded-xl font-bold text-sm text-white"
+              style={{ backgroundColor: "var(--brand)" }}
+            >
+              إعادة المحاولة
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+function AdminLoginContent() {
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
@@ -74,5 +113,13 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <LoginErrorBoundary>
+      <AdminLoginContent />
+    </LoginErrorBoundary>
   );
 }

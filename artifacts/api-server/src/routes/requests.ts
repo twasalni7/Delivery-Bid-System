@@ -917,6 +917,14 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         throw Object.assign(new Error("العرض غير موجود لهذا الطلب"), { status: 404 });
       }
 
+      // Re-check offer status inside transaction to prevent race with cancellation
+      if (offer.status !== "PENDING") {
+        throw Object.assign(
+          new Error("لا يمكن اختيار هذا العرض - الحالة الحالية: " + offer.status),
+          { status: 400 }
+        );
+      }
+
       const driver = await tx.query.driversTable.findFirst({
         where: eq(driversTable.id, offer.driverId),
       });
@@ -928,15 +936,20 @@ router.post("/:id/select-offer", requireAuth("client"), async (req, res) => {
         throw Object.assign(new Error("رصيد السائق غير كافٍ للقبول على هذا الطلب"), { status: 400 });
       }
 
+      // Atomic balance deduction with WHERE clause to prevent negative balance
+      // This protects against race conditions even if multiple selections happen concurrently
       const [updatedDriver] = await tx
         .update(driversTable)
         .set({ balance: sql`${driversTable.balance} - ${bidFee}::numeric` })
-        .where(and(eq(driversTable.id, driver.id), sql`${driversTable.balance} >= ${bidFee}::numeric`))
+        .where(and(
+          eq(driversTable.id, driver.id),
+          sql`${driversTable.balance} >= ${bidFee}::numeric` // Critical: prevents negative balance
+        ))
         .returning();
 
       if (!updatedDriver) {
         logger.warn(
-          { requestId: id, offerId, driverId: driver.id },
+          { requestId: id, offerId, driverId: driver.id, currentBalance: driver.balance, requiredFee: bidFee },
           "requests POST /:id/select-offer balance deduction failed due to insufficient balance or concurrent modification",
         );
         throw Object.assign(new Error("تعذر خصم الرسوم من رصيد السائق؛ قد يكون الرصيد غير كافٍ أو تغيّر أثناء التنفيذ"), { status: 400 });

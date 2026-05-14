@@ -75,13 +75,17 @@ export default function AdminActivityLogs() {
     }
   };
 
-  useEffect(() => { fetchLogs(page); }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchLogs(page);
+  }, [page, filterRole, filterAction, filterFrom, filterTo]); // Added filter dependencies
 
-  const applyFilters = () => { setPage(1); fetchLogs(1); };
+  const applyFilters = () => { setPage(1); }; // Just reset page - useEffect will trigger fetchLogs
   const clearFilters = () => {
-    setFilterRole(""); setFilterAction(""); setFilterFrom(""); setFilterTo("");
-    setPage(1);
-    setTimeout(() => fetchLogs(1), 0);
+    setFilterRole("");
+    setFilterAction("");
+    setFilterFrom("");
+    setFilterTo("");
+    setPage(1); // useEffect will trigger fetchLogs with cleared filters
   };
 
   const formatDate = (iso: string) => {
@@ -213,16 +217,18 @@ export default function AdminActivityLogs() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1 || loading}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
+            className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30 transition-opacity"
             style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             <ChevronRight size={16} /> السابق
           </button>
-          <span className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>صفحة {page}</span>
+          <span className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+            صفحة {page} {!hasMore && logs.length > 0 && "(آخر صفحة)"}
+          </span>
           <button
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => { if (hasMore) setPage((p) => p + 1); }}
             disabled={!hasMore || loading}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30"
+            className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-30 transition-opacity"
             style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)" }}
           >
             التالي <ChevronLeft size={16} />
