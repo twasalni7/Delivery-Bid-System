@@ -97,7 +97,12 @@ export default function AdminNotificationComposer() {
     mutationFn: async () => {
       let actionPayload: Record<string, unknown> | undefined;
       if (actionType === "emit_event") {
-        const parsedPayload = payloadJson.trim() ? JSON.parse(payloadJson) : {};
+        let parsedPayload: unknown = {};
+        try {
+          parsedPayload = payloadJson.trim() ? JSON.parse(payloadJson) : {};
+        } catch (err) {
+          throw new Error("صيغة JSON غير صحيحة في بيانات الحدث");
+        }
         actionPayload = {
           ...(typeof parsedPayload === "object" && parsedPayload ? parsedPayload as Record<string, unknown> : {}),
           eventName,

@@ -71,6 +71,9 @@ export default function AdminRequestDetails() {
     },
     enabled: !!id && showChat,
     refetchInterval: 10_000,
+    onError: (err: Error) => {
+      toast({ title: err.message ?? "فشل تحميل المحادثات", variant: "destructive" });
+    },
   });
   const { data: requestContext } = useQuery<RequestContext>({
     queryKey: ["admin-request-context", id],
@@ -81,6 +84,9 @@ export default function AdminRequestDetails() {
     },
     enabled: !!id,
     refetchInterval: 15_000,
+    onError: (err: Error) => {
+      toast({ title: err.message ?? "فشل تحميل سياق الطلب", variant: "destructive" });
+    },
   });
 
   const sendMessage = useMutation({

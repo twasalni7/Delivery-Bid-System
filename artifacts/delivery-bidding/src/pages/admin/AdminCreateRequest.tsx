@@ -168,6 +168,24 @@ export default function AdminCreateRequest() {
   };
 
   const handleSubmit = async () => {
+    // Validate locations are not empty
+    if (!homeLocation.trim() || !workLocation.trim()) {
+      toast({ title: "يرجى إدخال موقع الانطلاق والوصول", variant: "destructive" });
+      return;
+    }
+
+    // Validate at least one shift has goTime
+    if (!shifts[0]?.goTime) {
+      toast({ title: "يرجى تحديد وقت الذهاب", variant: "destructive" });
+      return;
+    }
+
+    // Validate at least one day selected
+    if (selectedDays.length === 0) {
+      toast({ title: "يرجى تحديد أيام العمل", variant: "destructive" });
+      return;
+    }
+
     const validAdditional = additionalLocations.filter((l) => l.address.trim());
     const firstGoTime = shifts[0]?.goTime ?? "";
     const firstReturnTime = shifts[0]?.returnTime ?? "";
