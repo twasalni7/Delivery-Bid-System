@@ -230,7 +230,7 @@ export default function AdminSupport() {
                         <button
                           className="flex-1 py-2.5 rounded-xl font-black disabled:opacity-50"
                           style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-                          disabled={update.isPending || remove.isPending}
+                          disabled={update.isPending || remove.isPending || (replies[t.id] ?? t.adminReply ?? "") === (t.adminReply ?? "")}
                           onClick={() => update.mutate({ id: t.id, adminReply: replies[t.id] ?? t.adminReply ?? undefined })}>
                           حفظ الرد
                         </button>
