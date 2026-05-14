@@ -180,6 +180,19 @@ export default function AdminCreateRequest() {
       return;
     }
 
+    // Validate time format (HH:MM)
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    for (const shift of shifts) {
+      if (shift.goTime && !timeRegex.test(shift.goTime)) {
+        toast({ title: "صيغة وقت الذهاب غير صحيحة (يجب أن تكون HH:MM)", variant: "destructive" });
+        return;
+      }
+      if (shift.returnTime && !timeRegex.test(shift.returnTime)) {
+        toast({ title: "صيغة وقت العودة غير صحيحة (يجب أن تكون HH:MM)", variant: "destructive" });
+        return;
+      }
+    }
+
     // Validate at least one day selected
     if (selectedDays.length === 0) {
       toast({ title: "يرجى تحديد أيام العمل", variant: "destructive" });

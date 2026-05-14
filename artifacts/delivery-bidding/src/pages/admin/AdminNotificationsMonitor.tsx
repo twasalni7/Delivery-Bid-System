@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Layout } from "@/components/layout";
 import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { API_ORIGIN as API } from "@/lib/api-config";
@@ -62,7 +62,7 @@ function timeAgo(iso: string): string {
   return `منذ ${Math.floor(hrs / 24)} يوم`;
 }
 
-function StatCard({
+const StatCard = memo(function StatCard({
   icon,
   label,
   value,
@@ -88,7 +88,7 @@ function StatCard({
       {sub && <div className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>{sub}</div>}
     </div>
   );
-}
+});
 
 export default function AdminNotificationsMonitor() {
   const { toast } = useToast();

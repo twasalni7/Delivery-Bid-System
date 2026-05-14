@@ -75,12 +75,14 @@ export default function AdminNotificationComposer() {
   const { data: metadata } = useQuery<MetadataResponse>({
     queryKey: ["push-targeting-metadata"],
     queryFn: () => apiFetch<MetadataResponse>("/api/push/targeting-metadata"),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes - rarely changes
   });
 
   const { data: analytics } = useQuery<AnalyticsResponse>({
     queryKey: ["push-analytics"],
     queryFn: () => apiFetch<AnalyticsResponse>("/api/push/analytics"),
     refetchInterval: 30_000,
+    staleTime: 20_000, // Cache for 20 seconds
   });
 
   const availableFields = metadata?.fieldsByRole[filterRole] ?? [];

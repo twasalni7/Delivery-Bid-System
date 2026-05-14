@@ -75,13 +75,17 @@ export default function AdminActivityLogs() {
     }
   };
 
-  useEffect(() => { fetchLogs(page); }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchLogs(page);
+  }, [page, filterRole, filterAction, filterFrom, filterTo]); // Added filter dependencies
 
-  const applyFilters = () => { setPage(1); fetchLogs(1); };
+  const applyFilters = () => { setPage(1); }; // Just reset page - useEffect will trigger fetchLogs
   const clearFilters = () => {
-    setFilterRole(""); setFilterAction(""); setFilterFrom(""); setFilterTo("");
-    setPage(1);
-    setTimeout(() => fetchLogs(1), 0);
+    setFilterRole("");
+    setFilterAction("");
+    setFilterFrom("");
+    setFilterTo("");
+    setPage(1); // useEffect will trigger fetchLogs with cleared filters
   };
 
   const formatDate = (iso: string) => {
