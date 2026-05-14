@@ -247,7 +247,7 @@ router.post("/login-admin", async (req, res) => {
         return;
       }
       // Verify password using scrypt
-      const isValid = await verifyPassword(admin.password, password);
+      const isValid = await comparePassword(password, admin.password);
       if (!isValid) {
         res.status(401).json({ error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
         return;
