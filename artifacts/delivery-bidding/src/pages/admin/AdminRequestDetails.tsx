@@ -109,6 +109,11 @@ export default function AdminRequestDetails() {
   // Admin select-offer — calls POST /api/admin/requests/:id/select-offer
   const selectOffer = useMutation({
     mutationFn: async (offerId: number) => {
+      // Check request status before attempting selection
+      if (request && request.status !== "OPEN") {
+        throw new Error("لا يمكن اختيار السائق - الطلب ليس في حالة مفتوح");
+      }
+
       const res = await fetch(`${API}/api/admin/requests/${id}/select-offer`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },

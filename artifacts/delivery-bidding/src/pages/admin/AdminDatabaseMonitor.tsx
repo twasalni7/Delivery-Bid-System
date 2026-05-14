@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
+import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { Database, RefreshCw, HardDrive } from "lucide-react";
@@ -42,16 +43,26 @@ const TABLE_NAMES_AR: Record<string, string> = {
 };
 
 export default function AdminDatabaseMonitor() {
+  const { toast } = useToast();
   const [data, setData] = useState<DbMonitor | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
+    setError(false);
     try {
       const res = await fetch(`${API}/api/admin/database-monitor`, { headers: getAuthHeaders() });
-      if (res.ok) setData(await res.json());
-    } catch {
-      // silent
+      if (res.ok) {
+        setData(await res.json());
+      } else {
+        setError(true);
+        toast({ title: "فشل تحميل بيانات قاعدة البيانات", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("Failed to fetch database monitor:", err);
+      setError(true);
+      toast({ title: "فشل الاتصال بقاعدة البيانات", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -66,7 +77,8 @@ export default function AdminDatabaseMonitor() {
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>مراقبة قاعدة البيانات</h1>
           <button
             onClick={fetchData}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm disabled:opacity-50"
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -74,8 +86,28 @@ export default function AdminDatabaseMonitor() {
           </button>
         </div>
 
+        {error ? (
+          <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
+            <p className="text-4xl mb-3">🔌</p>
+            <p className="font-black mb-2" style={{ color: "var(--status-cancelled-text)" }}>فشل الاتصال بقاعدة البيانات</p>
+            <p className="text-sm mb-4" style={{ color: "var(--status-cancelled-text)" }}>يرجى التحقق من حالة الخادم والمحاولة مرة أخرى</p>
+            <button
+              onClick={fetchData}
+              className="px-4 py-2 rounded-xl text-sm font-bold"
+              style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)" }}
+            >
+              إعادة المحاولة
+            </button>
+          </div>
+        ) : loading && !data ? (
+          <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <RefreshCw className="animate-spin mx-auto mb-3" size={32} style={{ color: "var(--text-muted)" }} />
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>جاري تحميل بيانات قاعدة البيانات...</p>
+          </div>
+        ) : null}
+
         {/* Summary */}
-        {data && (
+        {data && !error && (
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-2xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
