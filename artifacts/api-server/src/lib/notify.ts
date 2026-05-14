@@ -478,32 +478,50 @@ export async function notify(params: {
     actionPayload: params.actionPayload ?? null,
   });
 
-  // Step 3: Attempt push delivery via web-push
-  void getPushSubscription(params.userId, params.userRole).then((sub) => {
+  // Step 3: Attempt push delivery via web-push with proper error handling
+  try {
+    const sub = await getPushSubscription(params.userId, params.userRole);
     if (sub) {
       logger.info({ userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: push subscription found");
-      void sendWebPush(
-        params.userId,
-        params.userRole,
-        sub,
-        pushNotificationId,
-        params.title,
-        params.message,
-        deliveryUrl,
-        params.actionType,
-        params.actionPayload ?? null,
-        params.icon,
-        params.badge
-      );
-      return;
+      try {
+        await sendWebPush(
+          params.userId,
+          params.userRole,
+          sub,
+          pushNotificationId,
+          params.title,
+          params.message,
+          deliveryUrl,
+          params.actionType,
+          params.actionPayload ?? null,
+          params.icon,
+          params.badge
+        );
+        logger.info({ userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: push sent successfully");
+      } catch (pushError) {
+        logger.error({ err: pushError, userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: push delivery failed");
+        await markNotificationFailed({
+          notificationId: pushNotificationId,
+          error: pushError instanceof Error ? pushError.message : "push_send_failed",
+          provider: "web-push",
+        });
+      }
+    } else {
+      logger.info({ userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: no push subscription stored for recipient");
+      await markNotificationFailed({
+        notificationId: pushNotificationId,
+        error: "no_push_subscription",
+        provider: "web-push",
+      });
     }
-    logger.info({ userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: no push subscription stored for recipient");
-    void markNotificationFailed({
+  } catch (subscriptionError) {
+    logger.error({ err: subscriptionError, userId: params.userId, userRole: params.userRole, notificationId: pushNotificationId }, "notify: failed to retrieve push subscription");
+    await markNotificationFailed({
       notificationId: pushNotificationId,
-      error: "no_push_subscription",
+      error: subscriptionError instanceof Error ? subscriptionError.message : "subscription_retrieval_failed",
       provider: "web-push",
     });
-  });
+  }
 }
 
 /** Use for direct recipient targeting without repeating role wiring at call sites. */
