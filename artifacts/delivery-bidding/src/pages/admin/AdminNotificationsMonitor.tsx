@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout";
 import { AdminPageTabs } from "@/components/admin-page-tabs";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { useToast } from "@/hooks/use-toast";
 import { Bell, RefreshCw, CheckCircle, XCircle, Smartphone, Users, TrendingUp, MousePointerClick } from "lucide-react";
 
 interface DeliveryStats {
@@ -90,6 +91,7 @@ function StatCard({
 }
 
 export default function AdminNotificationsMonitor() {
+  const { toast } = useToast();
   const [data, setData] = useState<NotifMonitor | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -97,13 +99,18 @@ export default function AdminNotificationsMonitor() {
     setLoading(true);
     try {
       const res = await fetch(`${API}/api/admin/notifications-monitor`, { headers: getAuthHeaders() });
-      if (res.ok) setData(await res.json());
-    } catch {
-      // silent
+      if (res.ok) {
+        setData(await res.json());
+      } else {
+        toast({ title: "فشل تحميل بيانات الإشعارات", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications monitor:", err);
+      toast({ title: "فشل الاتصال بالخادم", variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { void fetchData(); }, [fetchData]);
 

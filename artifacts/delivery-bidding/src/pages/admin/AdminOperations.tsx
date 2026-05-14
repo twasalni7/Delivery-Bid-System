@@ -146,18 +146,57 @@ export default function AdminOperations() {
         fetch(`${API}/api/admin/operations-alerts`, { headers: getAuthHeaders() }),
         fetch(`${API}/api/admin/maintenance-mode`, { headers: getAuthHeaders() }),
       ]);
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (healthRes.ok) setHealth(await healthRes.json());
-      if (errorsRes.ok) setErrors(await errorsRes.json());
-      if (alertsRes.ok) setAlerts(await alertsRes.json());
-      if (maintenanceRes.ok) { const m = await maintenanceRes.json(); setMaintenance(m.enabled); }
+
+      let hasError = false;
+
+      if (statsRes.ok) {
+        setStats(await statsRes.json());
+      } else {
+        hasError = true;
+        console.error("Failed to fetch operations stats");
+      }
+
+      if (healthRes.ok) {
+        setHealth(await healthRes.json());
+      } else {
+        hasError = true;
+        console.error("Failed to fetch system health");
+      }
+
+      if (errorsRes.ok) {
+        setErrors(await errorsRes.json());
+      } else {
+        hasError = true;
+        console.error("Failed to fetch live errors");
+      }
+
+      if (alertsRes.ok) {
+        setAlerts(await alertsRes.json());
+      } else {
+        hasError = true;
+        console.error("Failed to fetch alerts");
+      }
+
+      if (maintenanceRes.ok) {
+        const m = await maintenanceRes.json();
+        setMaintenance(m.enabled);
+      } else {
+        hasError = true;
+        console.error("Failed to fetch maintenance mode");
+      }
+
+      if (hasError) {
+        toast({ title: "فشل تحميل بعض البيانات", description: "يرجى التحقق من اتصال الشبكة", variant: "destructive" });
+      }
+
       setLastRefresh(new Date());
-    } catch {
-      // Errors are surfaced via the isLoading/empty-state guards in the UI.
+    } catch (err) {
+      console.error("Failed to fetch operations data:", err);
+      toast({ title: "فشل تحميل بيانات التشغيل", description: "يرجى التحقق من اتصال الشبكة", variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchAll();

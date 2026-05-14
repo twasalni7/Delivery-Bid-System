@@ -167,6 +167,11 @@ export default function AdminPushDebug() {
         return;
       }
       const vapidData = await vapidRes.json() as { publicKey: string };
+      if (!vapidData.publicKey || vapidData.publicKey.trim().length === 0) {
+        addLog("❌ VAPID key فارغ أو غير موجود");
+        setDiagLoading(false);
+        return;
+      }
       addLog(`✓ VAPID key: ${vapidData.publicKey.substring(0, 30)}...`);
 
       // Step 4: Subscribe

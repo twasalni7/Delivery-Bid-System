@@ -68,7 +68,15 @@ export default function AdminSupport() {
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ adminReply, status }),
       });
-      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "فشل التحديث"); }
+      if (!r.ok) {
+        let errorData;
+        try {
+          errorData = await r.json();
+        } catch {
+          throw new Error("فشل التحديث - استجابة غير صالحة من الخادم");
+        }
+        throw new Error(errorData.error || "فشل التحديث");
+      }
       return r.json();
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-tickets"] }); toast({ title: "تم تحديث التذكرة" }); },

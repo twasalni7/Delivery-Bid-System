@@ -48,13 +48,19 @@ export default function AdminSettings() {
     fetch(`${API}/api/bank-accounts/all`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setAccounts(d); })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("Failed to fetch bank accounts:", err);
+        toast({ title: "فشل تحميل الحسابات البنكية", variant: "destructive" });
+      });
 
     fetch(`${API}/api/wallet-transactions`, { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setWalletTxs(d); })
-      .catch(() => {});
-  }, []);
+      .catch((err) => {
+        console.error("Failed to fetch wallet transactions:", err);
+        toast({ title: "فشل تحميل طلبات الشحن", variant: "destructive" });
+      });
+  }, [toast]);
 
   const handleChangeCode = async (e: React.FormEvent) => {
     e.preventDefault();
