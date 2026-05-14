@@ -226,46 +226,20 @@ router.post("/login-driver", async (req, res) => {
 });
 
 router.post("/login-admin", async (req, res) => {
-  const { loginCode, email, password } = req.body ?? {};
+  const { loginCode } = req.body ?? {};
 
-  // Support both old loginCode and new email+password authentication
-  if (!loginCode && (!email || !password)) {
-    res.status(400).json({ error: "يرجى إدخال رمز الدخول أو البريد الإلكتروني وكلمة المرور" });
+  if (!loginCode) {
+    res.status(400).json({ error: "يرجى إدخال رمز الدخول" });
     return;
   }
 
   try {
-    let admin;
-
-    // Try email+password authentication first (preferred method)
-    if (email && password) {
-      admin = await db.query.adminsTable.findFirst({
-        where: eq(adminsTable.email, email),
-      });
-      if (!admin || !admin.password) {
-        res.status(401).json({ error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
-        return;
-      }
-      // Verify password using scrypt
-      const isValid = await comparePassword(password, admin.password);
-      if (!isValid) {
-        res.status(401).json({ error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
-        return;
-      }
-    }
-    // Fallback to legacy loginCode authentication
-    else if (loginCode) {
-      admin = await db.query.adminsTable.findFirst({
-        where: eq(adminsTable.loginCode, loginCode),
-      });
-      if (!admin) {
-        res.status(401).json({ error: "رمز الدخول غير صحيح" });
-        return;
-      }
-    }
+    const admin = await db.query.adminsTable.findFirst({
+      where: eq(adminsTable.loginCode, loginCode),
+    });
 
     if (!admin) {
-      res.status(401).json({ error: "فشل تسجيل الدخول" });
+      res.status(401).json({ error: "رمز الدخول غير صحيح" });
       return;
     }
 
