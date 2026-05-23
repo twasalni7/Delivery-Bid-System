@@ -62,7 +62,7 @@ const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 // Default center: Dammam, Eastern Region
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
 // Debounce delays - optimized for better UX
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 250;
 const MOVE_END_DEBOUNCE_MS = 800; // Increased to prevent auto-geocoding on every small move
 // Guard time after programmatic moves (search selection, locate button)
 const PROGRAMMATIC_MOVE_GUARD_MS = 600;
@@ -391,7 +391,7 @@ export default function MapPicker({
       <div
         ref={containerRef}
         className="absolute inset-0"
-        style={{ backgroundColor: "#161616", touchAction: "pan-x pan-y" }}
+        style={{ backgroundColor: "#e8e0d8", touchAction: "pan-x pan-y" }}
       />
 
       {loading && (
@@ -412,13 +412,15 @@ export default function MapPicker({
 
       <div className="pointer-events-none absolute inset-0 z-[1150] flex items-center justify-center">
         <div className="flex flex-col items-center -translate-y-5">
-          <MapPin size={36} style={{ color }} className="drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]" />
-          <div className="mt-1 h-2.5 w-2.5 rounded-full border-2 border-white" style={{ backgroundColor: color }} />
+          <div style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5)) drop-shadow(0 0 6px rgba(255,255,255,0.4))" }}>
+            <MapPin size={40} style={{ color }} strokeWidth={2.5} />
+          </div>
+          <div className="mt-1 h-3 w-3 rounded-full border-2 border-white shadow-lg" style={{ backgroundColor: color }} />
         </div>
       </div>
 
       {!pendingSelection && !loading && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2.5 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.85)", color: "rgba(255,255,255,0.95)", maxWidth: "90%", backdropFilter: "blur(10px)", fontFamily: "var(--font-arabic)" }}>
+        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2.5 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.80)", color: "rgba(255,255,255,0.95)", maxWidth: "90%", backdropFilter: "blur(10px)", fontFamily: "var(--font-arabic)" }}>
           {placeholder}
         </div>
       )}
@@ -430,7 +432,7 @@ export default function MapPicker({
         className="h-full w-full"
         style={{
           minHeight: mapPanelMinHeight,
-          backgroundColor: "#161616",
+          backgroundColor: "#e8e0d8",
           touchAction: "pan-x pan-y",
         }}
       />
@@ -453,24 +455,41 @@ export default function MapPicker({
 
       <div className="pointer-events-none absolute inset-0 z-[1150] flex items-center justify-center">
         <div className="flex flex-col items-center -translate-y-5">
-          <MapPin size={34} style={{ color }} className="drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]" />
-          <div className="mt-1 h-2.5 w-2.5 rounded-full border-2 border-white" style={{ backgroundColor: color }} />
+          <div style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5)) drop-shadow(0 0 6px rgba(255,255,255,0.4))" }}>
+            <MapPin size={38} style={{ color }} strokeWidth={2.5} />
+          </div>
+          <div className="mt-1 h-3 w-3 rounded-full border-2 border-white shadow-lg" style={{ backgroundColor: color }} />
         </div>
       </div>
 
       {!pendingSelection && !loading && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2.5 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.85)", color: "rgba(255,255,255,0.95)", maxWidth: "90%", backdropFilter: "blur(10px)", fontFamily: "var(--font-arabic)" }}>
+        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2.5 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.80)", color: "rgba(255,255,255,0.95)", maxWidth: "90%", backdropFilter: "blur(10px)", fontFamily: "var(--font-arabic)" }}>
           {placeholder}
         </div>
       )}
     </div>
   );
 
+  /** Returns a colored icon + label for a result type */
+  function getTypeIcon(type?: string) {
+    if (!type) return { icon: "📍", label: "" };
+    const t = type.toLowerCase();
+    if (t.includes("hospital") || t.includes("clinic") || t.includes("مستشفى") || t.includes("عيادة")) return { icon: "🏥", label: "مستشفى" };
+    if (t.includes("school") || t.includes("مدرسة") || t.includes("university") || t.includes("جامعة")) return { icon: "🎓", label: "تعليم" };
+    if (t.includes("mosque") || t.includes("مسجد")) return { icon: "🕌", label: "مسجد" };
+    if (t.includes("residential") || t.includes("neighbourhood") || t.includes("suburb") || t.includes("quarter")) return { icon: "🏘️", label: "حي" };
+    if (t.includes("city") || t.includes("town") || t.includes("village")) return { icon: "🏙️", label: "مدينة" };
+    if (t.includes("mall") || t.includes("shop") || t.includes("market") || t.includes("سوق") || t.includes("مول")) return { icon: "🛍️", label: "تسوق" };
+    if (t.includes("park") || t.includes("garden")) return { icon: "🌳", label: "حديقة" };
+    if (t.includes("road") || t.includes("street") || t.includes("شارع")) return { icon: "🛣️", label: "شارع" };
+    return { icon: "📍", label: "" };
+  }
+
   const searchBar = (
     <div className="relative w-full">
-      <div className="flex items-center gap-2 px-3 rounded-2xl" style={{ backgroundColor: "var(--input-bg)", border: "1.5px solid var(--input-border)", minHeight: "52px" }}>
+      <div className="flex items-center gap-2 px-3 rounded-2xl" style={{ backgroundColor: "var(--input-bg)", border: "2px solid var(--input-border)", minHeight: "52px" }}>
         {searching ? (
-          <Loader2 size={20} className="shrink-0 animate-spin" style={{ color: "var(--text-muted)" }} />
+          <Loader2 size={20} className="shrink-0 animate-spin" style={{ color: "var(--brand)" }} />
         ) : (
           <Search size={20} className="shrink-0" style={{ color: "var(--text-muted)" }} />
         )}
@@ -480,10 +499,11 @@ export default function MapPicker({
           value={searchText}
           onChange={handleSearchInput}
           onFocus={() => searchResults.length > 0 && setShowResults(true)}
-          placeholder="ابحث عن الحي، الشارع، أو مكان معروف..."
+          placeholder="اكتب اسم الحي أو المستشفى أو المدرسة..."
           className="flex-1 bg-transparent py-3 text-base font-bold outline-none"
           style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none" }}
           dir="rtl"
+          autoComplete="off"
         />
         {searchText && (
           <button
@@ -498,39 +518,55 @@ export default function MapPicker({
         )}
       </div>
 
+      {/* Search hint when text is empty */}
+      {!searchText && (
+        <p className="text-xs font-bold px-1" style={{ color: "var(--text-hint)" }}>
+          💡 اكتب حرفين أو أكثر لتظهر الاقتراحات — مثال: "حي النزهة" أو "مستشفى الملك"
+        </p>
+      )}
+
       {showResults && searchResults.length > 0 && (
         <div
-          className="absolute z-[1400] w-full mt-2 rounded-2xl overflow-hidden max-h-[42dvh] overflow-y-auto"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
+          className="absolute z-[1400] w-full mt-1 rounded-2xl overflow-hidden max-h-[45dvh] overflow-y-auto"
+          style={{ backgroundColor: "var(--surface)", border: "2px solid var(--brand-border)", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
           role="listbox"
           aria-label="نتائج البحث عن المواقع"
         >
-          {searchResults.map((r) => (
-            <button
-              type="button"
-              key={r.id}
-              onClick={() => selectSearchResult(r)}
-              className="w-full flex items-start gap-3 px-4 py-4 text-right transition-colors"
-              style={{ color: "var(--text-sub)", borderBottom: "1px solid var(--border-subtle)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-2)")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-              dir="rtl"
-              role="option"
-              aria-label={r.shortAddress || r.address}
-            >
-              <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
-              <div className="flex-1 min-w-0">
-                <span className="text-base font-bold line-clamp-1 block">
-                  {r.shortAddress || r.address}
-                </span>
-                {r.shortAddress && r.shortAddress !== r.address && (
-                  <span className="text-xs font-medium opacity-70 line-clamp-1 block mt-0.5">
-                    {r.address}
+          <div className="px-3 py-2 flex items-center gap-2" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
+            <Search size={13} style={{ color: "var(--brand)" }} />
+            <span className="text-xs font-black" style={{ color: "var(--brand)" }}>
+              {searchResults.length} نتيجة — اختر الموقع المناسب
+            </span>
+          </div>
+          {searchResults.map((r, idx) => {
+            const { icon } = getTypeIcon(r.type);
+            return (
+              <button
+                type="button"
+                key={r.id}
+                onClick={() => selectSearchResult(r)}
+                className="w-full flex items-start gap-3 px-4 py-3.5 text-right transition-colors"
+                style={{ color: "var(--text-sub)", borderBottom: idx < searchResults.length - 1 ? "1px solid var(--border-subtle)" : undefined }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--brand-subtle)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                dir="rtl"
+                role="option"
+                aria-label={r.shortAddress || r.address}
+              >
+                <span className="text-xl shrink-0 mt-0.5" aria-hidden="true">{icon}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-base font-black line-clamp-1 block" style={{ color: "var(--text)" }}>
+                    {r.shortAddress || r.address}
                   </span>
-                )}
-              </div>
-            </button>
-          ))}
+                  {r.shortAddress && r.shortAddress !== r.address && (
+                    <span className="text-xs font-medium line-clamp-1 block mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      {r.address}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -544,7 +580,7 @@ export default function MapPicker({
             type="button"
             onClick={() => setIsPickerOpen(true)}
             className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 text-right"
-            style={{ border: "1px solid rgba(255,255,255,0.14)", background: "linear-gradient(130deg, rgba(17,28,46,0.85) 0%, rgba(8,13,23,0.95) 100%)" }}
+            style={{ border: "2px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}
           >
             <Expand size={20} style={{ color: "var(--brand)" }} />
             <div className="flex-1 min-w-0">
@@ -560,7 +596,7 @@ export default function MapPicker({
           {isPickerOpen && createPortal(
             <div
               className="fixed inset-0 z-[1200]"
-              style={{ background: "radial-gradient(120% 120% at 12% 10%, rgba(32,71,122,0.25) 0%, rgba(9,13,22,0.98) 42%, #05070c 100%)" }}
+              style={{ backgroundColor: "var(--bg)" }}
               role="dialog"
               aria-modal="true"
               aria-labelledby="map-picker-title"
@@ -570,8 +606,8 @@ export default function MapPicker({
                   className="flex-shrink-0 z-[1300] px-3 pb-2 space-y-2"
                   style={{
                     paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
-                    background: "linear-gradient(180deg, rgba(5,8,15,0.94) 0%, rgba(5,8,15,0.85) 100%)",
-                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    backgroundColor: "var(--surface)",
+                    borderBottom: "1px solid var(--border)",
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -584,8 +620,8 @@ export default function MapPicker({
                       className="flex items-center gap-1.5 px-4 rounded-xl font-black text-sm flex-shrink-0"
                       style={{
                         minHeight: "44px",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        backgroundColor: "rgba(255,255,255,0.05)",
+                        border: "1px solid var(--border)",
+                        backgroundColor: "var(--surface-2)",
                         color: "var(--text-sub)",
                       }}
                     >
@@ -593,14 +629,14 @@ export default function MapPicker({
                     </button>
                     <div className="flex-1 min-w-0">
                       <p id="map-picker-title" className="text-base font-black" style={{ color: "var(--text)" }}>حدد موقعك بدقة</p>
-                      <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>ابحث أو حرّك الخريطة حتى يصبح الدبوس فوق الموقع الصحيح</p>
+                      <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>ابحث باسم المكان أو حرّك الخريطة</p>
                     </div>
                   </div>
                   {searchBar}
                 </div>
 
                 {gpsError && (
-                  <div className="flex-shrink-0 mx-3 my-2 rounded-2xl px-4 py-3 text-sm font-black" style={{ backgroundColor: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.4)", color: "#fecaca" }}>
+                  <div className="flex-shrink-0 mx-3 my-2 rounded-2xl px-4 py-3 text-sm font-black" style={{ backgroundColor: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.4)", color: "#DC2626" }}>
                     {gpsError}
                   </div>
                 )}
@@ -610,8 +646,8 @@ export default function MapPicker({
                 <div
                   className="flex-shrink-0 z-[1300] p-3 flex flex-col gap-2"
                   style={{
-                    background: "linear-gradient(180deg, rgba(5,8,15,0.9) 0%, rgba(5,8,15,0.98) 100%)",
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
+                    backgroundColor: "var(--surface)",
+                    borderTop: "1px solid var(--border)",
                     paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
                   }}
                 >
@@ -620,7 +656,7 @@ export default function MapPicker({
                     onClick={handleLocateMe}
                     disabled={locating}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "52px", backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text)" }}
+                    style={{ minHeight: "52px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
                   >
                     {locating ? <Loader2 size={20} className="animate-spin" /> : <Navigation size={20} />}
                     <span>{locating ? "جاري تحديد موقعك..." : "📍 تحديد موقعي الحالي"}</span>
@@ -631,7 +667,7 @@ export default function MapPicker({
                     onClick={handleConfirmSelection}
                     disabled={!pendingSelection || geocoding || loading}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "56px", background: "linear-gradient(180deg, #3B82F6 0%, #2563EB 100%)", color: "var(--brand-fg)" }}
+                    style={{ minHeight: "56px", backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                   >
                     <CheckCircle2 size={22} />
                     <span>✅ تأكيد الموقع</span>
@@ -649,7 +685,7 @@ export default function MapPicker({
                 type="button"
                 onClick={() => setIsInlineExpanded(true)}
                 className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 text-right"
-                style={{ border: "1px solid rgba(255,255,255,0.14)", background: "linear-gradient(130deg, rgba(17,28,46,0.85) 0%, rgba(8,13,23,0.95) 100%)" }}
+                style={{ border: "2px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}
               >
                 <Expand size={20} style={{ color: "var(--brand)" }} />
                 <div className="flex-1 min-w-0">
