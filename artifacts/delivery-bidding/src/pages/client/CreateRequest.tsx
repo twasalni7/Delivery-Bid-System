@@ -6,10 +6,10 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { buildShiftsPayload } from "@/lib/time-utils";
-import type { MapCoords } from "@/components/MapPicker";
+import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
-import { ArrowLeft, Check, MapPin, Clock, Calendar, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Check, MapPin, Clock, Calendar, CheckCircle2, Map } from "lucide-react";
 
 // Types
 const CLIENT_TYPES = [
@@ -50,11 +50,11 @@ export default function CreateRequestNew() {
 
   // Step 3: Pickup location
   const [homeCoords, setHomeCoords] = useState<MapCoords | null>(null);
-  const [searchPickup, setSearchPickup] = useState("");
+  const [showPickupMap, setShowPickupMap] = useState(false);
 
   // Step 4: Dropoff location
   const [workCoords, setWorkCoords] = useState<MapCoords | null>(null);
-  const [searchDropoff, setSearchDropoff] = useState("");
+  const [showDropoffMap, setShowDropoffMap] = useState(false);
 
   // Step 5: Go time
   const [goTime, setGoTime] = useState("");
@@ -332,37 +332,62 @@ export default function CreateRequestNew() {
                 </p>
               </div>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <MapPin size={24} style={{ color: "var(--brand)" }} />
-                  <Input
-                    placeholder="ابحث عن الحي أو الشارع..."
-                    value={searchPickup}
-                    onChange={(e) => setSearchPickup(e.target.value)}
-                    className="flex-1 text-lg font-bold border-none bg-transparent"
-                    style={{ color: "var(--text)" }}
-                  />
-                </div>
+                {!showPickupMap && !homeCoords && (
+                  <button
+                    onClick={() => setShowPickupMap(true)}
+                    className="w-full flex items-center justify-center gap-3 p-6 rounded-2xl transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                  >
+                    <Map size={24} />
+                    <span className="text-lg font-black">فتح الخريطة لاختيار الموقع</span>
+                  </button>
+                )}
+                {showPickupMap && !homeCoords && (
+                  <div className="space-y-3">
+                    <MapPicker
+                      value={homeCoords}
+                      onChange={(coords) => {
+                        setHomeCoords(coords);
+                        setShowPickupMap(false);
+                      }}
+                      placeholder="حدد موقع الانطلاق من الخريطة"
+                      color="var(--brand)"
+                      openButtonLabel="حدد موقع الانطلاق"
+                      openButtonHint="ابحث أو حدد من الخريطة"
+                      collapsible={false}
+                    />
+                  </div>
+                )}
                 {homeCoords && (
-                  <div className="p-4 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand)" }}>
-                    <div className="flex items-start gap-3">
-                      <Check size={20} style={{ color: "var(--brand)" }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black" style={{ color: "var(--brand)" }}>تم التحديد</p>
-                        <p className="text-base font-bold mt-1" style={{ color: "var(--text)" }}>
-                          {homeCoords.address}
-                        </p>
+                  <div className="space-y-3">
+                    <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
+                      <div className="flex items-start gap-3">
+                        <Check size={24} style={{ color: "var(--brand)" }} strokeWidth={3} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد</p>
+                          <p className="text-lg font-bold" style={{ color: "var(--text)" }}>
+                            {homeCoords.address}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                    <button
+                      onClick={() => {
+                        setHomeCoords(null);
+                        setShowPickupMap(true);
+                      }}
+                      className="w-full p-3 rounded-xl text-sm font-black"
+                      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
+                    >
+                      تغيير الموقع
+                    </button>
                   </div>
                 )}
               </div>
-              <p className="text-sm font-bold text-center" style={{ color: "var(--text-hint)" }}>
-                💡 ابحث عن العنوان أو انقر "فتح الخريطة" للتحديد بدقة
-              </p>
             </div>
           )}
 
-          {/* Continue with other steps... */}
+          {/* Step 4: Dropoff Location */}
           {step === 4 && (
             <div className="space-y-6">
               <div>
@@ -374,27 +399,56 @@ export default function CreateRequestNew() {
                 </p>
               </div>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <MapPin size={24} style={{ color: "var(--brand)" }} />
-                  <Input
-                    placeholder="ابحث عن الحي أو الشارع..."
-                    value={searchDropoff}
-                    onChange={(e) => setSearchDropoff(e.target.value)}
-                    className="flex-1 text-lg font-bold border-none bg-transparent"
-                    style={{ color: "var(--text)" }}
-                  />
-                </div>
+                {!showDropoffMap && !workCoords && (
+                  <button
+                    onClick={() => setShowDropoffMap(true)}
+                    className="w-full flex items-center justify-center gap-3 p-6 rounded-2xl transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                  >
+                    <Map size={24} />
+                    <span className="text-lg font-black">فتح الخريطة لاختيار الموقع</span>
+                  </button>
+                )}
+                {showDropoffMap && !workCoords && (
+                  <div className="space-y-3">
+                    <MapPicker
+                      value={workCoords}
+                      onChange={(coords) => {
+                        setWorkCoords(coords);
+                        setShowDropoffMap(false);
+                      }}
+                      placeholder="حدد موقع الوصول من الخريطة"
+                      color="var(--brand)"
+                      initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
+                      openButtonLabel="حدد موقع الوصول"
+                      openButtonHint="ابحث أو حدد من الخريطة"
+                      collapsible={false}
+                    />
+                  </div>
+                )}
                 {workCoords && (
-                  <div className="p-4 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand)" }}>
-                    <div className="flex items-start gap-3">
-                      <Check size={20} style={{ color: "var(--brand)" }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black" style={{ color: "var(--brand)" }}>تم التحديد</p>
-                        <p className="text-base font-bold mt-1" style={{ color: "var(--text)" }}>
-                          {workCoords.address}
-                        </p>
+                  <div className="space-y-3">
+                    <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
+                      <div className="flex items-start gap-3">
+                        <Check size={24} style={{ color: "var(--brand)" }} strokeWidth={3} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد</p>
+                          <p className="text-lg font-bold" style={{ color: "var(--text)" }}>
+                            {workCoords.address}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                    <button
+                      onClick={() => {
+                        setWorkCoords(null);
+                        setShowDropoffMap(true);
+                      }}
+                      className="w-full p-3 rounded-xl text-sm font-black"
+                      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
+                    >
+                      تغيير الموقع
+                    </button>
                   </div>
                 )}
               </div>
