@@ -67,16 +67,15 @@ export default function ClientDashboard() {
     <Layout role="client">
       <div dir="rtl" className="space-y-5">
         <section
-          className="rounded-[2rem] p-7 space-y-5"
+          className="rounded-3xl p-8 space-y-6 transition-all hover:shadow-lg"
           aria-label="قسم إنشاء طلب توصيل جديد"
           style={{
-            background: "linear-gradient(135deg, #E0F7EE 0%, #F0FDF4 50%, #FFFFFF 100%)",
-            color: "var(--text)",
-            border: "1.5px solid var(--brand-border)",
-            boxShadow: "0 8px 20px rgba(0, 230, 118, 0.15)",
+            backgroundColor: "var(--surface)",
+            border: "2px solid var(--brand-border)",
+            boxShadow: "0 4px 16px rgba(59, 130, 246, 0.12)",
           }}
         >
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h2 className="text-3xl sm:text-4xl font-black leading-tight" style={{ color: "var(--text)" }}>
               طلب اشتراك جديد
             </h2>
@@ -86,12 +85,13 @@ export default function ClientDashboard() {
           </div>
           <Link
             href="/client/request/new"
-            className="w-full rounded-[1.5rem] px-6 py-5 flex items-center justify-center gap-3 text-base sm:text-lg font-black transition-transform active:scale-[0.98]"
+            className="w-full rounded-2xl px-7 py-6 flex items-center justify-center gap-3 text-base sm:text-lg font-black transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]"
             style={{
               backgroundColor: "var(--brand)",
               color: "var(--brand-fg)",
-              boxShadow: "0 4px 14px rgba(0, 230, 118, 0.3)",
-              minHeight: "64px"
+              boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
+              minHeight: "64px",
+              border: "1.5px solid var(--brand)",
             }}
           >
             <Plus size={24} strokeWidth={3} /> ابدأ الآن

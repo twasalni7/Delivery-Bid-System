@@ -102,22 +102,40 @@ export default function DriverDashboard() {
       <div dir="rtl" className="space-y-5">
         {/* Driver info card */}
         {driver && (
-          <div className="rounded-3xl p-5 mb-5" style={{ background: "linear-gradient(155deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 58%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div
+            className="rounded-3xl p-6 mb-6 transition-all hover:shadow-lg"
+            style={{
+              backgroundColor: "var(--surface)",
+              border: "1.5px solid var(--border)",
+            }}
+          >
             <div className="flex items-center justify-end mb-5">
-              <div className={`text-right px-4 py-2.5 rounded-2xl ${hasEnoughBalance ? "" : "border border-red-500/30"}`}
-                style={{ backgroundColor: hasEnoughBalance ? "var(--brand-subtle)" : "var(--status-cancelled-bg)" }}>
-                <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>الرصيد</p>
-                <p className="font-black text-lg" style={{ color: hasEnoughBalance ? "var(--brand)" : "var(--status-cancelled-text)" }} dir="ltr">{driver.balance.toFixed(0)} ر.س</p>
+              <div
+                className={`text-right px-5 py-3 rounded-2xl transition-all ${hasEnoughBalance ? "" : "border-2 border-red-500/40"}`}
+                style={{
+                  backgroundColor: hasEnoughBalance ? "var(--brand-subtle)" : "var(--status-cancelled-bg)",
+                  border: hasEnoughBalance ? "1.5px solid var(--brand-border)" : undefined,
+                }}
+              >
+                <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>الرصيد</p>
+                <p className="font-black text-xl" style={{ color: hasEnoughBalance ? "var(--brand)" : "var(--status-cancelled-text)" }} dir="ltr">{driver.balance.toFixed(0)} ر.س</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {[
                 { label: "دخل شهري", value: totalEarnings > 0 ? (totalEarnings >= 1000 ? `${(totalEarnings / 1000).toFixed(1)}K` : totalEarnings.toFixed(0)) : "—" },
                 { label: "اشتراكات نشطة", value: String(mySelectedJobs.length) },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl p-3 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                  <p className="font-black text-xl leading-tight" style={{ color: "var(--text)" }}>{stat.value}</p>
-                  <p className="text-xs mt-0.5 leading-tight font-bold" style={{ color: "var(--text-muted)" }}>{stat.label}</p>
+                <div
+                  key={stat.label}
+                  className="rounded-2xl p-4 text-center transition-all hover:shadow-sm"
+                  style={{
+                    backgroundColor: "var(--surface-2)",
+                    border: "1.5px solid var(--border)",
+                  }}
+                >
+                  <p className="font-black text-2xl leading-tight" style={{ color: "var(--brand)" }}>{stat.value}</p>
+                  <p className="text-xs mt-1 leading-tight font-bold" style={{ color: "var(--text-muted)" }}>{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -126,40 +144,63 @@ export default function DriverDashboard() {
 
         {/* Low balance warning */}
         {!hasEnoughBalance && driver && (
-          <div className="flex items-start gap-3 rounded-2xl px-5 py-4 mb-5" style={{ backgroundColor: "rgba(217,119,6,0.18)", border: "1px solid rgba(217,119,6,0.35)" }}>
-            <AlertTriangle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+          <div
+            className="flex items-start gap-3 rounded-2xl px-5 py-4 mb-5 transition-all"
+            style={{
+              backgroundColor: "var(--status-open-bg)",
+              border: "1.5px solid var(--status-open-border)",
+            }}
+          >
+            <AlertTriangle size={20} className="shrink-0 mt-0.5" style={{ color: "var(--status-open-text)" }} />
             <div>
-              <p className="font-black text-amber-300 text-sm">رصيد غير كافٍ</p>
-              <p className="text-amber-400/80 text-sm mt-0.5 font-bold">
-                تحتاج 50 ريال كحد أدنى لتقديم عروض. رصيدك الحالي: <strong dir="ltr">{driver.balance.toFixed(2)} ر.س</strong>
+              <p className="font-black text-sm" style={{ color: "var(--status-open-text)" }}>رصيد غير كافٍ</p>
+              <p className="text-sm mt-1 font-bold" style={{ color: "var(--text-muted)" }}>
+                تحتاج 50 ريال كحد أدنى لتقديم عروض. رصيدك الحالي: <strong dir="ltr" style={{ color: "var(--status-open-text)" }}>{driver.balance.toFixed(2)} ر.س</strong>
               </p>
             </div>
           </div>
         )}
 
         {/* Push notifications opt-in */}
-        <div className="mb-3">
+        <div className="mb-4">
           <EnablePushButton />
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black whitespace-nowrap transition-all"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all hover:shadow-md"
               style={activeTab === tab.id
-                ? { background: "linear-gradient(180deg, #ea1e3f 0%, #cf1232 100%)", color: "var(--brand-fg)" }
-                : { backgroundColor: "rgba(255,255,255,0.05)", color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.1)" }}
+                ? {
+                    backgroundColor: "var(--brand)",
+                    color: "var(--brand-fg)",
+                    border: "1.5px solid var(--brand)",
+                  }
+                : {
+                    backgroundColor: "var(--surface-2)",
+                    color: "var(--text-muted)",
+                    border: "1.5px solid var(--border)",
+                  }}
             >
               <span>{tab.icon}</span>
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
-                <span className="text-xs rounded-full px-2 py-0.5 font-black leading-none"
+                <span
+                  className="text-xs rounded-full px-2 py-0.5 font-black leading-none"
                   style={activeTab === tab.id
-                    ? { backgroundColor: "rgba(0,0,0,0.2)", color: "var(--brand-fg)" }
-                    : { backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                    ? {
+                        backgroundColor: "rgba(255,255,255,0.25)",
+                        color: "var(--brand-fg)",
+                      }
+                    : {
+                        backgroundColor: "var(--brand-subtle)",
+                        color: "var(--brand)",
+                        border: "1px solid var(--brand-border)",
+                      }}
+                >
                   {tab.count}
                 </span>
               )}
@@ -170,12 +211,18 @@ export default function DriverDashboard() {
         {/* ── Tab: Available ── */}
         {activeTab === "available" && (
           <>
-            {isLoading && <div className="text-center py-20 font-bold" style={{ color: "var(--text-hint)" }}>جاري تحميل الطلبات...</div>}
+            {isLoading && <div className="text-center py-20 font-bold" style={{ color: "var(--text-muted)" }}>جاري تحميل الطلبات...</div>}
             {!isLoading && (!openRequests || openRequests.length === 0) && (
-              <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
+              <div
+                className="text-center py-20 rounded-3xl transition-all hover:shadow-sm"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  border: "2px dashed var(--border)",
+                }}
+              >
                 <p className="text-4xl mb-3">📋</p>
                 <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد طلبات مفتوحة</p>
-                <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>تحقق لاحقاً لعروض دوام جديدة</p>
+                <p className="font-bold text-sm mt-2" style={{ color: "var(--text-muted)" }}>تحقق لاحقاً لعروض دوام جديدة</p>
               </div>
             )}
             {openRequests && openRequests.length > 0 && (
