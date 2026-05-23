@@ -52,89 +52,89 @@
 html.light {
   color-scheme: light;
 
-  /* Page & surfaces - Light and clean */
+  /* Page & surfaces - Enhanced contrast and clarity */
   --bg:          #FFFFFF;
-  --bg-page:     #F8FAFC;
+  --bg-page:     #F5F8FA;
   --surface:     #FFFFFF;
-  --surface-2:   #F8FAFC;
-  --surface-3:   #F1F5F9;
-  --surface-4:   #E2E8F0;
+  --surface-2:   #F9FAFB;
+  --surface-3:   #F3F4F6;
+  --surface-4:   #E5E7EB;
 
-  /* Text - Dark on light for excellent contrast */
-  --text:        #0A0F1A;
-  --text-sub:    #1E293B;
-  --text-muted:  #475569;
-  --text-hint:   #64748B;
+  /* Text - Improved contrast for better readability */
+  --text:        #111827;
+  --text-sub:    #374151;
+  --text-muted:  #6B7280;
+  --text-hint:   #9CA3AF;
 
-  /* Borders - Subtle and clean */
-  --border:        #E2E8F0;
-  --border-subtle: #F1F5F9;
-  --border-strong: #CBD5E1;
+  /* Borders - More visible and consistent */
+  --border:        #D1D5DB;
+  --border-subtle: #E5E7EB;
+  --border-strong: #9CA3AF;
 
-  /* Header - Clean white */
-  --header-bg:     rgba(255, 255, 255, 0.95);
-  --header-border: #E2E8F0;
+  /* Header - Enhanced visibility */
+  --header-bg:     rgba(255, 255, 255, 0.98);
+  --header-border: #E5E7EB;
   --header-height: 64px;
 
-  /* Sidebar */
-  --sidebar-bg:          #FFFFFF;
-  --sidebar-border:      #E2E8F0;
-  --sidebar-text:        #64748B;
-  --sidebar-text-hover:  #0F172A;
-  --sidebar-active-bg:   rgba(59, 130, 246, 0.12);
-  --sidebar-active-text: #2563EB;
-  --sidebar-hover-bg:    #F8FAFC;
-  --sidebar-icon-color:  #94A3B8;
+  /* Sidebar - Better contrast and visual hierarchy */
+  --sidebar-bg:          #FAFBFC;
+  --sidebar-border:      #E5E7EB;
+  --sidebar-text:        #6B7280;
+  --sidebar-text-hover:  #111827;
+  --sidebar-active-bg:   rgba(59, 130, 246, 0.15);
+  --sidebar-active-text: #1D4ED8;
+  --sidebar-hover-bg:    #F3F4F6;
+  --sidebar-icon-color:  #9CA3AF;
 
-  /* Inputs */
+  /* Inputs - Enhanced contrast */
   --input-bg:           #FFFFFF;
-  --input-border:       #CBD5E1;
-  --input-border-focus: #3B82F6;
-  --input-text:         #0F172A;
-  --input-placeholder:  #94A3B8;
-  --input-ring:         rgba(59, 130, 246, 0.15);
+  --input-border:       #D1D5DB;
+  --input-border-focus: #2563EB;
+  --input-text:         #111827;
+  --input-placeholder:  #9CA3AF;
+  --input-ring:         rgba(37, 99, 235, 0.2);
 
-  /* Shadows - Soft and natural */
-  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.08);
-  --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.12);
+  /* Shadows - Enhanced depth */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:  0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg:  0 10px 20px rgba(0, 0, 0, 0.12);
+  --shadow-xl:  0 20px 30px rgba(0, 0, 0, 0.15);
 
-  /* ── Status tokens ── */
-  --status-open-bg:      #FFF7ED;
-  --status-open-border:  #FDBA74;
+  /* ── Status tokens - Enhanced visibility and contrast ── */
+  --status-open-bg:      #FFF4E6;
+  --status-open-border:  #FB923C;
   --status-open-text:    #C2410C;
   --status-open-dot:     #EA580C;
 
-  --status-selected-bg:     rgba(59, 130, 246, 0.1);
-  --status-selected-border: #3B82F6;
-  --status-selected-text:   #2563EB;
-  --status-selected-dot:    #3B82F6;
+  --status-selected-bg:     #DBEAFE;
+  --status-selected-border: #60A5FA;
+  --status-selected-text:   #1E40AF;
+  --status-selected-dot:    #2563EB;
 
-  --status-active-bg:     #F0FDF4;
-  --status-active-border: #86EFAC;
+  --status-active-bg:     #D1FAE5;
+  --status-active-border: #34D399;
   --status-active-text:   #047857;
   --status-active-dot:    #059669;
 
-  --status-completed-bg:     #F9FAFB;
-  --status-completed-border: #D1D5DB;
-  --status-completed-text:   #6B7280;
-  --status-completed-dot:    #9CA3AF;
+  --status-completed-bg:     #F3F4F6;
+  --status-completed-border: #9CA3AF;
+  --status-completed-text:   #4B5563;
+  --status-completed-dot:    #6B7280;
 
-  --status-cancelled-bg:     #FEF2F2;
-  --status-cancelled-border: #FCA5A5;
-  --status-cancelled-text:   #DC2626;
-  --status-cancelled-dot:    #EF4444;
+  --status-cancelled-bg:     #FEE2E2;
+  --status-cancelled-border: #F87171;
+  --status-cancelled-text:   #B91C1C;
+  --status-cancelled-dot:    #DC2626;
 
   --status-expired-bg:     #F9FAFB;
-  --status-expired-border: #E5E7EB;
-  --status-expired-text:   #9CA3AF;
-  --status-expired-dot:    #D1D5DB;
+  --status-expired-border: #D1D5DB;
+  --status-expired-text:   #6B7280;
+  --status-expired-dot:    #9CA3AF;
 
   --status-frozen-bg:     #EFF6FF;
-  --status-frozen-border: #93C5FD;
-  --status-frozen-text:   #1D4ED8;
-  --status-frozen-dot:    #3B82F6;
+  --status-frozen-border: #60A5FA;
+  --status-frozen-text:   #1E40AF;
+  --status-frozen-dot:    #2563EB;
 
   /* Avatar palette */
   --avatar-1: #3B82F6; --avatar-1-fg: #fff;
