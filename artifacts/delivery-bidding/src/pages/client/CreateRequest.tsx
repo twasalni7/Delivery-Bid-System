@@ -64,6 +64,53 @@ export default function CreateRequestNew() {
   // Step 7: Days
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
 
+  // Confirmation dialog
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    const draft = localStorage.getItem("createRequestDraft");
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.clientType) setClientType(parsed.clientType);
+        if (parsed.numberOfPeople) setNumberOfPeople(parsed.numberOfPeople);
+        if (parsed.homeCoords) setHomeCoords(parsed.homeCoords);
+        if (parsed.workCoords) setWorkCoords(parsed.workCoords);
+        if (parsed.goTime) setGoTime(parsed.goTime);
+        if (parsed.hasReturn !== undefined) setHasReturn(parsed.hasReturn);
+        if (parsed.returnTime) setReturnTime(parsed.returnTime);
+        if (parsed.selectedDays) setSelectedDays(parsed.selectedDays);
+        if (parsed.step) setStep(parsed.step);
+
+        toast({
+          title: "تم استعادة المسودة",
+          description: "وجدنا طلب لم يكتمل، تم استعادة بياناتك"
+        });
+      } catch (e) {
+        // Invalid draft, ignore
+        console.error("Failed to parse draft", e);
+      }
+    }
+  }, [toast]);
+
+  // Auto-save draft to localStorage
+  useEffect(() => {
+    const draft = {
+      clientType,
+      numberOfPeople,
+      homeCoords,
+      workCoords,
+      goTime,
+      hasReturn,
+      returnTime,
+      selectedDays,
+      step,
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem("createRequestDraft", JSON.stringify(draft));
+  }, [clientType, numberOfPeople, homeCoords, workCoords, goTime, hasReturn, returnTime, selectedDays, step]);
+
   // Pricing
   const [pricingResult, setPricingResult] = useState<{
     pricePerPerson: number;
@@ -143,13 +190,18 @@ export default function CreateRequestNew() {
 
   const handleNext = () => {
     if (!canNext()) {
-      toast({ title: "يرجى إكمال الحقول المطلوبة", variant: "destructive" });
+      toast({
+        title: "يرجى إكمال الحقول المطلوبة",
+        description: "تأكدي من تعبئة جميع المعلومات المطلوبة",
+        variant: "destructive"
+      });
       return;
     }
     if (step < 8) {
       setStep(step + 1);
     } else {
-      handleSubmit();
+      // Show confirmation dialog before submitting
+      setShowConfirmDialog(true);
     }
   };
 
@@ -189,12 +241,17 @@ export default function CreateRequestNew() {
       },
       {
         onSuccess: (req) => {
+          localStorage.removeItem("createRequestDraft");
           queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
           toast({ title: "تم إنشاء الطلب بنجاح!", description: `طلب رقم #${req.id}` });
           setLocation(`/client/request/${req.id}`);
         },
         onError: (err: Error) => {
-          toast({ title: err.message || "فشل إنشاء الطلب", variant: "destructive" });
+          toast({
+            title: "عذراً، حدث خطأ بسيط",
+            description: "حاولي مرة أخرى أو تواصلي معنا للمساعدة",
+            variant: "destructive"
+          });
         },
       }
     );
@@ -286,6 +343,9 @@ export default function CreateRequestNew() {
                 </h1>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                   كم عدد الأشخاص في الاشتراك؟
+                </p>
+                <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
+                  💡 نحتاج هذه المعلومة لحساب السعر المناسب لك
                 </p>
               </div>
               <div className="flex items-center justify-center gap-8 py-12">
@@ -443,6 +503,9 @@ export default function CreateRequestNew() {
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                   متى تحتاج التوصيل في الصباح؟
                 </p>
+                <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
+                  ⏰ سيحاول السائق التواجد قبل الوقت المحدد بـ 5-10 دقائق
+                </p>
               </div>
               <div className="flex items-center justify-center gap-4 py-12">
                 <Clock size={32} style={{ color: "var(--brand)" }} />
@@ -552,6 +615,9 @@ export default function CreateRequestNew() {
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                   اختر الأيام التي تحتاج فيها التوصيل
                 </p>
+                <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
+                  📅 يمكنك اختيار أي عدد من الأيام حسب احتياجك
+                </p>
               </div>
               <div className="space-y-3">
                 {DAYS.map((day) => (
@@ -584,10 +650,13 @@ export default function CreateRequestNew() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-black mb-2" style={{ color: "var(--text)" }}>
-                  تأكيد الطلب
+                  🎉 تقريباً انتهينا!
                 </h1>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                   راجع تفاصيل طلبك قبل الإرسال
+                </p>
+                <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
+                  💡 يمكنك التعديل على أي معلومة بالضغط على أيقونة القلم
                 </p>
               </div>
               <div className="space-y-3">
@@ -730,6 +799,59 @@ export default function CreateRequestNew() {
             )}
           </button>
         </div>
+
+        {/* Confirmation Dialog */}
+        {showConfirmDialog && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+            onClick={() => setShowConfirmDialog(false)}
+          >
+            <div
+              className="w-full max-w-md p-6 rounded-3xl space-y-6 animate-in fade-in zoom-in-95 duration-200"
+              style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center space-y-2">
+                <div className="text-5xl mb-4">✅</div>
+                <h2 className="text-2xl font-black" style={{ color: "var(--text)" }}>
+                  هل أنت متأكدة؟
+                </h2>
+                <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
+                  سيتم إرسال طلبك للمراجعة. يمكنك التعديل عليه لاحقاً إذا احتجت.
+                </p>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowConfirmDialog(false);
+                    handleSubmit();
+                  }}
+                  disabled={createRequest.isPending}
+                  className="w-full rounded-2xl p-5 text-xl font-black flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+                  style={{
+                    backgroundColor: "var(--brand)",
+                    color: "var(--brand-fg)"
+                  }}
+                >
+                  <CheckCircle2 size={24} />
+                  {createRequest.isPending ? "جاري الإرسال..." : "نعم، أرسل الطلب"}
+                </button>
+                <button
+                  onClick={() => setShowConfirmDialog(false)}
+                  className="w-full rounded-2xl p-4 text-lg font-black transition-all active:scale-[0.98]"
+                  style={{
+                    backgroundColor: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text-sub)"
+                  }}
+                >
+                  مراجعة البيانات
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
