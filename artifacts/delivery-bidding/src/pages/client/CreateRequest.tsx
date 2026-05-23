@@ -9,7 +9,7 @@ import { buildShiftsPayload } from "@/lib/time-utils";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
-import { ArrowLeft, Check, MapPin, Clock, Calendar, CheckCircle2, Map } from "lucide-react";
+import { ArrowLeft, Check, MapPin, Clock, Calendar, CheckCircle2, Edit3 } from "lucide-react";
 
 // Types
 const CLIENT_TYPES = [
@@ -50,17 +50,15 @@ export default function CreateRequestNew() {
 
   // Step 3: Pickup location
   const [homeCoords, setHomeCoords] = useState<MapCoords | null>(null);
-  const [showPickupMap, setShowPickupMap] = useState(false);
 
   // Step 4: Dropoff location
   const [workCoords, setWorkCoords] = useState<MapCoords | null>(null);
-  const [showDropoffMap, setShowDropoffMap] = useState(false);
 
   // Step 5: Go time
   const [goTime, setGoTime] = useState("");
 
   // Step 6: Return time (optional)
-  const [hasReturn, setHasReturn] = useState<boolean | null>(null);
+  const [hasReturn, setHasReturn] = useState<boolean>(false);
   const [returnTime, setReturnTime] = useState("");
 
   // Step 7: Days
@@ -138,7 +136,7 @@ export default function CreateRequestNew() {
     if (step === 3) return !!homeCoords;
     if (step === 4) return !!workCoords;
     if (step === 5) return !!goTime;
-    if (step === 6) return hasReturn === false || (hasReturn === true && !!returnTime);
+    if (step === 6) return !hasReturn || (hasReturn && !!returnTime);
     if (step === 7) return selectedDays.length > 0;
     return true;
   };
@@ -328,27 +326,20 @@ export default function CreateRequestNew() {
                   موقع الانطلاق
                 </h1>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  من أين تبدأ رحلتك؟
+                  ابحثي عن العنوان أو حددي الموقع من الخريطة مباشرة
                 </p>
               </div>
               <div className="space-y-4">
-                {!showPickupMap && !homeCoords && (
-                  <button
-                    onClick={() => setShowPickupMap(true)}
-                    className="w-full flex items-center justify-center gap-3 p-6 rounded-2xl transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-                  >
-                    <Map size={24} />
-                    <span className="text-lg font-black">فتح الخريطة لاختيار الموقع</span>
-                  </button>
-                )}
-                {showPickupMap && !homeCoords && (
+                {!homeCoords && (
                   <div className="space-y-3">
                     <MapPicker
                       value={homeCoords}
                       onChange={(coords) => {
                         setHomeCoords(coords);
-                        setShowPickupMap(false);
+                        toast({
+                          title: "رائع! 🎉",
+                          description: "تم تحديد موقع الانطلاق بنجاح"
+                        });
                       }}
                       placeholder="حدد موقع الانطلاق من الخريطة"
                       color="var(--brand)"
@@ -364,7 +355,7 @@ export default function CreateRequestNew() {
                       <div className="flex items-start gap-3">
                         <Check size={24} style={{ color: "var(--brand)" }} strokeWidth={3} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد</p>
+                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد بنجاح</p>
                           <p className="text-lg font-bold" style={{ color: "var(--text)" }}>
                             {homeCoords.address}
                           </p>
@@ -372,10 +363,7 @@ export default function CreateRequestNew() {
                       </div>
                     </div>
                     <button
-                      onClick={() => {
-                        setHomeCoords(null);
-                        setShowPickupMap(true);
-                      }}
+                      onClick={() => setHomeCoords(null)}
                       className="w-full p-3 rounded-xl text-sm font-black"
                       style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
                     >
@@ -395,27 +383,20 @@ export default function CreateRequestNew() {
                   موقع الوصول
                 </h1>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  إلى أين تريد الوصول؟
+                  ابحثي عن وجهتك أو حدديها من الخريطة
                 </p>
               </div>
               <div className="space-y-4">
-                {!showDropoffMap && !workCoords && (
-                  <button
-                    onClick={() => setShowDropoffMap(true)}
-                    className="w-full flex items-center justify-center gap-3 p-6 rounded-2xl transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
-                  >
-                    <Map size={24} />
-                    <span className="text-lg font-black">فتح الخريطة لاختيار الموقع</span>
-                  </button>
-                )}
-                {showDropoffMap && !workCoords && (
+                {!workCoords && (
                   <div className="space-y-3">
                     <MapPicker
                       value={workCoords}
                       onChange={(coords) => {
                         setWorkCoords(coords);
-                        setShowDropoffMap(false);
+                        toast({
+                          title: "ممتاز! 🎯",
+                          description: "تم تحديد موقع الوصول بنجاح"
+                        });
                       }}
                       placeholder="حدد موقع الوصول من الخريطة"
                       color="var(--brand)"
@@ -432,7 +413,7 @@ export default function CreateRequestNew() {
                       <div className="flex items-start gap-3">
                         <Check size={24} style={{ color: "var(--brand)" }} strokeWidth={3} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد</p>
+                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد بنجاح</p>
                           <p className="text-lg font-bold" style={{ color: "var(--text)" }}>
                             {workCoords.address}
                           </p>
@@ -440,10 +421,7 @@ export default function CreateRequestNew() {
                       </div>
                     </div>
                     <button
-                      onClick={() => {
-                        setWorkCoords(null);
-                        setShowDropoffMap(true);
-                      }}
+                      onClick={() => setWorkCoords(null)}
                       className="w-full p-3 rounded-xl text-sm font-black"
                       style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
                     >
@@ -496,64 +474,71 @@ export default function CreateRequestNew() {
                   هل تحتاج توصيل عودة في المساء؟
                 </p>
               </div>
-              {hasReturn === null ? (
-                <div className="space-y-4">
-                  <button
-                    onClick={() => setHasReturn(true)}
-                    className="w-full p-6 rounded-2xl text-xl font-black transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+              <div className="space-y-4">
+                <button
+                  onClick={() => {
+                    if (hasReturn) {
+                      setHasReturn(false);
+                      setReturnTime("");
+                    } else {
+                      setHasReturn(true);
+                    }
+                  }}
+                  className="w-full p-6 rounded-2xl text-xl font-black transition-all active:scale-[0.98]"
+                  style={
+                    hasReturn
+                      ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                      : { backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }
+                  }
+                >
+                  {hasReturn && <Check size={24} className="inline-block ml-2" />}
+                  نعم، يوجد عودة
+                </button>
+
+                {/* Show time picker when hasReturn is true */}
+                {hasReturn && (
+                  <div className="p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-4 duration-300"
+                    style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}
                   >
-                    نعم، يوجد عودة
-                  </button>
-                  <button
-                    onClick={() => setHasReturn(false)}
-                    className="w-full p-6 rounded-2xl text-xl font-black transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }}
-                  >
-                    لا، ذهاب فقط
-                  </button>
-                </div>
-              ) : hasReturn ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center gap-4 py-8">
-                    <Clock size={32} style={{ color: "var(--brand)" }} />
-                    <Input
-                      type="time"
-                      value={returnTime}
-                      onChange={(e) => setReturnTime(e.target.value)}
-                      className="text-center text-3xl font-black p-6 rounded-2xl"
-                      style={{
-                        backgroundColor: "var(--surface)",
-                        border: "2px solid var(--brand)",
-                        color: "var(--brand)",
-                        minHeight: "100px"
-                      }}
-                      dir="ltr"
-                      placeholder="وقت العودة"
-                    />
+                    <p className="text-base font-bold" style={{ color: "var(--text)" }}>
+                      حدد وقت العودة:
+                    </p>
+                    <div className="flex items-center justify-center gap-4">
+                      <Clock size={32} style={{ color: "var(--brand)" }} />
+                      <Input
+                        type="time"
+                        value={returnTime}
+                        onChange={(e) => setReturnTime(e.target.value)}
+                        className="text-center text-3xl font-black p-6 rounded-2xl"
+                        style={{
+                          backgroundColor: "var(--surface)",
+                          border: "2px solid var(--brand)",
+                          color: "var(--brand)",
+                          minHeight: "100px"
+                        }}
+                        dir="ltr"
+                        placeholder="وقت العودة"
+                      />
+                    </div>
                   </div>
-                  <button
-                    onClick={() => { setHasReturn(null); setReturnTime(""); }}
-                    className="w-full p-3 rounded-xl text-sm font-black"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    تغيير الاختيار
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-lg font-black mb-4" style={{ color: "var(--brand)" }}>
-                    ✓ تم: ذهاب فقط
-                  </p>
-                  <button
-                    onClick={() => setHasReturn(null)}
-                    className="px-6 py-3 rounded-xl text-sm font-black"
-                    style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
-                  >
-                    تغيير الاختيار
-                  </button>
-                </div>
-              )}
+                )}
+
+                <button
+                  onClick={() => {
+                    setHasReturn(false);
+                    setReturnTime("");
+                  }}
+                  className="w-full p-6 rounded-2xl text-xl font-black transition-all active:scale-[0.98]"
+                  style={
+                    hasReturn === false
+                      ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                      : { backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }
+                  }
+                >
+                  {hasReturn === false && <Check size={24} className="inline-block ml-2" />}
+                  لا، ذهاب فقط
+                </button>
+              </div>
             </div>
           )}
 
@@ -606,31 +591,90 @@ export default function CreateRequestNew() {
                 </p>
               </div>
               <div className="space-y-3">
-                <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>نوع الاشتراك</p>
-                  <p className="text-lg font-black" style={{ color: "var(--text)" }}>
-                    {CLIENT_TYPES.find(t => t.value === clientType)?.label}
-                  </p>
+                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>نوع الاشتراك</p>
+                    <p className="text-lg font-black" style={{ color: "var(--text)" }}>
+                      {CLIENT_TYPES.find(t => t.value === clientType)?.label}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setStep(1)}
+                    className="p-2 rounded-xl transition-all active:scale-90"
+                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
+                    aria-label="تعديل نوع الاشتراك"
+                  >
+                    <Edit3 size={18} />
+                  </button>
+                </div>
+                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>عدد الأشخاص</p>
+                    <p className="text-lg font-black" style={{ color: "var(--text)" }}>{numberOfPeople}</p>
+                  </div>
+                  <button
+                    onClick={() => setStep(2)}
+                    className="p-2 rounded-xl transition-all active:scale-90"
+                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
+                    aria-label="تعديل عدد الأشخاص"
+                  >
+                    <Edit3 size={18} />
+                  </button>
                 </div>
                 <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>عدد الأشخاص</p>
-                  <p className="text-lg font-black" style={{ color: "var(--text)" }}>{numberOfPeople}</p>
-                </div>
-                <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <p className="text-sm font-bold mb-2" style={{ color: "var(--text-muted)" }}>المواقع</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>المواقع</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setStep(3)}
+                        className="p-2 rounded-xl transition-all active:scale-90"
+                        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
+                        aria-label="تعديل موقع الانطلاق"
+                      >
+                        <Edit3 size={18} />
+                      </button>
+                    </div>
+                  </div>
                   <p className="text-sm font-bold mb-1" style={{ color: "var(--text)" }}>من: {homeCoords?.address}</p>
                   <p className="text-sm font-bold" style={{ color: "var(--text)" }}>إلى: {workCoords?.address}</p>
                 </div>
-                <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>الأوقات</p>
-                  <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
-                    الذهاب: {goTime} {returnTime && `• العودة: ${returnTime}`}
-                  </p>
+                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>الأوقات</p>
+                    <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                      الذهاب: {goTime} {returnTime && `• العودة: ${returnTime}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setStep(5)}
+                    className="p-2 rounded-xl transition-all active:scale-90"
+                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
+                    aria-label="تعديل الأوقات"
+                  >
+                    <Edit3 size={18} />
+                  </button>
                 </div>
-                <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>أيام العمل</p>
-                  <p className="text-sm font-bold" style={{ color: "var(--text)" }}>{selectedDays.length} أيام في الأسبوع</p>
+                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>أيام العمل</p>
+                    <p className="text-sm font-bold" style={{ color: "var(--text)" }}>{selectedDays.length} أيام في الأسبوع</p>
+                  </div>
+                  <button
+                    onClick={() => setStep(7)}
+                    className="p-2 rounded-xl transition-all active:scale-90"
+                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
+                    aria-label="تعديل أيام العمل"
+                  >
+                    <Edit3 size={18} />
+                  </button>
                 </div>
+                {isPricingLoading && (
+                  <div className="p-6 rounded-2xl text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
+                      ⏳ جاري حساب السعر...
+                    </p>
+                  </div>
+                )}
                 {pricingResult && !pricingResult.needsAdminReview && (
                   <div className="p-6 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
                     <p className="text-sm font-bold mb-2" style={{ color: "var(--text-muted)" }}>السعر الشهري</p>
@@ -639,6 +683,13 @@ export default function CreateRequestNew() {
                     </p>
                     <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>
                       للشخص الواحد شهرياً
+                    </p>
+                  </div>
+                )}
+                {pricingResult && pricingResult.needsAdminReview && (
+                  <div className="p-6 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <p className="text-base font-bold text-center" style={{ color: "var(--text)" }}>
+                      سيتم مراجعة السعر من قبل الإدارة
                     </p>
                   </div>
                 )}
