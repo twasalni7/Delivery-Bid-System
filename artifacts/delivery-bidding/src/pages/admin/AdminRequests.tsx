@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useListRequests, useAdminDeleteRequest, getListRequestsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { Trash2, MapPin, Clock, Users, Search, X, Plus, Eye } from "lucide-react";
@@ -19,6 +18,11 @@ const STATUS_PILL_STYLE: Record<string, React.CSSProperties> = {
   CANCELLED: { backgroundColor: "var(--status-cancelled-bg)", color: "var(--status-cancelled-text)" },
   EXPIRED:   { backgroundColor: "var(--status-expired-bg)",   color: "var(--status-expired-text)" },
   FROZEN:    { backgroundColor: "var(--status-frozen-bg)",    color: "var(--status-frozen-text)" },
+};
+
+// Admin list responses can include client summary fields that are not part of the base request schema.
+type AdminRequest = CommuteRequest & {
+  client?: { name?: string | null; mobile?: string | null } | null;
 };
 
 
@@ -40,20 +44,26 @@ export default function AdminRequests() {
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
 
-  const filteredRequests = useMemo(() => {
+  const filteredRequests = useMemo<AdminRequest[]>(() => {
     const q = search.trim().toLowerCase();
-    return (requests ?? []).filter((r) => {
+    return ((requests ?? []) as AdminRequest[]).filter((r) => {
       if (statusFilter !== "ALL" && r.status !== statusFilter) return false;
       if (q) {
         const hay = [
           r.homeLocation, r.workLocation, r.phone ?? "",
-          r.selectedDriver?.name ?? "", (r as any).client?.name ?? "", (r as any).client?.mobile ?? "", String(r.id),
+          r.selectedDriver?.name ?? "", r.client?.name ?? "", r.client?.mobile ?? "", String(r.id),
         ].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
   }, [requests, statusFilter, search]);
+
+  const statusCounts = useMemo(() => {
+    const counts = new Map<string, number>([["ALL", requests?.length ?? 0]]);
+    for (const req of requests ?? []) counts.set(req.status, (counts.get(req.status) ?? 0) + 1);
+    return counts;
+  }, [requests]);
 
   const activeFilters = (statusFilter !== "ALL" ? 1 : 0) + (search ? 1 : 0);
 
@@ -110,20 +120,23 @@ export default function AdminRequests() {
             )}
           </div>
 
-          {/* Filter chips row */}
+          {/* Unified status filters */}
           <div className="flex flex-wrap gap-2 items-center">
-            {/* Status filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-9 rounded-xl text-sm font-bold w-36" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", color: "var(--text-sub)" }}>
-                <SelectValue placeholder="الحالة" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">كل الحالات</SelectItem>
-                {ALL_STATUSES.map((val) => (
-                  <SelectItem key={val} value={val}>{getStatusLabel(val)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {(["ALL", ...ALL_STATUSES] as const).map((val) => {
+              const active = statusFilter === val;
+              return (
+                <button key={val} onClick={() => setStatusFilter(val)}
+                  className="h-9 px-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5"
+                  style={active
+                    ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                    : { backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+                  {val === "ALL" ? "الكل" : getStatusLabel(val)}
+                  <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={active ? { backgroundColor: "rgba(0,0,0,0.2)" } : { backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
+                    {statusCounts.get(val) ?? 0}
+                  </span>
+                </button>
+              );
+            })}
 
             {activeFilters > 0 && (
               <button onClick={resetFilters}
@@ -132,24 +145,6 @@ export default function AdminRequests() {
                 <X size={13} /> مسح الفلاتر ({activeFilters})
               </button>
             )}
-
-            {/* Quick status tabs */}
-            <div className="flex gap-1 mr-auto flex-wrap">
-              {[
-                { label: "الكل", val: "ALL", count: requests?.length ?? 0 },
-                { label: "مفتوح", val: "OPEN", count: requests?.filter((r) => r.status === "OPEN").length ?? 0 },
-                { label: "نشط", val: "ACTIVE", count: requests?.filter((r) => r.status === "ACTIVE").length ?? 0 },
-              ].map((s) => (
-                <button key={s.val} onClick={() => setStatusFilter(s.val)}
-                  className="h-9 px-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5"
-                  style={statusFilter === s.val
-                    ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                    : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-                  {s.label}
-                  <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={statusFilter === s.val ? { backgroundColor: "rgba(0,0,0,0.2)" } : { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>{s.count}</span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -244,7 +239,7 @@ export default function AdminRequests() {
                             backgroundColor: "var(--surface-2)",
                             border: "1.5px solid var(--border)",
                           }}
-                        >{(req as any).clientType ?? "—"}</span>
+                        >{req.clientType ?? "—"}</span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2 text-sm font-bold">
@@ -253,18 +248,18 @@ export default function AdminRequests() {
                           <span style={{ color: "var(--text-hint)" }}>←</span>
                           <span style={{ color: "var(--text)" }}>{req.workLocation}</span>
                         </div>
-                        {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
-                          <p key={i} className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
+                        {req.additionalLocations?.map((loc) => (
+                          <p key={`${loc.type}-${loc.address}`} className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                         ))}
-                        {(req as any).client && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>👤 {(req as any).client.name} — {(req as any).client.mobile}</p>}
+                        {req.client && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>👤 {req.client.name} — {req.client.mobile}</p>}
                         {req.phone && <p className="text-xs mt-1.5 font-bold" dir="ltr" style={{ color: "var(--text-muted)" }}>📞 {req.phone}</p>}
-                        {(req as any).notes && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📝 {(req as any).notes}</p>}
+                        {req.notes && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📝 {req.notes}</p>}
                       </td>
                       <td className="px-5 py-4">
-                        {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                        {req.shifts && req.shifts.length > 0 ? (
                           <div className="space-y-0.5">
-                            {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
-                              <div key={i} className="flex items-center gap-1 text-xs" dir="ltr">
+                            {req.shifts.map((s) => (
+                              <div key={`${s.label ?? "shift"}-${s.goTime}-${s.returnTime ?? "none"}`} className="flex items-center gap-1 text-xs" dir="ltr">
                                 <Clock size={11} style={{ color: "var(--text-hint)" }} />
                                 <span className="font-medium">{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}</span>
                                 {s.label && <span style={{ color: "var(--text-hint)" }}>({s.label})</span>}
@@ -320,50 +315,61 @@ export default function AdminRequests() {
             <div className="md:hidden space-y-3">
               {filteredRequests.map((req) => (
                 <div key={req.id} className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                  <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>#{req.id}</span>
-                       {req.createdBy === "admin" && (
-                         <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>إداري</span>
-                       )}
-                      <span className="text-sm px-3 py-0.5 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+                  <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>#{req.id}</span>
+                        {req.createdBy === "admin" && (
+                          <span className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>إداري</span>
+                        )}
+                        <span className="text-sm px-3 py-0.5 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                         {getStatusLabel(req.status)}
-                      </span>
-                      {req.statusManuallySetByAdmin && (
-                        <span title="الحالة مثبّتة يدوياً" className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>🔒</span>
-                      )}
-                      {req.selectedDriver && <span className="text-sm px-2.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: "var(--brand-border)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>}
+                        </span>
+                        {req.statusManuallySetByAdmin && (
+                          <span title="الحالة مثبّتة يدوياً" className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>🔒</span>
+                        )}
+                      </div>
+                      <p className="mt-2 text-base font-black truncate" style={{ color: "var(--text)" }}>
+                        {req.homeLocation} ← {req.workLocation}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {req.clientType && (
+                          <span className="text-xs px-2.5 py-1 rounded-lg font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
+                            {req.clientType}
+                          </span>
+                        )}
+                        {req.selectedDriver && (
+                          <span className="text-xs px-2.5 py-1 rounded-lg font-bold" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex flex-col gap-2 shrink-0">
                       <Link href={`/admin/requests/${req.id}`}>
-                        <button className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}><Eye size={14} style={{ color: "var(--brand)" }} /></button>
+                        <button className="w-10 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }} aria-label={`عرض الطلب ${req.id}`}><Eye size={14} style={{ color: "var(--brand)" }} /></button>
                       </Link>
-                      <button onClick={() => handleDelete(req)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}><Trash2 size={14} style={{ color: "var(--status-cancelled-text)" }} /></button>
+                      <button onClick={() => handleDelete(req)} className="w-10 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }} aria-label={`حذف الطلب ${req.id}`}><Trash2 size={14} style={{ color: "var(--status-cancelled-text)" }} /></button>
                     </div>
                   </div>
                   <div className="px-4 pb-4 space-y-2">
-                    <div className="flex items-center gap-1.5 text-sm">
-                      <MapPin size={13} style={{ color: "var(--brand)" }} className="shrink-0" />
-                      <span className="font-medium">{req.homeLocation} ← {req.workLocation}</span>
-                    </div>
-                    {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
-                      <p key={i} className="text-xs" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
+                    {req.additionalLocations?.map((loc) => (
+                      <p key={`${loc.type}-${loc.address}`} className="text-xs" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                     ))}
-                    <div className="flex flex-wrap gap-4 text-sm">
-                      {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-2 rounded-xl p-3 text-sm" style={{ backgroundColor: "var(--surface-2)" }}>
+                      {req.shifts && req.shifts.length > 0 ? (
                         <span className="flex items-center gap-1 flex-wrap" dir="ltr">
                           <Clock size={13} />
-                          {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
-                            <span key={i}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < (req as any).shifts.length - 1 ? " |" : ""}</span>
+                          {req.shifts.map((s, i) => (
+                            <span key={`${s.label ?? "shift"}-${s.goTime}-${s.returnTime ?? "none"}`}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < req.shifts.length - 1 ? " |" : ""}</span>
                           ))}
                         </span>
                       ) : (
                         <span className="flex items-center gap-1" dir="ltr"><Clock size={13} /> {formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
                       )}
                       <span className="flex items-center gap-1"><Users size={13} /> {req.numberOfPeople} · {req.workingDaysPerWeek} أيام</span>
+                      {req.client && <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>👤 {req.client.name} — {req.client.mobile}</span>}
                     </div>
                     {req.phone && <p className="text-sm" dir="ltr" style={{ color: "var(--text-muted)" }}>📞 {req.phone}</p>}
-                    {(req as any).notes && <p className="text-xs" style={{ color: "var(--text-hint)" }}>📝 {(req as any).notes}</p>}
+                    {req.notes && <p className="text-xs" style={{ color: "var(--text-hint)" }}>📝 {req.notes}</p>}
                   </div>
                 </div>
               ))}
