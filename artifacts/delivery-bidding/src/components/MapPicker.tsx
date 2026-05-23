@@ -61,15 +61,13 @@ type SearchResult = {
 const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 // Default center: Dammam, Eastern Region
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
-// Debounce delays - reduced for faster response
-const SEARCH_DEBOUNCE_MS = 250;
-const MOVE_END_DEBOUNCE_MS = 350;
-// Increased from 150ms to give slower devices / Leaflet animations time to
-// complete before we allow the moveend geocoding trigger to fire.
-const PROGRAMMATIC_MOVE_GUARD_MS = 400;
-// ~4-6 meters in our target region (latitude-dependent): enough to ignore tiny map jitters while dragging.
-// Increase only if geocoding triggers too frequently; decrease only if very small deliberate drags are missed.
-const COORDINATE_EPSILON = 0.00005;
+// Debounce delays - optimized for better UX
+const SEARCH_DEBOUNCE_MS = 300;
+const MOVE_END_DEBOUNCE_MS = 800; // Increased to prevent auto-geocoding on every small move
+// Guard time after programmatic moves (search selection, locate button)
+const PROGRAMMATIC_MOVE_GUARD_MS = 600;
+// Coordinate threshold: ~10-12 meters - prevents unnecessary geocoding from tiny movements
+const COORDINATE_EPSILON = 0.0001;
 
 export default function MapPicker({
   value,
@@ -194,10 +192,11 @@ export default function MapPicker({
   };
 
   const updateSelectionFromCoordinates = useCallback(
-    async (lat: number, lng: number, options?: { recenter?: boolean; zoom?: number }) => {
+    async (lat: number, lng: number, options?: { recenter?: boolean; zoom?: number; skipZoom?: boolean }) => {
       const recenter = options?.recenter ?? true;
       const zoom = options?.zoom ?? 16;
-      if (recenter) setMarkerAndView(lat, lng, zoom);
+      const skipZoom = options?.skipZoom ?? false;
+      if (recenter && !skipZoom) setMarkerAndView(lat, lng, zoom);
       const fallbackAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
       applySelection({ lat, lng, address: fallbackAddress });
       await resolveAddressForSelection(lat, lng);
@@ -269,7 +268,8 @@ export default function MapPicker({
       Math.abs(previous.lng - center.lng) < COORDINATE_EPSILON;
     if (almostSamePoint) return;
     moveEndTimerRef.current = setTimeout(() => {
-      void updateSelectionFromCoordinates(center.lat, center.lng, { recenter: false });
+      // Skip zoom when updating from manual map drag
+      void updateSelectionFromCoordinates(center.lat, center.lng, { recenter: false, skipZoom: true });
     }, MOVE_END_DEBOUNCE_MS);
   }, [updateSelectionFromCoordinates]);
 
@@ -480,7 +480,7 @@ export default function MapPicker({
           value={searchText}
           onChange={handleSearchInput}
           onFocus={() => searchResults.length > 0 && setShowResults(true)}
-          placeholder="ابحث عن الحي أو الشارع..."
+          placeholder="ابحث عن الحي، الشارع، أو مكان معروف..."
           className="flex-1 bg-transparent py-3 text-[1.05rem] font-bold outline-none"
           style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none" }}
           dir="rtl"
@@ -592,8 +592,8 @@ export default function MapPicker({
                       ← رجوع
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p id="map-picker-title" className="text-base font-black" style={{ color: "var(--text)" }}>حددي موقعك بدقة</p>
-                      <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>حرّكي الخريطة حتى يصبح الدبوس الثابت فوق المكان المطلوب</p>
+                      <p id="map-picker-title" className="text-base font-black" style={{ color: "var(--text)" }}>حدد موقعك بدقة</p>
+                      <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>ابحث أو حرّك الخريطة حتى يصبح الدبوس فوق الموقع الصحيح</p>
                     </div>
                   </div>
                   {searchBar}
@@ -631,7 +631,7 @@ export default function MapPicker({
                     onClick={handleConfirmSelection}
                     disabled={!pendingSelection || geocoding || loading}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "56px", background: "linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)", color: "var(--brand-fg)" }}
+                    style={{ minHeight: "56px", background: "linear-gradient(180deg, #3B82F6 0%, #2563EB 100%)", color: "var(--brand-fg)" }}
                   >
                     <CheckCircle2 size={22} />
                     <span>✅ تأكيد الموقع</span>
@@ -680,7 +680,7 @@ export default function MapPicker({
             {(!collapsible || isInlineExpanded) && (
               <>
           <p className="text-sm font-black text-center" style={{ color: "var(--text-hint)" }}>
-            ابحثي بالعنوان أو حرّكي الخريطة، ثم أكدي الموقع للمتابعة
+            ابحث بالعنوان أو حرّك الخريطة، ثم أكد الموقع للمتابعة
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
