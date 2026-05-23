@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Landmark, Plus, Trash2, CheckCircle2, Eye, FileImage, AlertCircle, KeyRound, CreditCard, User } from "lucide-react";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { NotificationToggle } from "@/components/NotificationToggle";
 
 import { API_ORIGIN as API } from "@/lib/api-config";
 
@@ -168,6 +169,12 @@ export default function AdminSettings() {
             <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>إعدادات الإدارة</h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>إدارة الحسابات البنكية وطلبات الشحن ورمز الدخول</p>
           </div>
+        </div>
+
+        {/* ── Notification Settings ── */}
+        <div>
+          <h2 className="text-lg font-black mb-3" style={{ color: "var(--text)" }}>الإعدادات</h2>
+          <NotificationToggle />
         </div>
 
         {loadingData && (

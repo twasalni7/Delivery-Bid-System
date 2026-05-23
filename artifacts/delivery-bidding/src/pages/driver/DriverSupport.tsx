@@ -6,6 +6,7 @@ import { getTicketStatusColor, getTicketStatusLabel } from "@/lib/status-utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { NotificationToggle } from "@/components/NotificationToggle";
 
 import { API_ORIGIN } from "@/lib/api-config";
 const API_BASE = API_ORIGIN + "/api";
@@ -96,6 +97,12 @@ export default function DriverSupport() {
             <Plus size={16} />
             تذكرة جديدة
           </button>
+        </div>
+
+        {/* قسم إعدادات الإشعارات */}
+        <div className="mb-6">
+          <h2 className="text-lg font-black mb-3" style={{ color: "var(--text)" }}>الإعدادات</h2>
+          <NotificationToggle />
         </div>
 
         {/* New ticket form */}
