@@ -20,6 +20,10 @@ const STATUS_PILL_STYLE: Record<string, React.CSSProperties> = {
   FROZEN:    { backgroundColor: "var(--status-frozen-bg)",    color: "var(--status-frozen-text)" },
 };
 
+type AdminRequest = CommuteRequest & {
+  client?: { name?: string | null; mobile?: string | null } | null;
+};
+
 
 export default function AdminRequests() {
   const queryClient = useQueryClient();
@@ -39,14 +43,14 @@ export default function AdminRequests() {
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
 
-  const filteredRequests = useMemo(() => {
+  const filteredRequests = useMemo<AdminRequest[]>(() => {
     const q = search.trim().toLowerCase();
-    return (requests ?? []).filter((r) => {
+    return ((requests ?? []) as AdminRequest[]).filter((r) => {
       if (statusFilter !== "ALL" && r.status !== statusFilter) return false;
       if (q) {
         const hay = [
           r.homeLocation, r.workLocation, r.phone ?? "",
-          r.selectedDriver?.name ?? "", (r as any).client?.name ?? "", (r as any).client?.mobile ?? "", String(r.id),
+          r.selectedDriver?.name ?? "", r.client?.name ?? "", r.client?.mobile ?? "", String(r.id),
         ].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
@@ -243,17 +247,17 @@ export default function AdminRequests() {
                           <span style={{ color: "var(--text-hint)" }}>←</span>
                           <span style={{ color: "var(--text)" }}>{req.workLocation}</span>
                         </div>
-                        {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
+                        {req.additionalLocations?.map((loc, i) => (
                           <p key={i} className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                         ))}
-                        {(req as any).client && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>👤 {(req as any).client.name} — {(req as any).client.mobile}</p>}
+                        {req.client && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>👤 {req.client.name} — {req.client.mobile}</p>}
                         {req.phone && <p className="text-xs mt-1.5 font-bold" dir="ltr" style={{ color: "var(--text-muted)" }}>📞 {req.phone}</p>}
-                        {(req as any).notes && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📝 {(req as any).notes}</p>}
+                        {req.notes && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📝 {req.notes}</p>}
                       </td>
                       <td className="px-5 py-4">
-                        {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                        {req.shifts && req.shifts.length > 0 ? (
                           <div className="space-y-0.5">
-                            {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
+                            {req.shifts.map((s, i) => (
                               <div key={i} className="flex items-center gap-1 text-xs" dir="ltr">
                                 <Clock size={11} style={{ color: "var(--text-hint)" }} />
                                 <span className="font-medium">{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}</span>
@@ -346,25 +350,25 @@ export default function AdminRequests() {
                     </div>
                   </div>
                   <div className="px-4 pb-4 space-y-2">
-                    {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
+                    {req.additionalLocations?.map((loc, i) => (
                       <p key={i} className="text-xs" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                     ))}
                     <div className="grid grid-cols-1 gap-2 rounded-xl p-3 text-sm" style={{ backgroundColor: "var(--surface-2)" }}>
-                      {(req as any).shifts && (req as any).shifts.length > 0 ? (
+                      {req.shifts && req.shifts.length > 0 ? (
                         <span className="flex items-center gap-1 flex-wrap" dir="ltr">
                           <Clock size={13} />
-                          {((req as any).shifts as Array<{ label?: string; goTime: string; returnTime?: string }>).map((s, i) => (
-                            <span key={i}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < (req as any).shifts.length - 1 ? " |" : ""}</span>
+                          {req.shifts.map((s, i) => (
+                            <span key={i}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < req.shifts!.length - 1 ? " |" : ""}</span>
                           ))}
                         </span>
                       ) : (
                         <span className="flex items-center gap-1" dir="ltr"><Clock size={13} /> {formatTime12h(req.morningTime)}{req.eveningTime ? ` – ${formatTime12h(req.eveningTime)}` : ""}</span>
                       )}
                       <span className="flex items-center gap-1"><Users size={13} /> {req.numberOfPeople} · {req.workingDaysPerWeek} أيام</span>
-                      {(req as any).client && <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>👤 {(req as any).client.name} — {(req as any).client.mobile}</span>}
+                      {req.client && <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>👤 {req.client.name} — {req.client.mobile}</span>}
                     </div>
                     {req.phone && <p className="text-sm" dir="ltr" style={{ color: "var(--text-muted)" }}>📞 {req.phone}</p>}
-                    {(req as any).notes && <p className="text-xs" style={{ color: "var(--text-hint)" }}>📝 {(req as any).notes}</p>}
+                    {req.notes && <p className="text-xs" style={{ color: "var(--text-hint)" }}>📝 {req.notes}</p>}
                   </div>
                 </div>
               ))}
