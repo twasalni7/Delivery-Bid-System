@@ -191,7 +191,7 @@ export default function AdminDashboard() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <Link href="/admin/archive" className="rounded-2xl p-5 transition-all hover:shadow-md" style={{ backgroundColor: "var(--surface)", border: "1.5px solid var(--border)" }}>
-                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>مكتمل / أرشيف</p>
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>مكتمل</p>
                 <p className="text-2xl font-black" style={{ color: "var(--brand)" }}>{stats.completedRequests}</p>
               </Link>
               <Link href="/admin/drivers" className="rounded-2xl p-5 transition-all hover:shadow-md" style={{ backgroundColor: "var(--surface)", border: "1.5px solid var(--border)" }}>

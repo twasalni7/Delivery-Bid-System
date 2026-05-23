@@ -330,7 +330,7 @@ export default function AdminRequests() {
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <span className="text-xs px-2.5 py-1 rounded-lg font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
-                          {(req as any).clientType ?? "نوع غير محدد"}
+                          {(req as any).clientType ?? "نوع عميل غير محدد"}
                         </span>
                         {req.selectedDriver && (
                           <span className="text-xs px-2.5 py-1 rounded-lg font-bold" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>🚗 {req.selectedDriver.name}</span>
