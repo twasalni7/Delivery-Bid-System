@@ -4,7 +4,8 @@ import { haversineKm } from "@workspace/db/utils/pricing";
 // Verified against the OpenRouteService v2 directions API on 2026-05-10.
 const DEFAULT_ORS_API_URL = "https://api.openrouteservice.org/v2";
 const DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org";
-const DEFAULT_LANGUAGE = "en"; // OpenRouteService doesn't support 'ar' for directions, causing HTTP 500
+const DEFAULT_LANGUAGE = "ar"; // Arabic language for better local results
+const ROUTE_LANGUAGE = "en"; // OpenRouteService doesn't support 'ar' for directions, using 'en' for route calculations
 const GEO_CACHE_LIMIT = 200;
 const geoCache = new Map<string, unknown>();
 const FALLBACK_AVG_SPEED_KPH = 40;
@@ -103,6 +104,7 @@ export async function searchPlaces(query: string, limit = 6) {
   url.searchParams.set("limit", String(limit));
   url.searchParams.set("accept-language", DEFAULT_LANGUAGE);
   url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("countrycodes", "sa"); // Limit search to Saudi Arabia for better accuracy
 
   const response = await fetch(url, {
     headers: {
@@ -175,7 +177,7 @@ export async function calculateRoutePlan(points: RoutePoint[]): Promise<RoutePla
         body: JSON.stringify({
           coordinates: points.map((point) => [point.lng, point.lat]),
           instructions: false,
-          language: DEFAULT_LANGUAGE,
+          language: ROUTE_LANGUAGE,
           geometry: true,
           ...(radiusMeters != null ? { radiuses: points.map(() => radiusMeters) } : {}),
         }),
