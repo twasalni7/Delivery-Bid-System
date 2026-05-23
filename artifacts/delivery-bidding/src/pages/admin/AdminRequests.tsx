@@ -135,7 +135,7 @@ export default function AdminRequests() {
 
             {activeFilters > 0 && (
               <button onClick={resetFilters}
-                className="h-9 px-3.5 rounded-xl text-sm font-bold flex items-center gap-1.5 mr-auto"
+                className="h-9 px-3.5 rounded-xl text-sm font-bold flex items-center gap-1.5"
                 style={{ color: "var(--status-cancelled-text)", border: "1px solid var(--status-cancelled-border)", backgroundColor: "var(--status-cancelled-bg)" }}>
                 <X size={13} /> مسح الفلاتر ({activeFilters})
               </button>
