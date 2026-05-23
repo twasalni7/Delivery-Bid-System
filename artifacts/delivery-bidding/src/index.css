@@ -142,21 +142,30 @@
   .bg-brand-subtle   { background-color: var(--brand-subtle); }
   .hover-brand-subtle:hover { background-color: var(--brand-subtle-hover); }
 
-  /* ── Card ── */
+  /* ── Card - Enhanced styling ── */
   .card {
     background-color: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    transition: all var(--transition);
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
   }
   .card-lg {
     background-color: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-md);
+    transition: all var(--transition);
+  }
+  .card-lg:hover {
+    box-shadow: var(--shadow-lg);
   }
 
-  /* ── Primary button ── */
+  /* ── Primary button - Enhanced visibility ── */
   .btn-primary {
     background-color: var(--brand);
     color: var(--brand-fg);
@@ -172,24 +181,28 @@
     gap: 0.5rem;
     min-height: 44px;
     font-size: 0.9375rem;
-    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.32);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
     transition: background-color var(--transition), box-shadow var(--transition), transform var(--transition);
     white-space: nowrap;
     user-select: none;
   }
-  .btn-primary:hover  { background-color: var(--brand-hover); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); }
-  .btn-primary:active { transform: scale(0.97); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-primary:hover  {
+    background-color: var(--brand-hover);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: scale(0.98) translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-  /* ── Ghost / secondary button ── */
+  /* ── Ghost / secondary button - Enhanced ── */
   .btn-ghost {
     background-color: var(--surface-2);
-    color: var(--text-sub);
+    color: var(--text);
     font-weight: 600;
     font-family: var(--font-arabic);
     padding: 0.9rem 1.6rem;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -197,19 +210,24 @@
     gap: 0.5rem;
     min-height: 44px;
     font-size: 0.9375rem;
-    transition: background-color var(--transition), border-color var(--transition);
+    transition: all var(--transition);
     white-space: nowrap;
     user-select: none;
   }
-  .btn-ghost:hover  { background-color: var(--surface-3); border-color: var(--border-strong); }
-  .btn-ghost:active { transform: scale(0.97); }
-  .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost:hover  {
+    background-color: var(--surface-3);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-ghost:active { transform: scale(0.98) translateY(0); }
+  .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  /* ── Brand ghost button ── */
+  /* ── Brand ghost button - Enhanced ── */
   .btn-brand-ghost {
     background-color: var(--brand-subtle);
     color: var(--brand);
-    border: 1px solid var(--brand-border);
+    border: 1.5px solid var(--brand-border);
     font-weight: 700;
     font-family: var(--font-arabic);
     padding: 0.9rem 1.6rem;
@@ -221,13 +239,18 @@
     gap: 0.5rem;
     min-height: 44px;
     font-size: 0.9375rem;
-    transition: background-color var(--transition);
+    transition: all var(--transition);
     white-space: nowrap;
     user-select: none;
   }
-  .btn-brand-ghost:hover { background-color: var(--brand-subtle-hover); }
+  .btn-brand-ghost:hover {
+    background-color: var(--brand-subtle-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  }
+  .btn-brand-ghost:active { transform: scale(0.98) translateY(0); }
 
-  /* ── Form input ── */
+  /* ── Form input - Enhanced ── */
   .input-field {
     background-color: var(--input-bg);
     border: 1.5px solid var(--input-border);
@@ -236,10 +259,13 @@
     font-size: 0.9375rem;
     font-weight: 500;
     font-family: var(--font-arabic);
-    padding: 0.7rem 0.875rem;
+    padding: 0.75rem 1rem;
     width: 100%;
     transition: border-color var(--transition), box-shadow var(--transition);
     outline: none;
+  }
+  .input-field:hover {
+    border-color: var(--border-strong);
   }
   .input-field:focus {
     border-color: var(--input-border-focus);
@@ -254,32 +280,36 @@
     font-size: 0.9375rem;
     font-weight: 500;
     font-family: var(--font-arabic);
-    padding: 0.7rem 0.875rem;
+    padding: 0.75rem 1rem;
     width: 100%;
     transition: border-color var(--transition), box-shadow var(--transition);
     outline: none;
+  }
+  .input-dark:hover {
+    border-color: var(--border-strong);
   }
   .input-dark:focus {
     border-color: var(--input-border-focus);
     box-shadow: 0 0 0 3px var(--input-ring);
   }
 
-  /* ── Status pills ── */
+  /* ── Status pills - Enhanced visibility ── */
   .pill {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
+    gap: 6px;
+    padding: 4px 12px;
     border-radius: 99px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.8125rem;
+    font-weight: 700;
     white-space: nowrap;
-    border: 1px solid transparent;
+    border: 1.5px solid transparent;
+    transition: all var(--transition);
   }
   .pill::before {
     content: '';
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: currentColor;
     flex-shrink: 0;

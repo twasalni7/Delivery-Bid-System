@@ -136,10 +136,21 @@ export default function AdminDashboard() {
         {isLoading && <div className="text-center py-16 font-bold" style={{ color: "var(--text-muted)" }}>جاري التحميل...</div>}
 
         {/* ── إشعارات لوحة التحكم ── */}
-        <div className="rounded-3xl p-5 mb-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+        <div
+          className="rounded-3xl p-6 mb-6 transition-all hover:shadow-md"
+          style={{
+            backgroundColor: "var(--surface)",
+            border: "1.5px solid var(--border)",
+          }}
+        >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>🔔</div>
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
+              style={{
+                backgroundColor: "var(--brand-subtle)",
+                border: "1.5px solid var(--brand-border)",
+              }}
+            >🔔</div>
             <div>
               <p className="font-black text-base" style={{ color: "var(--text)" }}>إشعارات لوحة التحكم</p>
               <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>تلقّ تنبيهات فورية عند أي نشاط جديد</p>
@@ -150,56 +161,99 @@ export default function AdminDashboard() {
 
         {stats && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
               {STAT_CARDS.map((s) => (
-                <div key={s.key} className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                  <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>{s.label}</p>
+                <div
+                  key={s.key}
+                  className="rounded-2xl p-5 transition-all hover:shadow-md"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    border: "1.5px solid var(--border)",
+                  }}
+                >
+                  <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>{s.label}</p>
                   <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{stats[s.key]}</p>
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>مكتمل</p>
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div
+                className="rounded-2xl p-5 transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>مكتمل</p>
                 <p className="text-2xl font-black" style={{ color: "var(--brand)" }}>{stats.completedRequests}</p>
               </div>
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>السائقون</p>
-                <p className="text-2xl font-black">{stats.totalDrivers}</p>
+              <div
+                className="rounded-2xl p-5 transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>السائقون</p>
+                <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{stats.totalDrivers}</p>
               </div>
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>العروض</p>
-                <p className="text-2xl font-black">{stats.totalOffers}</p>
+              <div
+                className="rounded-2xl p-5 transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>العروض</p>
+                <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{stats.totalOffers}</p>
               </div>
             </div>
           </>
         )}
 
         {financial && (
-          <div className="mb-5">
-            <h2 className="text-base font-black mb-3 flex items-center gap-2">
-              <Banknote size={16} /> الإحصائيات المالية
+          <div className="mb-6">
+            <h2 className="text-base font-black mb-4 flex items-center gap-2">
+              <Banknote size={18} /> الإحصائيات المالية
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                  <Banknote size={12} /> إجمالي الرسوم المحصّلة
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+              <div
+                className="rounded-2xl p-5 transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                <p className="text-xs font-bold mb-2 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                  <Banknote size={14} /> إجمالي الرسوم المحصّلة
                 </p>
                 <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalFeesCollected.toLocaleString("ar-SA")} ريال</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>{financial.acceptedContractsCount} عقد × 50 ريال</p>
+                <p className="text-xs mt-2 font-bold" style={{ color: "var(--text-hint)" }}>{financial.acceptedContractsCount} عقد × 50 ريال</p>
               </div>
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-xs font-bold mb-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                  <Wallet size={12} /> إجمالي أرصدة السائقين
+              <div
+                className="rounded-2xl p-5 transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                <p className="text-xs font-bold mb-2 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                  <Wallet size={14} /> إجمالي أرصدة السائقين
                 </p>
                 <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalDriversBalance.toLocaleString("ar-SA")} ريال</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>مجموع أرصدة {financial.driverBalances.length} سائق</p>
+                <p className="text-xs mt-2 font-bold" style={{ color: "var(--text-hint)" }}>مجموع أرصدة {financial.driverBalances.length} سائق</p>
               </div>
               {financial.totalTransactionsAmount > 0 && (
-                <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border-subtle)" }}>
-                  <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>إجمالي المعاملات المالية</p>
+                <div
+                  className="rounded-2xl p-5 transition-all hover:shadow-md"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    border: "1.5px solid var(--border)",
+                  }}
+                >
+                  <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>إجمالي المعاملات المالية</p>
                   <p className="text-3xl font-black" style={{ color: "var(--brand)" }}>{financial.totalTransactionsAmount.toLocaleString("ar-SA")} ريال</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-hint)" }}>من جدول المعاملات</p>
+                  <p className="text-xs mt-2 font-bold" style={{ color: "var(--text-hint)" }}>من جدول المعاملات</p>
                 </div>
               )}
             </div>
