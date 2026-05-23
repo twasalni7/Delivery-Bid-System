@@ -6,7 +6,7 @@ export default function Home() {
     <div
       className="min-h-screen pb-10 px-4 sm:px-6 flex items-center justify-center"
       dir="rtl"
-      style={{ fontFamily: "var(--font-arabic)", background: "#f5f5f5" }}
+      style={{ fontFamily: "var(--font-arabic)", background: "#FFFFFF" }}
     >
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
@@ -20,7 +20,7 @@ export default function Home() {
           <Link href="/client/login">
             <div
               className="rounded-3xl p-8 text-white text-center cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-              style={{ background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)" }}
+              style={{ background: "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)" }}
             >
               <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
                 <Package size={32} />
@@ -38,7 +38,7 @@ export default function Home() {
           <Link href="/driver/login">
             <div
               className="rounded-3xl p-8 text-white text-center cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-              style={{ background: "linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)" }}
+              style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)" }}
             >
               <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
                 <Truck size={32} />
@@ -56,7 +56,7 @@ export default function Home() {
           <Link href="/admin/login">
             <div
               className="rounded-3xl p-8 text-white text-center cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
-              style={{ background: "linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%)" }}
+              style={{ background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)" }}
             >
               <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
                 <Shield size={32} />
