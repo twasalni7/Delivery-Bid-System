@@ -468,7 +468,7 @@ export default function MapPicker({
 
   const searchBar = (
     <div className="relative w-full">
-      <div className="flex items-center gap-2 px-3 rounded-2xl" style={{ backgroundColor: "var(--input-bg)", border: "1.5px solid var(--input-border)", minHeight: "56px" }}>
+      <div className="flex items-center gap-2 px-3 rounded-2xl" style={{ backgroundColor: "var(--input-bg)", border: "1.5px solid var(--input-border)", minHeight: "52px" }}>
         {searching ? (
           <Loader2 size={20} className="shrink-0 animate-spin" style={{ color: "var(--text-muted)" }} />
         ) : (
@@ -481,7 +481,7 @@ export default function MapPicker({
           onChange={handleSearchInput}
           onFocus={() => searchResults.length > 0 && setShowResults(true)}
           placeholder="ابحث عن الحي، الشارع، أو مكان معروف..."
-          className="flex-1 bg-transparent py-3 text-[1.05rem] font-bold outline-none"
+          className="flex-1 bg-transparent py-3 text-base font-bold outline-none"
           style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none" }}
           dir="rtl"
         />
