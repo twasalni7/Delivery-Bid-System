@@ -1,17 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateRequest, getListRequestsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { buildShiftsPayload } from "@/lib/time-utils";
+import { buildShiftsPayload, formatTime12hLong, SHIFT_LABELS } from "@/lib/time-utils";
 import MapPicker, { type MapCoords } from "@/components/MapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
-import { ArrowLeft, Check, MapPin, Clock, Calendar, CheckCircle2, Edit3 } from "lucide-react";
+import {
+  ArrowLeft, Check, Clock, Calendar, CheckCircle2, Edit3,
+  Plus, X, Home, Briefcase, MapPin, Loader2, Users,
+} from "lucide-react";
 
-// Types
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const CLIENT_TYPES = [
   { value: "موظفات", label: "موظفة", emoji: "👩‍💼" },
   { value: "معلمات", label: "معلمة", emoji: "👩‍🏫" },
@@ -32,6 +36,257 @@ const DAYS = [
 ];
 
 const MAX_PASSENGERS = 10;
+const MAX_SHIFTS = 4;
+const TOTAL_STEPS = 5;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type ShiftEntry = { goTime: string; returnTime: string };
+
+type PassengerEntry = {
+  pickupCoords: MapCoords | null;
+  destCoords: MapCoords | null;
+};
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/** Live price mini-card shown after locations are set */
+function PriceBadge({
+  isPricingLoading,
+  pricingResult,
+  routeSummary,
+  numberOfPeople,
+}: {
+  isPricingLoading: boolean;
+  pricingResult: { pricePerPerson: number; price: number; needsAdminReview: boolean } | undefined;
+  routeSummary: { distanceKm: number; durationMinutes: number } | undefined;
+  numberOfPeople: number;
+}) {
+  if (!routeSummary && !isPricingLoading) return null;
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--brand-border)", backgroundColor: "var(--brand-subtle)" }}>
+      <div className="px-4 py-3 flex items-center justify-between gap-3" style={{ borderBottom: "1px solid var(--brand-border)" }}>
+        <p className="text-sm font-black" style={{ color: "var(--text)" }}>💰 معاينة السعر التقريبي</p>
+        {isPricingLoading && <Loader2 size={16} className="animate-spin shrink-0" style={{ color: "var(--brand)" }} />}
+        {!isPricingLoading && pricingResult && !pricingResult.needsAdminReview && (
+          <p className="text-lg font-black shrink-0" style={{ color: "var(--brand)" }}>
+            {pricingResult.pricePerPerson.toLocaleString("ar-SA")}
+            <span className="text-xs font-bold mr-1">ر.س / شهر</span>
+          </p>
+        )}
+      </div>
+      <div className="px-4 py-2 flex items-center gap-4 flex-wrap">
+        {routeSummary && (
+          <>
+            <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
+              📍 {routeSummary.distanceKm.toFixed(1)} كم
+            </span>
+            <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
+              ⏱ {Math.round(routeSummary.durationMinutes)} دقيقة
+            </span>
+          </>
+        )}
+        {numberOfPeople > 1 && pricingResult && !pricingResult.needsAdminReview && (
+          <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
+            👥 الإجمالي: {pricingResult.price.toLocaleString("ar-SA")} ر.س
+          </span>
+        )}
+        {pricingResult?.needsAdminReview && (
+          <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
+            سيراجع الإداري السعر
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Single passenger location card */
+function PassengerCard({
+  index,
+  passenger,
+  onChange,
+}: {
+  index: number;
+  passenger: PassengerEntry;
+  onChange: (updated: PassengerEntry) => void;
+}) {
+  const [expandPickup, setExpandPickup] = useState(!passenger.pickupCoords);
+  const [expandDropoff, setExpandDropoff] = useState(false);
+
+  const hasPickup = Boolean(passenger.pickupCoords);
+  const hasDropoff = Boolean(passenger.destCoords);
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}>
+      {/* Card header */}
+      <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border-subtle)", backgroundColor: "var(--surface-2)" }}>
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+          style={{ backgroundColor: hasPickup && hasDropoff ? "var(--brand)" : "var(--border)", color: hasPickup && hasDropoff ? "var(--brand-fg)" : "var(--text-muted)" }}
+        >
+          {hasPickup && hasDropoff ? <Check size={14} strokeWidth={3} /> : index}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-black" style={{ color: "var(--text)" }}>
+            {index === 1 ? "الراكب الأول (أنت)" : `الراكب ${index}`}
+          </p>
+          <p className="text-xs font-bold" style={{ color: hasPickup && hasDropoff ? "var(--brand)" : "var(--text-muted)" }}>
+            {!hasPickup ? "حدد موقع الانطلاق أولاً" : !hasDropoff ? "أضف موقع الوصول" : "✓ تم تحديد الموقعين"}
+          </p>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* Pickup */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+              <Home size={14} style={{ color: "var(--brand)" }} /> موقع الانطلاق
+            </label>
+            {hasPickup && (
+              <button
+                onClick={() => {
+                  setExpandPickup((v) => !v);
+                }}
+                className="text-xs font-black px-2 py-1 rounded-lg"
+                style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
+              >
+                {expandPickup ? "إخفاء" : "تعديل"}
+              </button>
+            )}
+          </div>
+          {hasPickup && !expandPickup && (
+            <div className="flex items-center gap-2 p-3 rounded-xl" style={{ backgroundColor: "var(--surface-2)" }}>
+              <MapPin size={14} style={{ color: "var(--brand)" }} />
+              <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>{passenger.pickupCoords!.address}</p>
+            </div>
+          )}
+          {(!hasPickup || expandPickup) && (
+            <MapPicker
+              value={passenger.pickupCoords}
+              onChange={(coords) => {
+                onChange({ ...passenger, pickupCoords: coords });
+                setExpandPickup(false);
+                if (!passenger.destCoords) setExpandDropoff(true);
+              }}
+              placeholder="ابحث عن حي أو مكان ثم اضغط تأكيد"
+              color="var(--brand)"
+              collapsible
+              openButtonLabel="اضغط لتحديد موقع الانطلاق"
+              openButtonHint="ابحث عن اسم الحي أو المكان"
+            />
+          )}
+        </div>
+
+        {/* Dropoff — shown only after pickup is set */}
+        {hasPickup && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+                <Briefcase size={14} style={{ color: "var(--brand)" }} /> موقع الوصول
+              </label>
+              {hasDropoff && (
+                <button
+                  onClick={() => setExpandDropoff((v) => !v)}
+                  className="text-xs font-black px-2 py-1 rounded-lg"
+                  style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
+                >
+                  {expandDropoff ? "إخفاء" : "تعديل"}
+                </button>
+              )}
+            </div>
+            {hasDropoff && !expandDropoff && (
+              <div className="flex items-center gap-2 p-3 rounded-xl" style={{ backgroundColor: "var(--surface-2)" }}>
+                <MapPin size={14} style={{ color: "#F59E0B" }} />
+                <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>{passenger.destCoords!.address}</p>
+              </div>
+            )}
+            {(!hasDropoff || expandDropoff) && (
+              <MapPicker
+                value={passenger.destCoords}
+                onChange={(coords) => {
+                  onChange({ ...passenger, destCoords: coords });
+                  setExpandDropoff(false);
+                }}
+                placeholder="ابحث عن اسم المستشفى أو المدرسة..."
+                color="#F59E0B"
+                collapsible
+                initialCenter={passenger.pickupCoords ? [passenger.pickupCoords.lat, passenger.pickupCoords.lng] : undefined}
+                openButtonLabel="اضغط لتحديد موقع الوصول"
+                openButtonHint="ابحث عن اسم الجهة أو المكان"
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Single shift time editor */
+function ShiftCard({
+  index,
+  shift,
+  onChange,
+  onRemove,
+}: {
+  index: number;
+  shift: ShiftEntry;
+  onChange: (s: ShiftEntry) => void;
+  onRemove?: () => void;
+}) {
+  return (
+    <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-black" style={{ color: "var(--text)" }}>
+          {SHIFT_LABELS[index] ?? `الوردية ${index + 1}`}
+        </span>
+        {onRemove && (
+          <button
+            onClick={onRemove}
+            className="p-1.5 rounded-xl"
+            style={{ color: "var(--status-cancelled-text)", backgroundColor: "var(--status-cancelled-bg)" }}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>⏰ وقت الذهاب</label>
+          <Input
+            type="time"
+            value={shift.goTime}
+            onChange={(e) => onChange({ ...shift, goTime: e.target.value })}
+            className="rounded-xl font-bold text-base"
+            style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }}
+            dir="ltr"
+          />
+          {shift.goTime && (
+            <p className="text-xs font-bold" style={{ color: "var(--brand)" }}>{formatTime12hLong(shift.goTime)}</p>
+          )}
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>🔄 وقت العودة</label>
+          <Input
+            type="time"
+            value={shift.returnTime}
+            onChange={(e) => onChange({ ...shift, returnTime: e.target.value })}
+            className="rounded-xl font-bold text-base"
+            style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }}
+            dir="ltr"
+          />
+          {shift.returnTime && (
+            <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{formatTime12hLong(shift.returnTime)}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function CreateRequestNew() {
   const [, setLocation] = useLocation();
@@ -39,77 +294,42 @@ export default function CreateRequestNew() {
   const { toast } = useToast();
   const createRequest = useCreateRequest();
 
-  // Current step (1-7)
   const [step, setStep] = useState(1);
 
   // Step 1: Client type
   const [clientType, setClientType] = useState("");
 
-  // Step 2: Number of people
+  // Step 2: Number of people + passenger location entries
   const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [passengers, setPassengers] = useState<PassengerEntry[]>([{ pickupCoords: null, destCoords: null }]);
 
-  // Step 3: Pickup location
-  const [homeCoords, setHomeCoords] = useState<MapCoords | null>(null);
+  // Step 4: Shifts
+  const [shifts, setShifts] = useState<ShiftEntry[]>([{ goTime: "", returnTime: "" }]);
 
-  // Step 4: Dropoff location
-  const [workCoords, setWorkCoords] = useState<MapCoords | null>(null);
-
-  // Step 5: Go time
-  const [goTime, setGoTime] = useState("");
-
-  // Step 6: Return time (optional)
-  const [hasReturn, setHasReturn] = useState<boolean>(false);
-  const [returnTime, setReturnTime] = useState("");
-
-  // Step 7: Days
+  // Step 4: Days
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
 
   // Confirmation dialog
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Load draft from localStorage on mount
-  useEffect(() => {
-    const draft = localStorage.getItem("createRequestDraft");
-    if (draft) {
-      try {
-        const parsed = JSON.parse(draft);
-        if (parsed.clientType) setClientType(parsed.clientType);
-        if (parsed.numberOfPeople) setNumberOfPeople(parsed.numberOfPeople);
-        if (parsed.homeCoords) setHomeCoords(parsed.homeCoords);
-        if (parsed.workCoords) setWorkCoords(parsed.workCoords);
-        if (parsed.goTime) setGoTime(parsed.goTime);
-        if (parsed.hasReturn !== undefined) setHasReturn(parsed.hasReturn);
-        if (parsed.returnTime) setReturnTime(parsed.returnTime);
-        if (parsed.selectedDays) setSelectedDays(parsed.selectedDays);
-        if (parsed.step) setStep(parsed.step);
+  // Derived convenience refs to first passenger
+  const homeCoords = passengers[0]?.pickupCoords ?? null;
+  const workCoords = passengers[0]?.destCoords ?? null;
 
-        toast({
-          title: "تم استعادة المسودة",
-          description: "وجدنا طلب لم يكتمل، تم استعادة بياناتك"
-        });
-      } catch (e) {
-        // Invalid draft, ignore
-        console.error("Failed to parse draft", e);
+  // Sync passengers array length to numberOfPeople
+  const handleSetNumberOfPeople = (n: number) => {
+    const clamped = Math.max(1, Math.min(MAX_PASSENGERS, n));
+    setNumberOfPeople(clamped);
+    setPassengers((prev) => {
+      if (clamped > prev.length) {
+        return [...prev, ...Array.from({ length: clamped - prev.length }, () => ({ pickupCoords: null, destCoords: null }))];
       }
-    }
-  }, [toast]);
+      return prev.slice(0, clamped);
+    });
+  };
 
-  // Auto-save draft to localStorage
-  useEffect(() => {
-    const draft = {
-      clientType,
-      numberOfPeople,
-      homeCoords,
-      workCoords,
-      goTime,
-      hasReturn,
-      returnTime,
-      selectedDays,
-      step,
-      timestamp: new Date().toISOString()
-    };
-    localStorage.setItem("createRequestDraft", JSON.stringify(draft));
-  }, [clientType, numberOfPeople, homeCoords, workCoords, goTime, hasReturn, returnTime, selectedDays, step]);
+  const updatePassenger = (idx: number, updated: PassengerEntry) =>
+    setPassengers((prev) => prev.map((p, i) => (i === idx ? updated : p)));
 
   // Pricing
   const [pricingResult, setPricingResult] = useState<{
@@ -124,7 +344,7 @@ export default function CreateRequestNew() {
   } | undefined>(undefined);
   const [isPricingLoading, setIsPricingLoading] = useState(false);
 
-  // Fetch pricing when locations are ready
+  // Auto-recalculate price whenever locations, people, days, or shifts change
   useEffect(() => {
     if (!homeCoords || !workCoords) {
       setRouteSummary(undefined);
@@ -132,6 +352,9 @@ export default function CreateRequestNew() {
       return;
     }
     const controller = new AbortController();
+    const firstReturnTime = shifts[0]?.returnTime ?? "";
+    const validShifts = buildShiftsPayload(shifts);
+
     setIsPricingLoading(true);
     fetch(`${API}/api/maps/route`, {
       method: "POST",
@@ -155,8 +378,9 @@ export default function CreateRequestNew() {
             distanceKm: route.distanceKm,
             numberOfPeople,
             workingDaysPerWeek: selectedDays.length || 5,
-            numberOfShifts: 1,
-            eveningTime: returnTime || undefined,
+            numberOfShifts: validShifts.length || 1,
+            eveningTime: firstReturnTime || undefined,
+            shifts: validShifts.length > 0 ? validShifts : undefined,
           }),
         });
       })
@@ -170,21 +394,18 @@ export default function CreateRequestNew() {
         }
       });
     return () => controller.abort();
-  }, [homeCoords, workCoords, numberOfPeople, selectedDays, returnTime]);
+  }, [homeCoords, workCoords, numberOfPeople, selectedDays, shifts]);
 
   const toggleDay = (key: string) =>
     setSelectedDays((prev) =>
       prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key]
     );
 
-  const canNext = () => {
+  const canNext = (): boolean => {
     if (step === 1) return !!clientType;
     if (step === 2) return numberOfPeople >= 1;
-    if (step === 3) return !!homeCoords;
-    if (step === 4) return !!workCoords;
-    if (step === 5) return !!goTime;
-    if (step === 6) return !hasReturn || (hasReturn && !!returnTime);
-    if (step === 7) return selectedDays.length > 0;
+    if (step === 3) return passengers.every((p) => p.pickupCoords && p.destCoords);
+    if (step === 4) return !!(shifts[0]?.goTime) && selectedDays.length > 0;
     return true;
   };
 
@@ -192,32 +413,38 @@ export default function CreateRequestNew() {
     if (!canNext()) {
       toast({
         title: "يرجى إكمال الحقول المطلوبة",
-        description: "تأكدي من تعبئة جميع المعلومات المطلوبة",
-        variant: "destructive"
+        description: step === 3
+          ? "تأكد من تحديد موقع الانطلاق والوصول لجميع الركاب"
+          : step === 4
+            ? "حدد وقت الذهاب وأيام العمل على الأقل"
+            : "تأكد من تعبئة جميع المعلومات المطلوبة",
+        variant: "destructive",
       });
       return;
     }
-    if (step < 8) {
+    if (step < TOTAL_STEPS) {
       setStep(step + 1);
     } else {
-      // Show confirmation dialog before submitting
       setShowConfirmDialog(true);
     }
   };
 
   const handleSubmit = () => {
-    const validShifts = buildShiftsPayload([{ goTime, returnTime: returnTime || "" }]);
-    const passengersData = [{
-      passengerIndex: 1,
-      pickupLat: homeCoords?.lat ?? null,
-      pickupLng: homeCoords?.lng ?? null,
-      destinationLat: workCoords?.lat ?? null,
-      destinationLng: workCoords?.lng ?? null,
-      pickupAddress: homeCoords?.address || null,
-      destinationAddress: workCoords?.address || null,
-      workTime: goTime || null,
+    const validShifts = buildShiftsPayload(shifts);
+    const firstGoTime = shifts[0]?.goTime ?? "";
+    const firstReturnTime = shifts[0]?.returnTime ?? "";
+
+    const passengersData = passengers.map((p, idx) => ({
+      passengerIndex: idx + 1,
+      pickupLat: p.pickupCoords?.lat ?? null,
+      pickupLng: p.pickupCoords?.lng ?? null,
+      destinationLat: p.destCoords?.lat ?? null,
+      destinationLng: p.destCoords?.lng ?? null,
+      pickupAddress: p.pickupCoords?.address ?? null,
+      destinationAddress: p.destCoords?.address ?? null,
+      workTime: firstGoTime || null,
       daysPerWeek: selectedDays.length,
-    }];
+    }));
 
     createRequest.mutate(
       {
@@ -233,8 +460,8 @@ export default function CreateRequestNew() {
           numberOfPeople,
           workingDaysPerWeek: selectedDays.length,
           numberOfShifts: validShifts.length || 1,
-          morningTime: goTime,
-          eveningTime: returnTime || undefined,
+          morningTime: firstGoTime,
+          eveningTime: firstReturnTime || undefined,
           shifts: validShifts.length > 0 ? validShifts : undefined,
           passengers: passengersData,
         } as any,
@@ -246,20 +473,22 @@ export default function CreateRequestNew() {
           toast({ title: "تم إنشاء الطلب بنجاح!", description: `طلب رقم #${req.id}` });
           setLocation(`/client/request/${req.id}`);
         },
-        onError: (err: Error) => {
+        onError: () => {
           toast({
-            title: "عذراً، حدث خطأ بسيط",
-            description: "حاولي مرة أخرى أو تواصلي معنا للمساعدة",
-            variant: "destructive"
+            title: "عذراً، حدث خطأ",
+            description: "حاول مرة أخرى أو تواصل معنا للمساعدة",
+            variant: "destructive",
           });
         },
       }
     );
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   return (
     <Layout role="client">
-      <div dir="rtl" className="min-h-screen flex flex-col pb-32">
+      <div dir="rtl" className="min-h-screen flex flex-col pb-36">
         {/* Header */}
         <div className="px-4 py-4 flex items-center justify-between">
           {step > 1 ? (
@@ -280,23 +509,36 @@ export default function CreateRequestNew() {
             </Link>
           )}
           <p className="text-sm font-black" style={{ color: "var(--text-hint)" }}>
-            {step} / 8
+            {step} / {TOTAL_STEPS}
           </p>
         </div>
 
         {/* Progress bar */}
         <div className="px-4 mb-6">
-          <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)" }}>
+          <div className="w-full h-2 rounded-full" style={{ backgroundColor: "var(--border-subtle)" }}>
             <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{ backgroundColor: "var(--brand)", width: `${(step / 8) * 100}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{ backgroundColor: "var(--brand)", width: `${(step / TOTAL_STEPS) * 100}%` }}
             />
           </div>
         </div>
 
+        {/* Live price badge — shown on steps 3-5 once locations are set */}
+        {step >= 3 && (homeCoords || isPricingLoading) && (
+          <div className="px-4 mb-4">
+            <PriceBadge
+              isPricingLoading={isPricingLoading}
+              pricingResult={pricingResult}
+              routeSummary={routeSummary}
+              numberOfPeople={numberOfPeople}
+            />
+          </div>
+        )}
+
         {/* Content */}
-        <div className="flex-1 px-4">
-          {/* Step 1: Client Type */}
+        <div className="flex-1 px-4 space-y-5">
+
+          {/* ── Step 1: Client Type ── */}
           {step === 1 && (
             <div className="space-y-6">
               <div>
@@ -334,7 +576,7 @@ export default function CreateRequestNew() {
             </div>
           )}
 
-          {/* Step 2: Number of People */}
+          {/* ── Step 2: Number of People ── */}
           {step === 2 && (
             <div className="space-y-8">
               <div>
@@ -345,12 +587,12 @@ export default function CreateRequestNew() {
                   كم عدد الأشخاص في الاشتراك؟
                 </p>
                 <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
-                  💡 نحتاج هذه المعلومة لحساب السعر المناسب لك
+                  💡 في الخطوة التالية ستحدد مواقع كل راكب على الخريطة مباشرة
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-8 py-12">
+              <div className="flex items-center justify-center gap-8 py-8">
                 <button
-                  onClick={() => setNumberOfPeople(Math.max(1, numberOfPeople - 1))}
+                  onClick={() => handleSetNumberOfPeople(numberOfPeople - 1)}
                   className="w-16 h-16 rounded-full text-3xl font-black transition-all active:scale-90"
                   style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border)" }}
                 >
@@ -365,7 +607,7 @@ export default function CreateRequestNew() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setNumberOfPeople(Math.min(MAX_PASSENGERS, numberOfPeople + 1))}
+                  onClick={() => handleSetNumberOfPeople(numberOfPeople + 1)}
                   className="w-16 h-16 rounded-full text-3xl font-black transition-all active:scale-90"
                   style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
@@ -378,276 +620,114 @@ export default function CreateRequestNew() {
             </div>
           )}
 
-          {/* Step 3: Pickup Location */}
+          {/* ── Step 3: Locations (one card per passenger) ── */}
           {step === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <h1 className="text-3xl font-black mb-2" style={{ color: "var(--text)" }}>
-                  موقع الانطلاق
+                  تحديد المواقع
                 </h1>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  ابحثي عن العنوان أو حددي الموقع من الخريطة مباشرة
+                  ابحث عن اسم الحي أو المكان لكل راكب
+                </p>
+                <p className="text-sm font-bold mt-2 p-3 rounded-xl" style={{ color: "var(--text-hint)", backgroundColor: "var(--surface-2)" }}>
+                  💡 اكتب اسم الحي أو المستشفى أو المدرسة في خانة البحث وستظهر لك اقتراحات، ثم اضغط تأكيد الموقع
                 </p>
               </div>
-              <div className="space-y-4">
-                {!homeCoords && (
-                  <div className="space-y-3">
-                    <MapPicker
-                      value={homeCoords}
-                      onChange={(coords) => {
-                        setHomeCoords(coords);
-                        toast({
-                          title: "رائع! 🎉",
-                          description: "تم تحديد موقع الانطلاق بنجاح"
-                        });
-                      }}
-                      placeholder="حدد موقع الانطلاق من الخريطة"
-                      color="var(--brand)"
-                      openButtonLabel="حدد موقع الانطلاق"
-                      openButtonHint="ابحث أو حدد من الخريطة"
-                      collapsible={false}
-                    />
-                  </div>
-                )}
-                {homeCoords && (
-                  <div className="space-y-3">
-                    <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
-                      <div className="flex items-start gap-3">
-                        <Check size={24} style={{ color: "var(--brand)" }} strokeWidth={3} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد بنجاح</p>
-                          <p className="text-lg font-bold" style={{ color: "var(--text)" }}>
-                            {homeCoords.address}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setHomeCoords(null)}
-                      className="w-full p-3 rounded-xl text-sm font-black"
-                      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
-                    >
-                      تغيير الموقع
-                    </button>
-                  </div>
-                )}
-              </div>
+
+              {passengers.map((p, idx) => (
+                <PassengerCard
+                  key={idx}
+                  index={idx + 1}
+                  passenger={p}
+                  onChange={(updated) => updatePassenger(idx, updated)}
+                />
+              ))}
             </div>
           )}
 
-          {/* Step 4: Dropoff Location */}
+          {/* ── Step 4: Shifts + Days ── */}
           {step === 4 && (
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-black mb-2" style={{ color: "var(--text)" }}>
-                  موقع الوصول
+                  الأوقات والأيام
                 </h1>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  ابحثي عن وجهتك أو حدديها من الخريطة
+                  حدد أوقات الذهاب والعودة، ويمكنك إضافة أكثر من وردية
                 </p>
               </div>
-              <div className="space-y-4">
-                {!workCoords && (
-                  <div className="space-y-3">
-                    <MapPicker
-                      value={workCoords}
-                      onChange={(coords) => {
-                        setWorkCoords(coords);
-                        toast({
-                          title: "ممتاز! 🎯",
-                          description: "تم تحديد موقع الوصول بنجاح"
-                        });
-                      }}
-                      placeholder="حدد موقع الوصول من الخريطة"
-                      color="var(--brand)"
-                      initialCenter={homeCoords ? [homeCoords.lat, homeCoords.lng] : undefined}
-                      openButtonLabel="حدد موقع الوصول"
-                      openButtonHint="ابحث أو حدد من الخريطة"
-                      collapsible={false}
-                    />
-                  </div>
-                )}
-                {workCoords && (
-                  <div className="space-y-3">
-                    <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
-                      <div className="flex items-start gap-3">
-                        <Check size={24} style={{ color: "var(--brand)" }} strokeWidth={3} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black mb-1" style={{ color: "var(--brand)" }}>✓ تم التحديد بنجاح</p>
-                          <p className="text-lg font-bold" style={{ color: "var(--text)" }}>
-                            {workCoords.address}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setWorkCoords(null)}
-                      className="w-full p-3 rounded-xl text-sm font-black"
-                      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
-                    >
-                      تغيير الموقع
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Step 5: Go Time */}
-          {step === 5 && (
-            <div className="space-y-8">
-              <div>
-                <h1 className="text-3xl font-black mb-2" style={{ color: "var(--text)" }}>
-                  وقت الذهاب
-                </h1>
-                <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  متى تحتاج التوصيل في الصباح؟
-                </p>
-                <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
-                  ⏰ سيحاول السائق التواجد قبل الوقت المحدد بـ 5-10 دقائق
-                </p>
-              </div>
-              <div className="flex items-center justify-center gap-4 py-12">
-                <Clock size={32} style={{ color: "var(--brand)" }} />
-                <Input
-                  type="time"
-                  value={goTime}
-                  onChange={(e) => setGoTime(e.target.value)}
-                  className="text-center text-4xl font-black p-8 rounded-2xl"
-                  style={{
-                    backgroundColor: "var(--surface)",
-                    border: "2px solid var(--brand)",
-                    color: "var(--brand)",
-                    minHeight: "120px"
-                  }}
-                  dir="ltr"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Step 6: Return */}
-          {step === 6 && (
-            <div className="space-y-8">
-              <div>
-                <h1 className="text-3xl font-black mb-2" style={{ color: "var(--text)" }}>
-                  هل يوجد عودة؟
-                </h1>
-                <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  هل تحتاج توصيل عودة في المساء؟
-                </p>
-              </div>
-              <div className="space-y-4">
-                <button
-                  onClick={() => {
-                    if (hasReturn) {
-                      setHasReturn(false);
-                      setReturnTime("");
-                    } else {
-                      setHasReturn(true);
-                    }
-                  }}
-                  className="w-full p-6 rounded-2xl text-xl font-black transition-all active:scale-[0.98]"
-                  style={
-                    hasReturn
-                      ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                      : { backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }
-                  }
-                >
-                  {hasReturn && <Check size={24} className="inline-block ml-2" />}
-                  نعم، يوجد عودة
-                </button>
-
-                {/* Show time picker when hasReturn is true */}
-                {hasReturn && (
-                  <div className="p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-4 duration-300"
-                    style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}
-                  >
-                    <p className="text-base font-bold" style={{ color: "var(--text)" }}>
-                      حدد وقت العودة:
-                    </p>
-                    <div className="flex items-center justify-center gap-4">
-                      <Clock size={32} style={{ color: "var(--brand)" }} />
-                      <Input
-                        type="time"
-                        value={returnTime}
-                        onChange={(e) => setReturnTime(e.target.value)}
-                        className="text-center text-3xl font-black p-6 rounded-2xl"
-                        style={{
-                          backgroundColor: "var(--surface)",
-                          border: "2px solid var(--brand)",
-                          color: "var(--brand)",
-                          minHeight: "100px"
-                        }}
-                        dir="ltr"
-                        placeholder="وقت العودة"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => {
-                    setHasReturn(false);
-                    setReturnTime("");
-                  }}
-                  className="w-full p-6 rounded-2xl text-xl font-black transition-all active:scale-[0.98]"
-                  style={
-                    hasReturn === false
-                      ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                      : { backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }
-                  }
-                >
-                  {hasReturn === false && <Check size={24} className="inline-block ml-2" />}
-                  لا، ذهاب فقط
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 7: Days */}
-          {step === 7 && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-black mb-2" style={{ color: "var(--text)" }}>
-                  أيام العمل
-                </h1>
-                <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  اختر الأيام التي تحتاج فيها التوصيل
-                </p>
-                <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
-                  📅 يمكنك اختيار أي عدد من الأيام حسب احتياجك
-                </p>
-              </div>
+              {/* Shifts */}
               <div className="space-y-3">
-                {DAYS.map((day) => (
-                  <button
-                    key={day.key}
-                    onClick={() => toggleDay(day.key)}
-                    className="w-full flex items-center justify-between p-5 rounded-2xl transition-all active:scale-[0.98]"
-                    style={
-                      selectedDays.includes(day.key)
-                        ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                        : { backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+                    <Clock size={14} style={{ color: "var(--brand)" }} /> الورديات / الأوقات
+                  </label>
+                  <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
+                    {shifts.length} / {MAX_SHIFTS}
+                  </span>
+                </div>
+
+                {shifts.map((shift, idx) => (
+                  <ShiftCard
+                    key={idx}
+                    index={idx}
+                    shift={shift}
+                    onChange={(updated) =>
+                      setShifts((prev) => prev.map((s, i) => (i === idx ? updated : s)))
                     }
-                  >
-                    <div className="flex items-center gap-3">
-                      <Calendar size={20} />
-                      <span className="text-lg font-black">{day.label}</span>
-                    </div>
-                    {selectedDays.includes(day.key) && <Check size={24} strokeWidth={3} />}
-                  </button>
+                    onRemove={
+                      shifts.length > 1
+                        ? () => setShifts((prev) => prev.filter((_, i) => i !== idx))
+                        : undefined
+                    }
+                  />
                 ))}
+
+                {shifts.length < MAX_SHIFTS && (
+                  <button
+                    onClick={() => setShifts((prev) => [...prev, { goTime: "", returnTime: "" }])}
+                    className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-dashed text-sm font-black transition-all active:scale-[0.98]"
+                    style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+                  >
+                    <Plus size={16} /> إضافة وردية أخرى
+                  </button>
+                )}
               </div>
-              <p className="text-center text-sm font-bold" style={{ color: "var(--text-muted)" }}>
-                {selectedDays.length} {selectedDays.length === 1 ? "يوم" : "أيام"} في الأسبوع
-              </p>
+
+              {/* Days */}
+              <div className="space-y-3">
+                <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+                  <Calendar size={14} style={{ color: "var(--brand)" }} /> أيام العمل
+                </label>
+                <div className="space-y-2">
+                  {DAYS.map((day) => (
+                    <button
+                      key={day.key}
+                      onClick={() => toggleDay(day.key)}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98]"
+                      style={
+                        selectedDays.includes(day.key)
+                          ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                          : { backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }
+                      }
+                    >
+                      <span className="text-base font-black">{day.label}</span>
+                      {selectedDays.includes(day.key) && <Check size={20} strokeWidth={3} />}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-center text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+                  {selectedDays.length} {selectedDays.length === 1 ? "يوم" : "أيام"} في الأسبوع
+                </p>
+              </div>
             </div>
           )}
 
-          {/* Step 8: Summary */}
-          {step === 8 && (
-            <div className="space-y-6">
+          {/* ── Step 5: Summary ── */}
+          {step === 5 && (
+            <div className="space-y-5">
               <div>
                 <h1 className="text-3xl font-black mb-2" style={{ color: "var(--text)" }}>
                   🎉 تقريباً انتهينا!
@@ -655,132 +735,117 @@ export default function CreateRequestNew() {
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                   راجع تفاصيل طلبك قبل الإرسال
                 </p>
-                <p className="text-sm font-bold mt-2" style={{ color: "var(--text-hint)" }}>
-                  💡 يمكنك التعديل على أي معلومة بالضغط على أيقونة القلم
-                </p>
               </div>
-              <div className="space-y-3">
-                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>نوع الاشتراك</p>
-                    <p className="text-lg font-black" style={{ color: "var(--text)" }}>
+
+              {/* Type + people */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl flex items-start justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div>
+                    <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>نوع الاشتراك</p>
+                    <p className="text-base font-black" style={{ color: "var(--text)" }}>
                       {CLIENT_TYPES.find(t => t.value === clientType)?.label}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setStep(1)}
-                    className="p-2 rounded-xl transition-all active:scale-90"
-                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
-                    aria-label="تعديل نوع الاشتراك"
-                  >
-                    <Edit3 size={18} />
+                  <button onClick={() => setStep(1)} className="p-1.5 rounded-lg" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                    <Edit3 size={14} />
                   </button>
                 </div>
-                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>عدد الأشخاص</p>
-                    <p className="text-lg font-black" style={{ color: "var(--text)" }}>{numberOfPeople}</p>
-                  </div>
-                  <button
-                    onClick={() => setStep(2)}
-                    className="p-2 rounded-xl transition-all active:scale-90"
-                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
-                    aria-label="تعديل عدد الأشخاص"
-                  >
-                    <Edit3 size={18} />
-                  </button>
-                </div>
-                <div className="p-5 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>المواقع</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setStep(3)}
-                        className="p-2 rounded-xl transition-all active:scale-90"
-                        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
-                        aria-label="تعديل موقع الانطلاق"
-                      >
-                        <Edit3 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text)" }}>من: {homeCoords?.address}</p>
-                  <p className="text-sm font-bold" style={{ color: "var(--text)" }}>إلى: {workCoords?.address}</p>
-                </div>
-                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>الأوقات</p>
-                    <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
-                      الذهاب: {goTime} {returnTime && `• العودة: ${returnTime}`}
+                <div className="p-4 rounded-2xl flex items-start justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div>
+                    <p className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>عدد الأشخاص</p>
+                    <p className="text-base font-black flex items-center gap-1" style={{ color: "var(--text)" }}>
+                      <Users size={14} /> {numberOfPeople}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setStep(5)}
-                    className="p-2 rounded-xl transition-all active:scale-90"
-                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
-                    aria-label="تعديل الأوقات"
-                  >
-                    <Edit3 size={18} />
+                  <button onClick={() => setStep(2)} className="p-1.5 rounded-lg" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                    <Edit3 size={14} />
                   </button>
                 </div>
-                <div className="p-5 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>أيام العمل</p>
-                    <p className="text-sm font-bold" style={{ color: "var(--text)" }}>{selectedDays.length} أيام في الأسبوع</p>
-                  </div>
-                  <button
-                    onClick={() => setStep(7)}
-                    className="p-2 rounded-xl transition-all active:scale-90"
-                    style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}
-                    aria-label="تعديل أيام العمل"
-                  >
-                    <Edit3 size={18} />
-                  </button>
-                </div>
-                {isPricingLoading && (
-                  <div className="p-6 rounded-2xl text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                    <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                      ⏳ جاري حساب السعر...
-                    </p>
-                  </div>
-                )}
-                {pricingResult && !pricingResult.needsAdminReview && (
-                  <div className="p-6 rounded-2xl space-y-3" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
-                    <div>
-                      <p className="text-sm font-bold mb-2" style={{ color: "var(--text-muted)" }}>السعر الشهري</p>
-                      <p className="text-4xl font-black" style={{ color: "var(--brand)" }}>
-                        {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
-                      </p>
-                      <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>
-                        للشخص الواحد شهرياً
-                      </p>
-                    </div>
-                    {routeSummary && (
-                      <div className="flex items-center gap-4 pt-3" style={{ borderTop: "1px solid var(--brand-border)" }}>
-                        <div className="flex-1">
-                          <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>المسافة</p>
-                          <p className="text-lg font-black" style={{ color: "var(--text)" }}>
-                            {routeSummary.distanceKm.toFixed(1)} كم
-                          </p>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>المدة التقريبية</p>
-                          <p className="text-lg font-black" style={{ color: "var(--text)" }}>
-                            {Math.round(routeSummary.durationMinutes)} دقيقة
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {pricingResult && pricingResult.needsAdminReview && (
-                  <div className="p-6 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                    <p className="text-base font-bold text-center" style={{ color: "var(--text)" }}>
-                      سيتم مراجعة السعر من قبل الإدارة
-                    </p>
-                  </div>
-                )}
               </div>
+
+              {/* Locations */}
+              <div className="p-4 rounded-2xl space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-black" style={{ color: "var(--text-muted)" }}>المواقع</p>
+                  <button onClick={() => setStep(3)} className="p-1.5 rounded-lg" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+                {passengers.map((p, idx) => (
+                  <div key={idx} className="space-y-1 py-2" style={{ borderTop: idx > 0 ? "1px solid var(--border-subtle)" : undefined }}>
+                    {numberOfPeople > 1 && (
+                      <p className="text-xs font-black" style={{ color: "var(--text-hint)" }}>الراكب {idx + 1}</p>
+                    )}
+                    <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                      <Home size={12} className="inline-block ml-1" style={{ color: "var(--brand)" }} />
+                      {p.pickupCoords?.address}
+                    </p>
+                    <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                      <Briefcase size={12} className="inline-block ml-1" style={{ color: "#F59E0B" }} />
+                      {p.destCoords?.address}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Shifts */}
+              <div className="p-4 rounded-2xl space-y-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-black" style={{ color: "var(--text-muted)" }}>الأوقات والأيام</p>
+                  <button onClick={() => setStep(4)} className="p-1.5 rounded-lg" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+                {buildShiftsPayload(shifts).map((s, idx) => (
+                  <p key={idx} className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                    {s.label}: {s.goTime} {s.returnTime ? `← ${s.returnTime}` : ""}
+                  </p>
+                ))}
+                <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+                  📅 {selectedDays.length} أيام في الأسبوع
+                </p>
+              </div>
+
+              {/* Pricing */}
+              {isPricingLoading && (
+                <div className="p-5 rounded-2xl flex items-center gap-3" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <Loader2 size={20} className="animate-spin shrink-0" style={{ color: "var(--brand)" }} />
+                  <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>جاري حساب السعر...</p>
+                </div>
+              )}
+              {pricingResult && !pricingResult.needsAdminReview && (
+                <div className="p-6 rounded-2xl space-y-3" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
+                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>السعر الشهري</p>
+                  <p className="text-4xl font-black" style={{ color: "var(--brand)" }}>
+                    {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
+                    <span className="text-base font-bold mr-2" style={{ color: "var(--text-hint)" }}>/ شهر للشخص</span>
+                  </p>
+                  {numberOfPeople > 1 && (
+                    <p className="text-lg font-black" style={{ color: "var(--text-sub)" }}>
+                      الإجمالي: {pricingResult.price.toLocaleString("ar-SA")} ر.س
+                    </p>
+                  )}
+                  {routeSummary && (
+                    <div className="flex items-center gap-4 pt-3" style={{ borderTop: "1px solid var(--brand-border)" }}>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>المسافة</p>
+                        <p className="text-lg font-black" style={{ color: "var(--text)" }}>{routeSummary.distanceKm.toFixed(1)} كم</p>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>المدة التقريبية</p>
+                        <p className="text-lg font-black" style={{ color: "var(--text)" }}>{Math.round(routeSummary.durationMinutes)} دقيقة</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {pricingResult?.needsAdminReview && (
+                <div className="p-5 rounded-2xl text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <p className="text-base font-bold" style={{ color: "var(--text)" }}>
+                    سيتم مراجعة السعر من قبل الإدارة وإبلاغك
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -789,8 +854,8 @@ export default function CreateRequestNew() {
         <div
           className="fixed bottom-0 inset-x-0 p-4 z-50"
           style={{
-            background: "linear-gradient(180deg, transparent 0%, var(--bg) 20%)",
-            paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)"
+            background: "linear-gradient(180deg, transparent 0%, var(--bg) 25%)",
+            paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
           }}
         >
           <button
@@ -801,19 +866,13 @@ export default function CreateRequestNew() {
               backgroundColor: "var(--brand)",
               color: "var(--brand-fg)",
               boxShadow: "var(--brand-shadow)",
-              minHeight: "64px"
+              minHeight: "64px",
             }}
           >
-            {step === 8 ? (
-              createRequest.isPending ? (
-                "جاري الإرسال..."
-              ) : (
-                <>
-                  <CheckCircle2 size={24} /> إرسال الطلب
-                </>
-              )
+            {step === TOTAL_STEPS ? (
+              createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={24} /> إرسال الطلب</>
             ) : (
-              "التالي"
+              "التالي →"
             )}
           </button>
         </div>
@@ -822,7 +881,7 @@ export default function CreateRequestNew() {
         {showConfirmDialog && (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+            style={{ backgroundColor: "rgba(0,0,0,0.75)" }}
             onClick={() => setShowConfirmDialog(false)}
           >
             <div
@@ -832,37 +891,25 @@ export default function CreateRequestNew() {
             >
               <div className="text-center space-y-2">
                 <div className="text-5xl mb-4">✅</div>
-                <h2 className="text-2xl font-black" style={{ color: "var(--text)" }}>
-                  هل أنت متأكد؟
-                </h2>
+                <h2 className="text-2xl font-black" style={{ color: "var(--text)" }}>هل أنت متأكد؟</h2>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  سيتم إرسال طلبك للمراجعة. يمكنك التعديل عليه لاحقاً إذا احتجت.
+                  سيتم إرسال طلبك للمراجعة. يمكنك التعديل عليه لاحقاً.
                 </p>
               </div>
               <div className="space-y-3">
                 <button
-                  onClick={() => {
-                    setShowConfirmDialog(false);
-                    handleSubmit();
-                  }}
+                  onClick={() => { setShowConfirmDialog(false); handleSubmit(); }}
                   disabled={createRequest.isPending}
-                  className="w-full rounded-2xl p-5 text-xl font-black flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
-                  style={{
-                    backgroundColor: "var(--brand)",
-                    color: "var(--brand-fg)"
-                  }}
+                  className="w-full rounded-2xl p-5 text-xl font-black flex items-center justify-center gap-3"
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
                   <CheckCircle2 size={24} />
                   {createRequest.isPending ? "جاري الإرسال..." : "نعم، أرسل الطلب"}
                 </button>
                 <button
                   onClick={() => setShowConfirmDialog(false)}
-                  className="w-full rounded-2xl p-4 text-lg font-black transition-all active:scale-[0.98]"
-                  style={{
-                    backgroundColor: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text-sub)"
-                  }}
+                  className="w-full rounded-2xl p-4 text-lg font-black"
+                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-sub)" }}
                 >
                   مراجعة البيانات
                 </button>
