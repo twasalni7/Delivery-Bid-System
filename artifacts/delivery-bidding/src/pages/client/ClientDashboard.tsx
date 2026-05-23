@@ -5,7 +5,7 @@ import { Layout } from "@/components/layout";
 import { getStatusLabel } from "@/lib/status-utils";
 import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Archive, Bell, Plus } from "lucide-react";
+import { Archive, Plus } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -62,71 +62,43 @@ export default function ClientDashboard() {
   });
 
   const requests = (Array.isArray(data) ? data : []).filter((req) => !hasArchivedTimestamp(req));
-  const displayName = user?.name?.trim() || "عميل";
-  const firstName = displayName.split(" ")[0] || displayName;
 
   return (
     <Layout role="client">
       <div dir="rtl" className="space-y-5">
         <section
-          className="rounded-[2rem] p-5"
-          style={{
-            background: "linear-gradient(160deg, rgba(21,27,45,0.92) 0%, rgba(10,14,26,0.98) 100%)",
-            border: "1px solid var(--border-subtle)",
-            boxShadow: "var(--shadow-lg)",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>مرحباً بك</p>
-                <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>{firstName}</h1>
-              </div>
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-base font-black"
-                style={{
-                  backgroundColor: "var(--brand-subtle)",
-                  color: "var(--brand)",
-                  border: "1px solid var(--brand-border)",
-                  boxShadow: "var(--shadow-md)",
-                }}
-              >
-                {displayName.charAt(0)}
-              </div>
-            </div>
-            <Link
-              href="/client/notifications"
-              className="touch-compact w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)", color: "var(--text-sub)" }}
-              aria-label="الإشعارات"
-            >
-              <Bell size={17} />
-            </Link>
-          </div>
-        </section>
-
-        <section
-          className="rounded-[2.5rem] p-8 space-y-5"
+          className="rounded-[2rem] p-7 space-y-5"
           aria-label="قسم إنشاء طلب توصيل جديد"
           style={{
-            background: "linear-gradient(145deg, rgba(0,230,118,0.22) 0%, rgba(21,27,45,0.92) 55%, rgba(10,14,26,0.98) 100%)",
+            background: "linear-gradient(135deg, #E0F7EE 0%, #F0FDF4 50%, #FFFFFF 100%)",
             color: "var(--text)",
-            border: "1px solid var(--brand-border)",
-            boxShadow: "var(--shadow-xl)",
+            border: "1.5px solid var(--brand-border)",
+            boxShadow: "0 8px 20px rgba(0, 230, 118, 0.15)",
           }}
         >
           <div className="space-y-2">
-            <h2 className="text-4xl font-black leading-tight">طلب اشتراك جديد</h2>
-            <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>حدد تفاصيل اشتراكك بخطوات بسيطة</p>
+            <h2 className="text-3xl sm:text-4xl font-black leading-tight" style={{ color: "var(--text)" }}>
+              طلب اشتراك جديد
+            </h2>
+            <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
+              حدد تفاصيل اشتراكك بخطوات بسيطة
+            </p>
           </div>
           <Link
             href="/client/request/new"
-            className="w-full rounded-[1.5rem] px-6 py-5 flex items-center justify-center gap-3 text-lg font-black transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)", minHeight: "64px" }}
+            className="w-full rounded-[1.5rem] px-6 py-5 flex items-center justify-center gap-3 text-base sm:text-lg font-black transition-transform active:scale-[0.98]"
+            style={{
+              backgroundColor: "var(--brand)",
+              color: "var(--brand-fg)",
+              boxShadow: "0 4px 14px rgba(0, 230, 118, 0.3)",
+              minHeight: "64px"
+            }}
           >
             <Plus size={24} strokeWidth={3} /> ابدأ الآن
           </Link>
-          <p className="text-sm font-bold text-center" style={{ color: "var(--text-hint)" }}>💳 الدفع آخر الشهر - بدون دفع مقدم</p>
+          <p className="text-sm font-bold text-center" style={{ color: "var(--text-hint)" }}>
+            💳 الدفع آخر الشهر - بدون دفع مقدم
+          </p>
         </section>
 
 

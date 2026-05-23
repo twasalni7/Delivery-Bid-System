@@ -50,16 +50,19 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
 type SearchResult = {
   id: number | string;
   address: string;
+  shortAddress?: string;
   lat: number;
   lng: number;
+  type?: string;
+  importance?: number;
 };
 
 // Eastern Region bounding box: SW(25.5, 49.4) → NE(27.6, 50.7)
 const EASTERN_REGION_VIEWBOX = "49.4,25.5,50.7,27.6";
 // Default center: Dammam, Eastern Region
 const EASTERN_REGION_CENTER: [number, number] = [26.4307, 50.1037];
-// Debounce delays
-const SEARCH_DEBOUNCE_MS = 300;
+// Debounce delays - reduced for faster response
+const SEARCH_DEBOUNCE_MS = 250;
 const MOVE_END_DEBOUNCE_MS = 350;
 // Increased from 150ms to give slower devices / Leaflet animations time to
 // complete before we allow the moveend geocoding trigger to fire.
@@ -167,7 +170,7 @@ export default function MapPicker({
 
     setSearching(true);
     try {
-      const url = `${API}/api/maps/search?q=${encodeURIComponent(query)}&limit=6&viewbox=${EASTERN_REGION_VIEWBOX}`;
+      const url = `${API}/api/maps/search?q=${encodeURIComponent(query)}&limit=8&viewbox=${EASTERN_REGION_VIEWBOX}&bounded=1`;
       const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) return;
       const results = await res.json() as SearchResult[];
@@ -513,10 +516,19 @@ export default function MapPicker({
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
               dir="rtl"
               role="option"
-              aria-label={r.address}
+              aria-label={r.shortAddress || r.address}
             >
               <MapPin size={18} className="shrink-0 mt-0.5" style={{ color }} />
-              <span className="text-base font-bold line-clamp-2">{r.address}</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-base font-bold line-clamp-1 block">
+                  {r.shortAddress || r.address}
+                </span>
+                {r.shortAddress && r.shortAddress !== r.address && (
+                  <span className="text-xs font-medium opacity-70 line-clamp-1 block mt-0.5">
+                    {r.address}
+                  </span>
+                )}
+              </div>
             </button>
           ))}
         </div>

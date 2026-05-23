@@ -21,7 +21,10 @@ router.get("/search", requireAuth(), async (req, res) => {
   }
 
   try {
-    res.json(await searchPlaces(q, limit));
+    const viewbox = req.query["viewbox"] ? String(req.query["viewbox"]) : undefined;
+    const bounded = req.query["bounded"] === "1" || req.query["bounded"] === "true";
+
+    res.json(await searchPlaces(q, limit, { viewbox, bounded }));
   } catch (err) {
     logger.error({ err, query: q }, "maps GET /search error");
     res.status(500).json({ error: SERVER_ERROR_MSG });
