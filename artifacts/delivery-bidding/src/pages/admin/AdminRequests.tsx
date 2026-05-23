@@ -248,8 +248,8 @@ export default function AdminRequests() {
                           <span style={{ color: "var(--text-hint)" }}>←</span>
                           <span style={{ color: "var(--text)" }}>{req.workLocation}</span>
                         </div>
-                        {req.additionalLocations?.map((loc, i) => (
-                          <p key={i} className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
+                        {req.additionalLocations?.map((loc) => (
+                          <p key={`${loc.type}-${loc.address}`} className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                         ))}
                         {req.client && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>👤 {req.client.name} — {req.client.mobile}</p>}
                         {req.phone && <p className="text-xs mt-1.5 font-bold" dir="ltr" style={{ color: "var(--text-muted)" }}>📞 {req.phone}</p>}
@@ -258,8 +258,8 @@ export default function AdminRequests() {
                       <td className="px-5 py-4">
                         {req.shifts && req.shifts.length > 0 ? (
                           <div className="space-y-0.5">
-                            {req.shifts.map((s, i) => (
-                              <div key={i} className="flex items-center gap-1 text-xs" dir="ltr">
+                            {req.shifts.map((s) => (
+                              <div key={`${s.label ?? "shift"}-${s.goTime}-${s.returnTime ?? "none"}`} className="flex items-center gap-1 text-xs" dir="ltr">
                                 <Clock size={11} style={{ color: "var(--text-hint)" }} />
                                 <span className="font-medium">{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}</span>
                                 {s.label && <span style={{ color: "var(--text-hint)" }}>({s.label})</span>}
@@ -351,15 +351,15 @@ export default function AdminRequests() {
                     </div>
                   </div>
                   <div className="px-4 pb-4 space-y-2">
-                    {req.additionalLocations?.map((loc, i) => (
-                      <p key={i} className="text-xs" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
+                    {req.additionalLocations?.map((loc) => (
+                      <p key={`${loc.type}-${loc.address}`} className="text-xs" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                     ))}
                     <div className="grid grid-cols-1 gap-2 rounded-xl p-3 text-sm" style={{ backgroundColor: "var(--surface-2)" }}>
                       {req.shifts && req.shifts.length > 0 ? (
                         <span className="flex items-center gap-1 flex-wrap" dir="ltr">
                           <Clock size={13} />
                           {req.shifts.map((s, i) => (
-                            <span key={i}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < req.shifts.length - 1 ? " |" : ""}</span>
+                            <span key={`${s.label ?? "shift"}-${s.goTime}-${s.returnTime ?? "none"}`}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < req.shifts.length - 1 ? " |" : ""}</span>
                           ))}
                         </span>
                       ) : (
