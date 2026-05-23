@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Layout } from "@/components/layout";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { toEnglishDigits } from "@/lib/time-utils";
 
 type ArchivedRequest = { id: number; homeLocation: string; workLocation: string; status: string; archivedAt: string | null };
 
@@ -25,8 +26,8 @@ export default function ClientArchive() {
         <div
           className="rounded-[1.75rem] p-5"
           style={{
-            background: "linear-gradient(150deg, rgba(27,29,39,0.95) 0%, rgba(15,17,24,0.98) 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "var(--surface)",
+            border: "1px solid var(--border)",
           }}
         >
           <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>الأرشيف</h1>
@@ -36,13 +37,13 @@ export default function ClientArchive() {
           {items.map((item) => (
             <Link key={item.id} href={`/client/request/${item.id}`}>
               <div
-                className="rounded-[1.5rem] p-4 cursor-pointer"
+                className="rounded-[1.5rem] p-4 cursor-pointer transition-all hover:shadow-md"
                 style={{
-                  background: "linear-gradient(150deg, rgba(23,24,31,0.95) 0%, rgba(16,17,23,0.98) 100%)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  backgroundColor: "var(--surface)",
+                  border: "1px solid var(--border)",
                 }}
               >
-                <p className="font-black" style={{ color: "var(--text)" }}>طلب #{item.id}</p>
+                <p className="font-black" style={{ color: "var(--text)" }}>طلب #{toEnglishDigits(item.id)}</p>
                 <p className="text-sm font-bold mt-1" style={{ color: "var(--text-sub)" }}>{item.homeLocation} ← {item.workLocation}</p>
                 <p className="text-xs font-black mt-2" style={{ color: "var(--brand)" }}>{item.status}</p>
               </div>

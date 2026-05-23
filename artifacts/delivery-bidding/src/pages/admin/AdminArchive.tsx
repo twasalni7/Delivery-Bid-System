@@ -4,6 +4,7 @@ import { Layout } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
+import { toEnglishDigits } from "@/lib/time-utils";
 
 type ArchivedRequest = {
   id: number;
@@ -42,12 +43,12 @@ export default function AdminArchive() {
       <div dir="rtl" className="space-y-4">
         <div>
           <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>أرشيف الطلبات</h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>الطلبات المكتملة أو الملغاة المؤرشفة تلقائياً</p>
+          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>الطلبات المكتملة أو الملغاة المؤرشفة تلقائياً</p>
         </div>
 
         {loading ? (
-          <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>جاري التحميل...</p>
+          <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>جاري التحميل...</p>
           </div>
         ) : error ? (
           <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: "var(--status-cancelled-bg)", border: "1px solid var(--status-cancelled-border)" }}>
@@ -66,14 +67,14 @@ export default function AdminArchive() {
           <div className="space-y-3">
             {items.map((item) => (
               <Link key={item.id} href={`/admin/requests/${item.id}`}>
-                <div className="rounded-2xl p-4 cursor-pointer transition-colors hover:bg-opacity-80" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-                  <p className="font-black" style={{ color: "var(--text)" }}>#{item.id} — {item.homeLocation} ← {item.workLocation}</p>
-                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>{item.client?.name ?? "بدون عميل"} • {item.monthlyPrice.toFixed(0)} ر.س</p>
+                <div className="rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <p className="font-black" style={{ color: "var(--text)" }}>#{toEnglishDigits(item.id)} — {item.homeLocation} ← {item.workLocation}</p>
+                  <p className="text-sm font-bold mt-1" style={{ color: "var(--text-muted)" }}>{item.client?.name ?? "بدون عميل"} • {toEnglishDigits(item.monthlyPrice.toFixed(0))} ر.س</p>
                 </div>
               </Link>
             ))}
             {items.length === 0 && (
-              <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+              <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                 <p className="text-4xl mb-3">📦</p>
                 <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>لا توجد طلبات مؤرشفة</p>
               </div>

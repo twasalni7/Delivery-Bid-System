@@ -745,14 +745,32 @@ export default function CreateRequestNew() {
                   </div>
                 )}
                 {pricingResult && !pricingResult.needsAdminReview && (
-                  <div className="p-6 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
-                    <p className="text-sm font-bold mb-2" style={{ color: "var(--text-muted)" }}>السعر الشهري</p>
-                    <p className="text-4xl font-black" style={{ color: "var(--brand)" }}>
-                      {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
-                    </p>
-                    <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>
-                      للشخص الواحد شهرياً
-                    </p>
+                  <div className="p-6 rounded-2xl space-y-3" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
+                    <div>
+                      <p className="text-sm font-bold mb-2" style={{ color: "var(--text-muted)" }}>السعر الشهري</p>
+                      <p className="text-4xl font-black" style={{ color: "var(--brand)" }}>
+                        {pricingResult.pricePerPerson.toLocaleString("ar-SA")} ر.س
+                      </p>
+                      <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>
+                        للشخص الواحد شهرياً
+                      </p>
+                    </div>
+                    {routeSummary && (
+                      <div className="flex items-center gap-4 pt-3" style={{ borderTop: "1px solid var(--brand-border)" }}>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>المسافة</p>
+                          <p className="text-lg font-black" style={{ color: "var(--text)" }}>
+                            {routeSummary.distanceKm.toFixed(1)} كم
+                          </p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>المدة التقريبية</p>
+                          <p className="text-lg font-black" style={{ color: "var(--text)" }}>
+                            {Math.round(routeSummary.durationMinutes)} دقيقة
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {pricingResult && pricingResult.needsAdminReview && (
@@ -815,7 +833,7 @@ export default function CreateRequestNew() {
               <div className="text-center space-y-2">
                 <div className="text-5xl mb-4">✅</div>
                 <h2 className="text-2xl font-black" style={{ color: "var(--text)" }}>
-                  هل أنت متأكدة؟
+                  هل أنت متأكد؟
                 </h2>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
                   سيتم إرسال طلبك للمراجعة. يمكنك التعديل عليه لاحقاً إذا احتجت.

@@ -61,10 +61,10 @@ html.light {
   --surface-4:   #E2E8F0;
 
   /* Text - Dark on light for excellent contrast */
-  --text:        #0F172A;
-  --text-sub:    #334155;
-  --text-muted:  #64748B;
-  --text-hint:   #94A3B8;
+  --text:        #0A0F1A;
+  --text-sub:    #1E293B;
+  --text-muted:  #475569;
+  --text-hint:   #64748B;
 
   /* Borders - Subtle and clean */
   --border:        #E2E8F0;
