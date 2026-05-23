@@ -5,12 +5,11 @@ import { Layout } from "@/components/layout";
 import { getStatusLabel } from "@/lib/status-utils";
 import { hasArchivedTimestamp } from "@/lib/request-archive-utils";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Archive, Bell, MessageCircle, Plus, ShieldCheck, Sparkles, Wallet, LifeBuoy, User, Info } from "lucide-react";
+import { Archive, Bell, Plus } from "lucide-react";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { EnablePushButton } from "@/components/enable-push-button";
 
 type ClientRequest = {
   id: number;
@@ -107,7 +106,7 @@ export default function ClientDashboard() {
         </section>
 
         <section
-          className="rounded-[2rem] p-6 space-y-4"
+          className="rounded-[2.5rem] p-8 space-y-5"
           aria-label="قسم إنشاء طلب توصيل جديد"
           style={{
             background: "linear-gradient(145deg, rgba(0,230,118,0.22) 0%, rgba(21,27,45,0.92) 55%, rgba(10,14,26,0.98) 100%)",
@@ -116,168 +115,21 @@ export default function ClientDashboard() {
             boxShadow: "var(--shadow-xl)",
           }}
         >
-          <h2 className="text-3xl font-black leading-tight">جاهز لطلب توصيل؟</h2>
-          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>حدد تفاصيل مشوارك وسيتم حساب السعر ونشر الطلب للسائقين المناسبين</p>
+          <div className="space-y-2">
+            <h2 className="text-4xl font-black leading-tight">طلب اشتراك جديد</h2>
+            <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>حدد تفاصيل اشتراكك بخطوات بسيطة</p>
+          </div>
           <Link
             href="/client/request/new"
-            className="w-full rounded-2xl px-5 py-4 flex items-center justify-center gap-2 text-base font-black"
-            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)" }}
+            className="w-full rounded-[1.5rem] px-6 py-5 flex items-center justify-center gap-3 text-lg font-black transition-transform active:scale-[0.98]"
+            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)", minHeight: "64px" }}
           >
-            <Plus size={18} /> طلب اشتراك جديد
+            <Plus size={24} strokeWidth={3} /> ابدأ الآن
           </Link>
+          <p className="text-sm font-bold text-center" style={{ color: "var(--text-hint)" }}>💳 الدفع آخر الشهر - بدون دفع مقدم</p>
         </section>
 
-        <section
-          className="rounded-[2rem] p-5 space-y-4"
-          aria-label="معلومات الدفع"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-md)" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
-              style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}
-            >
-              <Wallet size={18} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="font-black text-lg leading-tight" style={{ color: "var(--text)" }}>دفع آمن وشفاف</h3>
-              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>بدون أي دفع مقدم — أسعار واضحة ونهائية</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              { icon: ShieldCheck, title: "بياناتك محمية", sub: "معلومات العميل داخل التطبيق" },
-              { icon: Wallet, title: "لا يوجد دفع مقدم", sub: "ابدأ الآن وادفع لاحقاً" },
-              { icon: Sparkles, title: "أسعار نهائية وواضحة", sub: "سعر محسوب قبل نشر الطلب" },
-              { icon: MessageCircle, title: "محادثة داخل التطبيق", sub: "تواصل مباشر مع السائق" },
-            ].map(({ icon: Icon, title, sub }) => (
-              <div
-                key={title}
-                className="rounded-2xl p-4 flex items-start gap-3"
-                style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
-              >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-                  <Icon size={16} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-black" style={{ color: "var(--text)" }}>{title}</p>
-                  <p className="text-xs font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>{sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-2xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: "rgba(0,230,118,0.10)", border: "1px solid var(--brand-border)" }}>
-            <Info size={15} style={{ color: "var(--brand)" }} />
-            <p className="text-xs font-black" style={{ color: "var(--text-sub)" }}>الدفع آخر الشهر للسائق مباشرة — بدون وسطاء.</p>
-          </div>
-        </section>
-
-        <section
-          className="rounded-[2rem] p-5 space-y-3"
-          aria-label="إجراءات سريعة"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-md)" }}
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-black" style={{ color: "var(--text)" }}>إجراءات سريعة</h3>
-            <Link href="/client/onboarding" className="text-xs font-black" style={{ color: "var(--brand)" }}>تعرف على التطبيق</Link>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { href: "/client/request/new", label: "طلب جديد", icon: Plus },
-              { href: "/client/notifications", label: "الإشعارات", icon: Bell },
-              { href: "/client/profile", label: "حسابي", icon: User },
-              { href: "/client/support", label: "الدعم", icon: LifeBuoy },
-            ].map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="rounded-[1.5rem] p-4 flex items-center justify-between gap-3 transition-transform active:scale-[0.99]"
-                style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-                    <Icon size={18} />
-                  </div>
-                  <span className="font-black text-sm truncate" style={{ color: "var(--text)" }}>{label}</span>
-                </div>
-                <span className="text-xs font-black" style={{ color: "var(--text-hint)" }}>←</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section
-          className="rounded-[2rem] p-4 grid grid-cols-4 gap-2"
-          style={{
-            backgroundColor: "var(--surface)",
-            border: "1px solid var(--border-subtle)",
-          }}
-        >
-          {[
-            { icon: Wallet, title: "سعر واضح" },
-            { icon: Sparkles, title: "اختيار الأنسب" },
-            { icon: MessageCircle, title: "تواصل مباشر" },
-            { icon: ShieldCheck, title: "دفع آمن" },
-          ].map((feature) => {
-            const Icon = feature.icon;
-            return (
-              <div key={feature.title} className="rounded-2xl p-3 text-center space-y-2" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
-                <div className="w-9 h-9 mx-auto rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
-                  <Icon size={15} />
-                </div>
-                <p className="text-xs font-black leading-tight" style={{ color: "var(--text-sub)" }}>{feature.title}</p>
-              </div>
-            );
-          })}
-        </section>
-
-        <section
-          className="rounded-[2rem] p-5 space-y-4"
-          style={{
-            backgroundColor: "var(--surface)",
-            border: "1px solid var(--border-subtle)",
-          }}
-        >
-          <h3 className="text-2xl font-black" style={{ color: "var(--text)" }}>كيف يعمل النظام؟</h3>
-          <div className="space-y-2">
-            {[
-              "أنشئ طلب التوصيل وحدد التفاصيل",
-              "يتم احتساب السعر تلقائياً قبل الإرسال",
-              "يتم نشر الطلب للسائقين المناسبين",
-              "السائقون المهتمون يرسلون قبولهم",
-              "اختر السائق المناسب لك",
-              "تواصل معه مباشرة عبر المحادثة أو واتساب",
-            ].map((step, idx) => (
-              <div key={step} className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
-                <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>{step}</p>
-                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}>
-                  {idx + 1}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section
-          className="rounded-[2rem] p-5 space-y-4"
-          style={{
-            backgroundColor: "var(--surface)",
-            border: "1px solid var(--border-subtle)",
-          }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
-              style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", color: "var(--brand)" }}>
-              🔔
-            </div>
-            <div>
-              <h3 className="font-black text-base" style={{ color: "var(--text)" }}>الإشعارات الفورية</h3>
-              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>تلقّ تنبيهات عند وصول عروض جديدة</p>
-            </div>
-          </div>
-          <EnablePushButton />
-        </section>
 
         <section className="space-y-3">
           <div className="flex items-center justify-between">
