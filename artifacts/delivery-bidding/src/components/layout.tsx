@@ -2,43 +2,14 @@ import { Link, useLocation } from "wouter";
 import {
   LogOut, Menu, Home, FileText, User, LifeBuoy, Settings,
   Users, Car, BarChart2, ClipboardList, DollarSign, Activity,
-  MapPin, Search, ChevronRight, Sun, Moon, Bell, Database, MoreHorizontal,
+  MapPin, Search, ChevronRight, Bell, Database, MoreHorizontal,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useTheme, Theme } from "@/contexts/theme-context";
 import { useState } from "react";
 import { NotificationsBell } from "@/components/notifications-bell";
 
 type NavLink = { href: string; label: string; icon: typeof Home; badge?: number };
 type NavGroup = { label: string; links: NavLink[] };
-
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const options: { value: Theme; icon: typeof Sun; label: string }[] = [
-    { value: "light", icon: Sun, label: "الوضع الفاتح" },
-    { value: "dark", icon: Moon, label: "الوضع الداكن" },
-  ];
-  return (
-    <div className="flex items-center gap-2 p-2 rounded-2xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
-      {options.map(({ value, icon: Icon, label }) => (
-        <button
-          key={value}
-          onClick={() => setTheme(value)}
-          aria-label={label}
-          className="touch-compact px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 font-black text-xs sm:text-sm"
-          style={
-            theme === value
-              ? { background: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)", minHeight: "auto" }
-              : { color: "var(--text-muted)", minHeight: "auto", border: "1px solid var(--border-subtle)", backgroundColor: "var(--surface)" }
-          }
-        >
-          <Icon size={15} />
-          <span>{label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 /* ══════════════════════════════════════════════
    ADMIN SIDEBAR LAYOUT
@@ -152,9 +123,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
         ))}
       </nav>
 
-      {/* Theme toggle + user */}
-      <div className="px-3 py-3 space-y-2" style={{ borderTop: "1px solid var(--sidebar-border)" }}>
-        <ThemeToggle />
+      {/* User info */}
+      <div className="px-3 py-3" style={{ borderTop: "1px solid var(--sidebar-border)" }}>
         {user && (
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl" style={{ backgroundColor: "var(--surface-2)" }}>
             <div
@@ -343,9 +313,6 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
           {/* Right side actions */}
           {user && (
             <div className="flex items-center gap-1.5">
-              <div>
-                <ThemeToggle />
-              </div>
               <div className="rounded-xl p-0.5" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
                 <NotificationsBell />
               </div>

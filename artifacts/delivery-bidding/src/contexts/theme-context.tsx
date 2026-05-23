@@ -7,7 +7,8 @@ const STORAGE_KEY = "tw_theme";
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
   root.classList.remove("light", "dark", "creamy");
-  root.classList.add(theme);
+  // Always force light mode
+  root.classList.add("light");
 }
 
 interface ThemeContextValue {
@@ -21,21 +22,16 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-      if (stored === "dark" || stored === "light") return stored;
-      if (stored === "creamy") return "dark";
-    } catch {}
-    return "light";
-  });
+  // Always use light theme
+  const [theme] = useState<Theme>("light");
 
   useEffect(() => {
     applyTheme(theme);
-    try { localStorage.setItem(STORAGE_KEY, theme); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, "light"); } catch {}
   }, [theme]);
 
-  const setTheme = (t: Theme) => setThemeState(t);
+  // setTheme does nothing, theme is always light
+  const setTheme = () => {};
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
