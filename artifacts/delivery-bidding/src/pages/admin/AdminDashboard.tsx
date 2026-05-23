@@ -63,6 +63,17 @@ const STAT_CARDS = [
   { key: "activeRequests", label: "نشط", bg: "var(--status-active-text)" },
 ] as const;
 
+const DASHBOARD_SHORTCUTS = [
+  { href: "/admin/requests", icon: "📋", label: "إدارة الطلبات", hint: "بحث، متابعة، وحذف", group: "أساسي" },
+  { href: "/admin/operations", icon: "🎛️", label: "مركز التحكم", hint: "الصحة والتنبيهات", group: "مراقبة" },
+  { href: "/admin/notifications-monitor", icon: "🔔", label: "مراقبة الإشعارات", hint: "تتبّع الإرسال", group: "مراقبة" },
+  { href: "/admin/compose", icon: "✉️", label: "إرسال إشعار", hint: "رسائل موجهة", group: "تشغيل" },
+  { href: "/admin/drivers", icon: "🚗", label: "السائقون", hint: "الحسابات والأرصدة", group: "أطراف" },
+  { href: "/admin/clients", icon: "👤", label: "العملاء", hint: "بيانات العملاء", group: "أطراف" },
+  { href: "/admin/pricing", icon: "💲", label: "التسعير", hint: "الرسوم والباقات", group: "تشغيل" },
+  { href: "/admin/database", icon: "🗄️", label: "قاعدة البيانات", hint: "مؤشرات النظام", group: "متقدم" },
+] as const;
+
 export default function AdminDashboard() {
   const [selectedMonths, setSelectedMonths] = useState<3 | 6 | 12>(12);
   const [fromDate, setFromDate] = useState("");
@@ -114,11 +125,11 @@ export default function AdminDashboard() {
       <div dir="rtl">
         <AdminPageTabs
           tabs={[
-            { href: "/admin", label: "Dashboard" },
-            { href: "/admin/operations", label: "Operations" },
+            { href: "/admin", label: "لوحة الإدارة" },
+            { href: "/admin/operations", label: "مركز التحكم" },
           ]}
         />
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <div>
             <h1 className="text-2xl font-black">لوحة الإدارة</h1>
             <p className="font-bold text-sm" style={{ color: "var(--text-muted)" }}>نظرة عامة على المنصة والإحصائيات</p>
@@ -137,13 +148,14 @@ export default function AdminDashboard() {
 
         {/* ── إشعارات لوحة التحكم ── */}
         <div
-          className="rounded-3xl p-6 mb-6 transition-all hover:shadow-md"
+          className="rounded-3xl p-5 mb-5 transition-all hover:shadow-md"
           style={{
             backgroundColor: "var(--surface)",
             border: "1.5px solid var(--border)",
           }}
         >
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
               style={{
@@ -157,6 +169,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <EnablePushButton />
+          </div>
         </div>
 
         {stats && (
@@ -176,37 +189,19 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div
-                className="rounded-2xl p-5 transition-all hover:shadow-md"
-                style={{
-                  backgroundColor: "var(--surface)",
-                  border: "1.5px solid var(--border)",
-                }}
-              >
-                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>مكتمل</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <Link href="/admin/archive" className="rounded-2xl p-5 transition-all hover:shadow-md" style={{ backgroundColor: "var(--surface)", border: "1.5px solid var(--border)" }}>
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>مكتمل / أرشيف</p>
                 <p className="text-2xl font-black" style={{ color: "var(--brand)" }}>{stats.completedRequests}</p>
-              </div>
-              <div
-                className="rounded-2xl p-5 transition-all hover:shadow-md"
-                style={{
-                  backgroundColor: "var(--surface)",
-                  border: "1.5px solid var(--border)",
-                }}
-              >
+              </Link>
+              <Link href="/admin/drivers" className="rounded-2xl p-5 transition-all hover:shadow-md" style={{ backgroundColor: "var(--surface)", border: "1.5px solid var(--border)" }}>
                 <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>السائقون</p>
                 <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{stats.totalDrivers}</p>
-              </div>
-              <div
-                className="rounded-2xl p-5 transition-all hover:shadow-md"
-                style={{
-                  backgroundColor: "var(--surface)",
-                  border: "1.5px solid var(--border)",
-                }}
-              >
+              </Link>
+              <Link href="/admin/offers" className="rounded-2xl p-5 transition-all hover:shadow-md" style={{ backgroundColor: "var(--surface)", border: "1.5px solid var(--border)" }}>
                 <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>العروض</p>
                 <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{stats.totalOffers}</p>
-              </div>
+              </Link>
             </div>
           </>
         )}
@@ -300,8 +295,8 @@ export default function AdminDashboard() {
             <button
               onClick={handleApplyCustomRange}
               disabled={!fromDate || !toDate}
-              className="text-xs font-bold px-3 py-1 rounded-lg text-black disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ backgroundColor: "var(--brand)" }}
+              className="text-xs font-bold px-3 py-1 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
             >
               تطبيق
             </button>
@@ -381,51 +376,29 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-          {[
-            { href: "/admin/requests", emoji: "📋", label: "الطلبات" },
-            { href: "/admin/drivers", emoji: "🚗", label: "السائقون" },
-            { href: "/admin/clients", emoji: "👤", label: "العملاء" },
-            { href: "/admin/offers", emoji: "💰", label: "العروض" },
-            { href: "/admin/support", emoji: "🎫", label: "الدعم" },
-            { href: "/admin/settings", emoji: "⚙️", label: "الإعدادات" },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-2xl p-4 flex flex-col items-center gap-2 transition-all active:scale-[0.97]"
-             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}
-            >
-              <span className="text-2xl">{item.emoji}</span>
-              <span className="text-sm font-black">{item.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* ── Advanced Tools ── */}
         <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
-          <p className="text-sm font-black mb-3" style={{ color: "var(--text-muted)" }}>
-            أدوات متقدمة <span aria-hidden="true">🛠</span>
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[
-              { href: "/admin/notifications", emoji: "🔔", label: "مراقبة الإشعارات" },
-              { href: "/admin/activity", emoji: "📜", label: "سجل النشاط" },
-              { href: "/admin/compose", emoji: "✉️", label: "إرسال إشعار" },
-              { href: "/admin/database", emoji: "🗄️", label: "قاعدة البيانات" },
-              { href: "/admin/pricing", emoji: "💲", label: "التسعير" },
-              { href: "/admin/service-areas", emoji: "🗺️", label: "مناطق الخدمة" },
-              { href: "/admin/archive", emoji: "🗃️", label: "الأرشيف" },
-              { href: "/admin/push-debug", emoji: "🔧", label: "تشخيص الإشعارات" },
-            ].map((item) => (
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-sm font-black" style={{ color: "var(--text)" }}>اختصارات الإدارة</p>
+              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>أهم المسارات بدون تكرار الأدوات الثانوية</p>
+            </div>
+            <Link href="/admin/settings" className="text-xs font-bold px-3 py-1.5 rounded-xl btn-ghost">
+              الإعدادات
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
+            {DASHBOARD_SHORTCUTS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-xl p-3 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]"
+                className="rounded-xl p-3 flex items-center gap-3 transition-all active:scale-[0.98]"
                 style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
               >
-                <span className="text-lg">{item.emoji}</span>
-                <span className="text-xs font-bold text-center leading-tight" style={{ color: "var(--text-sub)" }}>{item.label}</span>
+                <span className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: "var(--brand-subtle)" }}>{item.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-black" style={{ color: "var(--text)" }}>{item.label}</span>
+                  <span className="block text-xs font-bold truncate" style={{ color: "var(--text-muted)" }}>{item.group} · {item.hint}</span>
+                </span>
               </Link>
             ))}
           </div>
