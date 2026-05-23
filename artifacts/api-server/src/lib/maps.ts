@@ -6,11 +6,29 @@ const DEFAULT_ORS_API_URL = "https://api.openrouteservice.org/v2";
 const DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org";
 const DEFAULT_LANGUAGE = "ar"; // Arabic language for better local results
 const ROUTE_LANGUAGE = "en"; // OpenRouteService doesn't support 'ar' for directions, using 'en' for route calculations
-const GEO_CACHE_LIMIT = 200;
+const GEO_CACHE_LIMIT = 500; // Increased cache size for better performance
 const geoCache = new Map<string, unknown>();
 const FALLBACK_AVG_SPEED_KPH = 40;
 const ORS_DEFAULT_RADIUS_M = 350;
 const ORS_RETRY_RADIUS_M = 2000;
+
+// Cache for search queries with TTL
+const searchCacheWithTTL = new Map<string, { data: unknown; timestamp: number }>();
+const SEARCH_CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes cache TTL
+
+// Popular Saudi cities and neighborhoods for enhanced search
+const POPULAR_LOCATIONS = [
+  { name: "الدمام", lat: 26.4207, lng: 50.0888, type: "city" },
+  { name: "الخبر", lat: 26.2172, lng: 50.1971, type: "city" },
+  { name: "الظهران", lat: 26.2724, lng: 50.1514, type: "city" },
+  { name: "القطيف", lat: 26.5651, lng: 50.0088, type: "city" },
+  { name: "الجبيل", lat: 27.0047, lng: 49.6255, type: "city" },
+  { name: "الأحساء", lat: 25.3787, lng: 49.5857, type: "city" },
+  { name: "الرياض", lat: 24.7136, lng: 46.6753, type: "city" },
+  { name: "جدة", lat: 21.4858, lng: 39.1925, type: "city" },
+  { name: "مكة", lat: 21.4225, lng: 39.8262, type: "city" },
+  { name: "المدينة المنورة", lat: 24.5247, lng: 39.5692, type: "city" },
+];
 
 export type RoutePoint = {
   lat: number;
@@ -87,16 +105,57 @@ function setCached<T>(key: string, value: T): T {
   return value;
 }
 
+function getCachedWithTTL<T>(key: string): T | null {
+  const cached = searchCacheWithTTL.get(key);
+  if (!cached) return null;
+
+  // Check if cache has expired
+  if (Date.now() - cached.timestamp > SEARCH_CACHE_TTL_MS) {
+    searchCacheWithTTL.delete(key);
+    return null;
+  }
+
+  return cached.data as T;
+}
+
+function setCachedWithTTL<T>(key: string, value: T): T {
+  // Clean up expired entries if cache is getting large
+  if (searchCacheWithTTL.size >= GEO_CACHE_LIMIT) {
+    const now = Date.now();
+    for (const [k, v] of searchCacheWithTTL.entries()) {
+      if (now - v.timestamp > SEARCH_CACHE_TTL_MS) {
+        searchCacheWithTTL.delete(k);
+      }
+    }
+
+    // If still too large, remove oldest entries
+    if (searchCacheWithTTL.size >= GEO_CACHE_LIMIT) {
+      const oldestKey = searchCacheWithTTL.keys().next().value;
+      if (oldestKey) searchCacheWithTTL.delete(oldestKey);
+    }
+  }
+
+  searchCacheWithTTL.set(key, { data: value, timestamp: Date.now() });
+  return value;
+}
+
 function getNominatimUrl(path: string) {
   return `${(process.env["NOMINATIM_API_URL"] ?? DEFAULT_NOMINATIM_URL).replace(/\/+$/, "")}${path}`;
 }
 
-export async function searchPlaces(query: string, limit = 6) {
+export async function searchPlaces(query: string, limit = 6, options?: { viewbox?: string; bounded?: boolean }) {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
-  const cacheKey = `search:${trimmed}:${limit}`;
-  const cached = getCached<unknown[]>(cacheKey);
+
+  const cacheKey = `search:${trimmed}:${limit}:${options?.viewbox ?? ''}:${options?.bounded ?? ''}`;
+  const cached = getCachedWithTTL<unknown[]>(cacheKey);
   if (cached) return cached;
+
+  // Check for popular location matches first for instant results
+  const lowerQuery = trimmed.toLowerCase();
+  const popularMatches = POPULAR_LOCATIONS.filter(loc =>
+    loc.name.includes(trimmed) || loc.name.toLowerCase().includes(lowerQuery)
+  ).slice(0, 3); // Take top 3 popular matches
 
   const url = new URL(getNominatimUrl("/search"));
   url.searchParams.set("q", trimmed);
@@ -105,6 +164,15 @@ export async function searchPlaces(query: string, limit = 6) {
   url.searchParams.set("accept-language", DEFAULT_LANGUAGE);
   url.searchParams.set("addressdetails", "1");
   url.searchParams.set("countrycodes", "sa"); // Limit search to Saudi Arabia for better accuracy
+  url.searchParams.set("dedupe", "1"); // Remove duplicate results
+
+  // Add viewbox for better regional results
+  if (options?.viewbox) {
+    url.searchParams.set("viewbox", options.viewbox);
+    if (options.bounded) {
+      url.searchParams.set("bounded", "1");
+    }
+  }
 
   const response = await fetch(url, {
     headers: {
@@ -117,15 +185,77 @@ export async function searchPlaces(query: string, limit = 6) {
   }
 
   const data = (await response.json()) as Array<Record<string, unknown>>;
-  return setCached(
-    cacheKey,
-    data.map((item) => ({
+
+  // Process and enhance results
+  const results = data.map((item) => {
+    const address = String(item["display_name"] ?? "").trim();
+    const addressObj = item["address"] as Record<string, unknown> | undefined;
+
+    // Extract key address components for better display
+    const neighbourhood = addressObj?.neighbourhood || addressObj?.suburb || addressObj?.quarter;
+    const city = addressObj?.city || addressObj?.town || addressObj?.village;
+    const district = addressObj?.district || addressObj?.state_district;
+
+    // Create a more readable short address if possible
+    let shortAddress = address;
+    if (neighbourhood && city) {
+      shortAddress = `${neighbourhood}، ${city}`;
+    } else if (city) {
+      shortAddress = String(city);
+    }
+
+    return {
       id: item["place_id"],
-      address: String(item["display_name"] ?? "").trim(),
+      address,
+      shortAddress,
       lat: Number(item["lat"]),
       lng: Number(item["lon"]),
-    }))
-  );
+      type: String(item["type"] ?? ""),
+      importance: Number(item["importance"] ?? 0),
+    };
+  });
+
+  // Add popular matches to the beginning if they exist
+  if (popularMatches.length > 0) {
+    const popularResults = popularMatches.map((loc, idx) => ({
+      id: `popular-${idx}`,
+      address: `${loc.name}، المملكة العربية السعودية`,
+      shortAddress: loc.name,
+      lat: loc.lat,
+      lng: loc.lng,
+      type: loc.type,
+      importance: 1.0, // High importance for popular locations
+    }));
+
+    // Merge popular results with search results, removing duplicates
+    const merged = [...popularResults];
+    for (const result of results) {
+      const isDuplicate = popularResults.some(pr =>
+        Math.abs(pr.lat - result.lat) < 0.01 && Math.abs(pr.lng - result.lng) < 0.01
+      );
+      if (!isDuplicate) {
+        merged.push({
+          ...result,
+          id: String(result.id),
+        });
+      }
+    }
+
+    // Sort by importance and limit
+    merged.sort((a, b) => b.importance - a.importance);
+    return setCachedWithTTL(cacheKey, merged.slice(0, limit));
+  }
+
+  // Sort by importance to show most relevant results first
+  results.sort((a, b) => b.importance - a.importance);
+
+  // Convert ids to strings for consistency
+  const normalizedResults = results.map(r => ({
+    ...r,
+    id: String(r.id),
+  }));
+
+  return setCachedWithTTL(cacheKey, normalizedResults);
 }
 
 export async function reverseGeocode(lat: number, lng: number) {
