@@ -56,7 +56,6 @@ export default function AdminRequests() {
 
   const statusCounts = useMemo(() => {
     const counts = new Map<string, number>([["ALL", requests?.length ?? 0]]);
-    for (const status of ALL_STATUSES) counts.set(status, 0);
     for (const req of requests ?? []) counts.set(req.status, (counts.get(req.status) ?? 0) + 1);
     return counts;
   }, [requests]);
@@ -235,7 +234,7 @@ export default function AdminRequests() {
                             backgroundColor: "var(--surface-2)",
                             border: "1.5px solid var(--border)",
                           }}
-                        >{(req as any).clientType ?? "—"}</span>
+                        >{req.clientType ?? "—"}</span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2 text-sm font-bold">
@@ -329,9 +328,9 @@ export default function AdminRequests() {
                         {req.homeLocation} ← {req.workLocation}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {(req as any).clientType && (
+                        {req.clientType && (
                           <span className="text-xs px-2.5 py-1 rounded-lg font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
-                            {(req as any).clientType}
+                            {req.clientType}
                           </span>
                         )}
                         {req.selectedDriver && (
