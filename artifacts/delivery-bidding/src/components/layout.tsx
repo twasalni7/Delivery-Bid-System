@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LogOut, Menu, Home, FileText, User, LifeBuoy, Settings,
   Users, Car, BarChart2, ClipboardList, DollarSign, Activity,
-  MapPin, Search, ChevronRight, Bell, Database, MoreHorizontal,
+  MapPin, ChevronRight, Bell, Database, MoreHorizontal, Send,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
@@ -24,19 +24,25 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
 
   const navGroups: NavGroup[] = [
     {
-      label: "الرئيسية",
+      label: "نظرة عامة",
       links: [
         { href: "/admin", label: "لوحة التحكم", icon: BarChart2 },
+        { href: "/admin/operations", label: "مركز التحكم", icon: Activity },
       ],
     },
     {
-      label: "إدارة البيانات",
+      label: "الطلبات والأطراف",
       links: [
         { href: "/admin/requests",      label: "الطلبات",    icon: FileText },
-        { href: "/admin/archive",       label: "الأرشيف",    icon: ClipboardList },
         { href: "/admin/drivers",       label: "السائقون",   icon: Car },
         { href: "/admin/clients",       label: "العملاء",    icon: Users },
         { href: "/admin/offers",        label: "العروض",     icon: ClipboardList },
+        { href: "/admin/archive",       label: "الأرشيف",    icon: ClipboardList },
+      ],
+    },
+    {
+      label: "التشغيل",
+      links: [
         { href: "/admin/service-areas", label: "المناطق",    icon: MapPin },
         { href: "/admin/pricing",       label: "التسعير",    icon: DollarSign },
       ],
@@ -44,9 +50,9 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
     {
       label: "المراقبة",
       links: [
-        { href: "/admin/operations",              label: "مركز التحكم",     icon: Activity },
         { href: "/admin/activity",                label: "سجل النشاط",      icon: Activity },
-        { href: "/admin/notifications",           label: "مركز الإشعارات",  icon: Bell },
+        { href: "/admin/notifications-monitor",   label: "مراقبة الإشعارات", icon: Bell },
+        { href: "/admin/compose",                 label: "إرسال إشعار",     icon: Send },
         { href: "/admin/database",                label: "قاعدة البيانات",   icon: Database },
       ],
     },
@@ -194,15 +200,25 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          {/* Search */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl max-w-xs w-full"
+          {/* Fast admin shortcuts */}
+          <div className="hidden md:flex items-center gap-1.5 rounded-xl p-1"
             style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
-            <Search size={15} style={{ color: "var(--text-hint)", flexShrink: 0 }} />
-            <input
-              placeholder="ابحث في كل شيء..."
-              className="bg-transparent outline-none text-sm w-full"
-              style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none", minHeight: "auto" }}
-            />
+            {[
+              { href: "/admin/requests", label: "الطلبات" },
+              { href: "/admin/operations", label: "التحكم" },
+              { href: "/admin/notifications-monitor", label: "المراقبة" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                style={location.startsWith(item.href)
+                  ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                  : { color: "var(--text-muted)" }}
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
 
           {/* Actions */}
