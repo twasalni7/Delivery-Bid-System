@@ -473,10 +473,10 @@ export default function CreateRequestNew() {
           toast({ title: "تم إنشاء الطلب بنجاح!", description: `طلب رقم #${req.id}` });
           setLocation(`/client/request/${req.id}`);
         },
-        onError: () => {
+        onError: (err: Error) => {
           toast({
             title: "عذراً، حدث خطأ",
-            description: "حاول مرة أخرى أو تواصل معنا للمساعدة",
+            description: err?.message || "حاول مرة أخرى أو تواصل معنا للمساعدة",
             variant: "destructive",
           });
         },

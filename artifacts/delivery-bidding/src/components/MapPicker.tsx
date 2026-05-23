@@ -160,7 +160,7 @@ export default function MapPicker({
   );
 
   const searchPlaces = useCallback(async (query: string) => {
-    if (query.trim().length < 1) {
+    if (query.trim().length < 2) {
       setSearchResults([]);
       setShowResults(false);
       return;
@@ -521,7 +521,7 @@ export default function MapPicker({
       {/* Search hint when text is empty */}
       {!searchText && (
         <p className="text-xs font-bold px-1" style={{ color: "var(--text-hint)" }}>
-          💡 ابدأ بالكتابة لتظهر لك الاقتراحات — مثال: "حي النزهة" أو "مستشفى"
+          💡 اكتب حرفين أو أكثر لتظهر الاقتراحات — مثال: "حي النزهة" أو "مستشفى الملك"
         </p>
       )}
 
