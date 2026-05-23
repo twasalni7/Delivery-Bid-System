@@ -170,10 +170,22 @@ export default function AdminRequests() {
         {filteredRequests.length > 0 && (
           <>
             {/* Desktop table */}
-            <div className="hidden md:block rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}>
+            <div
+              className="hidden md:block rounded-3xl overflow-hidden"
+              style={{
+                backgroundColor: "var(--surface)",
+                border: "2px solid var(--border)",
+                boxShadow: "var(--shadow-md)",
+              }}
+            >
               <table className="w-full" dir="rtl">
                 <thead>
-                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
+                  <tr
+                    style={{
+                      backgroundColor: "var(--surface-3)",
+                      borderBottom: "2px solid var(--border)",
+                    }}
+                  >
                     <th className="text-right px-5 py-4 text-sm font-black w-16" style={{ color: "var(--text-muted)" }}>#</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>الحالة</th>
                     <th className="text-right px-5 py-4 text-sm font-black" style={{ color: "var(--text-muted)" }}>النوع</th>
@@ -186,7 +198,13 @@ export default function AdminRequests() {
                 </thead>
                 <tbody>
                   {filteredRequests.map((req, idx) => (
-                    <tr key={req.id} style={{ borderBottom: "1px solid var(--border-subtle)", backgroundColor: idx % 2 === 1 ? "var(--border-subtle)" : "transparent" }}>
+                    <tr
+                      key={req.id}
+                      style={{
+                        borderBottom: "1.5px solid var(--border)",
+                        backgroundColor: idx % 2 === 1 ? "var(--surface-2)" : "transparent",
+                      }}
+                    >
                       <td className="px-5 py-4 text-sm font-mono font-bold" style={{ color: "var(--text-muted)" }}>
                          #{req.id}
                          {req.createdBy === "admin" && (
@@ -194,31 +212,53 @@ export default function AdminRequests() {
                          )}
                        </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm px-3 py-1 rounded-full font-bold" style={STATUS_PILL_STYLE[req.status] ?? { backgroundColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="text-sm px-3.5 py-1.5 rounded-2xl font-bold"
+                            style={STATUS_PILL_STYLE[req.status] ?? {
+                              backgroundColor: "var(--surface-2)",
+                              color: "var(--text-muted)",
+                              border: "1.5px solid var(--border)",
+                            }}
+                          >
                             {getStatusLabel(req.status)}
                           </span>
                           {req.statusManuallySetByAdmin && (
-                            <span title="الحالة مثبّتة يدوياً — التزامن التلقائي متوقف" className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>🔒</span>
+                            <span
+                              title="الحالة مثبّتة يدوياً — التزامن التلقائي متوقف"
+                              className="text-xs px-2 py-1 rounded-full font-black"
+                              style={{
+                                backgroundColor: "var(--status-frozen-bg)",
+                                color: "var(--status-frozen-text)",
+                                border: "1.5px solid var(--status-frozen-border)",
+                              }}
+                            >🔒</span>
                           )}
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ color: "var(--text-sub)", backgroundColor: "var(--border-subtle)" }}>{(req as any).clientType ?? "—"}</span>
+                        <span
+                          className="text-sm font-bold px-3 py-1.5 rounded-xl"
+                          style={{
+                            color: "var(--text)",
+                            backgroundColor: "var(--surface-2)",
+                            border: "1.5px solid var(--border)",
+                          }}
+                        >{(req as any).clientType ?? "—"}</span>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <MapPin size={13} style={{ color: "var(--brand)" }} className="shrink-0" />
-                          <span className="font-medium">{req.homeLocation}</span>
+                        <div className="flex items-center gap-2 text-sm font-bold">
+                          <MapPin size={15} style={{ color: "var(--brand)" }} className="shrink-0" />
+                          <span style={{ color: "var(--text)" }}>{req.homeLocation}</span>
                           <span style={{ color: "var(--text-hint)" }}>←</span>
-                          <span className="font-medium">{req.workLocation}</span>
+                          <span style={{ color: "var(--text)" }}>{req.workLocation}</span>
                         </div>
                         {(req as any).additionalLocations?.map((loc: { type: string; address: string }, i: number) => (
-                          <p key={i} className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
+                          <p key={i} className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
                         ))}
-                        {(req as any).client && <p className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>👤 {(req as any).client.name} — {(req as any).client.mobile}</p>}
-                        {req.phone && <p className="text-xs mt-0.5" dir="ltr" style={{ color: "var(--text-hint)" }}>📞 {req.phone}</p>}
-                        {(req as any).notes && <p className="text-xs mt-0.5" style={{ color: "var(--text-hint)" }}>📝 {(req as any).notes}</p>}
+                        {(req as any).client && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>👤 {(req as any).client.name} — {(req as any).client.mobile}</p>}
+                        {req.phone && <p className="text-xs mt-1.5 font-bold" dir="ltr" style={{ color: "var(--text-muted)" }}>📞 {req.phone}</p>}
+                        {(req as any).notes && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📝 {(req as any).notes}</p>}
                       </td>
                       <td className="px-5 py-4">
                         {(req as any).shifts && (req as any).shifts.length > 0 ? (
