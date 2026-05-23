@@ -232,49 +232,94 @@ export default function DriverDashboard() {
                   const emoji = CLIENT_TYPE_EMOJI[clientTypeLabel] ?? "📦";
                   const offerCount = (req as any).offerCount ?? 0;
                   return (
-                    <div key={req.id} className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div
+                      key={req.id}
+                      className="rounded-3xl overflow-hidden transition-all hover:shadow-lg"
+                      style={{
+                        backgroundColor: "var(--surface)",
+                        border: "2px solid var(--border)",
+                        boxShadow: "var(--shadow-md)",
+                      }}
+                    >
                       {/* Card header */}
-                      <div className="p-5" style={{ backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div
+                        className="p-6"
+                        style={{
+                          backgroundColor: "var(--surface-2)",
+                          borderBottom: "1.5px solid var(--border)",
+                        }}
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <span className="text-3xl">{emoji}</span>
+                            <span className="text-4xl">{emoji}</span>
                             <div>
-                              <p className="font-black text-lg tracking-tight" style={{ color: "var(--text)" }}>{clientTypeLabel}</p>
-                              <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>REQ-{String(req.id).padStart(3, "0")}</p>
+                              <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{clientTypeLabel}</p>
+                              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>REQ-{String(req.id).padStart(3, "0")}</p>
                             </div>
                           </div>
-                          <div className="rounded-2xl px-4 py-3 text-center" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)", minWidth: "96px" }}>
-                            <p className="font-black text-3xl leading-none" style={{ color: "var(--brand)" }} dir="ltr">
+                          <div
+                            className="rounded-2xl px-5 py-4 text-center"
+                            style={{
+                              backgroundColor: "var(--brand-subtle)",
+                              border: "2px solid var(--brand-border)",
+                              minWidth: "100px",
+                            }}
+                          >
+                            <p className="font-black text-4xl leading-none" style={{ color: "var(--brand)" }} dir="ltr">
                               {((req as any).monthlyPrice ?? 0).toFixed(0)}
                             </p>
-                            <p className="text-[10px] font-bold mt-0.5" style={{ color: "var(--brand)" }}>ر.س / شهر</p>
+                            <p className="text-xs font-bold mt-1" style={{ color: "var(--text-muted)" }}>ر.س / شهر</p>
                             {(req as any).numberOfPeople > 1 && (
-                              <div className="mt-1.5 pt-1.5" style={{ borderTop: "1px solid rgba(222,255,154,0.2)" }}>
-                                <p className="font-black text-sm leading-none" style={{ color: "var(--text)" }} dir="ltr">
+                              <div
+                                className="mt-2 pt-2"
+                                style={{
+                                  borderTop: "1.5px solid var(--border)",
+                                }}
+                              >
+                                <p className="font-black text-base leading-none" style={{ color: "var(--text)" }} dir="ltr">
                                   {((req as any).monthlyPrice / (req as any).numberOfPeople).toFixed(0)}
                                 </p>
-                                <p className="text-[9px] font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>ر.س / شخص</p>
+                                <p className="text-[10px] font-bold mt-1" style={{ color: "var(--text-hint)" }}>ر.س / شخص</p>
                               </div>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <div className="p-5 space-y-4">
-                        <div className="space-y-3 relative pr-3">
-                          <div className="absolute right-[5px] top-4 bottom-4 w-[2px] rounded-full" style={{ backgroundColor: "var(--border-subtle)" }} />
+                      <div className="p-6 space-y-5">
+                        <div className="space-y-4 relative pr-4">
+                          <div
+                            className="absolute right-[7px] top-5 bottom-5 w-[3px] rounded-full"
+                            style={{
+                              backgroundColor: "var(--border)",
+                            }}
+                          />
                           <div className="flex items-start gap-3 relative z-10">
-                            <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
+                            <div
+                              className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center"
+                              style={{
+                                backgroundColor: "var(--brand)",
+                                border: "2px solid var(--surface)",
+                                boxShadow: "0 0 0 2px var(--brand)",
+                              }}
+                            />
                             <div>
-                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>من (المنطلق)</p>
-                              <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.homeLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
+                              <p className="text-xs font-bold mb-1" style={{ color: "var(--text-hint)" }}>من (المنطلق)</p>
+                              <p className="text-base font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.homeLocation} className="text-base font-black" style={{ color: "var(--text)" }} /></p>
                             </div>
                           </div>
                           <div className="flex items-start gap-3 relative z-10">
-                            <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
+                            <div
+                              className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center"
+                              style={{
+                                backgroundColor: "var(--status-cancelled-text)",
+                                border: "2px solid var(--surface)",
+                                boxShadow: "0 0 0 2px var(--status-cancelled-text)",
+                              }}
+                            />
                             <div>
-                              <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
-                              <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
+                              <p className="text-xs font-bold mb-1" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
+                              <p className="text-base font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.workLocation} className="text-base font-black" style={{ color: "var(--text)" }} /></p>
                             </div>
                           </div>
                         </div>
@@ -287,29 +332,48 @@ export default function DriverDashboard() {
                             ? shifts!.map((s, i) => ({ label: s.label ?? `الوردية ${i + 1}`, go: s.goTime ?? "", back: s.returnTime ?? "" }))
                             : [{ label: "الوردية الأولى", go: req.morningTime, back: req.eveningTime ?? "" }];
                           return (
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                               {shiftRows.map((s, i) => (
-                                <div key={i} className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                                  <div className="px-3 py-1.5 text-center" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
-                                    <p className="text-[10px] font-black tracking-wide" style={{ color: "var(--text-hint)" }}>{s.label}</p>
+                                <div
+                                  key={i}
+                                  className="rounded-2xl overflow-hidden"
+                                  style={{
+                                    border: "1.5px solid var(--border)",
+                                    backgroundColor: "var(--surface-2)",
+                                  }}
+                                >
+                                  <div
+                                    className="px-4 py-2 text-center"
+                                    style={{
+                                      backgroundColor: "var(--surface-3)",
+                                      borderBottom: "1px solid var(--border)",
+                                    }}
+                                  >
+                                    <p className="text-xs font-black tracking-wide" style={{ color: "var(--text-muted)" }}>{s.label}</p>
                                   </div>
-                                  <div className="grid gap-px" style={{ gridTemplateColumns: s.back ? "1fr 1fr" : "1fr", backgroundColor: "rgba(255,255,255,0.06)" }}>
-                                    <div className="px-4 py-3 text-right" style={{ backgroundColor: "var(--surface)" }}>
-                                      <p className="text-[9px] font-black mb-1" style={{ color: "var(--text-hint)" }}>الذهاب</p>
-                                      <p className="text-sm font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.go)}</p>
+                                  <div className="grid gap-px" style={{ gridTemplateColumns: s.back ? "1fr 1fr" : "1fr", backgroundColor: "var(--border)" }}>
+                                    <div className="px-4 py-3.5 text-right" style={{ backgroundColor: "var(--surface)" }}>
+                                      <p className="text-[10px] font-black mb-1.5" style={{ color: "var(--text-hint)" }}>الذهاب</p>
+                                      <p className="text-base font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.go)}</p>
                                     </div>
                                     {s.back && (
-                                      <div className="px-4 py-3 text-right" style={{ backgroundColor: "var(--surface)" }}>
-                                        <p className="text-[9px] font-black mb-1" style={{ color: "var(--text-hint)" }}>العودة</p>
-                                        <p className="text-sm font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.back)}</p>
+                                      <div className="px-4 py-3.5 text-right" style={{ backgroundColor: "var(--surface)" }}>
+                                        <p className="text-[10px] font-black mb-1.5" style={{ color: "var(--text-hint)" }}>العودة</p>
+                                        <p className="text-base font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.back)}</p>
                                       </div>
                                     )}
                                   </div>
                                 </div>
                               ))}
-                              <div className="rounded-2xl px-5 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                                <p className="text-xs font-black" style={{ color: "var(--text-hint)" }}>عدد الأشخاص</p>
-                                <p className="text-xl font-black" style={{ color: "var(--text)" }}>{req.numberOfPeople}</p>
+                              <div
+                                className="rounded-2xl px-5 py-4 flex items-center justify-between"
+                                style={{
+                                  backgroundColor: "var(--surface-2)",
+                                  border: "1.5px solid var(--border)",
+                                }}
+                              >
+                                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>عدد الأشخاص</p>
+                                <p className="text-2xl font-black" style={{ color: "var(--brand)" }}>{req.numberOfPeople}</p>
                               </div>
                             </div>
                           );

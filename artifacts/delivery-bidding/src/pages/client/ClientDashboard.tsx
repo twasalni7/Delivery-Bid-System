@@ -111,42 +111,107 @@ export default function ClientDashboard() {
             </Link>
           </div>
 
-          {isLoading && <div className="rounded-2xl p-5 text-sm font-black" style={{ backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>جاري التحميل...</div>}
+          {isLoading && (
+            <div
+              className="rounded-3xl p-8 text-base font-black text-center"
+              style={{
+                backgroundColor: "var(--surface)",
+                color: "var(--text-muted)",
+                border: "1.5px solid var(--border)",
+              }}
+            >
+              جاري التحميل...
+            </div>
+          )}
 
           {!isLoading && requests.length === 0 && (
-            <div className="rounded-2xl p-6 text-sm font-black" style={{ backgroundColor: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
-              لا توجد طلبات حالية.
+            <div
+              className="rounded-3xl p-10 text-center"
+              style={{
+                backgroundColor: "var(--surface)",
+                border: "2px dashed var(--border)",
+              }}
+            >
+              <p className="text-4xl mb-3">📋</p>
+              <p className="text-lg font-black" style={{ color: "var(--text)" }}>لا توجد طلبات حالية</p>
+              <p className="text-sm font-bold mt-2" style={{ color: "var(--text-muted)" }}>
+                ابدأ بإنشاء طلب جديد من الأعلى
+              </p>
             </div>
           )}
 
           {!isLoading && requests.map((req) => (
             <div
               key={req.id}
-              className="rounded-[1.75rem] p-5 space-y-3 transition-transform"
+              className="rounded-3xl p-6 space-y-4 transition-all hover:shadow-lg"
               style={{
                 backgroundColor: "var(--surface)",
-                border: "1px solid var(--border-subtle)",
+                border: "2px solid var(--border)",
                 boxShadow: "var(--shadow-md)",
               }}
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="font-black" style={{ color: "var(--text)" }}>طلب #{req.id}</p>
-                <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                    style={{
+                      backgroundColor: "var(--brand-subtle)",
+                      border: "1.5px solid var(--brand-border)",
+                    }}
+                  >
+                    📦
+                  </div>
+                  <div>
+                    <p className="font-black text-lg" style={{ color: "var(--text)" }}>طلب #{req.id}</p>
+                    <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>REQ-{String(req.id).padStart(3, "0")}</p>
+                  </div>
+                </div>
+                <span
+                  className="text-sm font-black px-4 py-2 rounded-2xl"
+                  style={{
+                    backgroundColor: "var(--brand-subtle)",
+                    color: "var(--brand)",
+                    border: "1.5px solid var(--brand-border)",
+                  }}
+                >
                   {getStatusLabel(req.status)}
                 </span>
               </div>
 
-              <p className="text-sm font-bold" style={{ color: "var(--text-sub)" }}>{req.homeLocation} ← {req.workLocation}</p>
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  backgroundColor: "var(--surface-2)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                <p className="text-sm font-bold mb-2" style={{ color: "var(--text-hint)" }}>المسار</p>
+                <p className="text-base font-black" style={{ color: "var(--text)" }}>
+                  {req.homeLocation} ← {req.workLocation}
+                </p>
+              </div>
 
-              <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
-                السائق: {req.selectedDriver?.name?.trim() || "لم يتم التعيين بعد"}
-              </p>
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  backgroundColor: "var(--surface-2)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                <p className="text-sm font-bold mb-2" style={{ color: "var(--text-hint)" }}>السائق</p>
+                <p className="text-base font-black" style={{ color: "var(--text)" }}>
+                  {req.selectedDriver?.name?.trim() || "لم يتم التعيين بعد"}
+                </p>
+              </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Link
                   href={`/client/request/${req.id}`}
-                  className="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-black"
-                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                  className="flex-1 rounded-2xl px-5 py-3.5 text-center text-base font-black transition-all hover:shadow-md"
+                  style={{
+                    backgroundColor: "var(--brand)",
+                    color: "var(--brand-fg)",
+                  }}
                 >
                   إدارة الطلب
                 </Link>
@@ -154,10 +219,14 @@ export default function ClientDashboard() {
                   type="button"
                   onClick={() => archiveRequest.mutate(req.id)}
                   disabled={archiveRequest.isPending}
-                  className="rounded-xl px-3 py-2.5 text-xs font-black inline-flex items-center gap-1"
-                  style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-sub)" }}
+                  className="rounded-2xl px-4 py-3.5 text-sm font-black inline-flex items-center gap-2 transition-all hover:shadow-sm"
+                  style={{
+                    backgroundColor: "var(--surface-2)",
+                    border: "1.5px solid var(--border)",
+                    color: "var(--text)",
+                  }}
                 >
-                  <Archive size={13} /> أرشفة
+                  <Archive size={16} /> أرشفة
                 </button>
               </div>
             </div>
