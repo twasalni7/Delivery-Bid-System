@@ -299,7 +299,7 @@ export default function DriverProfile() {
                 </div>
                 <div>
                   <p className="font-black" style={{ color: "var(--text)" }}>الأرباح الشهرية</p>
-                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>إجمالي الدخل من الاشتراكات</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>إجمالي الدخل من الاتفاقيات</p>
                 </div>
               </div>
               <div className="p-5">
@@ -308,7 +308,7 @@ export default function DriverProfile() {
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "اشتراكات نشطة", value: String(mySelectedJobs.length) },
+                    { label: "اتفاقيات نشطة", value: String(mySelectedJobs.length) },
                     { label: "رحلات / شهر", value: estimatedMonthlyTrips > 0 ? String(estimatedMonthlyTrips) : "—" },
                     { label: "متوسط / رحلة", value: avgPerTrip > 0 ? `${avgPerTrip} ر.س` : "—" },
                   ].map((s) => (

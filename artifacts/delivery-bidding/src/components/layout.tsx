@@ -245,15 +245,15 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
         ]
       : [
           { href: "/driver/profile",   label: "الحساب",    icon: User },
-          { href: "/driver/dashboard", label: "طلباتي",    icon: Home },
-          { href: "/driver/requests",  label: "اشتراكاتي", icon: ClipboardList },
+          { href: "/driver/dashboard", label: "الرئيسية", icon: Home },
+          { href: "/driver/requests",  label: "الاتفاقيات", icon: ClipboardList },
           { href: "/driver/archive",   label: "الأرشيف",   icon: FileText },
           { href: "/driver/support",   label: "المزيد",    icon: MoreHorizontal },
         ];
 
   const driverSideLinks: NavLink[] = [
     { href: "/driver/dashboard", label: "الرئيسية", icon: Home },
-    { href: "/driver/requests", label: "طلباتي", icon: ClipboardList },
+    { href: "/driver/requests", label: "الاتفاقيات", icon: ClipboardList },
     { href: "/driver/profile", label: "الملف الشخصي", icon: User },
     { href: "/driver/archive", label: "الأرشيف", icon: FileText },
     { href: "/driver/support", label: "المساعدة والدعم", icon: LifeBuoy },
@@ -304,7 +304,7 @@ function MobileLayout({ children, role }: { children: React.ReactNode; role: "cl
             <div className="leading-tight">
               <p className="text-sm font-bold" style={{ color: "var(--text)" }}>مرحباً {displayName}</p>
               <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                {role === "client" ? "أهلاً بك في بوابة العميل" : "لوحة السائق"}
+                {role === "client" ? "أهلاً بك في بوابة العميل" : "بوابة السائق"}
               </p>
             </div>
             </Link>

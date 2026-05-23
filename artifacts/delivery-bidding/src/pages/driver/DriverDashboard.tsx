@@ -14,7 +14,7 @@ import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import { API_ORIGIN as API } from "@/lib/api-config";
 
-type TabId = "schedule" | "available";
+type TabId = "agreements" | "available";
 
 const DAYS_FULL = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
@@ -60,7 +60,7 @@ export default function DriverDashboard() {
     newlyAccepted.forEach((job) => {
       toast({
         title: "🎉 تم اختيارك!",
-        description: `تم اختيارك لطلب #${job.id} — ${job.homeLocation} ← ${job.workLocation}`,
+        description: `تم قبولك في اتفاقية #${job.id} — ${job.homeLocation} ← ${job.workLocation}`,
       });
     });
     prevSelectedIdsRef.current = currentIds;
@@ -93,8 +93,8 @@ export default function DriverDashboard() {
   const totalEarnings = mySelectedJobs.reduce((sum, r) => sum + ((r as any).monthlyPrice ?? 0), 0);
 
   const tabs: { id: TabId; label: string; icon: string; count?: number }[] = [
-    { id: "schedule", label: "جدولي", icon: "🗓️", count: mySelectedJobs.length },
-    { id: "available", label: "طلبات جديدة", icon: "📋", count: openRequests?.length },
+    { id: "agreements", label: "الاتفاقيات", icon: "🤝", count: mySelectedJobs.length },
+    { id: "available", label: "فرص جديدة", icon: "📋", count: openRequests?.length },
   ];
 
   return (
@@ -124,7 +124,7 @@ export default function DriverDashboard() {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: "دخل شهري", value: totalEarnings > 0 ? (totalEarnings >= 1000 ? `${(totalEarnings / 1000).toFixed(1)}K` : totalEarnings.toFixed(0)) : "—" },
-                { label: "اشتراكات نشطة", value: String(mySelectedJobs.length) },
+                { label: "اتفاقيات نشطة", value: String(mySelectedJobs.length) },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -211,7 +211,7 @@ export default function DriverDashboard() {
         {/* ── Tab: Available ── */}
         {activeTab === "available" && (
           <>
-            {isLoading && <div className="text-center py-20 font-bold" style={{ color: "var(--text-muted)" }}>جاري تحميل الطلبات...</div>}
+            {isLoading && <div className="text-center py-20 font-bold" style={{ color: "var(--text-muted)" }}>جاري تحميل الفرص...</div>}
             {!isLoading && (!openRequests || openRequests.length === 0) && (
               <div
                 className="text-center py-20 rounded-3xl transition-all hover:shadow-sm"
@@ -221,8 +221,8 @@ export default function DriverDashboard() {
                 }}
               >
                 <p className="text-4xl mb-3">📋</p>
-                <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد طلبات مفتوحة</p>
-                <p className="font-bold text-sm mt-2" style={{ color: "var(--text-muted)" }}>تحقق لاحقاً لعروض دوام جديدة</p>
+                <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد فرص متاحة</p>
+                <p className="font-bold text-sm mt-2" style={{ color: "var(--text-muted)" }}>تحقق لاحقاً لفرص دوام جديدة</p>
               </div>
             )}
             {openRequests && openRequests.length > 0 && (
@@ -433,71 +433,77 @@ export default function DriverDashboard() {
           </>
         )}
 
-        {/* ── Tab: Schedule ── */}
-        {activeTab === "schedule" && (
+        {/* ── Tab: Agreements ── */}
+        {activeTab === "agreements" && (
           <div className="space-y-4">
             {mySelectedJobs.length === 0 && (
               <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
                 <p className="text-4xl mb-3">🗓️</p>
-                <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد اشتراكات نشطة</p>
-                <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>ستظهر هنا اشتراكاتك بعد اختيارك من العملاء</p>
+                <p className="text-xl font-black" style={{ color: "var(--text)" }}>لا توجد اتفاقيات نشطة</p>
+                <p className="font-bold text-sm mt-1" style={{ color: "var(--text-hint)" }}>ستظهر هنا اتفاقياتك بعد قبولك من العملاء</p>
               </div>
             )}
             {mySelectedJobs.map((req) => (
-              <div key={req.id} className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid var(--brand-border)" }}>
-                <div className="p-5" style={{ backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div
+                key={req.id}
+                className="rounded-3xl overflow-hidden transition-all hover:shadow-lg"
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "2px solid #E5E7EB",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                }}
+              >
+                <div className="p-5" style={{ backgroundColor: "#F9FAFB", borderBottom: "2px solid #E5E7EB" }}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <CheckCircle size={16} style={{ color: "var(--brand)" }} />
-                      <span className="font-black text-sm" style={{ color: "var(--brand)" }}>اشتراك نشط</span>
+                      <span className="font-black text-sm" style={{ color: "#1D4ED8" }}>اتفاقية نشطة</span>
                     </div>
-                    <span className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>REQ-{String(req.id).padStart(3, "0")}</span>
+                    <span className="text-xs font-bold" style={{ color: "#6B7280" }}>REQ-{String(req.id).padStart(3, "0")}</span>
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "var(--brand)" }} />
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.homeLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
+                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "#10B981" }} />
+                       <p className="text-sm font-black" style={{ color: "#111827" }}><LocationDisplay value={req.homeLocation} className="text-sm font-black" style={{ color: "#111827" }} /></p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)" }} />
-                      <p className="text-sm font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} /></p>
+                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "#EF4444" }} />
+                       <p className="text-sm font-black" style={{ color: "#111827" }}><LocationDisplay value={req.workLocation} className="text-sm font-black" style={{ color: "#111827" }} /></p>
                     </div>
                   </div>
-                  {/* Shift / time display for active job */}
                   {(req as any).shifts && (req as any).shifts.length > 0 ? (
                     <div className="space-y-1.5 mt-4">
-                      {((req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }>).map((s, i) => (
-                        <div key={i} className="px-3 py-2 rounded-xl" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                          <p className="text-[10px] font-black mb-1" style={{ color: "var(--text-hint)" }}>{s.label ?? `الوردية ${i + 1}`}</p>
-                          <div className="space-y-1 text-xs font-bold" style={{ color: "var(--text)" }}>
-                            <p dir="ltr">الذهاب: {formatTime12hLong(s.goTime ?? "")}</p>
-                            {s.returnTime && <p dir="ltr">العودة: {formatTime12hLong(s.returnTime)}</p>}
-                          </div>
+                       {((req as any).shifts as Array<{ label?: string; goTime?: string; returnTime?: string }>).map((s, i) => (
+                         <div key={i} className="px-3 py-2 rounded-xl" style={{ backgroundColor: "#FFFFFF", border: "2px solid #E5E7EB" }}>
+                           <p className="text-[10px] font-black mb-1" style={{ color: "#6B7280" }}>{s.label ?? `الوردية ${i + 1}`}</p>
+                           <div className="space-y-1 text-xs font-bold" style={{ color: "#111827" }}>
+                             <p dir="ltr">الذهاب: {formatTime12hLong(s.goTime ?? "")}</p>
+                             {s.returnTime && <p dir="ltr">العودة: {formatTime12hLong(s.returnTime)}</p>}
+                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-2 mt-4">
-                      <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                        <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>الذهاب</p>
-                        <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.morningTime)}</p>
+                      <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "#FFFFFF", border: "2px solid #E5E7EB" }}>
+                        <p className="text-[10px] font-bold" style={{ color: "#6B7280" }}>الذهاب</p>
+                        <p className="font-black text-sm" dir="ltr" style={{ color: "#111827" }}>{formatTime12hLong(req.morningTime)}</p>
                       </div>
                       {req.eveningTime && (
-                        <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-subtle)" }}>
-                          <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>العودة</p>
-                          <p className="font-black text-sm" dir="ltr" style={{ color: "var(--text)" }}>{formatTime12hLong(req.eveningTime)}</p>
+                        <div className="rounded-xl px-3 py-2 text-center" style={{ backgroundColor: "#FFFFFF", border: "2px solid #E5E7EB" }}>
+                          <p className="text-[10px] font-bold" style={{ color: "#6B7280" }}>العودة</p>
+                          <p className="font-black text-sm" dir="ltr" style={{ color: "#111827" }}>{formatTime12hLong(req.eveningTime)}</p>
                         </div>
                       )}
                     </div>
                   )}
-                  {/* Price breakdown in schedule card */}
                   {(req as any).monthlyPrice != null && (req as any).monthlyPrice > 0 && (
-                    <div className="flex items-center justify-between mt-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                    <div className="flex items-center justify-between mt-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: "#EFF6FF", border: "2px solid #3B82F6" }}>
                       <div>
-                        <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>
+                        <p className="text-[10px] font-bold" style={{ color: "#6B7280" }}>
                           {(req as any).numberOfPeople > 1 ? "السعر / شخص" : "السعر الشهري"}
                         </p>
-                        <p className="font-black text-lg" style={{ color: "var(--brand)" }} dir="ltr">
+                        <p className="font-black text-lg" style={{ color: "#1D4ED8" }} dir="ltr">
                           {(req as any).numberOfPeople > 1
                             ? ((req as any).monthlyPrice / (req as any).numberOfPeople).toFixed(0)
                             : (req as any).monthlyPrice.toFixed(0)}{" "}ر.س
@@ -505,8 +511,8 @@ export default function DriverDashboard() {
                       </div>
                       {(req as any).numberOfPeople > 1 && (
                         <div className="text-right">
-                          <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الإجمالي ({(req as any).numberOfPeople} أشخاص)</p>
-                          <p className="font-black text-base" style={{ color: "var(--text-sub)" }} dir="ltr">{(req as any).monthlyPrice.toFixed(0)} ر.س/شهر</p>
+                          <p className="text-[10px] font-bold" style={{ color: "#6B7280" }}>الإجمالي ({(req as any).numberOfPeople} أشخاص)</p>
+                          <p className="font-black text-base" style={{ color: "#111827" }} dir="ltr">{(req as any).monthlyPrice.toFixed(0)} ر.س/شهر</p>
                         </div>
                       )}
                     </div>
@@ -516,20 +522,20 @@ export default function DriverDashboard() {
                   <div className="flex gap-1.5 flex-wrap">
                     {DAYS_FULL.slice(0, req.workingDaysPerWeek ?? 5).map((d) => (
                       <span key={d} className="text-xs px-2.5 py-1 rounded-full font-black"
-                        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}>
+                        style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", border: "2px solid #3B82F6" }}>
                         {d}
                       </span>
                     ))}
                   </div>
                   {req.phone && (
-                    <div className="flex items-center gap-3 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                    <div className="flex items-center gap-3 pt-3" style={{ borderTop: "2px solid #E5E7EB" }}>
                       <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black"
-                        style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)" }}>
+                        style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8" }}>
                         {req.selectedDriver?.name?.charAt(0) ?? "ع"}
                       </div>
                       <div className="flex-1">
-                        <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>العميل</p>
-                        <a href={`tel:${req.phone}`} className="text-sm font-black" dir="ltr" style={{ color: "var(--text)" }}>{req.phone}</a>
+                        <p className="text-[10px] font-bold" style={{ color: "#6B7280" }}>العميل</p>
+                        <a href={`tel:${req.phone}`} className="text-sm font-black" dir="ltr" style={{ color: "#111827" }}>{req.phone}</a>
                       </div>
                       <a href={`tel:${req.phone}`}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black"
@@ -547,5 +553,4 @@ export default function DriverDashboard() {
     </Layout>
   );
 }
-
 
