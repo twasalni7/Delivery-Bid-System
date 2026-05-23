@@ -464,11 +464,11 @@ export default function DriverDashboard() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "#10B981" }} />
-                       <p className="text-sm font-black" style={{ color: "#111827" }}><LocationDisplay value={req.homeLocation} /></p>
+                       <LocationDisplay value={req.homeLocation} className="text-sm font-black" style={{ color: "#111827" }} />
                     </div>
                     <div className="flex items-center gap-3">
                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "#EF4444" }} />
-                       <p className="text-sm font-black" style={{ color: "#111827" }}><LocationDisplay value={req.workLocation} /></p>
+                       <LocationDisplay value={req.workLocation} className="text-sm font-black" style={{ color: "#111827" }} />
                     </div>
                   </div>
                   {(req as any).shifts && (req as any).shifts.length > 0 ? (
