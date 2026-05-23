@@ -395,18 +395,18 @@ export default function MapPicker({
       />
 
       {loading && (
-        <div className="absolute inset-0 z-[1200] flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
-          <div className="flex items-center gap-3 text-white text-base font-black px-5 py-4 rounded-2xl" style={{ backgroundColor: "rgba(20,20,20,0.72)" }}>
+        <div className="absolute inset-0 z-[1200] flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.85)" }}>
+          <div className="flex items-center gap-3 text-white text-base font-black px-6 py-4 rounded-2xl" style={{ backgroundColor: "rgba(20,20,20,0.8)", backdropFilter: "blur(10px)" }}>
             <Loader2 size={22} className="animate-spin" />
-            <span>جاري تحميل الخريطة...</span>
+            <span style={{ fontFamily: "var(--font-arabic)" }}>جاري تحميل الخريطة...</span>
           </div>
         </div>
       )}
 
       {geocoding && !loading && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black text-white" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-black text-white" style={{ backgroundColor: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}>
           <Loader2 size={16} className="animate-spin" />
-          <span>جاري تحديث العنوان...</span>
+          <span style={{ fontFamily: "var(--font-arabic)" }}>جاري تحديث العنوان...</span>
         </div>
       )}
 
@@ -418,7 +418,7 @@ export default function MapPicker({
       </div>
 
       {!pendingSelection && !loading && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
+        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2.5 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.85)", color: "rgba(255,255,255,0.95)", maxWidth: "90%", backdropFilter: "blur(10px)", fontFamily: "var(--font-arabic)" }}>
           {placeholder}
         </div>
       )}
@@ -436,18 +436,18 @@ export default function MapPicker({
       />
 
       {loading && (
-        <div className="absolute inset-0 z-[1200] flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
-          <div className="flex items-center gap-3 text-white text-base font-black px-5 py-4 rounded-2xl" style={{ backgroundColor: "rgba(20,20,20,0.72)" }}>
+        <div className="absolute inset-0 z-[1200] flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.85)" }}>
+          <div className="flex items-center gap-3 text-white text-base font-black px-6 py-4 rounded-2xl" style={{ backgroundColor: "rgba(20,20,20,0.8)", backdropFilter: "blur(10px)" }}>
             <Loader2 size={22} className="animate-spin" />
-            <span>جاري تحميل الخريطة...</span>
+            <span style={{ fontFamily: "var(--font-arabic)" }}>جاري تحميل الخريطة...</span>
           </div>
         </div>
       )}
 
       {geocoding && !loading && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black text-white" style={{ backgroundColor: "rgba(0,0,0,0.82)" }}>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-black text-white" style={{ backgroundColor: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}>
           <Loader2 size={16} className="animate-spin" />
-          <span>جاري تحديث العنوان...</span>
+          <span style={{ fontFamily: "var(--font-arabic)" }}>جاري تحديث العنوان...</span>
         </div>
       )}
 
@@ -459,7 +459,7 @@ export default function MapPicker({
       </div>
 
       {!pendingSelection && !loading && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.78)", color: "rgba(255,255,255,0.92)", maxWidth: "90%" }}>
+        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-[1100] px-4 py-2.5 rounded-2xl text-sm font-black text-center" style={{ backgroundColor: "rgba(0,0,0,0.85)", color: "rgba(255,255,255,0.95)", maxWidth: "90%", backdropFilter: "blur(10px)", fontFamily: "var(--font-arabic)" }}>
           {placeholder}
         </div>
       )}
