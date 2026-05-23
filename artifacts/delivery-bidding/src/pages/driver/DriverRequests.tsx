@@ -25,8 +25,8 @@ const STATUS_PILL: Record<string, string> = {
 };
 const STATUS_LABELS: Record<string, string> = {
   OPEN:      "قيد الانتظار",
-  SELECTED:  "نشط",
-  ACTIVE:    "نشط",
+  SELECTED:  "تم القبول",
+  ACTIVE:    "اتفاقية نشطة",
   COMPLETED: "منتهي",
   CANCELLED: "منتهي",
   EXPIRED:   "منتهي",
@@ -121,8 +121,8 @@ export default function DriverRequests() {
     <Layout role="driver">
       <div dir="rtl" className="space-y-4">
         <div className="mb-3">
-          <h1 className="text-[1.85rem] font-black tracking-tight" style={{ color: "var(--text)" }}>اشتراكاتي</h1>
-          <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>الطلبات التي تم اختيارك فيها</p>
+          <h1 className="text-[1.85rem] font-black tracking-tight" style={{ color: "var(--text)" }}>الاتفاقيات</h1>
+          <p className="font-bold text-sm mt-1" style={{ color: "var(--text-muted)" }}>الرحلات المقبولة والاتفاقيات النشطة في مكان واحد</p>
         </div>
 
         <div className="flex gap-2 mb-6">
@@ -145,11 +145,11 @@ export default function DriverRequests() {
           <div className="text-center py-20 rounded-3xl" style={{ backgroundColor: "var(--surface)", border: "2px dashed var(--border-subtle)" }}>
             <p className="text-4xl mb-3">🤝</p>
             <p className="font-black" style={{ color: "var(--text)" }}>لا توجد اتفاقيات</p>
-            <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>لم يتم اختيارك في أي طلب بعد</p>
+            <p className="text-sm font-bold mt-1" style={{ color: "var(--text-hint)" }}>ستظهر هنا الاتفاقيات بعد قبولك من العملاء</p>
             <Link href="/driver/dashboard"
               className="mt-5 inline-block px-5 py-2.5 rounded-full text-sm font-black"
               style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-sub)", border: "1px solid var(--border)" }}>
-              العودة للوحة السائق
+              العودة للرئيسية
             </Link>
           </div>
         )}
@@ -160,7 +160,7 @@ export default function DriverRequests() {
               {/* Card header */}
               <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-2"
                 style={{ backgroundColor: "#F9FAFB", borderBottom: "2px solid #E5E7EB" }}>
-                <span className="text-base font-black" style={{ color: "#111827" }}>طلب #{r.id}</span>
+                <span className="text-base font-black" style={{ color: "#111827" }}>اتفاقية #{r.id}</span>
                 <span className={`text-sm px-3 py-1 rounded-full font-black ${STATUS_PILL[r.status] ?? "pill-completed"}`}>
                   {STATUS_LABELS[r.status] ?? r.status}
                 </span>
@@ -255,7 +255,7 @@ export default function DriverRequests() {
                 {openChatId === r.id && (
                   <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)" }}>
                     <div className="px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border-subtle)" }}>
-                      <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>محادثة الطلب #{r.id}</span>
+                      <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>محادثة الاتفاقية #{r.id}</span>
                       <button onClick={() => setOpenChatId(null)} style={{ color: "var(--text-hint)" }}><X size={14} /></button>
                     </div>
                     <div className="max-h-64 overflow-y-auto p-3 space-y-2" style={{ backgroundColor: "var(--header-bg)" }}>
