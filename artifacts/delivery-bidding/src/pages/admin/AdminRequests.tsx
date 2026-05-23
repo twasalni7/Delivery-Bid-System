@@ -20,6 +20,7 @@ const STATUS_PILL_STYLE: Record<string, React.CSSProperties> = {
   FROZEN:    { backgroundColor: "var(--status-frozen-bg)",    color: "var(--status-frozen-text)" },
 };
 
+// Admin list responses can include client summary fields that are not part of the base request schema.
 type AdminRequest = CommuteRequest & {
   client?: { name?: string | null; mobile?: string | null } | null;
 };
@@ -358,7 +359,7 @@ export default function AdminRequests() {
                         <span className="flex items-center gap-1 flex-wrap" dir="ltr">
                           <Clock size={13} />
                           {req.shifts.map((s, i) => (
-                            <span key={i}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < (req.shifts?.length ?? 0) - 1 ? " |" : ""}</span>
+                            <span key={i}>{formatTime12hLong(s.goTime)}{s.returnTime ? ` – ${formatTime12hLong(s.returnTime)}` : ""}{i < req.shifts.length - 1 ? " |" : ""}</span>
                           ))}
                         </span>
                       ) : (
