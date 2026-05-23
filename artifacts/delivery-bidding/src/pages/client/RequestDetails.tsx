@@ -702,43 +702,43 @@ export default function RequestDetails() {
               return (
                 <div key={offer.id} className="rounded-2xl overflow-hidden transition-all"
                   style={{
-                    background: "linear-gradient(160deg, rgba(15,23,42,0.86) 0%, rgba(8,13,28,0.95) 100%)",
-                    border: `1px solid ${isSelected ? "var(--brand-border)" : "rgba(148,163,184,0.22)"}`,
-                    boxShadow: isSelected ? "0 0 0 2px rgba(0,230,118,0.18)" : undefined,
+                    backgroundColor: "#FFFFFF",
+                    border: `2px solid ${isSelected ? "#3B82F6" : "#E5E7EB"}`,
+                    boxShadow: isSelected ? "0 0 0 2px rgba(59, 130, 246, 0.18)" : "0 4px 12px rgba(0, 0, 0, 0.08)",
                   }}>
                   {isSelected && (
-                    <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "var(--brand-subtle)", borderBottom: "1px solid var(--brand-border)" }}>
-                      <CheckCircle size={14} style={{ color: "var(--brand)" }} />
-                      <span className="text-xs font-bold" style={{ color: "var(--brand)" }}>السائق المؤكَّد</span>
+                    <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "#EFF6FF", borderBottom: "2px solid #3B82F6" }}>
+                      <CheckCircle size={14} style={{ color: "#1D4ED8" }} />
+                      <span className="text-sm font-bold" style={{ color: "#1D4ED8" }}>السائق المؤكَّد</span>
                     </div>
                   )}
                     <div className="p-4">
                       <div className="flex items-center gap-3">
                         {/* Avatar */}
                         <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-black shrink-0"
-                          style={{ backgroundColor: isSelected ? "var(--brand)" : "var(--brand-subtle)", color: isSelected ? "var(--brand-fg)" : "var(--brand)" }}>
+                          style={{ backgroundColor: isSelected ? "#3B82F6" : "#EFF6FF", color: isSelected ? "#FFFFFF" : "#1D4ED8" }}>
                           {offer.driver?.name?.charAt(0) ?? "س"}
                         </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-black text-base" style={{ color: "var(--text)" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
+                            <p className="font-black text-xl" style={{ color: "#111827" }}>{offer.driver?.name ?? `سائق #${offer.driverId}`}</p>
                             {hasValidRating && driverRatingValue != null ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-black" style={{ color: "#fbbf24" }}>
+                              <span className="inline-flex items-center gap-1 text-sm font-black" style={{ color: "#fbbf24" }}>
                                 <Star size={12} fill="currentColor" /> {driverRatingValue.toFixed(1)}
                               </span>
                             ) : (
-                              <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ color: "var(--text-muted)", backgroundColor: "rgba(148,163,184,0.16)" }}>
+                              <span className="text-sm font-black px-2 py-0.5 rounded-full" style={{ color: "#6B7280", backgroundColor: "#F3F4F6" }}>
                                 سائق جديد
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 flex-wrap mt-0.5">
                           {offer.driver?.carType && (
-                            <span className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>{offer.driver.carType}</span>
+                            <span className="text-base font-bold" style={{ color: "#6B7280" }}>{offer.driver.carType}</span>
                           )}
                           {offer.driver?.nationality && (
-                            <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-hint)" }}>
+                            <span className="text-sm font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#F3F4F6", color: "#6B7280" }}>
                               {offer.driver.nationality}
                             </span>
                           )}
@@ -748,9 +748,9 @@ export default function RequestDetails() {
                        {isOpen && !request.selectedDriverId && (
                           <button
                             onClick={() => setConfirmOffer(offer)}
-                            className="px-4 py-2.5 rounded-xl font-black text-sm active:scale-95 transition-transform"
+                            className="px-4 py-2.5 rounded-xl font-black text-base active:scale-95 transition-transform"
                             aria-label={`اختيار السائق ${offer.driver?.name ?? `رقم ${offer.driverId}`}${offer.driver?.carType ? `، نوع المركبة ${offer.driver.carType}` : ""}${hasValidRating && driverRatingValue != null ? `، التقييم ${driverRatingValue.toFixed(1)}` : ""}`}
-                            style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)", boxShadow: "var(--brand-shadow)" }}
+                            style={{ backgroundColor: "#3B82F6", color: "#FFFFFF", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)" }}
                           >
                            اختيار السائق
                          </button>

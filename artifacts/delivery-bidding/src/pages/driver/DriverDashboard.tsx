@@ -236,50 +236,50 @@ export default function DriverDashboard() {
                       key={req.id}
                       className="rounded-3xl overflow-hidden transition-all hover:shadow-lg"
                       style={{
-                        backgroundColor: "var(--surface)",
-                        border: "2px solid var(--border)",
-                        boxShadow: "var(--shadow-md)",
+                        backgroundColor: "#FFFFFF",
+                        border: "2px solid #E5E7EB",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
                       }}
                     >
                       {/* Card header */}
                       <div
                         className="p-6"
                         style={{
-                          backgroundColor: "var(--surface-2)",
-                          borderBottom: "1.5px solid var(--border)",
+                          backgroundColor: "#F9FAFB",
+                          borderBottom: "2px solid #E5E7EB",
                         }}
                       >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <span className="text-4xl">{emoji}</span>
                             <div>
-                              <p className="font-black text-xl tracking-tight" style={{ color: "var(--text)" }}>{clientTypeLabel}</p>
-                              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>REQ-{String(req.id).padStart(3, "0")}</p>
+                              <p className="font-black text-2xl tracking-tight" style={{ color: "#111827" }}>{clientTypeLabel}</p>
+                              <p className="text-sm font-bold" style={{ color: "#6B7280" }}>REQ-{String(req.id).padStart(3, "0")}</p>
                             </div>
                           </div>
                           <div
                             className="rounded-2xl px-5 py-4 text-center"
                             style={{
-                              backgroundColor: "var(--brand-subtle)",
-                              border: "2px solid var(--brand-border)",
+                              backgroundColor: "#EFF6FF",
+                              border: "2px solid #3B82F6",
                               minWidth: "100px",
                             }}
                           >
-                            <p className="font-black text-4xl leading-none" style={{ color: "var(--brand)" }} dir="ltr">
+                            <p className="font-black text-5xl leading-none" style={{ color: "#1D4ED8" }} dir="ltr">
                               {((req as any).monthlyPrice ?? 0).toFixed(0)}
                             </p>
-                            <p className="text-xs font-bold mt-1" style={{ color: "var(--text-muted)" }}>ر.س / شهر</p>
+                            <p className="text-sm font-bold mt-1" style={{ color: "#6B7280" }}>ر.س / شهر</p>
                             {(req as any).numberOfPeople > 1 && (
                               <div
                                 className="mt-2 pt-2"
                                 style={{
-                                  borderTop: "1.5px solid var(--border)",
+                                  borderTop: "2px solid #DBEAFE",
                                 }}
                               >
-                                <p className="font-black text-base leading-none" style={{ color: "var(--text)" }} dir="ltr">
+                                <p className="font-black text-xl leading-none" style={{ color: "#111827" }} dir="ltr">
                                   {((req as any).monthlyPrice / (req as any).numberOfPeople).toFixed(0)}
                                 </p>
-                                <p className="text-[10px] font-bold mt-1" style={{ color: "var(--text-hint)" }}>ر.س / شخص</p>
+                                <p className="text-sm font-bold mt-1" style={{ color: "#6B7280" }}>ر.س / شخص</p>
                               </div>
                             )}
                           </div>
@@ -298,28 +298,28 @@ export default function DriverDashboard() {
                             <div
                               className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center"
                               style={{
-                                backgroundColor: "var(--brand)",
-                                border: "2px solid var(--surface)",
-                                boxShadow: "0 0 0 2px var(--brand)",
+                                backgroundColor: "#10B981",
+                                border: "2px solid #FFFFFF",
+                                boxShadow: "0 0 0 2px #10B981",
                               }}
                             />
                             <div>
-                              <p className="text-xs font-bold mb-1" style={{ color: "var(--text-hint)" }}>من (المنطلق)</p>
-                              <p className="text-base font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.homeLocation} className="text-base font-black" style={{ color: "var(--text)" }} /></p>
+                              <p className="text-sm font-bold mb-1" style={{ color: "#6B7280" }}>من (المنطلق)</p>
+                              <p className="text-lg font-black" style={{ color: "#111827" }}><LocationDisplay value={req.homeLocation} className="text-lg font-black" style={{ color: "#111827" }} /></p>
                             </div>
                           </div>
                           <div className="flex items-start gap-3 relative z-10">
                             <div
                               className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center"
                               style={{
-                                backgroundColor: "var(--status-cancelled-text)",
-                                border: "2px solid var(--surface)",
-                                boxShadow: "0 0 0 2px var(--status-cancelled-text)",
+                                backgroundColor: "#EF4444",
+                                border: "2px solid #FFFFFF",
+                                boxShadow: "0 0 0 2px #EF4444",
                               }}
                             />
                             <div>
-                              <p className="text-xs font-bold mb-1" style={{ color: "var(--text-hint)" }}>إلى (الوصول)</p>
-                              <p className="text-base font-black" style={{ color: "var(--text)" }}><LocationDisplay value={req.workLocation} className="text-base font-black" style={{ color: "var(--text)" }} /></p>
+                              <p className="text-sm font-bold mb-1" style={{ color: "#6B7280" }}>إلى (الوصول)</p>
+                              <p className="text-lg font-black" style={{ color: "#111827" }}><LocationDisplay value={req.workLocation} className="text-lg font-black" style={{ color: "#111827" }} /></p>
                             </div>
                           </div>
                         </div>
@@ -338,28 +338,28 @@ export default function DriverDashboard() {
                                   key={i}
                                   className="rounded-2xl overflow-hidden"
                                   style={{
-                                    border: "1.5px solid var(--border)",
-                                    backgroundColor: "var(--surface-2)",
+                                    border: "2px solid #E5E7EB",
+                                    backgroundColor: "#F9FAFB",
                                   }}
                                 >
                                   <div
                                     className="px-4 py-2 text-center"
                                     style={{
-                                      backgroundColor: "var(--surface-3)",
-                                      borderBottom: "1px solid var(--border)",
+                                      backgroundColor: "#EFF6FF",
+                                      borderBottom: "2px solid #DBEAFE",
                                     }}
                                   >
-                                    <p className="text-xs font-black tracking-wide" style={{ color: "var(--text-muted)" }}>{s.label}</p>
+                                    <p className="text-sm font-black tracking-wide" style={{ color: "#1D4ED8" }}>{s.label}</p>
                                   </div>
-                                  <div className="grid gap-px" style={{ gridTemplateColumns: s.back ? "1fr 1fr" : "1fr", backgroundColor: "var(--border)" }}>
-                                    <div className="px-4 py-3.5 text-right" style={{ backgroundColor: "var(--surface)" }}>
-                                      <p className="text-[10px] font-black mb-1.5" style={{ color: "var(--text-hint)" }}>الذهاب</p>
-                                      <p className="text-base font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.go)}</p>
+                                  <div className="grid gap-px" style={{ gridTemplateColumns: s.back ? "1fr 1fr" : "1fr", backgroundColor: "#E5E7EB" }}>
+                                    <div className="px-4 py-3.5 text-right" style={{ backgroundColor: "#FFFFFF" }}>
+                                      <p className="text-sm font-black mb-1.5" style={{ color: "#6B7280" }}>الذهاب</p>
+                                      <p className="text-xl font-black" style={{ color: "#111827" }} dir="ltr">{formatTime12hLong(s.go)}</p>
                                     </div>
                                     {s.back && (
-                                      <div className="px-4 py-3.5 text-right" style={{ backgroundColor: "var(--surface)" }}>
-                                        <p className="text-[10px] font-black mb-1.5" style={{ color: "var(--text-hint)" }}>العودة</p>
-                                        <p className="text-base font-black" style={{ color: "var(--text)" }} dir="ltr">{formatTime12hLong(s.back)}</p>
+                                      <div className="px-4 py-3.5 text-right" style={{ backgroundColor: "#FFFFFF" }}>
+                                        <p className="text-sm font-black mb-1.5" style={{ color: "#6B7280" }}>العودة</p>
+                                        <p className="text-xl font-black" style={{ color: "#111827" }} dir="ltr">{formatTime12hLong(s.back)}</p>
                                       </div>
                                     )}
                                   </div>
@@ -368,12 +368,12 @@ export default function DriverDashboard() {
                               <div
                                 className="rounded-2xl px-5 py-4 flex items-center justify-between"
                                 style={{
-                                  backgroundColor: "var(--surface-2)",
-                                  border: "1.5px solid var(--border)",
+                                  backgroundColor: "#F9FAFB",
+                                  border: "2px solid #E5E7EB",
                                 }}
                               >
-                                <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>عدد الأشخاص</p>
-                                <p className="text-2xl font-black" style={{ color: "var(--brand)" }}>{req.numberOfPeople}</p>
+                                <p className="text-base font-black" style={{ color: "#6B7280" }}>عدد الأشخاص</p>
+                                <p className="text-3xl font-black" style={{ color: "#1D4ED8" }}>{req.numberOfPeople}</p>
                               </div>
                             </div>
                           );
@@ -381,8 +381,8 @@ export default function DriverDashboard() {
 
                         <div className="flex gap-1.5 flex-wrap">
                           {DAYS_FULL.slice(0, req.workingDaysPerWeek ?? 5).map((d) => (
-                            <span key={d} className="text-xs px-2.5 py-1 rounded-full font-black"
-                              style={{ backgroundColor: "var(--brand-subtle)", color: "var(--brand)", border: "1px solid var(--brand-border)" }}>
+                            <span key={d} className="text-sm px-3 py-2 rounded-full font-black"
+                              style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", border: "2px solid #3B82F6" }}>
                               {d}
                             </span>
                           ))}

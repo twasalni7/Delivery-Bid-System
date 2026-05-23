@@ -156,12 +156,12 @@ export default function DriverRequests() {
 
         <div className="space-y-5">
           {filtered.map((r) => (
-            <div key={r.id} className="rounded-3xl overflow-hidden" style={{ background: "linear-gradient(150deg, rgba(20,31,50,0.8) 0%, rgba(9,13,22,0.95) 55%, rgba(6,10,16,0.98) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div key={r.id} className="rounded-3xl overflow-hidden" style={{ backgroundColor: "#FFFFFF", border: "2px solid #E5E7EB", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)" }}>
               {/* Card header */}
               <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-2"
-                style={{ backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                <span className="text-xs font-black" style={{ color: "var(--text-muted)" }}>طلب #{r.id}</span>
-                <span className={`text-xs px-3 py-1 rounded-full font-black ${STATUS_PILL[r.status] ?? "pill-completed"}`}>
+                style={{ backgroundColor: "#F9FAFB", borderBottom: "2px solid #E5E7EB" }}>
+                <span className="text-base font-black" style={{ color: "#111827" }}>طلب #{r.id}</span>
+                <span className={`text-sm px-3 py-1 rounded-full font-black ${STATUS_PILL[r.status] ?? "pill-completed"}`}>
                   {STATUS_LABELS[r.status] ?? r.status}
                 </span>
               </div>
@@ -169,24 +169,24 @@ export default function DriverRequests() {
               {/* Route */}
               <div className="px-5 py-5 space-y-4">
                 <div className="space-y-3 relative pr-3">
-                  <div className="absolute right-[5px] top-4 bottom-4 w-[2px] rounded-full" style={{ backgroundColor: "var(--border-subtle)" }} />
+                  <div className="absolute right-[5px] top-4 bottom-4 w-[2px] rounded-full" style={{ backgroundColor: "#E5E7EB" }} />
                   <div className="flex items-start gap-4 relative z-10">
-                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--brand)", boxShadow: "0 0 8px rgba(222,255,154,0.4)" }} />
+                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#10B981", boxShadow: "0 0 8px rgba(16, 185, 129, 0.4)" }} />
                     <div>
-                      <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الانطلاق</p>
-                      <LocationDisplay value={r.homeLocation} className="text-sm font-black" style={{ color: "var(--text)" }} />
+                      <p className="text-sm font-bold mb-0.5" style={{ color: "#6B7280" }}>الانطلاق</p>
+                      <LocationDisplay value={r.homeLocation} className="text-lg font-black" style={{ color: "#111827" }} />
                     </div>
                   </div>
                   <div className="flex items-start gap-4 relative z-10">
-                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "var(--status-cancelled-text)", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }} />
+                    <div className="w-4 h-4 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: "#EF4444", boxShadow: "0 0 8px rgba(239, 68, 68, 0.4)" }} />
                     <div>
-                      <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-hint)" }}>الوصول</p>
-                      <LocationDisplay value={r.workLocation} className="text-sm font-black" style={{ color: "var(--text)" }} />
+                      <p className="text-sm font-bold mb-0.5" style={{ color: "#6B7280" }}>الوصول</p>
+                      <LocationDisplay value={r.workLocation} className="text-lg font-black" style={{ color: "#111827" }} />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 text-xs font-black" style={{ color: "var(--text-muted)" }} dir="ltr">
+                <div className="flex flex-wrap gap-3 text-base font-black" style={{ color: "#111827" }} dir="ltr">
                   {r.shifts && r.shifts.length > 0 ? (
                     <span>⏰ {r.shifts.map((s) => `الذهاب: ${formatTime12hLong(s.goTime ?? "")}${s.returnTime ? ` | العودة: ${formatTime12hLong(s.returnTime)}` : ""}`).join(" | ")}</span>
                   ) : (
@@ -205,12 +205,12 @@ export default function DriverRequests() {
 
                 {/* Price breakdown */}
                 {(r as any).monthlyPrice != null && (r as any).monthlyPrice > 0 && (
-                  <div className="flex items-center justify-between p-3 rounded-2xl" style={{ backgroundColor: "var(--brand-subtle)", border: "1px solid var(--brand-border)" }}>
+                  <div className="flex items-center justify-between p-3 rounded-2xl" style={{ backgroundColor: "#EFF6FF", border: "2px solid #3B82F6" }}>
                     <div>
-                      <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>
+                      <p className="text-sm font-bold" style={{ color: "#6B7280" }}>
                         {r.numberOfPeople > 1 ? "السعر / شخص" : "السعر الشهري"}
                       </p>
-                      <p className="font-black text-xl" style={{ color: "var(--brand)" }} dir="ltr">
+                      <p className="font-black text-2xl" style={{ color: "#1D4ED8" }} dir="ltr">
                         {r.numberOfPeople > 1
                           ? ((r as any).monthlyPrice / r.numberOfPeople).toFixed(0)
                           : (r as any).monthlyPrice.toFixed(0)}{" "}ر.س
@@ -218,14 +218,14 @@ export default function DriverRequests() {
                     </div>
                     {r.numberOfPeople > 1 && (
                       <div className="text-right">
-                        <p className="text-[10px] font-bold" style={{ color: "var(--text-hint)" }}>الإجمالي ({r.numberOfPeople} أشخاص)</p>
-                        <p className="font-black text-base" style={{ color: "var(--text-sub)" }} dir="ltr">{(r as any).monthlyPrice.toFixed(0)} ر.س/شهر</p>
+                        <p className="text-sm font-bold" style={{ color: "#6B7280" }}>الإجمالي ({r.numberOfPeople} أشخاص)</p>
+                        <p className="font-black text-xl" style={{ color: "#111827" }} dir="ltr">{(r as any).monthlyPrice.toFixed(0)} ر.س/شهر</p>
                       </div>
                     )}
                   </div>
                 )}
 
-                <p className="text-xs font-bold" style={{ color: "var(--text-hint)" }}>
+                <p className="text-sm font-bold" style={{ color: "#6B7280" }}>
                   {new Date(r.createdAt).toLocaleDateString("ar-SA")}
                 </p>
               </div>
