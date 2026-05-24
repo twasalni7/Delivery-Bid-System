@@ -48,6 +48,13 @@ type PassengerEntry = {
   destCoords: MapCoords | null;
 };
 
+type ScheduleType = "fixed" | "variable" | "multiple";
+
+type DaySchedule = {
+  goTime: string;
+  returnTime: string;
+};
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 /** Live price mini-card shown after locations are set */
@@ -106,16 +113,19 @@ function PassengerCard({
   index,
   passenger,
   onChange,
+  hideDest = false,
 }: {
   index: number;
   passenger: PassengerEntry;
   onChange: (updated: PassengerEntry) => void;
+  hideDest?: boolean;
 }) {
   const [expandPickup, setExpandPickup] = useState(!passenger.pickupCoords);
   const [expandDropoff, setExpandDropoff] = useState(false);
 
   const hasPickup = Boolean(passenger.pickupCoords);
   const hasDropoff = Boolean(passenger.destCoords);
+  const isComplete = hideDest ? hasPickup : (hasPickup && hasDropoff);
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}>
@@ -123,16 +133,16 @@ function PassengerCard({
       <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border-subtle)", backgroundColor: "var(--surface-2)" }}>
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0"
-          style={{ backgroundColor: hasPickup && hasDropoff ? "var(--brand)" : "var(--border)", color: hasPickup && hasDropoff ? "var(--brand-fg)" : "var(--text-muted)" }}
+          style={{ backgroundColor: isComplete ? "var(--brand)" : "var(--border)", color: isComplete ? "var(--brand-fg)" : "var(--text-muted)" }}
         >
-          {hasPickup && hasDropoff ? <Check size={14} strokeWidth={3} /> : index}
+          {isComplete ? <Check size={14} strokeWidth={3} /> : index}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-black" style={{ color: "var(--text)" }}>
             {index === 1 ? "الراكب الأول (أنت)" : `الراكب ${index}`}
           </p>
-          <p className="text-xs font-bold" style={{ color: hasPickup && hasDropoff ? "var(--brand)" : "var(--text-muted)" }}>
-            {!hasPickup ? "حدد موقع الانطلاق أولاً" : !hasDropoff ? "أضف موقع الوصول" : "✓ تم تحديد الموقعين"}
+          <p className="text-xs font-bold" style={{ color: isComplete ? "var(--brand)" : "var(--text-muted)" }}>
+            {!hasPickup ? "حدد موقع الانطلاق" : hideDest ? "✓ تم تحديد الموقع" : !hasDropoff ? "أضف موقع الوصول" : "✓ تم تحديد الموقعين"}
           </p>
         </div>
       </div>
@@ -168,7 +178,7 @@ function PassengerCard({
               onChange={(coords) => {
                 onChange({ ...passenger, pickupCoords: coords });
                 setExpandPickup(false);
-                if (!passenger.destCoords) setExpandDropoff(true);
+                if (!hideDest && !passenger.destCoords) setExpandDropoff(true);
               }}
               placeholder="ابحث عن حي أو مكان ثم اضغط تأكيد"
               color="var(--brand)"
@@ -179,8 +189,8 @@ function PassengerCard({
           )}
         </div>
 
-        {/* Dropoff — shown only after pickup is set */}
-        {hasPickup && (
+        {/* Dropoff — shown only after pickup is set and not in same destination mode */}
+        {!hideDest && hasPickup && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
@@ -303,8 +313,14 @@ export default function CreateRequestNew() {
   const [numberOfPeople, setNumberOfPeople] = useState(1);
   const [passengers, setPassengers] = useState<PassengerEntry[]>([{ pickupCoords: null, destCoords: null }]);
 
-  // Step 4: Shifts
+  // New: Same destination mode
+  const [sameDestination, setSameDestination] = useState<boolean | null>(null);
+  const [sharedDestCoords, setSharedDestCoords] = useState<MapCoords | null>(null);
+
+  // Step 4: Schedule type and configuration
+  const [scheduleType, setScheduleType] = useState<ScheduleType | null>(null);
   const [shifts, setShifts] = useState<ShiftEntry[]>([{ goTime: "", returnTime: "" }]);
+  const [daySchedules, setDaySchedules] = useState<Record<string, DaySchedule>>({});
 
   // Step 4: Days
   const [selectedDays, setSelectedDays] = useState<string[]>(["sun", "mon", "tue", "wed", "thu"]);
@@ -312,9 +328,9 @@ export default function CreateRequestNew() {
   // Confirmation dialog
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Derived convenience refs to first passenger
+  // Derived convenience refs to first passenger (used for pricing preview)
   const homeCoords = passengers[0]?.pickupCoords ?? null;
-  const workCoords = passengers[0]?.destCoords ?? null;
+  const workCoords = sameDestination ? sharedDestCoords : (passengers[0]?.destCoords ?? null);
 
   // Sync passengers array length to numberOfPeople
   const handleSetNumberOfPeople = (n: number) => {
@@ -326,6 +342,11 @@ export default function CreateRequestNew() {
       }
       return prev.slice(0, clamped);
     });
+    // Reset same destination choice when changing number of people
+    if (clamped === 1) {
+      setSameDestination(null);
+      setSharedDestCoords(null);
+    }
   };
 
   const updatePassenger = (idx: number, updated: PassengerEntry) =>
@@ -352,8 +373,26 @@ export default function CreateRequestNew() {
       return;
     }
     const controller = new AbortController();
-    const firstReturnTime = shifts[0]?.returnTime ?? "";
-    const validShifts = buildShiftsPayload(shifts);
+
+    // Calculate shifts based on schedule type
+    let validShifts: { label: string; goTime: string; returnTime?: string }[] = [];
+    if (scheduleType === "fixed") {
+      validShifts = buildShiftsPayload(shifts);
+    } else if (scheduleType === "variable") {
+      // Variable times: one shift per day, but different times
+      const dayKeys = DAYS.map(d => d.key);
+      validShifts = dayKeys
+        .filter(key => selectedDays.includes(key) && daySchedules[key]?.goTime)
+        .map((key, idx) => ({
+          label: DAYS.find(d => d.key === key)?.label || `اليوم ${idx + 1}`,
+          goTime: daySchedules[key]!.goTime,
+          returnTime: daySchedules[key]!.returnTime || undefined,
+        }));
+    } else if (scheduleType === "multiple") {
+      validShifts = buildShiftsPayload(shifts);
+    }
+
+    const firstReturnTime = validShifts[0]?.returnTime ?? "";
 
     setIsPricingLoading(true);
     fetch(`${API}/api/maps/route`, {
@@ -370,6 +409,15 @@ export default function CreateRequestNew() {
       .then((r) => { if (!r.ok) throw new Error(`route: ${r.status}`); return r.json(); })
       .then((route) => {
         setRouteSummary(route);
+        // Count actual shifts for pricing
+        let numberOfShiftsForPricing = 1;
+        if (scheduleType === "multiple") {
+          numberOfShiftsForPricing = validShifts.length || 1;
+        } else if (scheduleType === "variable" || scheduleType === "fixed") {
+          // Variable/fixed times = 1 shift regardless of day differences
+          numberOfShiftsForPricing = 1;
+        }
+
         return fetch(`${API}/api/pricing/calculate`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...getAuthHeaders() },
@@ -378,7 +426,7 @@ export default function CreateRequestNew() {
             distanceKm: route.distanceKm,
             numberOfPeople,
             workingDaysPerWeek: selectedDays.length || 5,
-            numberOfShifts: validShifts.length || 1,
+            numberOfShifts: numberOfShiftsForPricing,
             eveningTime: firstReturnTime || undefined,
             shifts: validShifts.length > 0 ? validShifts : undefined,
           }),
@@ -394,7 +442,7 @@ export default function CreateRequestNew() {
         }
       });
     return () => controller.abort();
-  }, [homeCoords, workCoords, numberOfPeople, selectedDays, shifts]);
+  }, [homeCoords, workCoords, numberOfPeople, selectedDays, shifts, scheduleType, daySchedules]);
 
   const toggleDay = (key: string) =>
     setSelectedDays((prev) =>
@@ -404,8 +452,32 @@ export default function CreateRequestNew() {
   const canNext = (): boolean => {
     if (step === 1) return !!clientType;
     if (step === 2) return numberOfPeople >= 1;
-    if (step === 3) return passengers.every((p) => p.pickupCoords && p.destCoords);
-    if (step === 4) return !!(shifts[0]?.goTime) && selectedDays.length > 0;
+    if (step === 3) {
+      if (numberOfPeople === 1) {
+        return !!(passengers[0]?.pickupCoords && passengers[0]?.destCoords);
+      }
+      // For multiple passengers
+      if (sameDestination === null) return false; // Must choose same destination option
+      if (sameDestination) {
+        // All passengers need pickup, one shared destination
+        return passengers.every(p => p.pickupCoords) && !!sharedDestCoords;
+      } else {
+        // Each passenger needs both locations
+        return passengers.every(p => p.pickupCoords && p.destCoords);
+      }
+    }
+    if (step === 4) {
+      if (!scheduleType) return false;
+      if (scheduleType === "fixed") {
+        return !!(shifts[0]?.goTime) && selectedDays.length > 0;
+      }
+      if (scheduleType === "variable") {
+        return selectedDays.every(day => daySchedules[day]?.goTime) && selectedDays.length > 0;
+      }
+      if (scheduleType === "multiple") {
+        return shifts.length > 0 && shifts.every(s => s.goTime) && selectedDays.length > 0;
+      }
+    }
     return true;
   };
 
@@ -430,18 +502,41 @@ export default function CreateRequestNew() {
   };
 
   const handleSubmit = () => {
-    const validShifts = buildShiftsPayload(shifts);
-    const firstGoTime = shifts[0]?.goTime ?? "";
-    const firstReturnTime = shifts[0]?.returnTime ?? "";
+    // Build shifts array based on schedule type
+    let validShifts: { label: string; goTime: string; returnTime?: string }[] = [];
+    let numberOfShiftsForPricing = 1;
 
+    if (scheduleType === "fixed") {
+      validShifts = buildShiftsPayload(shifts);
+      numberOfShiftsForPricing = 1; // Fixed time = 1 shift
+    } else if (scheduleType === "variable") {
+      // Variable times per day: build one entry per selected day
+      const dayKeys = DAYS.map(d => d.key);
+      validShifts = dayKeys
+        .filter(key => selectedDays.includes(key) && daySchedules[key]?.goTime)
+        .map(key => ({
+          label: DAYS.find(d => d.key === key)?.label || key,
+          goTime: daySchedules[key]!.goTime,
+          returnTime: daySchedules[key]!.returnTime || undefined,
+        }));
+      numberOfShiftsForPricing = 1; // Different times per day = still 1 shift
+    } else if (scheduleType === "multiple") {
+      validShifts = buildShiftsPayload(shifts);
+      numberOfShiftsForPricing = validShifts.length || 1; // Multiple daily shifts = count all
+    }
+
+    const firstGoTime = validShifts[0]?.goTime ?? "";
+    const firstReturnTime = validShifts[0]?.returnTime ?? "";
+
+    // Build passengers data with same destination support
     const passengersData = passengers.map((p, idx) => ({
       passengerIndex: idx + 1,
       pickupLat: p.pickupCoords?.lat ?? null,
       pickupLng: p.pickupCoords?.lng ?? null,
-      destinationLat: p.destCoords?.lat ?? null,
-      destinationLng: p.destCoords?.lng ?? null,
+      destinationLat: sameDestination ? sharedDestCoords?.lat : p.destCoords?.lat ?? null,
+      destinationLng: sameDestination ? sharedDestCoords?.lng : p.destCoords?.lng ?? null,
       pickupAddress: p.pickupCoords?.address ?? null,
-      destinationAddress: p.destCoords?.address ?? null,
+      destinationAddress: sameDestination ? sharedDestCoords?.address : p.destCoords?.address ?? null,
       workTime: firstGoTime || null,
       daysPerWeek: selectedDays.length,
     }));
@@ -459,7 +554,7 @@ export default function CreateRequestNew() {
           distanceKm: routeSummary?.distanceKm,
           numberOfPeople,
           workingDaysPerWeek: selectedDays.length,
-          numberOfShifts: validShifts.length || 1,
+          numberOfShifts: numberOfShiftsForPricing,
           morningTime: firstGoTime,
           eveningTime: firstReturnTime || undefined,
           shifts: validShifts.length > 0 ? validShifts : undefined,
@@ -635,14 +730,74 @@ export default function CreateRequestNew() {
                 </p>
               </div>
 
-              {passengers.map((p, idx) => (
-                <PassengerCard
-                  key={idx}
-                  index={idx + 1}
-                  passenger={p}
-                  onChange={(updated) => updatePassenger(idx, updated)}
-                />
-              ))}
+              {/* Same Destination Choice (only for multiple passengers) */}
+              {numberOfPeople > 1 && sameDestination === null && (
+                <div className="space-y-3">
+                  <p className="text-lg font-black" style={{ color: "var(--text)" }}>هل الوجهة واحدة للجميع؟</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setSameDestination(true)}
+                      className="p-5 rounded-2xl transition-all active:scale-[0.98] text-center"
+                      style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border-subtle)" }}
+                    >
+                      <div className="text-3xl mb-2">✅</div>
+                      <p className="text-base font-black" style={{ color: "var(--text)" }}>نعم</p>
+                      <p className="text-xs font-bold mt-1" style={{ color: "var(--text-muted)" }}>وجهة واحدة فقط</p>
+                    </button>
+                    <button
+                      onClick={() => setSameDestination(false)}
+                      className="p-5 rounded-2xl transition-all active:scale-[0.98] text-center"
+                      style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border-subtle)" }}
+                    >
+                      <div className="text-3xl mb-2">📍</div>
+                      <p className="text-base font-black" style={{ color: "var(--text)" }}>لا</p>
+                      <p className="text-xs font-bold mt-1" style={{ color: "var(--text-muted)" }}>كل راكب له وجهة</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Show locations UI only after same destination choice */}
+              {(numberOfPeople === 1 || sameDestination !== null) && (
+                <>
+                  {sameDestination && (
+                    <div className="p-4 rounded-2xl space-y-3" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-black" style={{ color: "var(--text)" }}>✅ وجهة واحدة للجميع</p>
+                        <button
+                          onClick={() => {
+                            setSameDestination(null);
+                            setSharedDestCoords(null);
+                          }}
+                          className="text-xs font-black px-2 py-1 rounded-lg"
+                          style={{ backgroundColor: "var(--surface)", color: "var(--brand)" }}
+                        >
+                          تغيير
+                        </button>
+                      </div>
+                      <MapPicker
+                        value={sharedDestCoords}
+                        onChange={setSharedDestCoords}
+                        placeholder="ابحث عن الوجهة المشتركة..."
+                        color="#F59E0B"
+                        collapsible
+                        openButtonLabel="اضغط لتحديد الوجهة المشتركة"
+                        openButtonHint="ستكون هذه الوجهة لجميع الركاب"
+                      />
+                    </div>
+                  )}
+
+                  {passengers.map((p, idx) => (
+                    <PassengerCard
+                      key={idx}
+                      index={idx + 1}
+                      passenger={p}
+                      onChange={(updated) => updatePassenger(idx, updated)}
+                      hideDest={sameDestination === true}
+                    />
+                  ))}
+                </>
+              )}
             </div>
           )}
 
@@ -654,74 +809,228 @@ export default function CreateRequestNew() {
                   الأوقات والأيام
                 </h1>
                 <p className="text-base font-bold" style={{ color: "var(--text-muted)" }}>
-                  حدد أوقات الذهاب والعودة، ويمكنك إضافة أكثر من وردية
+                  اختر نوع الجدول المناسب لك
                 </p>
               </div>
 
-              {/* Shifts */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
-                    <Clock size={14} style={{ color: "var(--brand)" }} /> الورديات / الأوقات
-                  </label>
-                  <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
-                    {shifts.length} / {MAX_SHIFTS}
-                  </span>
-                </div>
-
-                {shifts.map((shift, idx) => (
-                  <ShiftCard
-                    key={idx}
-                    index={idx}
-                    shift={shift}
-                    onChange={(updated) =>
-                      setShifts((prev) => prev.map((s, i) => (i === idx ? updated : s)))
-                    }
-                    onRemove={
-                      shifts.length > 1
-                        ? () => setShifts((prev) => prev.filter((_, i) => i !== idx))
-                        : undefined
-                    }
-                  />
-                ))}
-
-                {shifts.length < MAX_SHIFTS && (
+              {/* Schedule Type Selector */}
+              {!scheduleType && (
+                <div className="space-y-3">
+                  <p className="text-sm font-black" style={{ color: "var(--text-sub)" }}>نوع الجدول</p>
                   <button
-                    onClick={() => setShifts((prev) => [...prev, { goTime: "", returnTime: "" }])}
-                    className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-dashed text-sm font-black transition-all active:scale-[0.98]"
-                    style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+                    onClick={() => setScheduleType("fixed")}
+                    className="w-full p-5 rounded-2xl transition-all active:scale-[0.98] text-right"
+                    style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border-subtle)" }}
                   >
-                    <Plus size={16} /> إضافة وردية أخرى
+                    <div className="flex items-start gap-4">
+                      <span className="text-3xl shrink-0">🕐</span>
+                      <div className="flex-1">
+                        <p className="text-lg font-black mb-1" style={{ color: "var(--text)" }}>وقت ثابت</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+                          نفس الوقت يومياً (ذهاب وعودة)
+                        </p>
+                      </div>
+                    </div>
                   </button>
-                )}
-              </div>
-
-              {/* Days */}
-              <div className="space-y-3">
-                <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
-                  <Calendar size={14} style={{ color: "var(--brand)" }} /> أيام العمل
-                </label>
-                <div className="space-y-2">
-                  {DAYS.map((day) => (
-                    <button
-                      key={day.key}
-                      onClick={() => toggleDay(day.key)}
-                      className="w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98]"
-                      style={
-                        selectedDays.includes(day.key)
-                          ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
-                          : { backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }
-                      }
-                    >
-                      <span className="text-base font-black">{day.label}</span>
-                      {selectedDays.includes(day.key) && <Check size={20} strokeWidth={3} />}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => setScheduleType("variable")}
+                    className="w-full p-5 rounded-2xl transition-all active:scale-[0.98] text-right"
+                    style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border-subtle)" }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="text-3xl shrink-0">📅</span>
+                      <div className="flex-1">
+                        <p className="text-lg font-black mb-1" style={{ color: "var(--text)" }}>أوقات مختلفة</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+                          كل يوم له وقت مختلف (بدون زيادة سعر)
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setScheduleType("multiple")}
+                    className="w-full p-5 rounded-2xl transition-all active:scale-[0.98] text-right"
+                    style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border-subtle)" }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="text-3xl shrink-0">🔄</span>
+                      <div className="flex-1">
+                        <p className="text-lg font-black mb-1" style={{ color: "var(--text)" }}>شفتات متعددة</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+                          أكثر من رحلة في نفس اليوم (زيادة سعر)
+                        </p>
+                      </div>
+                    </div>
+                  </button>
                 </div>
-                <p className="text-center text-sm font-bold" style={{ color: "var(--text-muted)" }}>
-                  {selectedDays.length} {selectedDays.length === 1 ? "يوم" : "أيام"} في الأسبوع
-                </p>
-              </div>
+              )}
+
+              {/* Show schedule UI based on selected type */}
+              {scheduleType && (
+                <>
+                  {/* Show selected type with change button */}
+                  <div className="p-4 rounded-2xl flex items-center justify-between" style={{ backgroundColor: "var(--brand-subtle)", border: "2px solid var(--brand)" }}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {scheduleType === "fixed" ? "🕐" : scheduleType === "variable" ? "📅" : "🔄"}
+                      </span>
+                      <div>
+                        <p className="text-sm font-black" style={{ color: "var(--text)" }}>
+                          {scheduleType === "fixed" ? "وقت ثابت" : scheduleType === "variable" ? "أوقات مختلفة" : "شفتات متعددة"}
+                        </p>
+                        <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
+                          {scheduleType === "fixed" ? "نفس الوقت يومياً" : scheduleType === "variable" ? "أوقات مختلفة حسب الأيام" : "عدة رحلات يومياً"}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setScheduleType(null);
+                        setShifts([{ goTime: "", returnTime: "" }]);
+                        setDaySchedules({});
+                      }}
+                      className="text-xs font-black px-3 py-2 rounded-lg"
+                      style={{ backgroundColor: "var(--surface)", color: "var(--brand)" }}
+                    >
+                      تغيير
+                    </button>
+                  </div>
+
+                  {/* Fixed Time Schedule */}
+                  {scheduleType === "fixed" && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+                        <Clock size={14} style={{ color: "var(--brand)" }} /> الوقت اليومي
+                      </label>
+                      <ShiftCard
+                        index={0}
+                        shift={shifts[0]!}
+                        onChange={(updated) => setShifts([updated])}
+                      />
+                    </div>
+                  )}
+
+                  {/* Variable Times Schedule */}
+                  {scheduleType === "variable" && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+                        <Calendar size={14} style={{ color: "var(--brand)" }} /> الأوقات حسب اليوم
+                      </label>
+                      <p className="text-xs font-bold p-3 rounded-xl" style={{ color: "var(--text-hint)", backgroundColor: "var(--surface-2)" }}>
+                        💡 حدد وقت مختلف لكل يوم عمل (بدون زيادة في السعر)
+                      </p>
+                      {selectedDays.length === 0 && (
+                        <p className="text-sm font-bold text-center p-4 rounded-xl" style={{ color: "var(--text-muted)", backgroundColor: "var(--surface-2)" }}>
+                          اختر أيام العمل أولاً من الأسفل
+                        </p>
+                      )}
+                      {selectedDays.map((dayKey) => {
+                        const day = DAYS.find(d => d.key === dayKey);
+                        const daySchedule = daySchedules[dayKey] || { goTime: "", returnTime: "" };
+                        return (
+                          <div key={dayKey} className="p-4 rounded-2xl space-y-3" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}>
+                            <p className="text-sm font-black" style={{ color: "var(--text)" }}>{day?.label}</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>⏰ الذهاب</label>
+                                <Input
+                                  type="time"
+                                  value={daySchedule.goTime}
+                                  onChange={(e) => setDaySchedules(prev => ({ ...prev, [dayKey]: { ...daySchedule, goTime: e.target.value } }))}
+                                  className="rounded-xl font-bold text-base"
+                                  style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }}
+                                  dir="ltr"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs font-black" style={{ color: "var(--text-hint)" }}>🔄 العودة</label>
+                                <Input
+                                  type="time"
+                                  value={daySchedule.returnTime}
+                                  onChange={(e) => setDaySchedules(prev => ({ ...prev, [dayKey]: { ...daySchedule, returnTime: e.target.value } }))}
+                                  className="rounded-xl font-bold text-base"
+                                  style={{ backgroundColor: "var(--surface)", border: "2px solid var(--border)", color: "var(--text)" }}
+                                  dir="ltr"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Multiple Shifts Schedule */}
+                  {scheduleType === "multiple" && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+                          <Clock size={14} style={{ color: "var(--brand)" }} /> الشفتات اليومية
+                        </label>
+                        <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
+                          {shifts.length} / {MAX_SHIFTS}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold p-3 rounded-xl" style={{ color: "var(--text-hint)", backgroundColor: "var(--surface-2)" }}>
+                        💡 كل شفت إضافي في نفس اليوم سيزيد السعر
+                      </p>
+
+                      {shifts.map((shift, idx) => (
+                        <ShiftCard
+                          key={idx}
+                          index={idx}
+                          shift={shift}
+                          onChange={(updated) =>
+                            setShifts((prev) => prev.map((s, i) => (i === idx ? updated : s)))
+                          }
+                          onRemove={
+                            shifts.length > 1
+                              ? () => setShifts((prev) => prev.filter((_, i) => i !== idx))
+                              : undefined
+                          }
+                        />
+                      ))}
+
+                      {shifts.length < MAX_SHIFTS && (
+                        <button
+                          onClick={() => setShifts((prev) => [...prev, { goTime: "", returnTime: "" }])}
+                          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-dashed text-sm font-black transition-all active:scale-[0.98]"
+                          style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+                        >
+                          <Plus size={16} /> إضافة شفت آخر
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Days Selection */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-black flex items-center gap-2" style={{ color: "var(--text-sub)" }}>
+                      <Calendar size={14} style={{ color: "var(--brand)" }} /> أيام العمل
+                    </label>
+                    <div className="space-y-2">
+                      {DAYS.map((day) => (
+                        <button
+                          key={day.key}
+                          onClick={() => toggleDay(day.key)}
+                          className="w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98]"
+                          style={
+                            selectedDays.includes(day.key)
+                              ? { backgroundColor: "var(--brand)", color: "var(--brand-fg)" }
+                              : { backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }
+                          }
+                        >
+                          <span className="text-base font-black">{day.label}</span>
+                          {selectedDays.includes(day.key) && <Check size={20} strokeWidth={3} />}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-center text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+                      {selectedDays.length} {selectedDays.length === 1 ? "يوم" : "أيام"} في الأسبوع
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
