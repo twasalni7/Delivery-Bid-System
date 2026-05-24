@@ -54,8 +54,18 @@
 Add to your `.env` file:
 
 ```bash
+# Server-side variable (recommended for production)
+GOOGLE_MAPS_API_KEY=your-google-maps-api-key-here
+
+# Optional: For local development, you can also set the frontend variable directly
 VITE_GOOGLE_MAPS_API_KEY=your-google-maps-api-key-here
 ```
+
+**How it works:**
+- The frontend first tries to use `VITE_GOOGLE_MAPS_API_KEY` if available (useful for local development)
+- If not found, it fetches the API key from the backend endpoint `/api/push/google-maps-key`
+- The backend serves the key from the `GOOGLE_MAPS_API_KEY` environment variable
+- This approach keeps the API key secure in production environments
 
 ### 3. Deploy
 
@@ -125,9 +135,11 @@ No database migrations are needed. The new fields are optional and backward comp
 ## Troubleshooting
 
 ### Map doesn't load
-- Check that `VITE_GOOGLE_MAPS_API_KEY` is set
+- Check that `GOOGLE_MAPS_API_KEY` is set in your server environment
+- Alternatively, set `VITE_GOOGLE_MAPS_API_KEY` for frontend-only development
 - Verify API key has correct APIs enabled
 - Check browser console for errors
+- Open browser DevTools Network tab and check if `/api/push/google-maps-key` returns the key successfully
 
 ### Search doesn't work
 - Ensure Places API is enabled
