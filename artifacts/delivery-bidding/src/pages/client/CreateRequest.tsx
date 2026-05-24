@@ -6,7 +6,7 @@ import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { buildShiftsPayload, formatTime12hLong, SHIFT_LABELS } from "@/lib/time-utils";
-import MapPicker, { type MapCoords } from "@/components/MapPicker";
+import GoogleMapPicker, { type GoogleMapCoords as MapCoords } from "@/components/GoogleMapPicker";
 import { API_ORIGIN as API } from "@/lib/api-config";
 import { getAuthHeaders } from "@/lib/authed-fetch";
 import {
@@ -173,7 +173,7 @@ function PassengerCard({
             </div>
           )}
           {(!hasPickup || expandPickup) && (
-            <MapPicker
+            <GoogleMapPicker
               value={passenger.pickupCoords}
               onChange={(coords) => {
                 onChange({ ...passenger, pickupCoords: coords });
@@ -213,7 +213,7 @@ function PassengerCard({
               </div>
             )}
             {(!hasDropoff || expandDropoff) && (
-              <MapPicker
+              <GoogleMapPicker
                 value={passenger.destCoords}
                 onChange={(coords) => {
                   onChange({ ...passenger, destCoords: coords });
@@ -843,7 +843,7 @@ export default function CreateRequestNew({ mode = "client" }: { mode?: "client" 
                           تغيير
                         </button>
                       </div>
-                      <MapPicker
+                      <GoogleMapPicker
                         value={sharedDestCoords}
                         onChange={setSharedDestCoords}
                         placeholder="ابحث عن الوجهة المشتركة..."
