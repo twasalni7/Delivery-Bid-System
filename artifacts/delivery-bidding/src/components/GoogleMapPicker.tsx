@@ -74,11 +74,11 @@ export default function GoogleMapPicker({
   const [pendingSelection, setPendingSelection] = useState<GoogleMapCoords | null>(value);
   const [searchText, setSearchText] = useState(value?.address ?? "");
 
+  const shouldRenderMap = isMobile ? isPickerOpen : (!collapsible || isInlineExpanded);
+
   const { isLoaded: mapsLoaded, isLoading: mapsLoading, error: mapsError } = useGoogleMaps({
     enabled: shouldRenderMap,
   });
-
-  const shouldRenderMap = isMobile ? isPickerOpen : (!collapsible || isInlineExpanded);
 
   const dismissKeyboardAndSuggestions = useCallback(() => {
     searchInputRef.current?.blur();
