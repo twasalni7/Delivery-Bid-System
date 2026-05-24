@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from "@/lib/google-maps-loader";
+import { API_ORIGIN } from "@/lib/api-config";
 
 interface UseGoogleMapsOptions {
   enabled?: boolean;
@@ -17,7 +18,25 @@ interface UseGoogleMapsReturn {
   google: typeof window.google | null;
 }
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+/**
+ * Fetch Google Maps API key from server
+ */
+async function fetchGoogleMapsApiKey(): Promise<string | null> {
+  try {
+    // First try to use the environment variable (for local development)
+    const envKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (envKey) return envKey;
+
+    // Otherwise fetch from server
+    const res = await fetch(`${API_ORIGIN}/api/push/google-maps-key`);
+    if (!res.ok) return null;
+    const body = (await res.json()) as { apiKey?: string };
+    return body.apiKey ?? null;
+  } catch (err) {
+    console.warn("[GoogleMaps] Failed to fetch API key:", err);
+    return null;
+  }
+}
 
 export function useGoogleMaps(options: UseGoogleMapsOptions = {}): UseGoogleMapsReturn {
   const { enabled = true } = options;
@@ -34,34 +53,40 @@ export function useGoogleMaps(options: UseGoogleMapsOptions = {}): UseGoogleMaps
     if (isLoaded) return;
     if (loadingRef.current) return;
 
-    if (!GOOGLE_MAPS_API_KEY) {
-      setError(new Error("Google Maps API key is not configured"));
-      return;
-    }
-
     loadingRef.current = true;
     setIsLoading(true);
     setError(null);
 
-    loadGoogleMapsAPI({
-      apiKey: GOOGLE_MAPS_API_KEY,
-      libraries: ["places", "geocoding", "geometry"],
-      language: "ar",
-      region: "SA",
-    })
-      .then((google) => {
-        setIsLoaded(true);
-        setGoogleInstance(google);
-        setError(null);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)));
-        console.error("Failed to load Google Maps:", err);
-      })
-      .finally(() => {
+    (async () => {
+      const apiKey = await fetchGoogleMapsApiKey();
+
+      if (!apiKey) {
+        setError(new Error("Google Maps API key is not configured"));
         setIsLoading(false);
         loadingRef.current = false;
-      });
+        return;
+      }
+
+      loadGoogleMapsAPI({
+        apiKey,
+        libraries: ["places", "geocoding", "geometry"],
+        language: "ar",
+        region: "SA",
+      })
+        .then((google) => {
+          setIsLoaded(true);
+          setGoogleInstance(google);
+          setError(null);
+        })
+        .catch((err) => {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          console.error("Failed to load Google Maps:", err);
+        })
+        .finally(() => {
+          setIsLoading(false);
+          loadingRef.current = false;
+        });
+    })();
   }, [enabled, isLoaded]);
 
   return {

@@ -99,6 +99,19 @@ router.get("/vapid-public-key", (_req, res) => {
 });
 
 /**
+ * GET /api/push/google-maps-key
+ * Returns the Google Maps API key for the frontend to use.
+ */
+router.get("/google-maps-key", (_req, res) => {
+  const key = process.env["GOOGLE_MAPS_API_KEY"];
+  if (!key) {
+    res.status(503).json({ error: "Google Maps is not configured on this server" });
+    return;
+  }
+  res.json({ apiKey: key });
+});
+
+/**
  * GET /api/push/status
  * Returns whether the current authenticated user has an active push subscription in DB.
  */
