@@ -2,6 +2,7 @@
  * LocationDisplay.tsx — توصّلني
  * مكون يعرض العنوان: إذا كان احداثيات يحوّله تلقائياً لـ "الحي، المدينة"
  * يمنع ظهور الإحداثيات والنصوص الإنجليزية
+ * يدعم بيانات Google Maps الجديدة مع fallback للبيانات القديمة
  */
 
 import { useState, useEffect } from "react";
@@ -13,6 +14,9 @@ interface LocationDisplayProps {
   style?: React.CSSProperties;
   fallbackText?: string;
   showLoadingState?: boolean;
+  // New props for Google Maps data
+  district?: string;
+  city?: string;
 }
 
 /**
@@ -51,9 +55,19 @@ export function LocationDisplay({
   style,
   fallbackText = "الموقع",
   showLoadingState = true,
+  district,
+  city,
 }: LocationDisplayProps) {
   const [display, setDisplay] = useState<string>(() => {
-    // محاولة أولى سريعة
+    // If we have district and city from Google Maps, use them directly
+    if (district && city) {
+      return `${district}، ${city}`;
+    }
+    if (district || city) {
+      return district || city || fallbackText;
+    }
+
+    // محاولة أولى سريعة للبيانات القديمة
     const coords = isCoordinates(value);
     if (coords) return showLoadingState ? "جاري التحميل..." : fallbackText;
     const short = shortLocation(value);
@@ -63,6 +77,17 @@ export function LocationDisplay({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // If we have district and city from Google Maps, use them
+    if (district && city) {
+      setDisplay(`${district}، ${city}`);
+      return;
+    }
+    if (district || city) {
+      setDisplay(district || city || fallbackText);
+      return;
+    }
+
+    // Fallback to old behavior for legacy data
     if (!value) {
       setDisplay(fallbackText);
       return;
@@ -88,7 +113,7 @@ export function LocationDisplay({
       const cleaned = arabicOnly(short);
       setDisplay(cleaned || fallbackText);
     }
-  }, [value, fallbackText]);
+  }, [value, fallbackText, district, city]);
 
   if (isLoading && showLoadingState) {
     return (

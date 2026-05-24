@@ -62,9 +62,9 @@ export const requestsTable = pgTable("requests", {
   distanceKm: doublePrecision("distance_km"),
   durationMinutes: doublePrecision("duration_minutes"),
   coordinates: jsonb("coordinates").$type<{
-    pickup: { lat: number; lng: number; address?: string | null } | null;
-    dropoff: { lat: number; lng: number; address?: string | null } | null;
-    waypoints?: Array<{ lat: number; lng: number; address?: string | null; type?: string | null }>;
+    pickup: { lat: number; lng: number; address?: string | null; district?: string | null; city?: string | null; place_id?: string | null } | null;
+    dropoff: { lat: number; lng: number; address?: string | null; district?: string | null; city?: string | null; place_id?: string | null } | null;
+    waypoints?: Array<{ lat: number; lng: number; address?: string | null; district?: string | null; city?: string | null; place_id?: string | null; type?: string | null }>;
   }>(),
   routePolyline: text("route_polyline"),
   pricingSnapshot: jsonb("pricing_snapshot").$type<Record<string, unknown>>(),
