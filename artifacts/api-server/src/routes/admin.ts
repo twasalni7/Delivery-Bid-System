@@ -12,6 +12,7 @@ import {
   notificationsTable,
   activityLogsTable,
   requestStopsTable,
+  requestPassengersTable,
 } from "@workspace/db";
 import { eq, count, ne, desc, sql, sum, inArray, and, isNull, isNotNull } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
@@ -1219,6 +1220,30 @@ router.post("/requests", async (req, res) => {
         createdBy: "admin",
       })
       .returning();
+
+    // Insert per-passenger records if provided
+    const passengersInput = req.body?.passengers;
+    const hasPassengers = Array.isArray(passengersInput) && passengersInput.length > 0;
+    if (hasPassengers) {
+      const passengers = passengersInput!;
+      const passengerRouteMap = new Map(
+        routing.passengerRoutes.map((route) => [route.passengerIndex, route.route.distanceKm])
+      );
+      await db.insert(requestPassengersTable).values(
+        passengers.map((p: any) => ({
+          requestId: created.id,
+          passengerIndex: p.passengerIndex,
+          pickupLat: p.pickupLat ?? null,
+          pickupLng: p.pickupLng ?? null,
+          destinationLat: p.destinationLat ?? null,
+          destinationLng: p.destinationLng ?? null,
+          pickupAddress: p.pickupAddress ?? null,
+          destinationAddress: p.destinationAddress ?? null,
+          workTime: p.workTime ?? null,
+          distanceKm: passengerRouteMap.get(p.passengerIndex) ?? null,
+        }))
+      );
+    }
 
     // Notify all active drivers about the new request
     const activeDrivers = await db

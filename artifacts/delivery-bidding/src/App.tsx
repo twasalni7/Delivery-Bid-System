@@ -43,7 +43,6 @@ import AdminOffers from "@/pages/admin/AdminOffers";
 import AdminClients from "@/pages/admin/AdminClients";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminSupport from "@/pages/admin/AdminSupport";
-import AdminCreateRequest from "@/pages/admin/AdminCreateRequest";
 import AdminRequestDetails from "@/pages/admin/AdminRequestDetails";
 import AdminPricing from "@/pages/admin/AdminPricing";
 import AdminActivityLogs from "@/pages/admin/AdminActivityLogs";
@@ -350,7 +349,7 @@ function Router() {
           <AdminGuard><AdminRequests /></AdminGuard>
         </Route>
         <Route path="/admin/requests/new">
-          <AdminGuard><AdminCreateRequest /></AdminGuard>
+          <AdminGuard><CreateRequest mode="admin" /></AdminGuard>
         </Route>
         <Route path="/admin/requests/:id">
           <AdminGuard><AdminRequestDetails /></AdminGuard>
