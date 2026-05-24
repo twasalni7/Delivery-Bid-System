@@ -9,6 +9,7 @@ import { Trash2, MapPin, Clock, Users, Search, X, Plus, Eye } from "lucide-react
 import type { CommuteRequest } from "@workspace/api-client-react";
 import { getStatusLabel, ALL_STATUSES } from "@/lib/status-utils";
 import { formatTime12h, formatTime12hLong } from "@/lib/time-utils";
+import { MultiLocationDisplay } from "@/components/MultiLocationDisplay";
 
 const STATUS_PILL_STYLE: Record<string, React.CSSProperties> = {
   OPEN:      { backgroundColor: "var(--status-open-bg)",      color: "var(--status-open-text)" },
@@ -242,15 +243,17 @@ export default function AdminRequests() {
                         >{req.clientType ?? "—"}</span>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-2 text-sm font-bold">
-                          <MapPin size={15} style={{ color: "var(--brand)" }} className="shrink-0" />
-                          <span style={{ color: "var(--text)" }}>{req.homeLocation}</span>
-                          <span style={{ color: "var(--text-hint)" }}>←</span>
-                          <span style={{ color: "var(--text)" }}>{req.workLocation}</span>
-                        </div>
-                        {req.additionalLocations?.map((loc) => (
-                          <p key={`${loc.type}-${loc.address}`} className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📍 {loc.type === "pickup" ? "استلام" : "توصيل"}: {loc.address}</p>
-                        ))}
+                        <MultiLocationDisplay
+                          requestId={req.id}
+                          fallbackPickup={req.homeLocation}
+                          fallbackPickupLat={(req as any).homeLat}
+                          fallbackPickupLng={(req as any).homeLng}
+                          fallbackDestination={req.workLocation}
+                          fallbackDestLat={(req as any).destLat}
+                          fallbackDestLng={(req as any).destLng}
+                          showMapButtons={true}
+                          compact={true}
+                        />
                         {req.client && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>👤 {req.client.name} — {req.client.mobile}</p>}
                         {req.phone && <p className="text-xs mt-1.5 font-bold" dir="ltr" style={{ color: "var(--text-muted)" }}>📞 {req.phone}</p>}
                         {req.notes && <p className="text-xs mt-1.5 font-bold" style={{ color: "var(--text-muted)" }}>📝 {req.notes}</p>}
@@ -329,9 +332,19 @@ export default function AdminRequests() {
                           <span title="الحالة مثبّتة يدوياً" className="text-xs px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: "var(--status-frozen-bg)", color: "var(--status-frozen-text)" }}>🔒</span>
                         )}
                       </div>
-                      <p className="mt-2 text-base font-black truncate" style={{ color: "var(--text)" }}>
-                        {req.homeLocation} ← {req.workLocation}
-                      </p>
+                      <div className="mt-2">
+                        <MultiLocationDisplay
+                          requestId={req.id}
+                          fallbackPickup={req.homeLocation}
+                          fallbackPickupLat={(req as any).homeLat}
+                          fallbackPickupLng={(req as any).homeLng}
+                          fallbackDestination={req.workLocation}
+                          fallbackDestLat={(req as any).destLat}
+                          fallbackDestLng={(req as any).destLng}
+                          showMapButtons={false}
+                          compact={true}
+                        />
+                      </div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {req.clientType && (
                           <span className="text-xs px-2.5 py-1 rounded-lg font-bold" style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}>
