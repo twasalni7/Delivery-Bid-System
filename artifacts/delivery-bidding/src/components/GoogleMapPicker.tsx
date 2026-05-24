@@ -572,14 +572,17 @@ export default function GoogleMapPicker({
 
   const mapPanel = (
     <div
-      className={isMobile ? "relative flex-1 min-h-0 overflow-hidden" : "relative flex-1 min-h-0 w-full"}
-      style={{ borderTop: "1px solid var(--border-subtle)" }}
+      className={isMobile ? "relative flex-1 min-h-0 overflow-hidden" : "relative w-full"}
+      style={{
+        borderTop: "1px solid var(--border-subtle)",
+        minHeight: isMobile ? undefined : mapPanelMinHeight,
+        height: isMobile ? undefined : mapPanelMinHeight,
+      }}
     >
       <div
         ref={containerRef}
-        className={isMobile ? "absolute inset-0" : "h-full w-full"}
+        className={isMobile ? "absolute inset-0" : "w-full h-full"}
         style={{
-          minHeight: isMobile ? undefined : mapPanelMinHeight,
           backgroundColor: "#e8e0d8",
           touchAction: "pan-x pan-y",
         }}
