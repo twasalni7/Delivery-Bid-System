@@ -10,11 +10,30 @@
  * - RTL support
  */
 
-import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import { MapPin, Loader2, Search, X, LocateFixed, CheckCircle2, Expand, Navigation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleMaps } from "@/hooks/use-google-maps";
+
+/**
+ * Debounce hook for search input
+ */
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export interface GoogleMapCoords {
   lat: number;
@@ -66,6 +85,9 @@ export default function GoogleMapPicker({
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
   );
+  const [isTablet, setIsTablet] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(min-width: 769px) and (max-width: 1024px)").matches
+  );
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isInlineExpanded, setIsInlineExpanded] = useState(!collapsible);
   const [isDesktopZoomed, setIsDesktopZoomed] = useState(false);
@@ -73,6 +95,7 @@ export default function GoogleMapPicker({
 
   const [pendingSelection, setPendingSelection] = useState<GoogleMapCoords | null>(value);
   const [searchText, setSearchText] = useState(value?.address ?? "");
+  const debouncedSearchText = useDebounce(searchText, 300);
 
   const shouldRenderMap = isMobile ? isPickerOpen : (!collapsible || isInlineExpanded);
 
@@ -233,13 +256,132 @@ export default function GoogleMapPicker({
     if (isMobile) setIsPickerOpen(false);
   }, [dismissKeyboardAndSuggestions, isMobile, onChange, pendingSelection, toast]);
 
-  // Update media query listener
+  // Inject global styles for Google Places autocomplete
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)");
-    const apply = () => setIsMobile(media.matches);
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
+    // Create style element for pac-container customization
+    const styleId = 'google-places-autocomplete-mobile-styles';
+
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        /* Google Places Autocomplete Mobile Optimization */
+        .pac-container {
+          z-index: 9999 !important;
+          position: fixed !important;
+          border-radius: 16px !important;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+          border: 1px solid var(--border) !important;
+          background: var(--surface) !important;
+          font-family: var(--font-arabic) !important;
+          margin-top: 4px !important;
+          overflow: hidden !important;
+        }
+
+        .pac-container::after {
+          display: none !important;
+        }
+
+        .pac-item {
+          cursor: pointer !important;
+          padding: 12px 16px !important;
+          border-top: 1px solid var(--border-subtle) !important;
+          font-size: 15px !important;
+          line-height: 1.5 !important;
+          color: var(--text) !important;
+          touch-action: manipulation !important;
+          -webkit-tap-highlight-color: transparent !important;
+        }
+
+        .pac-item:first-child {
+          border-top: none !important;
+        }
+
+        .pac-item:hover,
+        .pac-item:active,
+        .pac-item-selected {
+          background-color: var(--brand-subtle) !important;
+        }
+
+        .pac-item-query {
+          font-weight: 700 !important;
+          color: var(--text) !important;
+          font-size: 15px !important;
+        }
+
+        .pac-matched {
+          font-weight: 900 !important;
+          color: var(--brand) !important;
+        }
+
+        .pac-icon {
+          margin-left: 12px !important;
+          margin-right: 0 !important;
+          background-position: center !important;
+        }
+
+        /* Mobile-specific improvements */
+        @media (max-width: 768px) {
+          .pac-container {
+            max-width: calc(100vw - 24px) !important;
+            left: 12px !important;
+            right: 12px !important;
+            width: auto !important;
+          }
+
+          .pac-item {
+            min-height: 48px !important;
+            padding: 14px 16px !important;
+            font-size: 16px !important;
+            display: flex !important;
+            align-items: center !important;
+          }
+
+          .pac-item-query {
+            font-size: 16px !important;
+          }
+
+          .pac-icon {
+            width: 24px !important;
+            height: 24px !important;
+            margin-left: 16px !important;
+          }
+        }
+
+        /* Tablet optimization */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .pac-item {
+            min-height: 44px !important;
+            padding: 12px 14px !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      // Keep styles for the session but allow cleanup if needed
+    };
+  }, []);
+
+  // Update media query listeners for responsive breakpoints
+  useEffect(() => {
+    const mobileMedia = window.matchMedia("(max-width: 768px)");
+    const tabletMedia = window.matchMedia("(min-width: 769px) and (max-width: 1024px)");
+
+    const applyMobile = () => setIsMobile(mobileMedia.matches);
+    const applyTablet = () => setIsTablet(tabletMedia.matches);
+
+    applyMobile();
+    applyTablet();
+
+    mobileMedia.addEventListener("change", applyMobile);
+    tabletMedia.addEventListener("change", applyTablet);
+
+    return () => {
+      mobileMedia.removeEventListener("change", applyMobile);
+      tabletMedia.removeEventListener("change", applyTablet);
+    };
   }, []);
 
   // Update pending selection when value changes
@@ -276,6 +418,7 @@ export default function GoogleMapPicker({
     }
 
     setLoading(true);
+    let observerInstance: MutationObserver | null = null;
 
     try {
       const center = pendingSelection
@@ -311,13 +454,37 @@ export default function GoogleMapPicker({
       // Initialize geocoder
       geocoderRef.current = new google.maps.Geocoder();
 
-      // Initialize autocomplete
+      // Initialize autocomplete with mobile-optimized settings
       if (searchInputRef.current) {
         const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
           componentRestrictions: { country: "sa" },
           fields: ["address_components", "formatted_address", "geometry", "place_id"],
           types: ["establishment", "geocode"],
         });
+
+        // Set autocomplete dropdown z-index to be above everything
+        // Google Places autocomplete creates a .pac-container div
+        const observeAutocomplete = () => {
+          const pacContainers = document.querySelectorAll('.pac-container');
+          pacContainers.forEach(container => {
+            (container as HTMLElement).style.zIndex = '9999';
+            (container as HTMLElement).style.position = 'fixed';
+
+            // Ensure items are tappable on mobile
+            const items = container.querySelectorAll('.pac-item');
+            items.forEach(item => {
+              (item as HTMLElement).style.cursor = 'pointer';
+              (item as HTMLElement).style.minHeight = isMobile ? '48px' : '40px';
+              (item as HTMLElement).style.padding = isMobile ? '12px 16px' : '8px 12px';
+              (item as HTMLElement).style.fontSize = isMobile ? '16px' : '14px';
+              (item as HTMLElement).style.touchAction = 'manipulation';
+            });
+          });
+        };
+
+        // Observe DOM for autocomplete dropdown creation
+        observerInstance = new MutationObserver(observeAutocomplete);
+        observerInstance.observe(document.body, { childList: true, subtree: true });
 
         autocomplete.addListener("place_changed", async () => {
           const place = autocomplete.getPlace();
@@ -334,6 +501,9 @@ export default function GoogleMapPicker({
           setSearchText(coords.address);
           setMarkerAndView(lat, lng, SELECTED_ZOOM);
           setGpsError(null);
+
+          // Dismiss keyboard and suggestions after selection
+          dismissKeyboardAndSuggestions();
         });
 
         autocompleteRef.current = autocomplete;
@@ -364,15 +534,18 @@ export default function GoogleMapPicker({
     }
 
     return () => {
+      // Cleanup
+      if (observerInstance) {
+        observerInstance.disconnect();
+      }
       if (mapRef.current) {
-        // Cleanup
         markerRef.current?.setMap(null);
         markerRef.current = null;
         autocompleteRef.current = null;
         mapRef.current = null;
       }
     };
-  }, [shouldRenderMap, mapsLoaded, pendingSelection, initialCenter, extractLocationDetails, setMarkerAndView, toast, updateSelectionFromCoordinates]);
+  }, [shouldRenderMap, mapsLoaded, pendingSelection, initialCenter, extractLocationDetails, setMarkerAndView, toast, updateSelectionFromCoordinates, dismissKeyboardAndSuggestions, isMobile]);
 
   // Show error if Google Maps failed to load (only after loading attempt is complete)
   if (mapsError && !mapsLoading) {
@@ -447,33 +620,64 @@ export default function GoogleMapPicker({
 
   const searchBar = (
     <div className="relative w-full">
-      <div className="flex items-center gap-2 px-3 rounded-2xl" style={{ backgroundColor: "var(--input-bg)", border: "2px solid var(--input-border)", minHeight: "52px" }}>
-        <Search size={20} className="shrink-0" style={{ color: "var(--text-muted)" }} />
+      <div
+        className="flex items-center gap-2 px-3 rounded-2xl"
+        style={{
+          backgroundColor: "var(--input-bg)",
+          border: "2px solid var(--input-border)",
+          minHeight: isMobile ? "56px" : "52px",
+          // Ensure this stays on top
+          position: "relative",
+          zIndex: 10,
+        }}
+      >
+        <Search size={isMobile ? 22 : 20} className="shrink-0" style={{ color: "var(--text-muted)" }} />
         <input
           ref={searchInputRef}
           type="text"
           value={searchText}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
-          placeholder="اكتب اسم الحي أو المستشفى أو المدرسة..."
-          className="flex-1 bg-transparent py-3 text-base font-bold outline-none"
-          style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none" }}
+          placeholder={isMobile ? "ابحث عن الحي أو المكان..." : "اكتب اسم الحي أو المستشفى أو المدرسة..."}
+          className="flex-1 bg-transparent py-3 font-bold outline-none"
+          style={{
+            color: "var(--text)",
+            fontFamily: "var(--font-arabic)",
+            border: "none",
+            fontSize: isMobile ? "16px" : "15px", // 16px prevents zoom on iOS
+            // Prevent unwanted mobile behaviors
+            WebkitAppearance: "none",
+            touchAction: "manipulation",
+          }}
           dir="rtl"
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          enterKeyHint="search"
         />
         {searchText && (
           <button
             type="button"
-            onClick={() => setSearchText("")}
-            className="touch-compact shrink-0 p-2 rounded-xl"
-            style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+            onClick={() => {
+              setSearchText("");
+              searchInputRef.current?.focus();
+            }}
+            className="shrink-0 p-2 rounded-xl"
+            style={{
+              backgroundColor: "var(--surface-2)",
+              border: "1px solid var(--border-subtle)",
+              minWidth: isMobile ? "44px" : "auto",
+              minHeight: isMobile ? "44px" : "auto",
+              touchAction: "manipulation",
+            }}
             aria-label="مسح البحث"
           >
-            <X size={16} style={{ color: "var(--text-muted)" }} />
+            <X size={isMobile ? 18 : 16} style={{ color: "var(--text-muted)" }} />
           </button>
         )}
       </div>
 
-      {!searchText && (
+      {!searchText && !isMobile && (
         <p className="text-xs font-bold px-1 mt-1" style={{ color: "var(--text-hint)" }}>
           💡 ابحث عن الحي أو المكان — مثال: "حي النزهة" أو "مستشفى الملك فهد"
         </p>
@@ -504,19 +708,26 @@ export default function GoogleMapPicker({
 
           {isPickerOpen && createPortal(
             <div
-              className="fixed inset-0 z-[1200]"
-              style={{ backgroundColor: "var(--bg)" }}
+              className="fixed inset-0"
+              style={{
+                backgroundColor: "var(--bg)",
+                zIndex: 9998, // Below autocomplete dropdown (9999) but above everything else
+              }}
               role="dialog"
               aria-modal="true"
               aria-labelledby="map-picker-title"
             >
-              <div className="flex flex-col" style={{ height: "100%" }}>
+              <div className="flex flex-col" style={{ height: "100%", isolation: "isolate" }}>
+                {/* Fixed header with search - always visible even when keyboard is open */}
                 <div
-                  className="flex-shrink-0 z-[1300] px-3 pb-2 space-y-2"
+                  className="flex-shrink-0 px-3 pb-2 space-y-2"
                   style={{
                     paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
                     backgroundColor: "var(--surface)",
                     borderBottom: "1px solid var(--border)",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 100, // Above map but below autocomplete
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -529,9 +740,11 @@ export default function GoogleMapPicker({
                       className="flex items-center gap-1.5 px-4 rounded-xl font-black text-sm flex-shrink-0"
                       style={{
                         minHeight: "44px",
+                        minWidth: "44px",
                         border: "1px solid var(--border)",
                         backgroundColor: "var(--surface-2)",
                         color: "var(--text-sub)",
+                        touchAction: "manipulation",
                       }}
                     >
                       ← رجوع
@@ -550,14 +763,29 @@ export default function GoogleMapPicker({
                   </div>
                 )}
 
-                {mapPanel}
-
+                {/* Map container - scrollable area */}
                 <div
-                  className="flex-shrink-0 z-[1300] p-3 flex flex-col gap-2"
+                  className="flex-1 min-h-0"
+                  style={{
+                    position: "relative",
+                    // Allow map to scroll when keyboard is open
+                    overflowY: "auto",
+                    WebkitOverflowScrolling: "touch",
+                  }}
+                >
+                  {mapPanel}
+                </div>
+
+                {/* Fixed bottom buttons - always visible */}
+                <div
+                  className="flex-shrink-0 p-3 flex flex-col gap-2"
                   style={{
                     backgroundColor: "var(--surface)",
                     borderTop: "1px solid var(--border)",
                     paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
+                    position: "sticky",
+                    bottom: 0,
+                    zIndex: 100, // Above map
                   }}
                 >
                   <button
@@ -565,7 +793,13 @@ export default function GoogleMapPicker({
                     onClick={handleLocateMe}
                     disabled={locating}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "52px", backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                    style={{
+                      minHeight: "52px",
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text)",
+                      touchAction: "manipulation",
+                    }}
                   >
                     {locating ? <Loader2 size={20} className="animate-spin" /> : <Navigation size={20} />}
                     <span>{locating ? "جاري تحديد موقعك..." : "📍 تحديد موقعي الحالي"}</span>
@@ -576,7 +810,12 @@ export default function GoogleMapPicker({
                     onClick={handleConfirmSelection}
                     disabled={!pendingSelection || geocoding || loading}
                     className="w-full rounded-2xl px-4 font-black text-base flex items-center justify-center gap-2 disabled:opacity-60"
-                    style={{ minHeight: "56px", backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                    style={{
+                      minHeight: "56px",
+                      backgroundColor: "var(--brand)",
+                      color: "var(--brand-fg)",
+                      touchAction: "manipulation",
+                    }}
                   >
                     <CheckCircle2 size={22} />
                     <span>✅ تأكيد الموقع</span>
