@@ -69,12 +69,14 @@ describe("pricing engine mapping helpers", () => {
     expect(getTripTypeFromShifts(2, null)).toBe("round_trip");
     expect(getTripTypeFromShifts(4, null)).toBe("shift");
     expect(getTripTypeFromShifts(3, null)).toBe(3);
-    expect(getTripTypeFromShifts(1, [{ goTime: "07:00", returnTime: "15:00" }])).toBe("round_trip");
+    // With numberOfShifts=1 and returnTime, should be round_trip
+    expect(getTripTypeFromShifts(1, [{ goTime: "07:00", returnTime: "15:00" }], "15:00")).toBe("round_trip");
+    // With numberOfShifts=4 (multiple daily shifts), should be shift
     expect(
-      getTripTypeFromShifts(1, [
+      getTripTypeFromShifts(4, [
         { goTime: "07:00", returnTime: "12:00" },
         { goTime: "13:00", returnTime: "18:00" },
-      ])
+      ], "12:00")
     ).toBe("shift");
     expect(getTripTypeFromShifts(1, null, "15:00")).toBe("round_trip");
     // default engine (no config) is now formula_v2
@@ -83,5 +85,37 @@ describe("pricing engine mapping helpers", () => {
     expect(resolvePricingEngine("formula_v2")).toBe("formula_v2");
     // matrix can still be selected explicitly (revert capability preserved)
     expect(resolvePricingEngine("matrix")).toBe("matrix");
+  });
+
+  it("prioritizes numberOfShifts over shifts array for variable schedule", () => {
+    // Variable schedule: different times per day, but still round_trip pricing
+    const variableScheduleShifts = [
+      { goTime: "07:00", returnTime: "14:00", label: "الأحد" },
+      { goTime: "08:00", returnTime: "15:00", label: "الإثنين" },
+      { goTime: "07:30", returnTime: "14:30", label: "الثلاثاء" },
+    ];
+    // When numberOfShifts=1 with evening time, should be round_trip (not count all shifts)
+    expect(getTripTypeFromShifts(1, variableScheduleShifts, "14:00")).toBe("round_trip");
+
+    // Multiple daily shifts: count all shift trips
+    const multipleShifts = [
+      { goTime: "07:00", returnTime: "12:00" },
+      { goTime: "13:00", returnTime: "18:00" },
+    ];
+    // When numberOfShifts=4, use that value
+    expect(getTripTypeFromShifts(4, multipleShifts, "12:00")).toBe("shift");
+
+    // Legacy: without numberOfShifts, count shifts array
+    expect(getTripTypeFromShifts(null, multipleShifts, null)).toBe("shift");
+  });
+
+  it("handles one-way variable schedule", () => {
+    const variableOneWay = [
+      { goTime: "07:00", label: "الأحد" },
+      { goTime: "08:00", label: "الإثنين" },
+    ];
+    // numberOfShifts=1 without evening time = one_way
+    expect(getTripTypeFromShifts(1, variableOneWay, null)).toBe("one_way");
+    expect(getTripTypeFromShifts(1, variableOneWay, "")).toBe("one_way");
   });
 });

@@ -213,15 +213,33 @@ export function calculateSubscriptionPriceV2(
 
 /**
  * Resolves the pricing trip type from schedule payload.
- * Priority: explicit structured `shifts` (go/return counts) then legacy `eveningTime`,
- * then `numberOfShifts` fallback for older payloads.
- * Note: counting is based on trip legs (go + return), not just shift array length.
+ * Priority: explicit numberOfShifts (distinguishes variable schedule from multiple shifts),
+ * then structured `shifts` (go/return counts), then legacy `eveningTime` fallback.
+ *
+ * IMPORTANT: numberOfShifts=1 with shifts array means "variable schedule" (different times per day)
+ * which should NOT increase price. Only when numberOfShifts>1 do we count actual shift trips.
  */
 export function getTripTypeFromShifts(
   numberOfShifts?: number | null,
   shifts?: { goTime: string; returnTime?: string; label?: string }[] | null,
   eveningTime?: string | null
 ): string | number {
+  // Priority 1: If numberOfShifts is explicitly provided, use it
+  // This handles the "variable schedule" case where shifts array exists but it's not multiple daily shifts
+  const explicitShiftCount = Number(numberOfShifts);
+  if (Number.isFinite(explicitShiftCount) && explicitShiftCount >= 1) {
+    const count = Math.round(explicitShiftCount);
+    if (count === 1) {
+      // Variable schedule OR one-way: check if there's a return time
+      const hasReturn = typeof eveningTime === "string" && eveningTime.trim() !== "";
+      return hasReturn ? "round_trip" : "one_way";
+    }
+    if (count === 2) return "round_trip";
+    if (count === 4) return "shift";
+    return count;
+  }
+
+  // Priority 2: Count trips from shifts array (for older API calls without explicit numberOfShifts)
   const tripsFromShifts = Array.isArray(shifts)
     ? shifts.reduce((sum, shift) => {
         const hasGo = typeof shift.goTime === "string" && shift.goTime.trim() !== "";
@@ -229,22 +247,22 @@ export function getTripTypeFromShifts(
         return sum + (hasGo ? 1 : 0) + (hasReturn ? 1 : 0);
       }, 0)
     : 0;
-  // Legacy payloads may send only morning/evening scalar times instead of shifts.
-  // In that shape, eveningTime means the rider provided a return leg as well, so treat it as round trip.
+
+  if (tripsFromShifts > 0) {
+    if (tripsFromShifts === 1) return "one_way";
+    if (tripsFromShifts === 2) return "round_trip";
+    if (tripsFromShifts === 4) return "shift";
+    return tripsFromShifts;
+  }
+
+  // Priority 3: Legacy payloads with only morning/evening scalar times
   const tripsFromLegacyTimes =
-    tripsFromShifts === 0 && typeof eveningTime === "string" && eveningTime.trim() !== ""
+    typeof eveningTime === "string" && eveningTime.trim() !== ""
       ? LEGACY_ROUND_TRIP_COUNT
-      : 0;
-  const count =
-    tripsFromShifts > 0
-      ? tripsFromShifts
-      : tripsFromLegacyTimes > 0
-      ? tripsFromLegacyTimes
-      : Math.max(1, Math.round(Number(numberOfShifts) || 1));
-  if (count === 1) return "one_way";
-  if (count === 2) return "round_trip";
-  if (count === 4) return "shift";
-  return count;
+      : 1;
+
+  if (tripsFromLegacyTimes === 2) return "round_trip";
+  return "one_way";
 }
 
 function toFormulaResult(distanceKm: number, persons: number, formula: FormulaV2Result): MatrixPricingResult {
