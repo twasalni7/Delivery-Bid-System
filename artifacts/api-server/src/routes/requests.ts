@@ -476,6 +476,20 @@ router.get("/:id/stops", requireAuth(), async (req, res) => {
   }
 });
 
+router.get("/:id/passengers", requireAuth(), async (req, res) => {
+  const id = parseInt(req.params["id"]!, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "معرف غير صالح" }); return; }
+  try {
+    const passengers = await db.select().from(requestPassengersTable)
+      .where(eq(requestPassengersTable.requestId, id))
+      .orderBy(requestPassengersTable.passengerIndex);
+    res.json(passengers);
+  } catch (err) {
+    logger.error({ err }, "GET request passengers error");
+    res.status(500).json({ error: SERVER_ERROR_MSG });
+  }
+});
+
 router.get("/:id", requireAuth(), async (req, res) => {
   const id = Number(req.params["id"]);
   if (isNaN(id)) {

@@ -298,16 +298,20 @@ function ShiftCard({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function CreateRequestNew() {
+export default function CreateRequestNew({ mode = "client" }: { mode?: "client" | "admin" }) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const createRequest = useCreateRequest();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [step, setStep] = useState(1);
 
   // Step 1: Client type
   const [clientType, setClientType] = useState("");
+
+  // Phone number (required for admin mode)
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   // Step 2: Number of people + passenger location entries
   const [numberOfPeople, setNumberOfPeople] = useState(1);
@@ -450,7 +454,13 @@ export default function CreateRequestNew() {
     );
 
   const canNext = (): boolean => {
-    if (step === 1) return !!clientType;
+    if (step === 1) {
+      // Client type is required
+      if (!clientType) return false;
+      // Admin mode requires valid phone number
+      if (mode === "admin" && !/^05\d{8}$/.test(phoneNumber)) return false;
+      return true;
+    }
     if (step === 2) return numberOfPeople >= 1;
     if (step === 3) {
       if (numberOfPeople === 1) {
@@ -501,7 +511,7 @@ export default function CreateRequestNew() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Build shifts array based on schedule type
     let validShifts: { label: string; goTime: string; returnTime?: string }[] = [];
     let numberOfShiftsForPricing = 1;
@@ -541,48 +551,79 @@ export default function CreateRequestNew() {
       daysPerWeek: selectedDays.length,
     }));
 
-    createRequest.mutate(
-      {
-        data: {
-          clientType: clientType as any,
-          homeLocation: homeCoords?.address || "",
-          workLocation: workCoords?.address || "",
-          homeLat: homeCoords?.lat,
-          homeLng: homeCoords?.lng,
-          destLat: workCoords?.lat,
-          destLng: workCoords?.lng,
-          distanceKm: routeSummary?.distanceKm,
-          numberOfPeople,
-          workingDaysPerWeek: selectedDays.length,
-          numberOfShifts: numberOfShiftsForPricing,
-          morningTime: firstGoTime,
-          eveningTime: firstReturnTime || undefined,
-          shifts: validShifts.length > 0 ? validShifts : undefined,
-          passengers: passengersData,
-        } as any,
-      },
-      {
-        onSuccess: (req) => {
-          localStorage.removeItem("createRequestDraft");
-          queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
-          toast({ title: "تم إنشاء الطلب بنجاح!", description: `طلب رقم #${req.id}` });
-          setLocation(`/client/request/${req.id}`);
-        },
-        onError: (err: Error) => {
-          toast({
-            title: "عذراً، حدث خطأ",
-            description: err?.message || "حاول مرة أخرى أو تواصل معنا للمساعدة",
-            variant: "destructive",
-          });
-        },
+    const requestData = {
+      clientType: clientType as any,
+      homeLocation: homeCoords?.address || "",
+      workLocation: workCoords?.address || "",
+      homeLat: homeCoords?.lat,
+      homeLng: homeCoords?.lng,
+      destLat: workCoords?.lat,
+      destLng: workCoords?.lng,
+      distanceKm: routeSummary?.distanceKm,
+      numberOfPeople,
+      workingDaysPerWeek: selectedDays.length,
+      numberOfShifts: numberOfShiftsForPricing,
+      morningTime: firstGoTime,
+      eveningTime: firstReturnTime || undefined,
+      shifts: validShifts.length > 0 ? validShifts : undefined,
+      passengers: passengersData,
+      phone: mode === "admin" ? phoneNumber : undefined,
+    } as any;
+
+    if (mode === "admin") {
+      // Use admin endpoint with fetch
+      setIsSubmitting(true);
+      try {
+        const res = await fetch(`${API}/api/admin/requests`, {
+          method: "POST",
+          headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify(requestData),
+        });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "فشل إنشاء الطلب");
+        }
+        const req = await res.json();
+        localStorage.removeItem("createRequestDraft");
+        queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+        toast({ title: "تم إنشاء الطلب بنجاح!", description: `طلب رقم #${req.id}` });
+        setLocation("/admin/requests");
+      } catch (err: any) {
+        toast({
+          title: "عذراً، حدث خطأ",
+          description: err?.message || "حاول مرة أخرى أو تواصل معنا للمساعدة",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
       }
-    );
+    } else {
+      // Use client endpoint with React Query mutation
+      createRequest.mutate(
+        { data: requestData },
+        {
+          onSuccess: (req) => {
+            localStorage.removeItem("createRequestDraft");
+            queryClient.invalidateQueries({ queryKey: getListRequestsQueryKey() });
+            toast({ title: "تم إنشاء الطلب بنجاح!", description: `طلب رقم #${req.id}` });
+            setLocation(`/client/request/${req.id}`);
+          },
+          onError: (err: Error) => {
+            toast({
+              title: "عذراً، حدث خطأ",
+              description: err?.message || "حاول مرة أخرى أو تواصل معنا للمساعدة",
+              variant: "destructive",
+            });
+          },
+        }
+      );
+    }
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <Layout role="client">
+    <Layout role={mode}>
       <div dir="rtl" className="min-h-screen flex flex-col pb-36">
         {/* Header */}
         <div className="px-4 py-4 flex items-center justify-between">
@@ -596,7 +637,7 @@ export default function CreateRequestNew() {
             </button>
           ) : (
             <Link
-              href="/client"
+              href={mode === "admin" ? "/admin/requests" : "/client"}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black"
               style={{ color: "var(--text-sub)", backgroundColor: "var(--surface)", border: "1px solid var(--border-subtle)" }}
             >
@@ -668,6 +709,33 @@ export default function CreateRequestNew() {
                   </button>
                 ))}
               </div>
+
+              {/* Phone Number Input for Admin Mode */}
+              {mode === "admin" && (
+                <div>
+                  <label className="block text-lg font-bold mb-3" style={{ color: "var(--text)" }}>
+                    رقم هاتف العميل <span style={{ color: "var(--error)" }}>*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="05XXXXXXXX"
+                    className="w-full px-4 py-4 text-lg rounded-xl transition-all"
+                    style={{
+                      backgroundColor: "var(--surface)",
+                      border: "2px solid var(--border)",
+                      color: "var(--text)",
+                    }}
+                    dir="ltr"
+                  />
+                  {phoneNumber && !/^05\d{8}$/.test(phoneNumber) && (
+                    <p className="text-sm font-bold mt-2" style={{ color: "var(--error)" }}>
+                      ⚠️ الرجاء إدخال رقم جوال سعودي صحيح (مثال: 0501234567)
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1169,7 +1237,7 @@ export default function CreateRequestNew() {
         >
           <button
             onClick={handleNext}
-            disabled={!canNext() || createRequest.isPending}
+            disabled={!canNext() || (mode === "admin" ? isSubmitting : createRequest.isPending)}
             className="w-full rounded-2xl p-5 text-xl font-black flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50"
             style={{
               backgroundColor: "var(--brand)",
@@ -1179,7 +1247,7 @@ export default function CreateRequestNew() {
             }}
           >
             {step === TOTAL_STEPS ? (
-              createRequest.isPending ? "جاري الإرسال..." : <><CheckCircle2 size={24} /> إرسال الطلب</>
+              (mode === "admin" ? isSubmitting : createRequest.isPending) ? "جاري الإرسال..." : <><CheckCircle2 size={24} /> إرسال الطلب</>
             ) : (
               "التالي →"
             )}
@@ -1208,12 +1276,12 @@ export default function CreateRequestNew() {
               <div className="space-y-3">
                 <button
                   onClick={() => { setShowConfirmDialog(false); handleSubmit(); }}
-                  disabled={createRequest.isPending}
+                  disabled={mode === "admin" ? isSubmitting : createRequest.isPending}
                   className="w-full rounded-2xl p-5 text-xl font-black flex items-center justify-center gap-3"
                   style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
                 >
                   <CheckCircle2 size={24} />
-                  {createRequest.isPending ? "جاري الإرسال..." : "نعم، أرسل الطلب"}
+                  {(mode === "admin" ? isSubmitting : createRequest.isPending) ? "جاري الإرسال..." : "نعم، أرسل الطلب"}
                 </button>
                 <button
                   onClick={() => setShowConfirmDialog(false)}
