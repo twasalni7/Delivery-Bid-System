@@ -1,6 +1,7 @@
 /**
  * LocationDisplay.tsx — توصّلني
  * مكون يعرض العنوان: إذا كان احداثيات يحوّله تلقائياً لـ "الحي، المدينة"
+ * يمنع ظهور الإحداثيات والنصوص الإنجليزية
  */
 
 import { useState, useEffect } from "react";
@@ -11,35 +12,88 @@ interface LocationDisplayProps {
   className?: string;
   style?: React.CSSProperties;
   fallbackText?: string;
+  showLoadingState?: boolean;
+}
+
+/**
+ * Checks if a string contains mostly English characters
+ */
+function isEnglishText(text: string): boolean {
+  if (!text) return false;
+  const englishChars = text.match(/[a-zA-Z]/g);
+  const totalChars = text.replace(/[\s,،.]/g, "").length;
+  return englishChars && totalChars > 0 && (englishChars.length / totalChars) > 0.5;
+}
+
+/**
+ * Removes English words and cleans up Arabic location names
+ */
+function arabicOnly(text: string): string {
+  if (!text) return "";
+
+  // Remove common English words found in addresses
+  const cleanText = text
+    .replace(/\b(Saudi Arabia|Kingdom|Street|Road|Avenue|Building|Floor|Unit|Unnamed|Unknown)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // If the result is empty or still mostly English, return fallback
+  if (!cleanText || isEnglishText(cleanText)) {
+    return "الموقع";
+  }
+
+  return cleanText;
 }
 
 export function LocationDisplay({
   value,
   className,
   style,
-  fallbackText,
+  fallbackText = "الموقع",
+  showLoadingState = true,
 }: LocationDisplayProps) {
   const [display, setDisplay] = useState<string>(() => {
     // محاولة أولى سريعة
     const coords = isCoordinates(value);
-    if (coords) return ""; // ننتظر الـ geocode
-    return shortLocation(value);
+    if (coords) return showLoadingState ? "جاري التحميل..." : fallbackText;
+    const short = shortLocation(value);
+    return arabicOnly(short) || fallbackText;
   });
 
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
-    if (!value) return;
+    if (!value) {
+      setDisplay(fallbackText);
+      return;
+    }
+
     const coords = isCoordinates(value);
     if (coords) {
-      reverseGeocode(coords.lat, coords.lng).then(setDisplay);
+      setIsLoading(true);
+      reverseGeocode(coords.lat, coords.lng)
+        .then((result) => {
+          // If reverse geocoding returns coordinates, use fallback
+          if (isCoordinates(result)) {
+            setDisplay(fallbackText);
+          } else {
+            const cleaned = arabicOnly(result);
+            setDisplay(cleaned || fallbackText);
+          }
+        })
+        .catch(() => setDisplay(fallbackText))
+        .finally(() => setIsLoading(false));
     } else {
-      setDisplay(shortLocation(value));
+      const short = shortLocation(value);
+      const cleaned = arabicOnly(short);
+      setDisplay(cleaned || fallbackText);
     }
-  }, [value]);
+  }, [value, fallbackText]);
 
-  if (!display) {
+  if (isLoading && showLoadingState) {
     return (
-      <span className={className} style={{ ...style, opacity: 0.4 }}>
-        {fallbackText ?? "جاري التحميل..."}
+      <span className={className} style={{ ...style, opacity: 0.6 }}>
+        جاري التحميل...
       </span>
     );
   }
