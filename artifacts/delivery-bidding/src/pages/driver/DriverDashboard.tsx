@@ -8,6 +8,7 @@ import { EnablePushButton } from "@/components/enable-push-button";
 import { AlertTriangle, Clock, Users, CheckCircle, Phone, ChevronLeft } from "lucide-react";
 import { MapButtons } from "@/components/MapButtons";
 import { LocationDisplay } from "@/components/LocationDisplay";
+import { MultiLocationDisplay } from "@/components/MultiLocationDisplay";
 import { formatTime12hLong } from "@/lib/time-utils";
 import { toast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
@@ -287,42 +288,16 @@ export default function DriverDashboard() {
                       </div>
 
                       <div className="p-6 space-y-5">
-                        <div className="space-y-4 relative pr-4">
-                          <div
-                            className="absolute right-[7px] top-5 bottom-5 w-[3px] rounded-full"
-                            style={{
-                              backgroundColor: "var(--border)",
-                            }}
-                          />
-                          <div className="flex items-start gap-3 relative z-10">
-                            <div
-                              className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center"
-                              style={{
-                                backgroundColor: "#10B981",
-                                border: "2px solid #FFFFFF",
-                                boxShadow: "0 0 0 2px #10B981",
-                              }}
-                            />
-                            <div>
-                              <p className="text-sm font-bold mb-1" style={{ color: "#6B7280" }}>من (المنطلق)</p>
-                              <p className="text-lg font-black" style={{ color: "#111827" }}><LocationDisplay value={req.homeLocation} className="text-lg font-black" style={{ color: "#111827" }} /></p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-3 relative z-10">
-                            <div
-                              className="w-5 h-5 rounded-full mt-0.5 shrink-0 flex items-center justify-center"
-                              style={{
-                                backgroundColor: "#EF4444",
-                                border: "2px solid #FFFFFF",
-                                boxShadow: "0 0 0 2px #EF4444",
-                              }}
-                            />
-                            <div>
-                              <p className="text-sm font-bold mb-1" style={{ color: "#6B7280" }}>إلى (الوصول)</p>
-                              <p className="text-lg font-black" style={{ color: "#111827" }}><LocationDisplay value={req.workLocation} className="text-lg font-black" style={{ color: "#111827" }} /></p>
-                            </div>
-                          </div>
-                        </div>
+                        <MultiLocationDisplay
+                          requestId={req.id}
+                          fallbackPickup={req.homeLocation}
+                          fallbackPickupLat={(req as any).homeLat}
+                          fallbackPickupLng={(req as any).homeLng}
+                          fallbackDestination={req.workLocation}
+                          fallbackDestLat={(req as any).destLat}
+                          fallbackDestLng={(req as any).destLng}
+                          showMapButtons={false}
+                        />
 
                         {/* ── الأوقات الموحدة ── */}
                         {(() => {
@@ -388,12 +363,17 @@ export default function DriverDashboard() {
                           ))}
                         </div>
 
-                        {/* أزرار الخريطة */}
-                        <MapButtons
-                          homeLat={(req as any).homeLat}
-                          homeLng={(req as any).homeLng}
-                          destLat={(req as any).destLat}
-                          destLng={(req as any).destLng}
+                        {/* أزرار الخريطة - مع دعم المواقع المتعددة */}
+                        <MultiLocationDisplay
+                          requestId={req.id}
+                          fallbackPickup={req.homeLocation}
+                          fallbackPickupLat={(req as any).homeLat}
+                          fallbackPickupLng={(req as any).homeLng}
+                          fallbackDestination={req.workLocation}
+                          fallbackDestLat={(req as any).destLat}
+                          fallbackDestLng={(req as any).destLng}
+                          showMapButtons={true}
+                          compact={true}
                         />
 
                         {offerCount > 0 && (
@@ -462,14 +442,17 @@ export default function DriverDashboard() {
                     <span className="text-xs font-bold" style={{ color: "#6B7280" }}>REQ-{String(req.id).padStart(3, "0")}</span>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "#10B981" }} />
-                       <LocationDisplay value={req.homeLocation} className="text-sm font-black" style={{ color: "#111827" }} />
-                    </div>
-                    <div className="flex items-center gap-3">
-                       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: "#EF4444" }} />
-                       <LocationDisplay value={req.workLocation} className="text-sm font-black" style={{ color: "#111827" }} />
-                    </div>
+                    <MultiLocationDisplay
+                      requestId={req.id}
+                      fallbackPickup={req.homeLocation}
+                      fallbackPickupLat={(req as any).homeLat}
+                      fallbackPickupLng={(req as any).homeLng}
+                      fallbackDestination={req.workLocation}
+                      fallbackDestLat={(req as any).destLat}
+                      fallbackDestLng={(req as any).destLng}
+                      showMapButtons={false}
+                      compact={true}
+                    />
                   </div>
                   {(req as any).shifts && (req as any).shifts.length > 0 ? (
                     <div className="space-y-1.5 mt-4">
