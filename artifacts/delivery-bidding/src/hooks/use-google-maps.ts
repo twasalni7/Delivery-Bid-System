@@ -40,54 +40,93 @@ async function fetchGoogleMapsApiKey(): Promise<string | null> {
 
 export function useGoogleMaps(options: UseGoogleMapsOptions = {}): UseGoogleMapsReturn {
   const { enabled = true } = options;
-  const [isLoaded, setIsLoaded] = useState(isGoogleMapsLoaded);
+  const [isLoaded, setIsLoaded] = useState(() => isGoogleMapsLoaded());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [googleInstance, setGoogleInstance] = useState<typeof window.google | null>(
-    isGoogleMapsLoaded() ? window.google : null
+    () => (isGoogleMapsLoaded() ? window.google : null)
   );
   const loadingRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const maxRetries = 3;
 
   useEffect(() => {
     if (!enabled) return;
-    if (isLoaded) return;
+    if (isLoaded && googleInstance) return;
     if (loadingRef.current) return;
+
+    // Check if already loaded externally
+    if (isGoogleMapsLoaded() && window.google?.maps) {
+      setIsLoaded(true);
+      setGoogleInstance(window.google);
+      setError(null);
+      return;
+    }
 
     loadingRef.current = true;
     setIsLoading(true);
     setError(null);
 
-    (async () => {
-      const apiKey = await fetchGoogleMapsApiKey();
+    const attemptLoad = async () => {
+      try {
+        const apiKey = await fetchGoogleMapsApiKey();
 
-      if (!apiKey) {
-        setError(new Error("Google Maps API key is not configured"));
+        if (!apiKey) {
+          throw new Error("Google Maps API key is not configured");
+        }
+
+        const google = await loadGoogleMapsAPI({
+          apiKey,
+          libraries: ["places", "geocoding", "geometry"],
+          language: "ar",
+          region: "SA",
+        });
+
+        // Double-check that google.maps is actually available
+        if (!google?.maps) {
+          throw new Error("Google Maps API loaded but google.maps is not available");
+        }
+
+        // Verify that Places API is available
+        if (!google.maps.places) {
+          throw new Error("Google Maps Places library is not available");
+        }
+
+        setIsLoaded(true);
+        setGoogleInstance(google);
+        setError(null);
+        retryCountRef.current = 0;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err : new Error(String(err));
+        console.error(`Failed to load Google Maps (attempt ${retryCountRef.current + 1}/${maxRetries}):`, errorMessage);
+
+        // Retry logic
+        if (retryCountRef.current < maxRetries) {
+          retryCountRef.current++;
+          const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 5000); // Exponential backoff: 1s, 2s, 4s
+          console.log(`Retrying Google Maps load in ${retryDelay}ms...`);
+
+          setTimeout(() => {
+            loadingRef.current = false;
+            attemptLoad();
+          }, retryDelay);
+          return;
+        }
+
+        // Max retries reached
+        setError(errorMessage);
         setIsLoading(false);
         loadingRef.current = false;
-        return;
       }
+    };
 
-      loadGoogleMapsAPI({
-        apiKey,
-        libraries: ["places", "geocoding", "geometry"],
-        language: "ar",
-        region: "SA",
-      })
-        .then((google) => {
-          setIsLoaded(true);
-          setGoogleInstance(google);
-          setError(null);
-        })
-        .catch((err) => {
-          setError(err instanceof Error ? err : new Error(String(err)));
-          console.error("Failed to load Google Maps:", err);
-        })
-        .finally(() => {
-          setIsLoading(false);
-          loadingRef.current = false;
-        });
-    })();
-  }, [enabled, isLoaded]);
+    attemptLoad().finally(() => {
+      if (retryCountRef.current >= maxRetries || error === null) {
+        setIsLoading(false);
+        loadingRef.current = false;
+      }
+    });
+  }, [enabled, isLoaded, googleInstance, error]);
 
   return {
     isLoaded,

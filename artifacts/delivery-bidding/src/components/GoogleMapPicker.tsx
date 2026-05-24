@@ -267,7 +267,13 @@ export default function GoogleMapPicker({
 
   // Initialize map and autocomplete
   useEffect(() => {
-    if (!containerRef.current || mapRef.current || !shouldRenderMap || !mapsLoaded) return;
+    if (!containerRef.current || mapRef.current || !shouldRenderMap) return;
+
+    // Wait until Google Maps is fully loaded
+    if (!mapsLoaded || !window.google?.maps?.places) {
+      console.log("[GoogleMapPicker] Waiting for Google Maps to load...");
+      return;
+    }
 
     setLoading(true);
 
@@ -346,6 +352,7 @@ export default function GoogleMapPicker({
       });
 
       setLoading(false);
+      console.log("[GoogleMapPicker] Map initialized successfully");
     } catch (error) {
       console.error("Failed to initialize map:", error);
       setLoading(false);
@@ -367,8 +374,8 @@ export default function GoogleMapPicker({
     };
   }, [shouldRenderMap, mapsLoaded, pendingSelection, initialCenter, extractLocationDetails, setMarkerAndView, toast, updateSelectionFromCoordinates]);
 
-  // Show error if Google Maps failed to load
-  if (mapsError) {
+  // Show error if Google Maps failed to load (only after loading attempt is complete)
+  if (mapsError && !mapsLoading) {
     return (
       <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.4)" }}>
         <p className="text-sm font-black" style={{ color: "#DC2626" }}>
@@ -376,6 +383,9 @@ export default function GoogleMapPicker({
         </p>
         <p className="text-xs font-bold" style={{ color: "#DC2626" }}>
           {mapsError.message}
+        </p>
+        <p className="text-xs" style={{ color: "#DC2626" }}>
+          يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى، أو التواصل مع الدعم الفني.
         </p>
       </div>
     );
