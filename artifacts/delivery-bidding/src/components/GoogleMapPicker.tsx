@@ -78,6 +78,17 @@ export default function GoogleMapPicker({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const programmaticMoveRef = useRef(false);
+  // Ref kept in sync with pendingSelection every render so the map-init effect can
+  // read the current value without declaring it as a dependency (avoids destroying
+  // and re-creating the map on every drag/geocode update).
+  const pendingSelectionRef = useRef<GoogleMapCoords | null>(null);
+  // Capture the initial center once at mount time so that inline arrays passed as
+  // `initialCenter` props don't cause the map to reinitialize on every render.
+  const initialCenterRef = useRef<{ lat: number; lng: number }>(
+    initialCenter
+      ? { lat: initialCenter[0], lng: initialCenter[1] }
+      : { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] }
+  );
 
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
@@ -96,13 +107,19 @@ export default function GoogleMapPicker({
 
   const [pendingSelection, setPendingSelection] = useState<GoogleMapCoords | null>(value);
   const [searchText, setSearchText] = useState(value?.address ?? "");
-  const debouncedSearchText = useDebounce(searchText, 300);
 
   const shouldRenderMap = isMobile ? isPickerOpen : (!collapsible || isInlineExpanded);
 
+  // Always start loading the Maps API as soon as this component mounts so the map
+  // opens instantly when the user taps / expands it.  The actual Map DOM object is
+  // only created when shouldRenderMap becomes true (see the init useEffect below).
   const { isLoaded: mapsLoaded, isLoading: mapsLoading, error: mapsError } = useGoogleMaps({
-    enabled: shouldRenderMap,
+    enabled: true,
   });
+
+  // Keep the ref in sync with the latest pendingSelection on every render.
+  // Done as a plain assignment (not in a useEffect) so it is always current.
+  pendingSelectionRef.current = pendingSelection;
 
   const dismissKeyboardAndSuggestions = useCallback(() => {
     searchInputRef.current?.blur();
@@ -408,7 +425,13 @@ export default function GoogleMapPicker({
     if (!isInlineExpanded) setIsDesktopZoomed(false);
   }, [isInlineExpanded]);
 
-  // Initialize map and autocomplete
+  // Initialize map and autocomplete.
+  // IMPORTANT: `pendingSelection` and `initialCenter` are intentionally NOT in the
+  // dependency array.  Both are read via refs so that the map is never destroyed and
+  // re-created just because the user dragged (which updates pendingSelection) or
+  // because the parent re-rendered with a new inline array for initialCenter.
+  // The map is only (re-)initialized when the render conditions change
+  // (shouldRenderMap, mapsLoaded) or when the breakpoint flips (isMobile).
   useEffect(() => {
     if (!containerRef.current || mapRef.current || !shouldRenderMap) return;
 
@@ -421,17 +444,17 @@ export default function GoogleMapPicker({
     setLoading(true);
     let observerInstance: MutationObserver | null = null;
 
-    try {
-      const center = pendingSelection
-        ? { lat: pendingSelection.lat, lng: pendingSelection.lng }
-        : initialCenter
-        ? { lat: initialCenter[0], lng: initialCenter[1] }
-        : { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] };
+    // Read current values via refs so they aren't deps of this effect.
+    const currentPending = pendingSelectionRef.current;
+    const center = currentPending
+      ? { lat: currentPending.lat, lng: currentPending.lng }
+      : initialCenterRef.current;
 
+    try {
       // Initialize map
       const map = new google.maps.Map(containerRef.current, {
         center,
-        zoom: pendingSelection ? 15 : DEFAULT_ZOOM,
+        zoom: currentPending ? 15 : DEFAULT_ZOOM,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
@@ -443,10 +466,10 @@ export default function GoogleMapPicker({
       mapRef.current = map;
 
       // Initialize marker if there's a pending selection
-      if (pendingSelection) {
+      if (currentPending) {
         markerRef.current = new google.maps.Marker({
           map,
-          position: { lat: pendingSelection.lat, lng: pendingSelection.lng },
+          position: { lat: currentPending.lat, lng: currentPending.lng },
           draggable: false,
           title: "الموقع المحدد",
         });
@@ -546,7 +569,10 @@ export default function GoogleMapPicker({
         mapRef.current = null;
       }
     };
-  }, [shouldRenderMap, mapsLoaded, pendingSelection, initialCenter, extractLocationDetails, setMarkerAndView, toast, updateSelectionFromCoordinates, dismissKeyboardAndSuggestions, isMobile]);
+    // pendingSelection and initialCenter are intentionally excluded — they are read
+    // via refs inside the effect so the map is not destroyed on every drag or re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldRenderMap, mapsLoaded, extractLocationDetails, setMarkerAndView, toast, updateSelectionFromCoordinates, dismissKeyboardAndSuggestions, isMobile]);
 
   // Show error if Google Maps failed to load (only after loading attempt is complete)
   if (mapsError && !mapsLoading) {
