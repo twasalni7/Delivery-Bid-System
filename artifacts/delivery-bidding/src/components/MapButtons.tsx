@@ -30,6 +30,33 @@ interface MapButtonsProps {
   compact?: boolean;
 }
 
+function toFiniteNumber(value: number | string | null | undefined): number | null {
+  if (value == null) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildMapLink(location: LocationPoint): string | null {
+  const lat = toFiniteNumber(location.lat);
+  const lng = toFiniteNumber(location.lng);
+  if (lat != null && lng != null) {
+    return `https://www.google.com/maps?q=${lat},${lng}`;
+  }
+  if (location.address?.trim()) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address.trim())}`;
+  }
+  return null;
+}
+
+function buildLocationTitle(location: LocationPoint): string {
+  if (location.address?.trim()) return location.address.trim();
+  const lat = toFiniteNumber(location.lat);
+  const lng = toFiniteNumber(location.lng);
+  if (lat != null && lng != null) return `${lat}, ${lng}`;
+  return "الموقع";
+}
+
 export function MapButtons({
   homeLat,
   homeLng,
@@ -41,32 +68,6 @@ export function MapButtons({
   dropoffLocations = [],
   compact = false,
 }: MapButtonsProps) {
-  const toFiniteNumber = (value: number | string | null | undefined): number | null => {
-    if (value == null) return null;
-    if (typeof value === "number") return Number.isFinite(value) ? value : null;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-
-  const buildMapLink = (location: LocationPoint): string | null => {
-    const lat = toFiniteNumber(location.lat);
-    const lng = toFiniteNumber(location.lng);
-    if (lat != null && lng != null) {
-      return `https://www.google.com/maps?q=${lat},${lng}`;
-    }
-    if (location.address?.trim()) {
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address.trim())}`;
-    }
-    return null;
-  };
-
-  const buildLocationTitle = (location: LocationPoint): string => {
-    if (location.address?.trim()) return location.address.trim();
-    const lat = toFiniteNumber(location.lat);
-    const lng = toFiniteNumber(location.lng);
-    if (lat != null && lng != null) return `${lat}, ${lng}`;
-    return "الموقع";
-  };
 
   // Build unified pickup list
   const allPickups: LocationPoint[] = [];
