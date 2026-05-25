@@ -385,13 +385,13 @@ export default function MapPicker({
   // On desktop the container height is driven by minHeight so we keep h-full w-full.
   const mapPanel = isMobile ? (
     <div
-      className="relative flex-1 min-h-0 overflow-hidden"
+      className="absolute inset-0 overflow-hidden"
       style={{ borderTop: "1px solid var(--border-subtle)" }}
     >
       <div
         ref={containerRef}
-        className="absolute inset-0"
-        style={{ backgroundColor: "#e8e0d8", touchAction: "pan-x pan-y" }}
+        className="w-full h-full"
+        style={{ backgroundColor: "#e8e0d8", touchAction: "pan-x pan-y", position: "relative" }}
       />
 
       {loading && (
@@ -500,10 +500,23 @@ export default function MapPicker({
           onChange={handleSearchInput}
           onFocus={() => searchResults.length > 0 && setShowResults(true)}
           placeholder="اكتب اسم الحي أو المستشفى أو المدرسة..."
-          className="flex-1 bg-transparent py-3 text-base font-bold outline-none"
-          style={{ color: "var(--text)", fontFamily: "var(--font-arabic)", border: "none" }}
+          className="flex-1 bg-transparent py-3 font-bold outline-none"
+          style={{
+            color: "var(--text)",
+            fontFamily: "var(--font-arabic)",
+            border: "none",
+            fontSize: "16px", // 16px prevents zoom on iOS
+            WebkitAppearance: "none",
+            touchAction: "manipulation",
+            WebkitTapHighlightColor: "transparent",
+          }}
           dir="rtl"
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          enterKeyHint="search"
+          inputMode="search"
         />
         {searchText && (
           <button
@@ -596,18 +609,24 @@ export default function MapPicker({
           {isPickerOpen && createPortal(
             <div
               className="fixed inset-0 z-[1200]"
-              style={{ backgroundColor: "var(--bg)" }}
+              style={{
+                backgroundColor: "var(--bg)",
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+              }}
               role="dialog"
               aria-modal="true"
               aria-labelledby="map-picker-title"
             >
-              <div className="flex flex-col" style={{ height: "100%" }}>
+              <div className="flex flex-col" style={{ minHeight: "100vh", height: "100%" }}>
                 <div
                   className="flex-shrink-0 z-[1300] px-3 pb-2 space-y-2"
                   style={{
                     paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
                     backgroundColor: "var(--surface)",
                     borderBottom: "1px solid var(--border)",
+                    position: "sticky",
+                    top: 0,
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -641,7 +660,9 @@ export default function MapPicker({
                   </div>
                 )}
 
-                {mapPanel}
+                <div className="flex-1" style={{ position: "relative", minHeight: 0, overflow: "hidden" }}>
+                  {mapPanel}
+                </div>
 
                 <div
                   className="flex-shrink-0 z-[1300] p-3 flex flex-col gap-2"
@@ -649,6 +670,8 @@ export default function MapPicker({
                     backgroundColor: "var(--surface)",
                     borderTop: "1px solid var(--border)",
                     paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
+                    position: "sticky",
+                    bottom: 0,
                   }}
                 >
                   <button
