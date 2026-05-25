@@ -7,18 +7,20 @@
 import { MapPin } from "lucide-react";
 
 interface LocationPoint {
-  lat: number;
-  lng: number;
+  lat?: number | string | null;
+  lng?: number | string | null;
   address?: string;
   label?: string;
 }
 
 interface MapButtonsProps {
   // Legacy single location support (for backward compatibility)
-  homeLat?: number | null;
-  homeLng?: number | null;
-  destLat?: number | null;
-  destLng?: number | null;
+  homeLat?: number | string | null;
+  homeLng?: number | string | null;
+  destLat?: number | string | null;
+  destLng?: number | string | null;
+  homeAddress?: string | null;
+  destAddress?: string | null;
 
   // New multiple locations support
   pickupLocations?: LocationPoint[];
@@ -33,41 +35,87 @@ export function MapButtons({
   homeLng,
   destLat,
   destLng,
+  homeAddress,
+  destAddress,
   pickupLocations = [],
   dropoffLocations = [],
   compact = false,
 }: MapButtonsProps) {
+  const toFiniteNumber = (value: number | string | null | undefined): number | null => {
+    if (value == null) return null;
+    if (typeof value === "number") return Number.isFinite(value) ? value : null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const buildMapLink = (location: LocationPoint): string | null => {
+    const lat = toFiniteNumber(location.lat);
+    const lng = toFiniteNumber(location.lng);
+    if (lat != null && lng != null) {
+      return `https://www.google.com/maps?q=${lat},${lng}`;
+    }
+    if (location.address?.trim()) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address.trim())}`;
+    }
+    return null;
+  };
+
   // Build unified pickup list
   const allPickups: LocationPoint[] = [];
-  if (homeLat && homeLng) {
-    allPickups.push({ lat: homeLat, lng: homeLng, label: "موقع الانطلاق" });
+  if (
+    toFiniteNumber(homeLat) != null ||
+    toFiniteNumber(homeLng) != null ||
+    (homeAddress && homeAddress.trim())
+  ) {
+    allPickups.push({
+      lat: homeLat,
+      lng: homeLng,
+      address: homeAddress ?? undefined,
+      label: "موقع الانطلاق",
+    });
   }
   allPickups.push(...pickupLocations);
 
   // Build unified dropoff list
   const allDropoffs: LocationPoint[] = [];
-  if (destLat && destLng) {
-    allDropoffs.push({ lat: destLat, lng: destLng, label: "موقع الوصول" });
+  if (
+    toFiniteNumber(destLat) != null ||
+    toFiniteNumber(destLng) != null ||
+    (destAddress && destAddress.trim())
+  ) {
+    allDropoffs.push({
+      lat: destLat,
+      lng: destLng,
+      address: destAddress ?? undefined,
+      label: "موقع الوصول",
+    });
   }
   allDropoffs.push(...dropoffLocations);
 
-  if (allPickups.length === 0 && allDropoffs.length === 0) return null;
+  const visiblePickups = allPickups
+    .map((loc) => ({ ...loc, href: buildMapLink(loc) }))
+    .filter((loc): loc is LocationPoint & { href: string } => typeof loc.href === "string");
+  const visibleDropoffs = allDropoffs
+    .map((loc) => ({ ...loc, href: buildMapLink(loc) }))
+    .filter((loc): loc is LocationPoint & { href: string } => typeof loc.href === "string");
+
+  if (visiblePickups.length === 0 && visibleDropoffs.length === 0) return null;
 
   return (
     <div className="space-y-3" dir="rtl">
       {/* Pickup locations */}
-      {allPickups.length > 0 && (
+      {visiblePickups.length > 0 && (
         <div className="space-y-2">
-          {allPickups.length > 1 && !compact && (
+          {visiblePickups.length > 1 && !compact && (
             <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>
-              🏠 مواقع الانطلاق ({allPickups.length})
+              🏠 مواقع الانطلاق ({visiblePickups.length})
             </p>
           )}
           <div className="flex gap-2 flex-wrap">
-            {allPickups.map((loc, idx) => (
+            {visiblePickups.map((loc, idx) => (
               <a
                 key={`pickup-${idx}`}
-                href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
+                href={loc.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all hover:scale-105 active:scale-95"
@@ -79,7 +127,7 @@ export function MapButtons({
                 title={loc.address || `${loc.lat}, ${loc.lng}`}
               >
                 <MapPin size={13} />
-                {loc.label || (allPickups.length > 1 ? `انطلاق ${idx + 1}` : "فتح في الخرائط")}
+                {loc.label || (visiblePickups.length > 1 ? `انطلاق ${idx + 1}` : "فتح في الخرائط")}
               </a>
             ))}
           </div>
@@ -87,18 +135,18 @@ export function MapButtons({
       )}
 
       {/* Dropoff locations */}
-      {allDropoffs.length > 0 && (
+      {visibleDropoffs.length > 0 && (
         <div className="space-y-2">
-          {allDropoffs.length > 1 && !compact && (
+          {visibleDropoffs.length > 1 && !compact && (
             <p className="text-xs font-black" style={{ color: "var(--text-muted)" }}>
-              🎯 مواقع الوصول ({allDropoffs.length})
+              🎯 مواقع الوصول ({visibleDropoffs.length})
             </p>
           )}
           <div className="flex gap-2 flex-wrap">
-            {allDropoffs.map((loc, idx) => (
+            {visibleDropoffs.map((loc, idx) => (
               <a
                 key={`dropoff-${idx}`}
-                href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
+                href={loc.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all hover:scale-105 active:scale-95"
@@ -110,7 +158,7 @@ export function MapButtons({
                 title={loc.address || `${loc.lat}, ${loc.lng}`}
               >
                 <MapPin size={13} />
-                {loc.label || (allDropoffs.length > 1 ? `وصول ${idx + 1}` : "فتح في الخرائط")}
+                {loc.label || (visibleDropoffs.length > 1 ? `وصول ${idx + 1}` : "فتح في الخرائط")}
               </a>
             ))}
           </div>

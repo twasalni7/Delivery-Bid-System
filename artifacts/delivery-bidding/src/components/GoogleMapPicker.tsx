@@ -15,6 +15,7 @@ import { createPortal } from "react-dom";
 import { MapPin, Loader2, Search, X, LocateFixed, CheckCircle2, Expand, Navigation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleMaps } from "@/hooks/use-google-maps";
+import MapPicker from "@/components/MapPicker";
 
 /**
  * Debounce hook for search input
@@ -550,16 +551,25 @@ export default function GoogleMapPicker({
   // Show error if Google Maps failed to load (only after loading attempt is complete)
   if (mapsError && !mapsLoading) {
     return (
-      <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.4)" }}>
-        <p className="text-sm font-black" style={{ color: "#DC2626" }}>
-          ⚠️ تعذر تحميل خدمة الخرائط
-        </p>
-        <p className="text-xs font-bold" style={{ color: "#DC2626" }}>
-          {mapsError.message}
-        </p>
-        <p className="text-xs" style={{ color: "#DC2626" }}>
-          يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى، أو التواصل مع الدعم الفني.
-        </p>
+      <div className="space-y-3">
+        <div className="rounded-2xl p-4 space-y-2" style={{ backgroundColor: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)" }}>
+          <p className="text-sm font-black" style={{ color: "#B45309" }}>
+            ⚠️ تعذّر تحميل خرائط Google — تم التحويل إلى الخريطة البديلة
+          </p>
+          <p className="text-xs font-bold" style={{ color: "#92400E" }}>
+            {mapsError.message}
+          </p>
+        </div>
+        <MapPicker
+          value={value ? { lat: value.lat, lng: value.lng, address: value.address } : null}
+          onChange={(coords) => onChange({ lat: coords.lat, lng: coords.lng, address: coords.address })}
+          placeholder={placeholder}
+          color={color}
+          initialCenter={initialCenter}
+          collapsible={collapsible}
+          openButtonLabel={openButtonLabel}
+          openButtonHint={openButtonHint}
+        />
       </div>
     );
   }

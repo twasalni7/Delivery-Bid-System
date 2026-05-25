@@ -38,7 +38,7 @@ export function MultiLocationDisplay({
     const uniqueDestinations = new Map<string, { lat: number; lng: number; address?: string }>();
 
     passengers.forEach((p) => {
-      if (p.pickupLat && p.pickupLng) {
+      if (p.pickupLat != null && p.pickupLng != null) {
         const key = `${p.pickupLat},${p.pickupLng}`;
         if (!uniquePickups.has(key)) {
           uniquePickups.set(key, {
@@ -48,7 +48,7 @@ export function MultiLocationDisplay({
           });
         }
       }
-      if (p.destinationLat && p.destinationLng) {
+      if (p.destinationLat != null && p.destinationLng != null) {
         const key = `${p.destinationLat},${p.destinationLng}`;
         if (!uniqueDestinations.has(key)) {
           uniqueDestinations.set(key, {
@@ -200,8 +200,10 @@ export function MultiLocationDisplay({
         <MapButtons
           homeLat={fallbackPickupLat}
           homeLng={fallbackPickupLng}
+          homeAddress={fallbackPickup}
           destLat={fallbackDestLat}
           destLng={fallbackDestLng}
+          destAddress={fallbackDestination}
           compact={compact}
         />
       )}
