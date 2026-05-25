@@ -571,7 +571,7 @@ export default function GoogleMapPicker({
     };
     // pendingSelection and initialCenter are intentionally excluded — they are read
     // via refs inside the effect so the map is not destroyed on every drag or re-render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pendingSelectionRef and initialCenterRef replace these deps
   }, [shouldRenderMap, mapsLoaded, extractLocationDetails, setMarkerAndView, toast, updateSelectionFromCoordinates, dismissKeyboardAndSuggestions, isMobile]);
 
   // Show error if Google Maps failed to load (only after loading attempt is complete)

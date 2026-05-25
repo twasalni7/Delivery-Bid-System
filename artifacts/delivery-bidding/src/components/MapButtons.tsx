@@ -54,8 +54,10 @@ function buildLocationTitle(location: LocationPoint): string {
   const lat = toFiniteNumber(location.lat);
   const lng = toFiniteNumber(location.lng);
   if (lat != null && lng != null) return `${lat}, ${lng}`;
-  return "الموقع";
+  return FALLBACK_LOCATION_LABEL;
 }
+
+const FALLBACK_LOCATION_LABEL = "الموقع";
 
 export function MapButtons({
   homeLat,

@@ -96,6 +96,7 @@ export function useGoogleMaps(options: UseGoogleMapsOptions = {}): UseGoogleMaps
         setGoogleInstance(google);
         setError(null);
         setIsLoading(false);
+        // Also reset the ref so future enabled→false→true cycles can re-trigger if needed.
         loadingRef.current = false;
         retryCountRef.current = 0;
       } catch (err) {
