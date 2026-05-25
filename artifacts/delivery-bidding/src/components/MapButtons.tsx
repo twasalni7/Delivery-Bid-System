@@ -63,8 +63,7 @@ export function MapButtons({
   // Build unified pickup list
   const allPickups: LocationPoint[] = [];
   if (
-    toFiniteNumber(homeLat) != null ||
-    toFiniteNumber(homeLng) != null ||
+    (toFiniteNumber(homeLat) != null && toFiniteNumber(homeLng) != null) ||
     (homeAddress && homeAddress.trim())
   ) {
     allPickups.push({
@@ -79,8 +78,7 @@ export function MapButtons({
   // Build unified dropoff list
   const allDropoffs: LocationPoint[] = [];
   if (
-    toFiniteNumber(destLat) != null ||
-    toFiniteNumber(destLng) != null ||
+    (toFiniteNumber(destLat) != null && toFiniteNumber(destLng) != null) ||
     (destAddress && destAddress.trim())
   ) {
     allDropoffs.push({
