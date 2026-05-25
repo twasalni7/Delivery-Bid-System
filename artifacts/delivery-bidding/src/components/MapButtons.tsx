@@ -60,6 +60,14 @@ export function MapButtons({
     return null;
   };
 
+  const buildLocationTitle = (location: LocationPoint): string => {
+    if (location.address?.trim()) return location.address.trim();
+    const lat = toFiniteNumber(location.lat);
+    const lng = toFiniteNumber(location.lng);
+    if (lat != null && lng != null) return `${lat}, ${lng}`;
+    return "الموقع";
+  };
+
   // Build unified pickup list
   const allPickups: LocationPoint[] = [];
   if (
@@ -122,7 +130,7 @@ export function MapButtons({
                   color: "#2E7D32",
                   border: "2px solid #81C784",
                 }}
-                title={loc.address || `${loc.lat}, ${loc.lng}`}
+                title={buildLocationTitle(loc)}
               >
                 <MapPin size={13} />
                 {loc.label || (visiblePickups.length > 1 ? `انطلاق ${idx + 1}` : "فتح في الخرائط")}
@@ -153,7 +161,7 @@ export function MapButtons({
                   color: "#C62828",
                   border: "2px solid #EF5350",
                 }}
-                title={loc.address || `${loc.lat}, ${loc.lng}`}
+                title={buildLocationTitle(loc)}
               >
                 <MapPin size={13} />
                 {loc.label || (visibleDropoffs.length > 1 ? `وصول ${idx + 1}` : "فتح في الخرائط")}
