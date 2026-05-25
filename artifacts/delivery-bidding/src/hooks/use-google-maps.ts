@@ -95,6 +95,9 @@ export function useGoogleMaps(options: UseGoogleMapsOptions = {}): UseGoogleMaps
         setIsLoaded(true);
         setGoogleInstance(google);
         setError(null);
+        setIsLoading(false);
+        // Also reset the ref so future enabled→false→true cycles can re-trigger if needed.
+        loadingRef.current = false;
         retryCountRef.current = 0;
       } catch (err) {
         const errorMessage = err instanceof Error ? err : new Error(String(err));
@@ -120,12 +123,7 @@ export function useGoogleMaps(options: UseGoogleMapsOptions = {}): UseGoogleMaps
       }
     };
 
-    attemptLoad().finally(() => {
-      if (retryCountRef.current >= maxRetries || error === null) {
-        setIsLoading(false);
-        loadingRef.current = false;
-      }
-    });
+    attemptLoad();
   }, [enabled, isLoaded, googleInstance, error]);
 
   return {
