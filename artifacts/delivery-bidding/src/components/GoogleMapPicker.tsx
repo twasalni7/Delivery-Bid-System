@@ -285,7 +285,7 @@ export default function GoogleMapPicker({
       style.textContent = `
         /* Google Places Autocomplete Mobile Optimization */
         .pac-container {
-          z-index: 9999 !important;
+          z-index: 10000 !important;
           position: fixed !important;
           border-radius: 16px !important;
           box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
@@ -294,6 +294,8 @@ export default function GoogleMapPicker({
           font-family: var(--font-arabic) !important;
           margin-top: 4px !important;
           overflow: hidden !important;
+          max-height: min(50vh, 400px) !important;
+          overflow-y: auto !important;
         }
 
         .pac-container::after {
@@ -608,19 +610,20 @@ export default function GoogleMapPicker({
 
   const mapPanel = (
     <div
-      className={isMobile ? "relative flex-1 min-h-0 overflow-hidden" : "relative w-full"}
+      className={isMobile ? "absolute inset-0 overflow-hidden" : "relative w-full"}
       style={{
         borderTop: "1px solid var(--border-subtle)",
         minHeight: isMobile ? undefined : mapPanelMinHeight,
-        height: isMobile ? undefined : mapPanelMinHeight,
+        height: isMobile ? "100%" : mapPanelMinHeight,
       }}
     >
       <div
         ref={containerRef}
-        className={isMobile ? "absolute inset-0" : "w-full h-full"}
+        className="w-full h-full"
         style={{
           backgroundColor: "#e8e0d8",
           touchAction: "pan-x pan-y",
+          position: "relative",
         }}
       />
 
@@ -682,10 +685,11 @@ export default function GoogleMapPicker({
             color: "var(--text)",
             fontFamily: "var(--font-arabic)",
             border: "none",
-            fontSize: isMobile ? "16px" : "15px", // 16px prevents zoom on iOS
+            fontSize: "16px", // 16px prevents zoom on iOS on all devices
             // Prevent unwanted mobile behaviors
             WebkitAppearance: "none",
             touchAction: "manipulation",
+            WebkitTapHighlightColor: "transparent",
           }}
           dir="rtl"
           autoComplete="off"
@@ -693,6 +697,7 @@ export default function GoogleMapPicker({
           autoCapitalize="off"
           spellCheck="false"
           enterKeyHint="search"
+          inputMode="search"
         />
         {searchText && (
           <button
@@ -750,13 +755,15 @@ export default function GoogleMapPicker({
               className="fixed inset-0"
               style={{
                 backgroundColor: "var(--bg)",
-                zIndex: 9998, // Below autocomplete dropdown (9999) but above everything else
+                zIndex: 9900, // Lower than autocomplete dropdown (10000)
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
               }}
               role="dialog"
               aria-modal="true"
               aria-labelledby="map-picker-title"
             >
-              <div className="flex flex-col" style={{ height: "100%", isolation: "isolate" }}>
+              <div className="flex flex-col" style={{ minHeight: "100vh", height: "100%", isolation: "isolate" }}>
                 {/* Fixed header with search - always visible even when keyboard is open */}
                 <div
                   className="flex-shrink-0 px-3 pb-2 space-y-2"
@@ -766,7 +773,7 @@ export default function GoogleMapPicker({
                     borderBottom: "1px solid var(--border)",
                     position: "sticky",
                     top: 0,
-                    zIndex: 100, // Above map but below autocomplete
+                    zIndex: 9950, // Above map (1150) but below autocomplete (10000)
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -802,14 +809,13 @@ export default function GoogleMapPicker({
                   </div>
                 )}
 
-                {/* Map container - scrollable area */}
+                {/* Map container - fixed height area */}
                 <div
-                  className="flex-1 min-h-0"
+                  className="flex-1"
                   style={{
                     position: "relative",
-                    // Allow map to scroll when keyboard is open
-                    overflowY: "auto",
-                    WebkitOverflowScrolling: "touch",
+                    minHeight: 0,
+                    overflow: "hidden",
                   }}
                 >
                   {mapPanel}
@@ -824,7 +830,7 @@ export default function GoogleMapPicker({
                     paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
                     position: "sticky",
                     bottom: 0,
-                    zIndex: 100, // Above map
+                    zIndex: 9950, // Above map but below autocomplete
                   }}
                 >
                   <button
