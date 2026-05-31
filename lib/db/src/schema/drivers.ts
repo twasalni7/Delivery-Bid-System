@@ -24,8 +24,12 @@ export const driversTable = pgTable(
     name: text("name").notNull(),
     mobile: text("mobile").notNull(),
     loginCode: text("login_code").notNull(),
+    passwordHash: text("password_hash"), // nullable for backward compatibility
+    requiresPasswordReset: integer("requires_password_reset").notNull().default(0), // 0 = false, 1 = true (SQLite compatibility)
     balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default("0"),
     carType: text("car_type"),
+    carYear: text("car_year"),
+    city: text("city"),
     nationality: text("nationality"),
     age: integer("age"),
     nationalId: text("national_id"),

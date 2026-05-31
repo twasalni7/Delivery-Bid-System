@@ -17,6 +17,7 @@ import serviceAreasRouter from "./service-areas";
 import operationsRouter from "./operations";
 import mapsRouter from "./maps";
 import debugRouter from "./debug";
+import driverRegistrationRouter from "./driver-registration";
 
 const router: IRouter = Router();
 
@@ -43,5 +44,7 @@ router.use("/activity-logs", activityLogsRouter);
 router.use("/admin/activity-logs", activityLogsRouter);
 router.use("/service-areas", serviceAreasRouter);
 router.use("/debug", debugRouter);
+router.use("/driver-registration", driverRegistrationRouter);
+router.use("/admin/driver-registration", driverRegistrationRouter);
 
 export default router;

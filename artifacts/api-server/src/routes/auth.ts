@@ -1,8 +1,8 @@
 import { Router, Request } from "express";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import { db } from "@workspace/db";
-import { clientsTable, driversTable, adminsTable, userTokensTable } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { clientsTable, driversTable, adminsTable, userTokensTable, passwordResetTokensTable } from "@workspace/db";
+import { eq, inArray, and, gt } from "drizzle-orm";
 import { hashPassword, comparePassword } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
@@ -182,21 +182,44 @@ router.post("/login-client", async (req, res) => {
 });
 
 router.post("/login-driver", async (req, res) => {
-  const { mobile, loginCode } = req.body ?? {};
-  if (!mobile || !loginCode) {
-    res.status(400).json({ error: "يرجى إدخال الجوال ورمز التسجيل" });
+  const { mobile, loginCode, password } = req.body ?? {};
+  if (!mobile) {
+    res.status(400).json({ error: "يرجى إدخال الجوال" });
+    return;
+  }
+  if (!loginCode && !password) {
+    res.status(400).json({ error: "يرجى إدخال رمز التسجيل أو كلمة المرور" });
     return;
   }
   try {
     const mobileCandidates = getDriverMobileLoginCandidates(String(mobile));
-    const normalizedLoginCode = normalizeLoginCode(String(loginCode));
     const driver = await db.query.driversTable.findFirst({
       where: inArray(driversTable.mobile, mobileCandidates),
     });
-    if (!driver || normalizeLoginCode(String(driver.loginCode)) !== normalizedLoginCode) {
-      res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });
+
+    if (!driver) {
+      res.status(401).json({ error: "رقم الجوال أو بيانات الدخول غير صحيحة" });
       return;
     }
+
+    // Authentication logic
+    let isAuthenticated = false;
+
+    // Case 1: Login with password (new system)
+    if (password && driver.passwordHash) {
+      isAuthenticated = await comparePassword(password, driver.passwordHash);
+    }
+    // Case 2: Login with loginCode (legacy system or first-time users)
+    else if (loginCode) {
+      const normalizedLoginCode = normalizeLoginCode(String(loginCode));
+      isAuthenticated = normalizeLoginCode(String(driver.loginCode)) === normalizedLoginCode;
+    }
+
+    if (!isAuthenticated) {
+      res.status(401).json({ error: "رقم الجوال أو بيانات الدخول غير صحيحة" });
+      return;
+    }
+
     if (driver.status === "BLOCKED") {
       res
         .status(403)
@@ -207,9 +230,11 @@ router.post("/login-driver", async (req, res) => {
       res.status(403).json({ error: "هذا الحساب غير متاح" });
       return;
     }
+
     await regenerateSessionBestEffort(req, "login-driver");
     const token = await createAuthToken(driver.id, "driver", driver.name);
     await logActivity({ actorId: driver.id, actorRole: "driver", action: "auth.login", entity: "drivers", entityId: driver.id, req });
+
     res.json({
       id: driver.id,
       name: driver.name,
@@ -218,6 +243,7 @@ router.post("/login-driver", async (req, res) => {
       status: driver.status,
       role: "driver",
       token,
+      requiresPasswordReset: !driver.passwordHash || driver.requiresPasswordReset === 1,
     });
   } catch (err) {
     logger.error({ err }, "login-driver error");
@@ -350,6 +376,258 @@ router.patch("/me/password", async (req, res) => {
     res.json({ message: "تم تغيير كلمة المرور بنجاح" });
   } catch (err) {
     logger.error({ err }, "me/password error");
+    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+  }
+});
+
+// ============= Driver Password Management =============
+
+// Helper function to generate temporary password
+function generateTemporaryPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed similar characters
+  let password = "";
+  for (let i = 0; i < 8; i++) {
+    password += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return password;
+}
+
+// Helper function to hash token
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+// Set first password for legacy drivers
+router.post("/driver/set-first-password", async (req, res) => {
+  const { mobile, loginCode, newPassword } = req.body ?? {};
+  if (!mobile || !loginCode || !newPassword) {
+    res.status(400).json({ error: "يرجى إدخال جميع البيانات المطلوبة" });
+    return;
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
+    return;
+  }
+  try {
+    const mobileCandidates = getDriverMobileLoginCandidates(String(mobile));
+    const normalizedLoginCode = normalizeLoginCode(String(loginCode));
+    const driver = await db.query.driversTable.findFirst({
+      where: inArray(driversTable.mobile, mobileCandidates),
+    });
+
+    if (!driver || normalizeLoginCode(String(driver.loginCode)) !== normalizedLoginCode) {
+      res.status(401).json({ error: "رقم الجوال أو رمز التسجيل غير صحيح" });
+      return;
+    }
+
+    // Only allow if driver doesn't have a password yet
+    if (driver.passwordHash) {
+      res.status(400).json({ error: "تم تعيين كلمة المرور مسبقاً. استخدم نسيت كلمة المرور لإعادة التعيين" });
+      return;
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await db
+      .update(driversTable)
+      .set({ passwordHash, requiresPasswordReset: 0 })
+      .where(eq(driversTable.id, driver.id));
+
+    await logActivity({
+      actorId: driver.id,
+      actorRole: "driver",
+      action: "driver.password_set",
+      entity: "drivers",
+      entityId: driver.id,
+      req,
+    });
+
+    res.json({ message: "تم تعيين كلمة المرور بنجاح" });
+  } catch (err) {
+    logger.error({ err }, "driver/set-first-password error");
+    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+  }
+});
+
+// Request password reset
+router.post("/driver/forgot-password", async (req, res) => {
+  const { mobile } = req.body ?? {};
+  if (!mobile) {
+    res.status(400).json({ error: "يرجى إدخال رقم الجوال" });
+    return;
+  }
+  try {
+    const mobileCandidates = getDriverMobileLoginCandidates(String(mobile));
+    const driver = await db.query.driversTable.findFirst({
+      where: inArray(driversTable.mobile, mobileCandidates),
+    });
+
+    // Always return success to prevent user enumeration
+    if (!driver) {
+      res.json({ message: "إذا كان رقم الجوال مسجلاً، سيتم إرسال رمز إعادة التعيين" });
+      return;
+    }
+
+    // Generate reset token
+    const resetToken = randomBytes(32).toString("hex");
+    const tokenHash = hashToken(resetToken);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Invalidate any existing tokens for this driver
+    await db
+      .delete(passwordResetTokensTable)
+      .where(
+        and(
+          eq(passwordResetTokensTable.driverId, driver.id),
+          eq(passwordResetTokensTable.usedAt, null)
+        )
+      );
+
+    // Create new token
+    await db.insert(passwordResetTokensTable).values({
+      driverId: driver.id,
+      tokenHash,
+      expiresAt,
+    });
+
+    await logActivity({
+      actorId: driver.id,
+      actorRole: "driver",
+      action: "driver.password_reset_requested",
+      entity: "drivers",
+      entityId: driver.id,
+      req,
+    });
+
+    // TODO: Send SMS/WhatsApp with reset token
+    // For now, return the token in development (should be removed in production)
+    res.json({
+      message: "تم إرسال رمز إعادة التعيين",
+      resetToken: process.env.NODE_ENV === "development" ? resetToken : undefined,
+    });
+  } catch (err) {
+    logger.error({ err }, "driver/forgot-password error");
+    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+  }
+});
+
+// Reset password with token
+router.post("/driver/reset-password", async (req, res) => {
+  const { mobile, resetToken, newPassword } = req.body ?? {};
+  if (!mobile || !resetToken || !newPassword) {
+    res.status(400).json({ error: "يرجى إدخال جميع البيانات المطلوبة" });
+    return;
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
+    return;
+  }
+  try {
+    const mobileCandidates = getDriverMobileLoginCandidates(String(mobile));
+    const driver = await db.query.driversTable.findFirst({
+      where: inArray(driversTable.mobile, mobileCandidates),
+    });
+
+    if (!driver) {
+      res.status(401).json({ error: "رقم الجوال أو رمز إعادة التعيين غير صحيح" });
+      return;
+    }
+
+    const tokenHash = hashToken(resetToken);
+    const token = await db.query.passwordResetTokensTable.findFirst({
+      where: and(
+        eq(passwordResetTokensTable.driverId, driver.id),
+        eq(passwordResetTokensTable.tokenHash, tokenHash),
+        eq(passwordResetTokensTable.usedAt, null),
+        gt(passwordResetTokensTable.expiresAt, new Date())
+      ),
+    });
+
+    if (!token) {
+      res.status(401).json({ error: "رمز إعادة التعيين غير صحيح أو منتهي الصلاحية" });
+      return;
+    }
+
+    // Update password
+    const passwordHash = await hashPassword(newPassword);
+    await db
+      .update(driversTable)
+      .set({ passwordHash, requiresPasswordReset: 0 })
+      .where(eq(driversTable.id, driver.id));
+
+    // Mark token as used
+    await db
+      .update(passwordResetTokensTable)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokensTable.id, token.id));
+
+    await logActivity({
+      actorId: driver.id,
+      actorRole: "driver",
+      action: "driver.password_reset",
+      entity: "drivers",
+      entityId: driver.id,
+      req,
+    });
+
+    res.json({ message: "تم إعادة تعيين كلمة المرور بنجاح" });
+  } catch (err) {
+    logger.error({ err }, "driver/reset-password error");
+    res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
+  }
+});
+
+// Change password (requires authentication)
+router.patch("/driver/change-password", async (req, res) => {
+  const user = req.session.user ?? req.tokenUser;
+  if (!user || user.role !== "driver") {
+    res.status(401).json({ error: "غير مصرح" });
+    return;
+  }
+
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ error: "يرجى إدخال كلمة المرور الحالية والجديدة" });
+    return;
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    res.status(400).json({ error: "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل" });
+    return;
+  }
+
+  try {
+    const driver = await db.query.driversTable.findFirst({
+      where: eq(driversTable.id, user.id),
+    });
+
+    if (!driver || !driver.passwordHash) {
+      res.status(404).json({ error: "السائق غير موجود أو لم يتم تعيين كلمة مرور بعد" });
+      return;
+    }
+
+    const valid = await comparePassword(currentPassword, driver.passwordHash);
+    if (!valid) {
+      res.status(400).json({ error: "كلمة المرور الحالية غير صحيحة" });
+      return;
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await db
+      .update(driversTable)
+      .set({ passwordHash: newHash })
+      .where(eq(driversTable.id, user.id));
+
+    await logActivity({
+      actorId: user.id,
+      actorRole: "driver",
+      action: "driver.password_changed",
+      entity: "drivers",
+      entityId: user.id,
+      req,
+    });
+
+    res.json({ message: "تم تغيير كلمة المرور بنجاح" });
+  } catch (err) {
+    logger.error({ err }, "driver/change-password error");
     res.status(500).json({ error: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" });
   }
 });
