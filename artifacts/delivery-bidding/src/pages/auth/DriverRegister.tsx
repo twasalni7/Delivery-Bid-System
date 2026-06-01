@@ -42,8 +42,14 @@ export default function DriverRegister() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "فشل تقديم الطلب");
+        let errorMessage = "فشل تقديم الطلب";
+        try {
+          const error = await res.json();
+          errorMessage = error.error || errorMessage;
+        } catch {
+          // Response body is empty or not JSON
+        }
+        throw new Error(errorMessage);
       }
 
       return res.json();

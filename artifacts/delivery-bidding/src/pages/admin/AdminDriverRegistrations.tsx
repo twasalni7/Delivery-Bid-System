@@ -66,8 +66,14 @@ export default function AdminDriverRegistrations() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "فشل قبول الطلب");
+        let errorMessage = "فشل قبول الطلب";
+        try {
+          const error = await res.json();
+          errorMessage = error.error || errorMessage;
+        } catch {
+          // Response body is empty or not JSON
+        }
+        throw new Error(errorMessage);
       }
 
       return res.json() as Promise<ApprovalResponse>;
@@ -100,8 +106,14 @@ export default function AdminDriverRegistrations() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "فشل رفض الطلب");
+        let errorMessage = "فشل رفض الطلب";
+        try {
+          const error = await res.json();
+          errorMessage = error.error || errorMessage;
+        } catch {
+          // Response body is empty or not JSON
+        }
+        throw new Error(errorMessage);
       }
 
       return res.json();
