@@ -91,10 +91,8 @@ export default function DriverLoginPage() {
             <p className="text-sm mb-2" style={{ color: "var(--text-muted)" }}>
               ليس لديك حساب؟
             </p>
-            <Link href="/driver/register">
-              <a className="text-sm font-bold" style={{ color: "var(--brand)" }}>
-                تقديم طلب انضمام كسائق ←
-              </a>
+            <Link href="/driver/register" className="text-sm font-bold" style={{ color: "var(--brand)" }}>
+              تقديم طلب انضمام كسائق ←
             </Link>
           </div>
         </div>
