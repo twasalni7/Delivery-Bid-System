@@ -18,6 +18,7 @@ import Home from "@/pages/Home";
 import ClientLogin from "@/pages/auth/ClientLogin";
 import ClientRegister from "@/pages/auth/ClientRegister";
 import DriverLoginPage from "@/pages/auth/DriverLoginPage";
+import DriverRegister from "@/pages/auth/DriverRegister";
 import AdminLoginPage from "@/pages/auth/AdminLoginPage";
 
 import ClientDashboard from "@/pages/client/ClientDashboard";
@@ -39,6 +40,7 @@ import DriverArchive from "@/pages/driver/DriverArchive";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
 import AdminDrivers from "@/pages/admin/AdminDrivers";
+import AdminDriverRegistrations from "@/pages/admin/AdminDriverRegistrations";
 import AdminOffers from "@/pages/admin/AdminOffers";
 import AdminClients from "@/pages/admin/AdminClients";
 import AdminSettings from "@/pages/admin/AdminSettings";
@@ -318,6 +320,7 @@ function Router() {
         </Route>
 
         <Route path="/driver/login" component={DriverLoginPage} />
+        <Route path="/driver/register" component={DriverRegister} />
         <Route path="/driver" component={DriverLogin} />
         <Route path="/driver/dashboard">
           <DriverGuard><DriverDashboard /></DriverGuard>
@@ -356,6 +359,9 @@ function Router() {
         </Route>
         <Route path="/admin/drivers">
           <AdminGuard><AdminDrivers /></AdminGuard>
+        </Route>
+        <Route path="/admin/driver-registrations">
+          <AdminGuard><AdminDriverRegistrations /></AdminGuard>
         </Route>
         <Route path="/admin/offers">
           <AdminGuard><AdminOffers /></AdminGuard>

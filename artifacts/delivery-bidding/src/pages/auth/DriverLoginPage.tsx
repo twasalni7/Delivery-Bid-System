@@ -86,6 +86,17 @@ export default function DriverLoginPage() {
               {loginMutation.isPending ? "جاري الدخول..." : "دخول"}
             </button>
           </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm mb-2" style={{ color: "var(--text-muted)" }}>
+              ليس لديك حساب؟
+            </p>
+            <Link href="/driver/register">
+              <a className="text-sm font-bold" style={{ color: "var(--brand)" }}>
+                تقديم طلب انضمام كسائق ←
+              </a>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
