@@ -269,10 +269,8 @@ export default function DriverRegister() {
 
               <div className="text-center text-sm text-gray-600">
                 <p>هل لديك حساب بالفعل؟</p>
-                <Link href="/driver/login">
-                  <a className="text-blue-600 hover:underline font-medium">
-                    تسجيل الدخول
-                  </a>
+                <Link href="/driver/login" className="text-blue-600 hover:underline font-medium">
+                  تسجيل الدخول
                 </Link>
               </div>
             </div>
