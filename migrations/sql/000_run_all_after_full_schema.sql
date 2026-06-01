@@ -1,5 +1,5 @@
 -- Combined migration script for migrations after 000_full_schema.sql
--- Run /tmp/workspace/twasalni7/Delivery-Bid-System/migrations/sql/000_full_schema.sql first, then run this file once.
+-- Run migrations/sql/000_full_schema.sql first, then run this file once.
 
 -- =====================================================================
 -- BEGIN 001_enable_rls_and_policies.sql
@@ -1903,7 +1903,7 @@ CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_role
 -- =====================================================================
 
 -- =====================================================================
--- Migration 023: Rename pricing_matrix columns to match Drizzle schema
+-- Migration 029: Rename pricing_matrix columns to match Drizzle schema
 -- نظام توصّلني — تصحيح أسماء أعمدة pricing_matrix
 -- =====================================================================
 --
@@ -1916,7 +1916,7 @@ CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_role
 -- هذه المهاجرة تصحح الأسماء وتعيد بناء الفهرس الفريد.
 -- تعمل بشكل آمن سواء كانت الأعمدة بالأسماء القديمة أو الجديدة.
 --
--- Run via: psql "$DATABASE_URL" -f migrations/sql/023_pricing_matrix_rename_columns.sql
+-- Run via: psql "$DATABASE_URL" -f migrations/sql/029_pricing_matrix_rename_columns.sql
 -- Or paste into Supabase SQL Editor
 -- =====================================================================
 
