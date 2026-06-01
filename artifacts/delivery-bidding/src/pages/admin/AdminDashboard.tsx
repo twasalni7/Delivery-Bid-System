@@ -69,6 +69,7 @@ const DASHBOARD_SHORTCUTS = [
   { href: "/admin/notifications-monitor", icon: "🔔", label: "مراقبة الإشعارات", hint: "تتبّع الإرسال", group: "مراقبة" },
   { href: "/admin/compose", icon: "✉️", label: "إرسال إشعار", hint: "رسائل موجهة", group: "تشغيل" },
   { href: "/admin/drivers", icon: "🚗", label: "السائقون", hint: "الحسابات والأرصدة", group: "أطراف" },
+  { href: "/admin/driver-registrations", icon: "📝", label: "طلبات التسجيل", hint: "قبول ورفض السائقين", group: "أطراف" },
   { href: "/admin/clients", icon: "👤", label: "العملاء", hint: "بيانات العملاء", group: "أطراف" },
   { href: "/admin/pricing", icon: "💲", label: "التسعير", hint: "الرسوم والباقات", group: "تشغيل" },
   { href: "/admin/database", icon: "🗄️", label: "قاعدة البيانات", hint: "مؤشرات النظام", group: "متقدم" },
