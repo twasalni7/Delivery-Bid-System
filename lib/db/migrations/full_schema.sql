@@ -58,6 +58,11 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
+  CREATE TYPE registration_request_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
   CREATE TYPE ticket_status AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
@@ -93,20 +98,24 @@ CREATE TABLE IF NOT EXISTS clients (
 
 -- 2c. drivers (السائقون)
 CREATE TABLE IF NOT EXISTS drivers (
-  id                SERIAL PRIMARY KEY,
-  name              TEXT          NOT NULL,
-  mobile            TEXT          NOT NULL,
-  login_code        TEXT          NOT NULL,
-  balance           REAL          NOT NULL DEFAULT 0,
-  car_type          TEXT,
-  nationality       TEXT,
-  age               INTEGER,
-  national_id       TEXT,
-  status            driver_status NOT NULL DEFAULT 'ACTIVE',
-  warning_count     INTEGER       NOT NULL DEFAULT 0,
-  push_subscription TEXT,
-  deleted_at        TIMESTAMPTZ,
-  created_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+  id                        SERIAL PRIMARY KEY,
+  name                      TEXT          NOT NULL,
+  mobile                    TEXT          NOT NULL,
+  login_code                TEXT          NOT NULL,
+  password_hash             TEXT,
+  requires_password_reset   INTEGER       NOT NULL DEFAULT 0,
+  balance                   REAL          NOT NULL DEFAULT 0,
+  car_type                  TEXT,
+  car_year                  TEXT,
+  city                      TEXT,
+  nationality               TEXT,
+  age                       INTEGER,
+  national_id               TEXT,
+  status                    driver_status NOT NULL DEFAULT 'ACTIVE',
+  warning_count             INTEGER       NOT NULL DEFAULT 0,
+  push_subscription         TEXT,
+  deleted_at                TIMESTAMPTZ,
+  created_at                TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
 
@@ -208,6 +217,35 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 3h. password_reset_tokens (رموز إعادة تعيين كلمة المرور للسائقين)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id          SERIAL PRIMARY KEY,
+  driver_id   INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3i. driver_registration_requests (طلبات تسجيل السائقين)
+CREATE TABLE IF NOT EXISTS driver_registration_requests (
+  id                SERIAL PRIMARY KEY,
+  name              TEXT                        NOT NULL,
+  mobile            TEXT                        NOT NULL,
+  city              TEXT                        NOT NULL,
+  car_type          TEXT                        NOT NULL,
+  car_year          TEXT                        NOT NULL,
+  nationality       TEXT                        NOT NULL,
+  national_id       TEXT                        NOT NULL,
+  age               INTEGER                     NOT NULL,
+  status            registration_request_status NOT NULL DEFAULT 'PENDING',
+  approved_by       INTEGER REFERENCES admins(id),
+  approved_at       TIMESTAMPTZ,
+  rejection_reason  TEXT,
+  created_driver_id INTEGER,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 
 -- ─────────────────────────────────────────────────────
 -- 4. Indexes
@@ -218,6 +256,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS drivers_mobile_unique
 
 CREATE UNIQUE INDEX IF NOT EXISTS drivers_login_code_unique
   ON drivers (login_code);
+
+CREATE INDEX IF NOT EXISTS idx_driver_registration_requests_mobile
+  ON driver_registration_requests (mobile);
+
+CREATE INDEX IF NOT EXISTS idx_driver_registration_requests_status
+  ON driver_registration_requests (status);
+
+CREATE INDEX IF NOT EXISTS idx_driver_registration_requests_created_at
+  ON driver_registration_requests (created_at);
 
 
 -- ─────────────────────────────────────────────────────
