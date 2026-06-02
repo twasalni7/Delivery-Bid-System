@@ -11,13 +11,14 @@ import { csrfProtection } from "./middleware/csrfProtection";
 import { errorLogger } from "./middleware/errorLogger";
 import { resolveTokenUser } from "./middleware/resolveTokenUser";
 import { securityHeaders } from "./middleware/securityHeaders";
+import { jsonResponseMiddleware, errorHandlerMiddleware } from "./middleware/json-response";
 
 const app = express();
 
 const isProduction = process.env["NODE_ENV"] === "production";
 const isTest = process.env["NODE_ENV"] === "test";
 
-// ─── SESSION_SECRET validation ─────────────────────────────────────────────
+// ─── SESSION_SECRET validation ──────────────────────────────────────────────
 const SESSION_SECRET = process.env["SESSION_SECRET"];
 if (isProduction && !SESSION_SECRET) {
   throw new Error(
@@ -71,6 +72,11 @@ app.set("trust proxy", 1);
 
 // ─── CSRF protection ───────────────────────────────────────────────────────
 app.use(csrfProtection);
+
+// ─── JSON Response Middleware ──────────────────────────────────────────────
+// ✅ هذا يضمن أن كل JSON response صحيح دائماً ويحل خطأ:
+// "Unexpected end of JSON input"
+app.use(jsonResponseMiddleware);
 
 // ─── Rate limiting for auth endpoints ─────────────────────────────────────
 // Increased limits to accommodate multiple users from same network/IP
@@ -169,5 +175,9 @@ const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 Sentry.setupExpressErrorHandler(app);
 app.use(errorLogger);
 app.use(globalErrorHandler);
+
+// ─── Error Handler Middleware ────────────────────────────────────────────
+// ✅ يضمن أن جميع error responses JSON صحيح أيضاً
+app.use(errorHandlerMiddleware);
 
 export default app;
