@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحباً بك في توصّلني</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --brand: #00d15a;
+            --brand-dark: #00b84d;
+            --font: 'IBM Plex Sans Arabic', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+
+        .onboarding-container {
+            max-width: 480px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Slides Container */
+        .slides-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+
+        /* Slide Content */
+        .slide-icon {
+            font-size: 6rem;
+            margin-bottom: 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .slide-title {
+            font-size: 2rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .slide-description {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.7;
+            max-width: 380px;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            margin: 2rem 0;
+            max-width: 380px;
+            box-shadow: 0 12px 40px rgba(0, 209, 90, 0.3);
+        }
+
+        .highlight-box h3 {
+            font-size: 1.375rem;
+            font-weight: 900;
+            color: #000;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.875rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .highlight-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .check-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        /* Features List */
+        .features-list {
+            margin: 2rem 0;
+            max-width: 380px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: right;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 209, 90, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 1.125rem;
+            font-weight: 900;
+            margin-bottom: 0.375rem;
+        }
+
+        .feature-content p {
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        /* Pagination Dots */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1.5rem 0;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dot.active {
+            width: 24px;
+            border-radius: 4px;
+            background: var(--brand);
+        }
+
+        /* Bottom Actions */
+        .bottom-actions {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1.125rem;
+            background: var(--brand);
+            color: #000;
+            border: none;
+            border-radius: 3rem;
+            font-weight: 900;
+            font-size: 1.125rem;
+            cursor: pointer;
+            font-family: var(--font);
+            box-shadow: 0 8px 24px rgba(0, 209, 90, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 209, 90, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-skip {
+            width: 100%;
+            padding: 1rem;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: var(--font);
+            margin-top: 0.75rem;
+        }
+
+        /* Notification Permission Page */
+        .notification-page {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .notification-page.active {
+            display: flex;
+        }
+
+        .notification-icon {
+            font-size: 6rem;
+            margin-bottom: 2rem;
+        }
+
+        .notification-title {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+
+        .notification-description {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            line-height: 1.7;
+            margin-bottom: 3rem;
+            max-width: 380px;
+        }
+
+        .notification-buttons {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn-notification {
+            width: 100%;
+            padding: 1.125rem;
+            border-radius: 3rem;
+            font-weight: 900;
+            font-size: 1.125rem;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all 0.3s ease;
+        }
+
+        .btn-enable {
+            background: var(--brand);
+            color: #000;
+            border: none;
+            box-shadow: 0 8px 24px rgba(0, 209, 90, 0.4);
+        }
+
+        .btn-enable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 209, 90, 0.5);
+        }
+
+        .btn-later {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-later:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 1rem;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .success-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-text {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--brand);
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <!-- Onboarding Slides -->
+        <div class="slides-wrapper" id="slidesWrapper">
+            <!-- Slide 1: Welcome -->
+            <div class="slide active" data-slide="0">
+                <div class="slide-icon">🚗</div>
+                <h1 class="slide-title">مرحباً بك في توصّلني</h1>
+                <p class="slide-description">
+                    خدمة اشتراك شهري للتوصيل اليومي<br>
+                    آمنة، مريحة، وموثوقة
+                </p>
+            </div>
+
+            <!-- Slide 2: How It Works -->
+            <div class="slide" data-slide="1">
+                <div class="slide-icon">📅</div>
+                <h1 class="slide-title">اشتراك شهري للدوامات</h1>
+                <p class="slide-description">
+                    توصيل يومي لمكان عملك أو دراستك<br>
+                    بسعر ثابت وواضح كل شهر
+                </p>
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">⏰</div>
+                        <div class="feature-content">
+                            <h4>مواعيد ثابتة</h4>
+                            <p>حدد مواعيد الذهاب والعودة المناسبة لك</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📍</div>
+                        <div class="feature-content">
+                            <h4>مسار محدد</h4>
+                            <p>من البيت للعمل ومن العمل للبيت يومياً</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">👤</div>
+                        <div class="feature-content">
+                            <h4>سائق ثابت</h4>
+                            <p>نفس السائق طوال الشهر</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Payment Info - MOST IMPORTANT -->
+            <div class="slide" data-slide="2">
+                <div class="slide-icon">💳</div>
+                <h1 class="slide-title">نظام الدفع الآمن</h1>
+                <p class="slide-description" style="margin-bottom: 2rem;">
+                    راحتك وأمانك أولويتنا
+                </p>
+                <div class="highlight-box">
+                    <h3>
+                        <span>🔒</span>
+                        معلومات مهمة
+                    </h3>
+                    <div class="highlight-item">
+                        <div class="check-icon">✓</div>
+                        <span>لا يوجد دفع مقدم</span>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="check-icon">✓</div>
+                        <span>الدفع آخر الشهر فقط</span>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="check-icon">✓</div>
+                        <span>الدفع للسائق مباشرة</span>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="check-icon">✓</div>
+                        <span>بدون رسوم إضافية</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Trust & Safety -->
+            <div class="slide" data-slide="3">
+                <div class="slide-icon">🛡️</div>
+                <h1 class="slide-title">موثوقية وأمان</h1>
+                <p class="slide-description" style="margin-bottom: 2rem;">
+                    نهتم بسلامتك وراحتك
+                </p>
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">✅</div>
+                        <div class="feature-content">
+                            <h4>سائقون موثوقون</h4>
+                            <p>جميع السائقين مراجعين ومصرح لهم</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📱</div>
+                        <div class="feature-content">
+                            <h4>محادثة آمنة</h4>
+                            <p>تواصل مع السائق داخل التطبيق</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">⭐</div>
+                        <div class="feature-content">
+                            <h4>تقييمات حقيقية</h4>
+                            <p>راجع تقييمات العملاء السابقين</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🔐</div>
+                        <div class="feature-content">
+                            <h4>خصوصية محمية</h4>
+                            <p>بياناتك لا تظهر إلا بعد اختيار السائق</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination Dots -->
+        <div class="pagination" id="pagination">
+            <div class="dot active" data-slide="0"></div>
+            <div class="dot" data-slide="1"></div>
+            <div class="dot" data-slide="2"></div>
+            <div class="dot" data-slide="3"></div>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="bottom-actions" id="bottomActions">
+            <button class="btn-primary" id="nextBtn">التالي</button>
+            <button class="btn-skip" id="skipBtn">تخطي</button>
+        </div>
+
+        <!-- Notification Permission Page (Hidden Initially) -->
+        <div class="notification-page" id="notificationPage">
+            <div class="notification-icon">🔔</div>
+            <h1 class="notification-title">تفعيل الإشعارات</h1>
+            <p class="notification-description">
+                احصل على تحديثات فورية عن طلباتك والعروض الجديدة من السائقين
+            </p>
+            <div class="notification-buttons">
+                <button class="btn-notification btn-enable" id="enableNotifications">
+                    🔔 تفعيل الإشعارات
+                </button>
+                <button class="btn-notification btn-later" id="skipNotifications">
+                    ربما لاحقاً
+                </button>
+            </div>
+            <div class="success-message" id="successMessage">
+                <div class="success-icon">✅</div>
+                <div class="success-text">تم تفعيل الإشعارات بنجاح!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const totalSlides = 4;
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        const nextBtn = document.getElementById('nextBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        const slidesWrapper = document.getElementById('slidesWrapper');
+        const bottomActions = document.getElementById('bottomActions');
+        const pagination = document.getElementById('pagination');
+        const notificationPage = document.getElementById('notificationPage');
+
+        // Navigate to slide
+        function goToSlide(index) {
+            if (index < 0 || index >= totalSlides) return;
+
+            slides[currentSlide].classList.remove('active');
+            slides[currentSlide].classList.add('prev');
+            dots[currentSlide].classList.remove('active');
+
+            currentSlide = index;
+
+            slides[currentSlide].classList.remove('prev');
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.add('active');
+
+            // Update button text
+            if (currentSlide === totalSlides - 1) {
+                nextBtn.textContent = 'فهمت، لننطلق!';
+            } else {
+                nextBtn.textContent = 'التالي';
+            }
+        }
+
+        // Next button
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < totalSlides - 1) {
+                goToSlide(currentSlide + 1);
+            } else {
+                showNotificationPage();
+            }
+        });
+
+        // Skip button
+        skipBtn.addEventListener('click', () => {
+            showNotificationPage();
+        });
+
+        // Dot navigation
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                goToSlide(index);
+            });
+        });
+
+        // Show notification page
+        function showNotificationPage() {
+            slidesWrapper.style.display = 'none';
+            pagination.style.display = 'none';
+            bottomActions.style.display = 'none';
+            notificationPage.classList.add('active');
+        }
+
+        // Enable notifications
+        document.getElementById('enableNotifications').addEventListener('click', async () => {
+            try {
+                // Request notification permission
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        document.getElementById('successMessage').classList.add('show');
+                        setTimeout(() => {
+                            finishOnboarding();
+                        }, 2000);
+                    } else {
+                        // Permission denied, but still proceed
+                        finishOnboarding();
+                    }
+                } else {
+                    // Notifications not supported
+                    finishOnboarding();
+                }
+            } catch (error) {
+                console.error('Notification error:', error);
+                finishOnboarding();
+            }
+        });
+
+        // Skip notifications
+        document.getElementById('skipNotifications').addEventListener('click', () => {
+            finishOnboarding();
+        });
+
+        // Finish onboarding
+        function finishOnboarding() {
+            // Store that user has completed onboarding
+            localStorage.setItem('onboardingCompleted', 'true');
+            // Redirect to main app
+            window.location.href = 'design-v2-uber-style.html';
+        }
+
+        // Swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        slidesWrapper.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        slidesWrapper.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50 && currentSlide < totalSlides - 1) {
+                // Swipe left - next slide
+                goToSlide(currentSlide + 1);
+            }
+            if (touchEndX > touchStartX + 50 && currentSlide > 0) {
+                // Swipe right - previous slide
+                goToSlide(currentSlide - 1);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة تصميم - تفاصيل الطلب | توصّلني</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050816;
+            --bg-secondary: #0a0f1e;
+            --bg-tertiary: #0f1729;
+            --bg-card: #101423;
+            --brand-purple-dark: #5b21b6;
+            --brand-purple: #7c3aed;
+            --brand-purple-light: #8b5cf6;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-subtle: rgba(148, 163, 184, 0.12);
+            --border-medium: rgba(148, 163, 184, 0.18);
+            --radius-sm: 0.75rem;
+            --radius-md: 1rem;
+            --radius-lg: 1.5rem;
+            --radius-xl: 2rem;
+            --space-xs: 0.5rem;
+            --space-sm: 0.75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-arabic);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+            background: var(--bg-secondary);
+            min-height: 100vh;
+            padding-bottom: 120px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(15,23,42,0.55);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(124,58,237,0.2);
+            border-color: var(--brand-purple);
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 900;
+        }
+
+        /* Status Card */
+        .status-card {
+            background: linear-gradient(145deg, #5b21b6 0%, #7c3aed 45%, #6d28d9 100%);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+            box-shadow: 0 22px 42px rgba(91,33,182,0.5);
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 99px;
+            font-size: 0.8125rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .request-id {
+            font-size: 1.125rem;
+            font-weight: 900;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .route-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+            padding: var(--space-lg);
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-lg);
+        }
+
+        .route-icon {
+            font-size: 1.75rem;
+        }
+
+        .route-text {
+            flex: 1;
+        }
+
+        .route-from, .route-to {
+            font-size: 0.9375rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .route-location {
+            font-size: 0.8125rem;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+        }
+
+        .detail-item {
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            text-align: center;
+        }
+
+        .detail-icon {
+            font-size: 1.25rem;
+            margin-bottom: var(--space-xs);
+        }
+
+        .detail-value {
+            font-size: 0.9375rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 900;
+            margin-bottom: var(--space-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        /* Offer Card */
+        .offer-card {
+            background: linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-md);
+            transition: all 0.3s ease;
+        }
+
+        .offer-card:hover {
+            border-color: var(--brand-purple);
+            box-shadow: 0 8px 32px rgba(124,58,237,0.2);
+            transform: translateY(-2px);
+        }
+
+        .offer-header {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .driver-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #a78bfa 0%, #6d28d9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 900;
+            font-size: 1.5rem;
+            border: 3px solid rgba(124,58,237,0.3);
+            flex-shrink: 0;
+        }
+
+        .driver-info {
+            flex: 1;
+        }
+
+        .driver-name {
+            font-size: 1.125rem;
+            font-weight: 900;
+            margin-bottom: 0.25rem;
+        }
+
+        .driver-rating {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-bottom: var(--space-xs);
+        }
+
+        .star {
+            color: #fbbf24;
+        }
+
+        .driver-car {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .offer-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+            padding: var(--space-md);
+            background: rgba(15,23,42,0.4);
+            border-radius: var(--radius-md);
+        }
+
+        .offer-detail {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .select-driver-btn {
+            width: 100%;
+            padding: var(--space-md);
+            background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 900;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-arabic);
+        }
+
+        .select-driver-btn:hover {
+            box-shadow: 0 8px 20px rgba(124,58,237,0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Chat Button (Floating) */
+        .chat-fab {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(145deg, #7c3aed 0%, #6d28d9 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 32px rgba(124,58,237,0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+
+        .chat-fab:hover {
+            transform: translateX(-50%) translateY(-4px);
+            box-shadow: 0 16px 40px rgba(124,58,237,0.6);
+        }
+
+        .chat-icon {
+            font-size: 1.75rem;
+        }
+
+        /* Bottom Sheet Overlay */
+        .bottom-sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .bottom-sheet-overlay.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Bottom Sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 480px;
+            margin: 0 auto;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            max-height: 70vh;
+            display: none;
+            flex-direction: column;
+            z-index: 101;
+            animation: slideUp 0.3s ease;
+        }
+
+        .bottom-sheet.active {
+            display: flex;
+        }
+
+        .sheet-header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sheet-title {
+            font-size: 1.125rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .message {
+            max-width: 75%;
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-lg);
+            font-size: 0.9375rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: rgba(15,23,42,0.8);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: #fff;
+        }
+
+        .message-time {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .chat-input-area {
+            padding: var(--space-lg);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: var(--space-md);
+            background: rgba(15,23,42,0.5);
+            border: 1.5px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            font-family: var(--font-arabic);
+            resize: none;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--brand-purple);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: var(--brand-purple);
+            border: none;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.25rem;
+        }
+
+        .send-btn:hover {
+            background: var(--brand-purple-light);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="back-btn">←</button>
+            <h1>تفاصيل الطلب</h1>
+        </div>
+
+        <!-- Status Card -->
+        <div class="status-card">
+            <div class="status-header">
+                <span class="request-id">طلب #123</span>
+                <span class="status-badge">مفتوح</span>
+            </div>
+
+            <div class="route-info">
+                <div class="route-icon">📍</div>
+                <div class="route-text">
+                    <div class="route-from">من</div>
+                    <div class="route-location">الرياض، حي النخيل</div>
+                </div>
+            </div>
+
+            <div class="route-info">
+                <div class="route-icon">🎯</div>
+                <div class="route-text">
+                    <div class="route-to">إلى</div>
+                    <div class="route-location">جامعة الملك سعود</div>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-icon">⏰</div>
+                    <div class="detail-value">7:00 ص</div>
+                    <div class="detail-label">وقت الذهاب</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-icon">🏠</div>
+                    <div class="detail-value">3:00 م</div>
+                    <div class="detail-label">وقت العودة</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-icon">👥</div>
+                    <div class="detail-value">1 شخص</div>
+                    <div class="detail-label">عدد الركاب</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-icon">💰</div>
+                    <div class="detail-value">1,200 ر.س</div>
+                    <div class="detail-label">السعر الشهري</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Offers Section -->
+        <div class="section-title">
+            🚗 السائقون المقبِلون (3)
+        </div>
+
+        <!-- Offer Card 1 -->
+        <div class="offer-card">
+            <div class="offer-header">
+                <div class="driver-avatar">أ</div>
+                <div class="driver-info">
+                    <div class="driver-name">أحمد محمد</div>
+                    <div class="driver-rating">
+                        <span class="star">⭐</span>
+                        <span>4.8</span>
+                        <span style="color: var(--text-muted);">(127 رحلة)</span>
+                    </div>
+                    <div class="driver-car">🚙 تويوتا كامري 2022</div>
+                </div>
+            </div>
+
+            <div class="offer-details">
+                <div class="offer-detail">🇸🇦 سعودي</div>
+                <div class="offer-detail">✅ موثق</div>
+                <div class="offer-detail">⚡ رد سريع</div>
+                <div class="offer-detail">🎖️ سائق مميز</div>
+            </div>
+
+            <button class="select-driver-btn">✓ اختيار هذا السائق</button>
+        </div>
+
+        <!-- Offer Card 2 -->
+        <div class="offer-card">
+            <div class="offer-header">
+                <div class="driver-avatar">م</div>
+                <div class="driver-info">
+                    <div class="driver-name">محمد علي</div>
+                    <div class="driver-rating">
+                        <span class="star">⭐</span>
+                        <span>4.6</span>
+                        <span style="color: var(--text-muted);">(89 رحلة)</span>
+                    </div>
+                    <div class="driver-car">🚙 هونداي سوناتا 2021</div>
+                </div>
+            </div>
+
+            <div class="offer-details">
+                <div class="offer-detail">🇸🇦 سعودي</div>
+                <div class="offer-detail">✅ موثق</div>
+                <div class="offer-detail">💬 متجاوب</div>
+                <div class="offer-detail">⏱️ دقيق بالمواعيد</div>
+            </div>
+
+            <button class="select-driver-btn">✓ اختيار هذا السائق</button>
+        </div>
+
+        <!-- Offer Card 3 -->
+        <div class="offer-card">
+            <div class="offer-header">
+                <div class="driver-avatar">خ</div>
+                <div class="driver-info">
+                    <div class="driver-name">خالد إبراهيم</div>
+                    <div class="driver-rating">
+                        <span class="star">⭐</span>
+                        <span>4.9</span>
+                        <span style="color: var(--text-muted);">(203 رحلة)</span>
+                    </div>
+                    <div class="driver-car">🚙 مرسيدس C-Class 2023</div>
+                </div>
+            </div>
+
+            <div class="offer-details">
+                <div class="offer-detail">🇸🇦 سعودي</div>
+                <div class="offer-detail">✅ موثق</div>
+                <div class="offer-detail">🌟 تقييمات ممتازة</div>
+                <div class="offer-detail">🎖️ سائق محترف</div>
+            </div>
+
+            <button class="select-driver-btn">✓ اختيار هذا السائق</button>
+        </div>
+    </div>
+
+    <!-- Floating Chat Button -->
+    <button class="chat-fab" onclick="openChat()">
+        <span class="chat-icon">💬</span>
+    </button>
+
+    <!-- Bottom Sheet Overlay -->
+    <div class="bottom-sheet-overlay" id="chatOverlay" onclick="closeChat()"></div>
+
+    <!-- Bottom Sheet (Chat) -->
+    <div class="bottom-sheet" id="chatSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">
+                💬 المحادثة مع السائق
+            </div>
+            <button class="close-btn" onclick="closeChat()">✕</button>
+        </div>
+
+        <div class="chat-messages">
+            <div class="message received">
+                <div>مرحباً بك! أنا جاهز للبدء في الخدمة</div>
+                <div class="message-time">10:30 ص</div>
+            </div>
+            <div class="message sent">
+                <div>شكراً لك! متى يمكنك البدء؟</div>
+                <div class="message-time">10:32 ص</div>
+            </div>
+            <div class="message received">
+                <div>يمكنني البدء من الأحد القادم إن شاء الله</div>
+                <div class="message-time">10:33 ص</div>
+            </div>
+            <div class="message sent">
+                <div>ممتاز، شكراً لك</div>
+                <div class="message-time">10:35 ص</div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <textarea class="chat-input" rows="1" placeholder="اكتب رسالة..."></textarea>
+            <button class="send-btn">📤</button>
+        </div>
+    </div>
+
+    <script>
+        function openChat() {
+            document.getElementById('chatOverlay').classList.add('active');
+            document.getElementById('chatSheet').classList.add('active');
+        }
+
+        function closeChat() {
+            document.getElementById('chatOverlay').classList.remove('active');
+            document.getElementById('chatSheet').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينات التصميم الجديد | توصّلني</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050816;
+            --bg-secondary: #0a0f1e;
+            --brand-purple: #7c3aed;
+            --brand-purple-light: #8b5cf6;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-subtle: rgba(148, 163, 184, 0.12);
+            --border-medium: rgba(148, 163, 184, 0.18);
+            --radius-lg: 1.5rem;
+            --radius-xl: 2rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-arabic);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: var(--space-xl);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+            padding: var(--space-xl);
+            background: linear-gradient(145deg, #5b21b6 0%, #7c3aed 45%, #6d28d9 100%);
+            border-radius: var(--radius-xl);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+        }
+
+        .header p {
+            font-size: 1.125rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+        }
+
+        .intro {
+            background: linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-xl);
+        }
+
+        .intro h2 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+        }
+
+        .intro ul {
+            list-style: none;
+            margin: var(--space-lg) 0;
+        }
+
+        .intro li {
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            background: rgba(15,23,42,0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .intro li strong {
+            color: var(--brand-purple-light);
+            font-weight: 900;
+        }
+
+        .previews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--space-xl);
+            margin-bottom: var(--space-xl);
+        }
+
+        .preview-card {
+            background: linear-gradient(160deg, rgba(15,22,42,0.95) 0%, rgba(9,13,27,0.98) 100%);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            transition: all 0.3s ease;
+        }
+
+        .preview-card:hover {
+            border-color: var(--brand-purple);
+            box-shadow: 0 8px 32px rgba(124,58,237,0.2);
+            transform: translateY(-4px);
+        }
+
+        .preview-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(124,58,237,0.2);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: var(--space-lg);
+        }
+
+        .preview-card h3 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+        }
+
+        .preview-card p {
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: var(--space-lg);
+            line-height: 1.8;
+        }
+
+        .features-list {
+            list-style: none;
+            margin-bottom: var(--space-lg);
+        }
+
+        .features-list li {
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            background: rgba(15,23,42,0.3);
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .preview-btn {
+            width: 100%;
+            padding: var(--space-md) var(--space-lg);
+            background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 900;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-arabic);
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+
+        .preview-btn:hover {
+            box-shadow: 0 8px 20px rgba(124,58,237,0.4);
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            padding: var(--space-xl);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .alert {
+            background: rgba(234, 88, 12, 0.12);
+            border: 1px solid rgba(234, 88, 12, 0.25);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-xl);
+            color: #FB923C;
+            font-weight: 700;
+        }
+
+        .alert strong {
+            display: block;
+            font-size: 1.125rem;
+            margin-bottom: var(--space-md);
+            font-weight: 900;
+        }
+
+        @media (max-width: 768px) {
+            .previews-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎨 معاينات التصميم الجديد</h1>
+            <p>بوابة العملاء - تطبيق توصّلني</p>
+        </div>
+
+        <!-- Alert -->
+        <div class="alert">
+            <strong>⚠️ ملاحظة مهمة</strong>
+            هذه معاينات تصميمية فقط (Mockups) ولا تحتوي على أي منطق برمجي. التطبيق الفعلي سيتم بعد الموافقة على التصميم.
+        </div>
+
+        <!-- Intro -->
+        <div class="intro">
+            <h2>📋 نظرة عامة على التصميم</h2>
+            <p style="color: var(--text-secondary); font-weight: 600; margin-bottom: var(--space-lg);">
+                التصميم الجديد يركز على تحسين تجربة المستخدم مع الحفاظ على جميع الوظائف الحالية. التعديلات المقترحة تشمل:
+            </p>
+            <ul>
+                <li>✨ <strong>Dark Mode فقط</strong> بتدرجات بنفسجية داكنة وأنيقة</li>
+                <li>📱 <strong>Mobile App Style</strong> تصميم يشبه التطبيقات الحديثة</li>
+                <li>🎯 <strong>Minimal & Clean</strong> واجهة نظيفة بدون ازدحام</li>
+                <li>🔍 <strong>معلومات واضحة</strong> شرح تفصيلي لكيفية عمل النظام</li>
+                <li>🛡️ <strong>الأمان والثقة</strong> إبراز نقاط الموثوقية والأمان</li>
+                <li>✨ <strong>Animations خفيفة</strong> تجربة سلسة ومريحة</li>
+            </ul>
+        </div>
+
+        <!-- Previews Grid -->
+        <div class="previews-grid">
+            <!-- Preview 1: Dashboard -->
+            <div class="preview-card">
+                <div class="preview-icon">🏠</div>
+                <h3>الصفحة الرئيسية</h3>
+                <p>الصفحة الرئيسية للعميل مع جميع المعلومات والإجراءات الأساسية</p>
+
+                <ul class="features-list">
+                    <li>✅ Hero Section مع ترحيب شخصي</li>
+                    <li>✅ CTA واضح لإنشاء طلب جديد</li>
+                    <li>✅ قسم "كيف يعمل النظام؟" تفاعلي</li>
+                    <li>✅ قسم "الأمان والثقة" مفصّل</li>
+                    <li>✅ عرض الطلبات الحالية</li>
+                    <li>✅ Bottom Navigation</li>
+                </ul>
+
+                <a href="design-preview-dashboard.html" class="preview-btn" target="_blank">
+                    👁️ عرض المعاينة
+                </a>
+            </div>
+
+            <!-- Preview 2: Create Request -->
+            <div class="preview-card">
+                <div class="preview-icon">➕</div>
+                <h3>إنشاء طلب جديد</h3>
+                <p>صفحة إنشاء الطلب مع Stepper محسّن وعرض السعر المباشر</p>
+
+                <ul class="features-list">
+                    <li>✅ Progress Stepper محسّن (3 خطوات)</li>
+                    <li>✅ Price Preview ثابت (Sticky)</li>
+                    <li>✅ Form Cards نظيفة ومنظمة</li>
+                    <li>✅ اختيار الأوقات بشكل بصري</li>
+                    <li>✅ أزرار Navigation ثابتة</li>
+                </ul>
+
+                <a href="design-preview-create-request.html" class="preview-btn" target="_blank">
+                    👁️ عرض المعاينة
+                </a>
+            </div>
+
+            <!-- Preview 3: Request Details -->
+            <div class="preview-card">
+                <div class="preview-icon">📋</div>
+                <h3>تفاصيل الطلب والعروض</h3>
+                <p>صفحة عرض تفاصيل الطلب مع العروض من السائقين والمحادثة</p>
+
+                <ul class="features-list">
+                    <li>✅ Status Card بتصميم gradient</li>
+                    <li>✅ عرض معلومات المسار والأوقات</li>
+                    <li>✅ Offer Cards احترافية للسائقين</li>
+                    <li>✅ Floating Chat Button</li>
+                    <li>✅ Bottom Sheet للمحادثة</li>
+                </ul>
+
+                <a href="design-preview-request-details.html" class="preview-btn" target="_blank">
+                    👁️ عرض المعاينة
+                </a>
+            </div>
+        </div>
+
+        <!-- Design System Info -->
+        <div class="intro">
+            <h2>🎨 نظام التصميم</h2>
+            <p style="color: var(--text-secondary); font-weight: 600; margin-bottom: var(--space-lg);">
+                التصميم يعتمد على نظام تصميم موحد مع:
+            </p>
+            <ul>
+                <li>🎨 <strong>ألوان متناسقة:</strong> تدرجات بنفسجية (#7c3aed) مع خلفيات داكنة</li>
+                <li>✏️ <strong>خط عربي احترافي:</strong> IBM Plex Sans Arabic</li>
+                <li>📐 <strong>مسافات موحدة:</strong> نظام spacing متناسق</li>
+                <li>🔘 <strong>أزرار واضحة:</strong> minimum 44px للأهداف اللمسية</li>
+                <li>✨ <strong>تأثيرات خفيفة:</strong> shadows و glows بسيطة</li>
+                <li>📱 <strong>Responsive:</strong> يتكيف مع جميع أحجام الشاشات</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>تم الإنشاء بواسطة Claude Code | 2026-05-12</p>
+            <p style="margin-top: var(--space-md); font-size: 0.875rem;">
+                لقراءة التفاصيل الكاملة، راجع ملف <strong>README.md</strong> في هذا المجلد
+            </p>
+        </div>
+    </div>
+</body>
+</html>
