@@ -42,6 +42,6 @@
     "supertest": "7.2.2",
     "thread-stream": "4.2.0",
     "vite": "catalog:",
-    "vitest": "4.1.7"
+    "vitest": "4.1.8"
   }
 }
