@@ -14,7 +14,7 @@
   "private": true,
   "devDependencies": {
     "typescript": "~6.0.3",
-    "prettier": "^3.8.3",
+    "prettier": "^3.8.4",
     "@types/node": "^20.0.0"
   },
   "pnpm": {
